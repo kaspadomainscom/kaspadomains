@@ -27,13 +27,13 @@ export async function generateMetadata({ params }: { params: { category: string 
       title,
       description,
       url: `https://yourdomain.com/domains/categories/${params.category}`,
-      siteName: "RedNose Domains",
+      siteName: "kaspadomains.com",
       images: [
         {
           url: "https://yourdomain.com/og-image.png",
           width: 1200,
           height: 630,
-          alt: "RedNose Domains",
+          alt: "kaspadomains.com",
         },
       ],
       locale: "en_US",

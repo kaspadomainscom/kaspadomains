@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RedNose Token",
+  title: "kaspadomains.com",
   icons: {
     icon: `/kaspadomains.com/favicon.ico`, // 👈 Add this line
   },
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image", // Optional: Set a summary card type for Twitter
-    title: "RedNose Token",
+    title: "kaspadomains",
     description: "Fair launched Kaspa meme token with NFTs and zero team allocation",
   },
 };

@@ -26,10 +26,10 @@ const DomainPage = () => {
   return (
     <section className="max-w-7xl mx-auto px-6 py-6 space-y-12">
       <div className="space-y-4">
-        <h1 className="text-5xl font-semibold text-center text-gray-900">RedNose Domain Market</h1>
+        <h1 className="text-5xl font-semibold text-center text-gray-900">kaspadomains Market</h1>
         <div className="lg:columns-2 lg:gap-8 text-gray-700 text-lg leading-relaxed">
           <p>
-            Welcome to the <strong>RedNose premium domain marketplace</strong> – a curated platform showcasing only the most unique and valuable domains in the Kaspa ecosystem.
+            Welcome to the <strong>kaspadomains premium domain marketplace</strong> – a curated platform showcasing only the most unique and valuable domains in the Kaspa ecosystem.
             Every domain listed here is special: it&apos;s either a recognizable name, a strong brand candidate, or a high-potential investment.
           </p>
           <p>

@@ -5,11 +5,12 @@ import { categoriesData } from "@/data/categoriesManifest";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const baseUrl = "http://localhost:3000/rednose-site/"; // ✅ Replace with your live domain
+  const baseUrl = "http://kaspadomains.com/"; // ✅ Replace with your live domain
 
   const staticRoutes = [
     "",
     "/list-domain",
+    "/domain",
     "/domains",
     "/domains/categories",
     ...Object.keys(categoriesData).map((cat) => `/domains/categories/${cat}`),

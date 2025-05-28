@@ -2,9 +2,9 @@ import Link from "next/link";
 import { categoriesData } from "@/data/categoriesManifest";
 
 export const metadata = {
-  title: "RedNose Domains — Premium Kaspa KNS Marketplace",
+  title: "Kaspa Domains — Premium Kaspa KNS Marketplace",
   description:
-    "Discover premium KNS domains listed on the RedNose marketplace. One-time 100 KAS listing fee for unique and valuable domains only.",
+    "Discover premium KNS domains listed on the kaspadomains marketplace. One-time 100 KAS listing fee for unique and valuable domains only.",
 };
 
 export default function Home() {
@@ -12,7 +12,7 @@ export default function Home() {
     <main className="space-y-24">
       {/* Hero */}
       <section className="bg-gradient-to-br from-[#70C7BA] to-[#54B2A1] py-24 text-white text-center px-6">
-        <h1 className="text-5xl font-bold mb-4">RedNose KNS Domain Marketplace</h1>
+        <h1 className="text-5xl font-bold mb-4">kaspadomains KNS Domain Marketplace</h1>
         <p className="text-xl mb-6">
           List or discover valuable Kaspa domains. Only premium domains accepted with a 100 KAS one-time listing fee.
         </p>
@@ -73,7 +73,7 @@ export default function Home() {
 
       {/* Marketplace Description */}
       <section className="max-w-4xl mx-auto text-center px-6 pb-24">
-        <h2 className="text-3xl font-bold mb-6">Why RedNose?</h2>
+        <h2 className="text-3xl font-bold mb-6">Why Kaspadomains.com?</h2>
         <p className="text-lg text-gray-700">
         This marketplace curates only premium KNS domains—names with real value, brand potential,
         or cultural relevance. With a one-time listing fee of 100 KAS, only special domains make

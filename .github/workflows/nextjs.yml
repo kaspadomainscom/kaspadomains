@@ -77,6 +77,8 @@ jobs:
         run: ${{ steps.detect-package-manager.outputs.runner }} next build
       - name: Add .nojekyll file
         run: echo "" > ./out/.nojekyll
+      - name: Add CNAME file
+        run: echo "kaspadomains.com" > ./out/CNAME
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

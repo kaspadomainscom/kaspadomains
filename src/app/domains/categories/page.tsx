@@ -3,7 +3,7 @@ import { categoriesData } from "@/data/categoriesManifest";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Domain Categories | RedNose",
+  title: "Domain Categories | kaspadomains.com",
   description: "Browse all KNS domain categories like finance, gaming, characters, memes, and more.",
 };
 

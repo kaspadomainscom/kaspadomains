@@ -20,7 +20,7 @@ export default function NotFound() {
         <p className="text-sm text-gray-500 mt-6">
           Still having trouble?{" "}
           <Link
-            href="https://t.me/RedNoseSupport"
+            href="https://t.me/KaspadomainsSupport"
             target="_blank"
             className="underline text-blue-600"
           >

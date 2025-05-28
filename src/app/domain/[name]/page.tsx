@@ -42,7 +42,7 @@ export async function generateMetadata({
   const { domain, categoryTitle } = found;
 
   return {
-    title: `${domain.name} — Premium ${categoryTitle} Domain | RedNose`,
+    title: `${domain.name} — Premium ${categoryTitle} Domain | kaspadomains.com`,
     description: `Buy ${domain.name}, a premium KNS domain listed in the ${categoryTitle} category.`,
     openGraph: {
       title: domain.name,
@@ -126,7 +126,7 @@ export default async function DomainPage({
             availability: domain.listed
               ? "https://schema.org/InStock"
               : "https://schema.org/OutOfStock",
-            url: `https://rednose.market/domains/${domain.name}`,
+            url: `https://kaspadomains.com/domains/${domain.name}`,
           },
           ...(domain.sellerTelegram && {
             seller: {

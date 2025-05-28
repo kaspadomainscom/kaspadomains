@@ -5,7 +5,7 @@ export default function Docs() {
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <h1 className="text-3xl font-bold">Our Mission</h1>
       <p className="text-lg text-gray-700">
-        We curate and sell premium KNS domains to fund the RedNose token ecosystem. By investing in a top-tier domain, you’re supporting development,
+        We curate and sell premium KNS domains to fund the kaspadomains ecosystem. By investing in a top-tier domain, you’re supporting development,
         liquidity, and community growth, while securing a valuable on-chain asset.
       </p>
 
