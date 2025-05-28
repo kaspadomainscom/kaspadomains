@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: { category: string 
   const category = categories[params.category];
   if (!category) return {};
 
-  const title = `${category.title} | RedNose Domains`;
+  const title = `${category.title} | Kaspa Domains`;
   const description = `Browse ${category.domains.length} premium ${params.category} KNS domains.`;
 
   return {
