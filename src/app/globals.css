@@ -18,6 +18,7 @@
   --kaspaAqua: #38E8DC;
   --kaspaBlue: #0091AD;
   --kaspaTeal: #178582;
+  --kaspaDarkGreen: #0F2F2E;
   --kaspaGold: #FFD700;
   --kaspaWhite: #F7FDFC;
 }
@@ -95,7 +96,12 @@ body {
 .bg-kaspaTeal {
   background-color: var(--kaspaTeal);
 }
-
+.text-kaspaDarkGreen {
+  color: var(--kaspaDarkGreen);
+}
+.bg-kaspaDarkGreen {
+  background-color: var(--kaspaDarkGreen);
+}
 .text-kaspaGold {
   color: var(--kaspaGold);
 }

@@ -1,56 +1,55 @@
-// src/components/Header.tsx
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import Image from "next/image";
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
 
   const navItems = [
-    { label: "Home", href: "/" },
-    { label: "Domains", href: "/domains" },
-    { label: "Categories", href: "/domains/categories" },
-    { label: "Learn", href: "/learn" },
+    { label: 'Home', href: '/' },
+    { label: 'Domains', href: '/domains' },
+    { label: 'Categories', href: '/domains/categories' },
+    { label: 'Learn', href: '/learn' },
   ];
 
   const isActive = (href: string) =>
     pathname === href
-      ? "text-white after:block after:h-0.5 after:bg-white after:w-full"
-      : "text-white/80 hover:text-white";
+      ? 'text-white after:block after:h-0.5 after:bg-white after:w-full'
+      : 'text-white/80 hover:text-white';
 
   const premiumDomains = [
-    "wallet.kas",
-    "pay.kas",
-    "nft.kas",
-    "dex.kas",
-    "ai.kas",
-    "btc.kas",
-    "eth.kas",
-    "chat.kas",
-    "swap.kas",
-    "gas.kas",
+    'wallet.kas',
+    'pay.kas',
+    'nft.kas',
+    'dex.kas',
+    'ai.kas',
+    'btc.kas',
+    'eth.kas',
+    'chat.kas',
+    'swap.kas',
+    'gas.kas',
   ];
 
   return (
-    <header className="sticky top-0 z-50">
-      {/* Top Bar */}
-      <div className="bg-[#0F2F2E]/90 backdrop-blur-md shadow-md">
+    <header className="sticky top-0 z-50 shadow-sm">
+      {/* Top Navigation */}
+      <div className="bg-[#0F2F2E]/90 backdrop-blur-md">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3 md:py-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 group transition-transform hover:scale-105">
+          <Link href="/" className="flex items-center gap-2 group transition hover:scale-105">
             <Image
               src="/kaspadomains-logo.jpg"
               alt="KaspaDomains"
               width={40}
               height={40}
-              className="w-10 h-10"
+              className="w-10 h-10 rounded-md"
               priority
             />
-            <span className="text-2xl md:text-3xl font-semibold tracking-tight text-white">
+            <span className="text-2xl md:text-3xl font-bold tracking-tight text-white">
               Kaspa<span className="text-[#FFD700]">Domains</span>
             </span>
           </Link>
@@ -62,7 +61,7 @@ export default function Header() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`relative px-1 pb-1 font-medium transition-colors duration-200 ${isActive(item.href)}`}
+                  className={`relative pb-1 font-medium transition-colors duration-200 ${isActive(item.href)}`}
                 >
                   {item.label}
                 </Link>
@@ -74,7 +73,7 @@ export default function Header() {
               <input
                 type="text"
                 placeholder="Search .kas domains"
-                className="w-48 px-3 py-2 rounded-lg text-sm bg-white/10 placeholder-white/50 border border-white/20 focus:bg-white focus:text-gray-900 focus:outline-none"
+                className="w-52 px-3 py-2 rounded-md text-sm text-white bg-white/10 border border-white/20 placeholder-white/50 focus:bg-white focus:text-gray-900 focus:outline-none transition"
               />
               <svg
                 className="absolute right-2 top-1/2 h-4 w-4 text-white/60 -translate-y-1/2"
@@ -88,17 +87,17 @@ export default function Header() {
               </svg>
             </div>
 
-            {/* Connect Wallet */}
-            <button className="ml-4 px-4 py-2 bg-[#FFD700] text-[#0F2F2E] font-semibold rounded-lg shadow hover:bg-[#ffcc00] transition">
+            {/* Connect Button */}
+            <button className="ml-4 px-4 py-2 bg-[#FFD700] text-[#0F2F2E] font-semibold rounded-md hover:bg-[#ffcc00] transition">
               Connect Wallet
             </button>
           </div>
 
           {/* Mobile Menu Toggle */}
           <button
-            className="md:hidden p-2 text-white/90 hover:text-white transition"
             onClick={() => setMenuOpen((o) => !o)}
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            className="md:hidden p-2 text-white hover:text-white transition"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
           >
             <svg
               className="w-6 h-6"
@@ -118,13 +117,13 @@ export default function Header() {
       </div>
 
       {/* Premium Domains Ticker */}
-      <div className="bg-gradient-to-r from-[#FFD700]/20 to-[#FFD700]/10 border-t border-[#FFD700]/20 overflow-hidden whitespace-nowrap">
+      <div className="bg-gradient-to-r from-[#FFD700]/20 to-[#FFD700]/10 border-t border-[#FFD700]/30 overflow-hidden whitespace-nowrap">
         <div className="animate-marquee flex gap-8 py-2 px-4 text-white text-sm md:text-base font-semibold hover:[animation-play-state:paused]">
           {premiumDomains.map((domain, index) => (
             <a
               key={index}
               href={`/domains/${domain}`}
-              className="flex-shrink-0 hover:underline text-[#FFD700] whitespace-nowrap"
+              className="flex-shrink-0 text-[#FFD700] hover:underline whitespace-nowrap"
             >
               🔥 {domain} — <span className="underline underline-offset-4">Buy Now</span>
             </a>
@@ -132,19 +131,19 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Nav */}
       {menuOpen && (
-        <nav className="md:hidden bg-[#0F2F2E] px-4 pb-4 space-y-2 animate-slide-down">
+        <nav className="md:hidden bg-[#0F2F2E] px-4 pb-4 pt-2 animate-slide-down space-y-3">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className={`block px-2 py-2 rounded-lg text-white/90 hover:text-white ${isActive(item.href)}`}
+              className={`block px-2 py-2 rounded-md text-white/90 hover:text-white ${isActive(item.href)}`}
             >
               {item.label}
             </Link>
           ))}
-          <button className="w-full text-left px-2 py-2 bg-[#FFD700] text-[#0F2F2E] rounded-lg font-medium">
+          <button className="w-full px-4 py-2 bg-[#FFD700] text-[#0F2F2E] rounded-md font-semibold hover:bg-[#ffcc00] transition">
             Connect Wallet
           </button>
         </nav>
