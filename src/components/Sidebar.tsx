@@ -20,8 +20,10 @@ export default function Sidebar() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // ✅ FIXED: Don't collapse sidebar on mobile — allow full content
+  const collapsed = isMobile ? false : isCollapsed;
+
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
-  const collapsed = isCollapsed || isMobile;
 
   return (
     <aside
@@ -32,7 +34,7 @@ export default function Sidebar() {
         bg-[#0F2F2E] text-white relative z-10 shadow-inner border-r border-[#3DFDAD]/20
       `}
     >
-      {/* Collapse Button */}
+      {/* Collapse Button (Desktop Only) */}
       {!isMobile && (
         <button
           onClick={toggleSidebar}
