@@ -23,9 +23,9 @@ export default function Docs() {
         <li>Exclusivity through carefully selected top-tier names</li>
       </ul>
 
-      <h2 className="text-2xl font-semibold mt-8">Funding the RedNose Token</h2>
+      <h2 className="text-2xl font-semibold mt-8">Funding the kaspadomains Token</h2>
       <p className="text-gray-700">
-        Proceeds from domain sales are allocated to RedNose token initiatives:
+        Proceeds from domain sales are allocated to kaspadomains token initiatives:
       </p>
       <ul className="list-disc list-inside text-gray-700 space-y-1">
         <li><strong>40%</strong> - Owner rewards and project leadership</li>
@@ -35,12 +35,12 @@ export default function Docs() {
 
       <h2 className="text-2xl font-semibold mt-8">Token Rewards for Domain Owners</h2>
       <p className="text-gray-700">
-        Early domain buyers qualify for upcoming RedNose token airdrops. Allocation tiers will depend on factors like domain value, age,
+        Early domain buyers qualify for upcoming kaspadomains token airdrops. Allocation tiers will depend on factors like domain value, age,
         and community participation.
       </p>
 
       <p className="text-sm text-gray-500 mt-8">
-        Stay tuned for announcements on snapshots, airdrop schedules, and token launch details. Claim your domain and join the RedNose community today!
+        Stay tuned for announcements on snapshots, airdrop schedules, and token launch details. Claim your domain and join the kaspadomains community today!
       </p>
     </div>
   );

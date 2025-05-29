@@ -1,4 +1,3 @@
-// src/components/Sidebar.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -20,7 +19,9 @@ export default function Sidebar() {
   }, []);
 
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
-  
+
+  const collapsed = isCollapsed || isMobile;
+
   return (
     <aside
       className={`
@@ -46,22 +47,30 @@ export default function Sidebar() {
       {/* Content */}
       {(mobileOpen || !isMobile) && (
         <div className={`space-y-3 ${isMobile ? 'flex justify-around' : 'block'}`}>
-          <div className={`bg-[#70C7BA] text-white p-2 space-y-3`}>
-            <p>Categories</p>
+          {/* Collapsing Categories Header */}
+          <div
+            className={`
+              bg-kaspaGreen text-white p-2 flex items-center
+              ${collapsed ? 'justify-center' : 'justify-start'}
+            `}
+          >
+            <span className="mr-2">📂</span>
+            {!collapsed && <span className="text-sm font-semibold">Categories</span>}
           </div>
-          <SidebarLink icon="🔤" label="Short Names" collapsed={isCollapsed || isMobile} href="/categories/short" />
-          <SidebarLink icon="#️⃣" label="999 Club" collapsed={isCollapsed || isMobile} href="/categories/999club" />
-          <SidebarLink icon="🔢" label="10k Club" collapsed={isCollapsed || isMobile} href="/categories/10kclub" />
-          <SidebarLink icon="💯" label="100k Club" collapsed={isCollapsed || isMobile} href="/categories/100kclub" />
-          <SidebarLink icon="🏷️" label="Brandables" collapsed={isCollapsed || isMobile} href="/categories/brandables" />
-          <SidebarLink icon="🌍" label="Real Words" collapsed={isCollapsed || isMobile} href="/categories/real-words" />
-          <SidebarLink icon="💼" label="Business" collapsed={isCollapsed || isMobile} href="/categories/business" />
-          <SidebarLink icon="🎮" label="Gaming" collapsed={isCollapsed || isMobile} href="/categories/gaming" />
-          <SidebarLink icon="🧠" label="AI & Tech" collapsed={isCollapsed || isMobile} href="/categories/ai-tech" />
-          <SidebarLink icon="💰" label="Finance" collapsed={isCollapsed || isMobile} href="/categories/finance" />
-          <SidebarLink icon="🌐" label="Web3 / dApps" collapsed={isCollapsed || isMobile} href="/categories/web3" />
-          <SidebarLink icon="🧸" label="Memes & Fun" collapsed={isCollapsed || isMobile} href="/categories/memes" />
-          <SidebarLink icon="📈" label="Trending" collapsed={isCollapsed || isMobile} href="/categories/trending" />
+
+          <SidebarLink icon="🔤" label="Short Names" collapsed={collapsed} href="/categories/short" />
+          <SidebarLink icon="#️⃣" label="999 Club" collapsed={collapsed} href="/categories/999club" />
+          <SidebarLink icon="🔢" label="10k Club" collapsed={collapsed} href="/categories/10kclub" />
+          <SidebarLink icon="💯" label="100k Club" collapsed={collapsed} href="/categories/100kclub" />
+          <SidebarLink icon="🏷️" label="Brandables" collapsed={collapsed} href="/categories/brandables" />
+          <SidebarLink icon="🌍" label="Real Words" collapsed={collapsed} href="/categories/real-words" />
+          <SidebarLink icon="💼" label="Business" collapsed={collapsed} href="/categories/business" />
+          <SidebarLink icon="🎮" label="Gaming" collapsed={collapsed} href="/categories/gaming" />
+          <SidebarLink icon="🧠" label="AI & Tech" collapsed={collapsed} href="/categories/ai-tech" />
+          <SidebarLink icon="💰" label="Finance" collapsed={collapsed} href="/categories/finance" />
+          <SidebarLink icon="🌐" label="Web3 / dApps" collapsed={collapsed} href="/categories/web3" />
+          <SidebarLink icon="🧸" label="Memes & Fun" collapsed={collapsed} href="/categories/memes" />
+          <SidebarLink icon="📈" label="Trending" collapsed={collapsed} href="/categories/trending" />
         </div>
       )}
     </aside>
@@ -85,7 +94,6 @@ function SidebarLink({
       className="flex items-center text-sm hover:text-red-600 transition-colors duration-200 justify-center md:justify-start"
     >
       <span className="mr-2">{icon}</span>
-      {/* Show label only if not collapsed */}
       {!collapsed && <span>{label}</span>}
     </Link>
   );

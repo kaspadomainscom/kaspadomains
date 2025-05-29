@@ -1,3 +1,4 @@
+// src/components/Header.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -13,7 +14,7 @@ export default function Header() {
     { label: "Home", href: "/" },
     { label: "Domains", href: "/domains" },
     { label: "Categories", href: "/domains/categories" },
-    { label: "Learn", href: "/learn" }, // ✅ SEO-optimized Learn page
+    { label: "Learn", href: "/learn" },
   ];
 
   const isActive = (href: string) =>
@@ -37,10 +38,10 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50">
       {/* Top Bar */}
-      <div className="bg-[#70C7BA]/75 backdrop-blur-md shadow-md">
+      <div className="bg-[#0F2F2E]/90 backdrop-blur-md shadow-md">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3 md:py-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2 group transition-transform hover:scale-105">
             <Image
               src="/kaspadomains-logo.jpg"
               alt="KaspaDomains"
@@ -49,12 +50,12 @@ export default function Header() {
               className="w-10 h-10"
               priority
             />
-            <span className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
+            <span className="text-2xl md:text-3xl font-semibold tracking-tight text-white">
               Kaspa<span className="text-[#FFD700]">Domains</span>
             </span>
           </Link>
 
-          {/* Nav + Search + CTA */}
+          {/* Desktop Nav */}
           <div className="hidden md:flex items-center space-x-6">
             <nav className="flex space-x-4">
               {navItems.map((item) => (
@@ -68,11 +69,12 @@ export default function Header() {
               ))}
             </nav>
 
+            {/* Search */}
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search premium domains…"
-                className="w-48 px-3 py-1.5 rounded-lg text-sm bg-white/20 placeholder-white/60 focus:bg-white focus:text-gray-800 focus:outline-none transition-colors"
+                placeholder="Search .kas domains"
+                className="w-48 px-3 py-2 rounded-lg text-sm bg-white/10 placeholder-white/50 border border-white/20 focus:bg-white focus:text-gray-900 focus:outline-none"
               />
               <svg
                 className="absolute right-2 top-1/2 h-4 w-4 text-white/60 -translate-y-1/2"
@@ -86,7 +88,8 @@ export default function Header() {
               </svg>
             </div>
 
-            <button className="ml-4 px-4 py-1.5 bg-white text-[#70C7BA] font-semibold rounded-lg shadow hover:bg-white/90 transition">
+            {/* Connect Wallet */}
+            <button className="ml-4 px-4 py-2 bg-[#FFD700] text-[#0F2F2E] font-semibold rounded-lg shadow hover:bg-[#ffcc00] transition">
               Connect Wallet
             </button>
           </div>
@@ -114,7 +117,7 @@ export default function Header() {
         </div>
       </div>
 
-      {/* 🔥 Premium Domains Ticker */}
+      {/* Premium Domains Ticker */}
       <div className="bg-gradient-to-r from-[#FFD700]/20 to-[#FFD700]/10 border-t border-[#FFD700]/20 overflow-hidden whitespace-nowrap">
         <div className="animate-marquee flex gap-8 py-2 px-4 text-white text-sm md:text-base font-semibold hover:[animation-play-state:paused]">
           {premiumDomains.map((domain, index) => (
@@ -131,7 +134,7 @@ export default function Header() {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <nav className="md:hidden bg-[#70C7BA] px-4 pb-4 space-y-2 animate-slide-down">
+        <nav className="md:hidden bg-[#0F2F2E] px-4 pb-4 space-y-2 animate-slide-down">
           {navItems.map((item) => (
             <Link
               key={item.href}
@@ -141,7 +144,7 @@ export default function Header() {
               {item.label}
             </Link>
           ))}
-          <button className="w-full text-left px-2 py-2 bg-white text-[#70C7BA] rounded-lg font-medium">
+          <button className="w-full text-left px-2 py-2 bg-[#FFD700] text-[#0F2F2E] rounded-lg font-medium">
             Connect Wallet
           </button>
         </nav>

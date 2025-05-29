@@ -7,10 +7,19 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
   --kaspaGreen: #70C7BA;
   --kaspaGreenLight: #49EACB;
   --kaspaDark: #231F20;
   --kaspaGray: #B6B6B6;
+
+  /* ✅ Additional Kaspa color palette */
+  --kaspaMint: #7EF4CC;
+  --kaspaAqua: #38E8DC;
+  --kaspaBlue: #0091AD;
+  --kaspaTeal: #178582;
+  --kaspaGold: #FFD700;
+  --kaspaWhite: #F7FDFC;
 }
 
 /* Dark mode preferences */
@@ -21,18 +30,19 @@
   }
 }
 
-/* Global body styling */
+/* ✅ Global body styling with reset */
 body {
+  margin: 0;
+  padding: 0;
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* You can also define global text color and background here */
+/* ✅ Utility classes for Kaspa theme */
 .text-kaspaGreen {
   color: var(--kaspaGreen);
 }
-
 .bg-kaspaGreen {
   background-color: var(--kaspaGreen);
 }
@@ -40,7 +50,6 @@ body {
 .text-kaspaGreenLight {
   color: var(--kaspaGreenLight);
 }
-
 .bg-kaspaGreenLight {
   background-color: var(--kaspaGreenLight);
 }
@@ -48,7 +57,6 @@ body {
 .text-kaspaDark {
   color: var(--kaspaDark);
 }
-
 .bg-kaspaDark {
   background-color: var(--kaspaDark);
 }
@@ -56,13 +64,53 @@ body {
 .text-kaspaGray {
   color: var(--kaspaGray);
 }
-
 .bg-kaspaGray {
   background-color: var(--kaspaGray);
 }
 
+.text-kaspaMint {
+  color: var(--kaspaMint);
+}
+.bg-kaspaMint {
+  background-color: var(--kaspaMint);
+}
 
+.text-kaspaAqua {
+  color: var(--kaspaAqua);
+}
+.bg-kaspaAqua {
+  background-color: var(--kaspaAqua);
+}
 
+.text-kaspaBlue {
+  color: var(--kaspaBlue);
+}
+.bg-kaspaBlue {
+  background-color: var(--kaspaBlue);
+}
+
+.text-kaspaTeal {
+  color: var(--kaspaTeal);
+}
+.bg-kaspaTeal {
+  background-color: var(--kaspaTeal);
+}
+
+.text-kaspaGold {
+  color: var(--kaspaGold);
+}
+.bg-kaspaGold {
+  background-color: var(--kaspaGold);
+}
+
+.text-kaspaWhite {
+  color: var(--kaspaWhite);
+}
+.bg-kaspaWhite {
+  background-color: var(--kaspaWhite);
+}
+
+/* ✅ Custom animation utilities */
 @layer utilities {
   .animate-marquee {
     animation: marquee 25s linear infinite;
@@ -76,4 +124,19 @@ body {
       transform: translateX(-100%);
     }
   }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-down {
+  animation: slideDown 0.25s ease-out forwards;
 }
