@@ -26,17 +26,17 @@ export default function Sidebar() {
   return (
     <aside
       className={`
-        bg-white border-r border-gray-200 transition-all duration-300 ease-in-out
+        transition-all duration-300 ease-in-out
         ${isMobile ? 'w-full border-t md:border-t-0' : collapsed ? 'w-16' : 'w-64'}
         ${isMobile ? (mobileOpen ? 'h-auto' : 'h-14') : 'min-h-screen'}
-        relative z-10
+        bg-[#0F2F2E] text-white relative z-10 shadow-inner border-r border-[#3DFDAD]/20
       `}
     >
       {/* Collapse Button */}
       {!isMobile && (
         <button
           onClick={toggleSidebar}
-          className="absolute top-4 right-[-12px] bg-gray-100 border border-gray-300 rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-gray-200 z-20"
+          className="absolute top-4 right-[-12px] bg-[#1C4745] border border-[#3DFDAD]/30 rounded-full w-6 h-6 flex items-center justify-center text-xs text-[#3DFDAD] hover:bg-[#1a403d] z-20"
           title={isCollapsed ? 'Expand' : 'Collapse'}
         >
           {isCollapsed ? '→' : '←'}
@@ -48,7 +48,7 @@ export default function Sidebar() {
         <div className="h-full overflow-y-auto pt-4 pb-8 space-y-2">
           {/* Header */}
           <div
-            className={`bg-kaspaGreen text-white px-3 py-2 text-xs font-semibold tracking-wide uppercase flex items-center ${collapsed ? 'justify-center' : 'justify-start'}`}
+            className={`bg-[#152d2b] text-[#3DFDAD] px-3 py-2 text-xs font-semibold tracking-wide uppercase flex items-center ${collapsed ? 'justify-center' : 'justify-start'}`}
           >
             <span className="mr-2">📂</span>
             {!collapsed && <span>Categories</span>}
@@ -108,7 +108,7 @@ function SidebarLink({
       className={`
         flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium
         transition-colors duration-200
-        ${active ? 'bg-gray-100 text-kaspaGreen font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-kaspaGreen'}
+        ${active ? 'bg-[#1c403d] text-[#3DFDAD] font-semibold' : 'text-white/80 hover:bg-[#1a403d] hover:text-[#3DFDAD]'}
         ${collapsed ? 'justify-center' : 'justify-start'}
       `}
     >

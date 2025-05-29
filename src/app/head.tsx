@@ -1,9 +1,10 @@
+// src/app/head.tsx
 export default function Head() {
     return (
       <>
-        <link rel="icon" href="${process.env.NEXT_PUBLIC_BASE_PATH}/favicon.ico" />
+        <link rel="icon" href="/favicon.ico" />
         {/* Optional fallbacks */}
-        {/* <link rel="icon" href="${process.env.NEXT_PUBLIC_BASE_PATH}/favicon.ico" type="image/x-icon" /> */}
+        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
       </>
     );
   }

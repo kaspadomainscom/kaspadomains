@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "kaspadomains.com",
   icons: {
-    icon: `/kaspadomains.com/favicon.ico`, // 👈 Add this line
+    icon: `/favicon.ico`, // 👈 Add this line
   },
   description: "",
   openGraph: {
