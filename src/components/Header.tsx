@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import Image from 'next/image';
 import KaspaDomainsLogo from './KaspaDomainsLogo';
 
 export default function Header() {
