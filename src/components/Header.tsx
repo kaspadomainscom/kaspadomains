@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
+import KaspaDomainsLogo from './KaspaDomainsLogo';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -40,19 +41,7 @@ export default function Header() {
       <div className="bg-[#0F2F2E]/90 backdrop-blur-md">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3 md:py-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group transition hover:scale-105">
-            <Image
-              src="/kaspadomains-logo.jpg"
-              alt="KaspaDomains"
-              width={40}
-              height={40}
-              className="w-10 h-10 rounded-md"
-              priority
-            />
-            <span className="text-2xl md:text-3xl font-bold tracking-tight text-white">
-              Kaspa<span className="text-[#FFD700]">Domains</span>
-            </span>
-          </Link>
+          <KaspaDomainsLogo />
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center space-x-6">
@@ -88,7 +77,7 @@ export default function Header() {
             </div>
 
             {/* Connect Button */}
-            <button className="ml-4 px-4 py-2 bg-[#FFD700] text-[#0F2F2E] font-semibold rounded-md hover:bg-[#ffcc00] transition">
+            <button className="ml-4 px-4 py-2 bg-[#3DFDAD] text-[#0F2F2E] font-semibold rounded-md hover:bg-[#34e29c] transition">
               Connect Wallet
             </button>
           </div>
@@ -117,15 +106,15 @@ export default function Header() {
       </div>
 
       {/* Premium Domains Ticker */}
-      <div className="bg-gradient-to-r from-[#FFD700]/20 to-[#FFD700]/10 border-t border-[#FFD700]/30 overflow-hidden whitespace-nowrap">
-        <div className="animate-marquee flex gap-8 py-2 px-4 text-white text-sm md:text-base font-semibold hover:[animation-play-state:paused]">
+      <div className="bg-[#0F2F2E] border-t border-[#3DFDAD]/20 overflow-hidden">
+        <div className="animate-marquee flex gap-8 py-2 px-4 text-[#3DFDAD] text-sm md:text-base font-medium tracking-tight hover:[animation-play-state:paused]">
           {premiumDomains.map((domain, index) => (
             <a
               key={index}
               href={`/domains/${domain}`}
-              className="flex-shrink-0 text-[#FFD700] hover:underline whitespace-nowrap"
+              className="flex-shrink-0 whitespace-nowrap hover:underline transition duration-200 glow-green"
             >
-              🔥 {domain} — <span className="underline underline-offset-4">Buy Now</span>
+              🔥 <span className="font-semibold">{domain}</span> — <span className="underline underline-offset-4">Buy Now</span>
             </a>
           ))}
         </div>
@@ -143,11 +132,17 @@ export default function Header() {
               {item.label}
             </Link>
           ))}
-          <button className="w-full px-4 py-2 bg-[#FFD700] text-[#0F2F2E] rounded-md font-semibold hover:bg-[#ffcc00] transition">
+          <button className="w-full px-4 py-2 bg-[#3DFDAD] text-[#0F2F2E] rounded-md font-semibold hover:bg-[#34e29c] transition">
             Connect Wallet
           </button>
         </nav>
       )}
+
+      <style jsx>{`
+        .glow-green {
+          text-shadow: 0 0 6px #3DFDAD, 0 0 12px #3DFDAD;
+        }
+      `}</style>
     </header>
   );
 }
