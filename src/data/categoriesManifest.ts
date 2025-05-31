@@ -2,6 +2,7 @@
 import { club100k } from "./categories/100kclub";
 import { club10k } from "./categories/10kclub";
 import { club999 } from "./categories/999club";
+import { brandablesDomains } from "./categories/brandables";
 import { charactersDomains } from "./categories/characters";
 import { finance } from "./categories/finance";
 import { gamingDomains } from "./categories/gaming";
@@ -56,7 +57,7 @@ export const categoriesData: Record<
   },
   brandables: {
     title: "Brandables",
-    domains: namesDomains,
+    domains: brandablesDomains,
   },
   "ai-tech": {
     title: "Ai & Tech",
