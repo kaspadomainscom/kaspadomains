@@ -91,19 +91,19 @@ export default function Sidebar() {
 }
 
 const categoryLinks = [
-  { icon: '🔤', label: 'Short Names', href: '/categories/short' },
-  { icon: '#️⃣', label: '999 Club', href: '/categories/999club' },
-  { icon: '🔢', label: '10k Club', href: '/categories/10kclub' },
-  { icon: '💯', label: '100k Club', href: '/categories/100kclub' },
-  { icon: '🏷️', label: 'Brandables', href: '/categories/brandables' },
-  { icon: '🌍', label: 'Real Words', href: '/categories/real-words' },
-  { icon: '💼', label: 'Business', href: '/categories/business' },
-  { icon: '🎮', label: 'Gaming', href: '/categories/gaming' },
-  { icon: '🧠', label: 'AI & Tech', href: '/categories/ai-tech' },
-  { icon: '💰', label: 'Finance', href: '/categories/finance' },
-  { icon: '🌐', label: 'Web3 / dApps', href: '/categories/web3' },
-  { icon: '🧸', label: 'Memes & Fun', href: '/categories/memes' },
-  { icon: '📈', label: 'Trending', href: '/categories/trending' },
+  { icon: '🔤', label: 'Short Names', href: '/domains/categories/category/short' },
+  { icon: '#️⃣', label: '999 Club', href: '/domains/categories/category/999club' },
+  { icon: '🔢', label: '10k Club', href: '/domains/categories/category/10kclub' },
+  { icon: '💯', label: '100k Club', href: '/domains/categories/category/100kclub' },
+  { icon: '🏷️', label: 'Brandables', href: '/domains/categories/category/brandables' },
+  { icon: '🌍', label: 'Real Words', href: '/domains/categories/category/real-words' },
+  { icon: '💼', label: 'Business', href: '/domains/categories/category/business' },
+  { icon: '🎮', label: 'Gaming', href: '/domains/categories/category/gaming' },
+  { icon: '🧠', label: 'AI & Tech', href: '/domains/categories/category/ai-tech' },
+  { icon: '💰', label: 'Finance', href: '/domains/categories/category/finance' },
+  { icon: '🌐', label: 'Web3 / dApps', href: '/domains/categories/category/web3' },
+  { icon: '🧸', label: 'Memes & Fun', href: '/domains/categories/category/memes' },
+  { icon: '📈', label: 'Trending', href: '/domains/categories/category/trending' },
 ];
 
 function SidebarLink({

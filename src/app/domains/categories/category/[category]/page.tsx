@@ -1,26 +1,28 @@
 // src/app/domains/categories/category/[category]/page.tsx
+
 import { notFound } from "next/navigation";
 import { categoriesData } from "@/data/categoriesManifest";
 import { DomainCard } from "@/components/DomainCard";
 import { Metadata } from "next";
 import { JsonLd } from "@/components/JsonLd";
 
-export async function generateStaticParams() {
-  const categories = categoriesData;
-  return Object.keys(categories).map((category) => ({ category }));
+type StaticParam = { category: string };
+
+export function generateStaticParams(): StaticParam[] {
+  return Object.keys(categoriesData).map((category) => ({ category }));
 }
 
 export async function generateMetadata({
   params,
 }: {
-  params: { category: string };
+  params: Promise<{ category: string }>;
 }): Promise<Metadata> {
-  const categories = categoriesData;
-  const category = categories[params.category];
-  if (!category) return {};
+  const { category } = await params;
+  const categoryData = categoriesData[category];
+  if (!categoryData) return {};
 
-  const title = `${category.title} | Kaspa Domains`;
-  const description = `Browse ${category.domains.length} premium ${params.category} KNS domains.`;
+  const title = `${categoryData.title} | Kaspa Domains`;
+  const description = `Browse ${categoryData.domains.length} premium ${category} KNS domains.`;
 
   return {
     title,
@@ -28,7 +30,7 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      url: `https://kaspadomains.com/domains/categories/${params.category}`,
+      url: `https://kaspadomains.com/domains/categories/${category}`,
       siteName: "kaspadomains.com",
       images: [
         {
@@ -50,31 +52,27 @@ export async function generateMetadata({
   };
 }
 
-//   params,
-// }: {
-//   params: Promise<{ name: string }>;
-// }) {
-
 export default async function CategoryPage({
   params,
 }: {
   params: Promise<{ category: string }>;
 }) {
   const { category } = await params;
-  const categories = categoriesData;
-  const categoryPath = categories[category];
-  if (!category) return notFound();
+  const categoryData = categoriesData[category];
+
+  if (!categoryData) return notFound();
 
   return (
     <main className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">{categoryPath.title}</h1>
+      <h1 className="text-3xl font-bold mb-6">{categoryData.title}</h1>
+
       <JsonLd
         data={{
           "@context": "https://schema.org",
           "@type": "ItemList",
-          name: `${categoryPath.title} KNS Domains`,
-          description: `Premium Kaspa KNS domains in the ${categoryPath.title} category.`,
-          itemListElement: categoryPath.domains.map((domain, index) => ({
+          name: `${categoryData.title} KNS Domains`,
+          description: `Premium Kaspa KNS domains in the ${categoryData.title} category.`,
+          itemListElement: categoryData.domains.map((domain, index) => ({
             "@type": "ListItem",
             position: index + 1,
             url: `https://kaspadomains.com/domains/categories/${category}#${domain.name}`,
@@ -94,8 +92,9 @@ export default async function CategoryPage({
           })),
         }}
       />
+
       <div className="grid gap-4">
-        {categoryPath.domains.map((domain, i) => (
+        {categoryData.domains.map((domain, i) => (
           <DomainCard key={i} domain={domain} />
         ))}
       </div>
