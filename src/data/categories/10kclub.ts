@@ -1,6 +1,6 @@
-export const club999Domains = [
+export const club10k = [
   {
-    name: "999club.kas",
+    name: "10kclub.kas",
     listed: true,
     price: 1500,
     sellerTelegram: "@kaspadomainscom",

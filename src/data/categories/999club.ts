@@ -1,4 +1,4 @@
-export const club999Domains = [
+export const club999 = [
   {
     name: "999club.kas",
     listed: true,
