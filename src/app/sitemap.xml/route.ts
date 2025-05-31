@@ -5,7 +5,7 @@ import { categoriesData } from "@/data/categoriesManifest";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const baseUrl = "http://kaspadomains.com/"; // ✅ Replace with your live domain
+  const baseUrl = "http://kaspadomains.com"; // ✅ Replace with your live domain
 
   const staticRoutes = [
     "",
