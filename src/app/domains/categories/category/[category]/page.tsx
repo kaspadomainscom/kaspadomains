@@ -5,15 +5,17 @@ import { DomainCard } from "@/components/DomainCard";
 import { Metadata } from "next";
 import { JsonLd } from "@/components/JsonLd";
 
-// If categoriesData is async (Promise), always await inside these functions
-
 export async function generateStaticParams() {
-  const categories = await categoriesData; // await the data here
+  const categories = categoriesData;
   return Object.keys(categories).map((category) => ({ category }));
 }
 
-export async function generateMetadata({ params }: { params: { category: string } }): Promise<Metadata> {
-  const categories = await categoriesData; // await the data here as well
+export async function generateMetadata({
+  params,
+}: {
+  params: { category: string };
+}): Promise<Metadata> {
+  const categories = categoriesData;
   const category = categories[params.category];
   if (!category) return {};
 
@@ -48,8 +50,12 @@ export async function generateMetadata({ params }: { params: { category: string 
   };
 }
 
-export default async function CategoryPage({ params }: { params: { category: string } }) {
-  const categories = await categoriesData;  // await here inside the page component!
+export default function CategoryPage({
+  params,
+}: {
+  params: { category: string };
+}) {
+  const categories = categoriesData;
   const category = categories[params.category];
   if (!category) return notFound();
 
