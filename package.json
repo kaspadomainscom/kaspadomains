@@ -1,12 +1,10 @@
 {
   "name": "kaspadomains",
-  "homepage": "https://kaspadomainscom.github.io/kaspadomains",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && next export",
-    "deploy": "npm run build && gh-pages -d out",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -26,9 +24,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.3.1",
-    "gh-pages": "^6.3.0",
-    "supabase": "^2.23.4",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5.8.3"
   }
 }

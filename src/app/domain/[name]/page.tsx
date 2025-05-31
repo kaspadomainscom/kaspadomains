@@ -126,12 +126,13 @@ export default async function DomainPage({
             availability: domain.listed
               ? "https://schema.org/InStock"
               : "https://schema.org/OutOfStock",
-            url: `https://kaspadomains.com/domains/${domain.name}`,
+            url: `https://kaspadomains.com/domain/${domain.name}`,
           },
           ...(domain.sellerTelegram && {
             seller: {
               "@type": "Person",
-              name: domain.sellerTelegram,
+              name: domain.sellerTelegram.replace("@", "") || "Unknown",
+
             },
           }),
         }}

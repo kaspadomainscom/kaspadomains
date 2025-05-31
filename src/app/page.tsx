@@ -5,7 +5,7 @@ import { categoriesData } from "@/data/categoriesManifest";
 export const metadata = {
   title: "Kaspa Domains — Premium Kaspa KNS Marketplace",
   description:
-    "Discover premium KNS domains listed on the kaspadomains marketplace. One-time 100 KAS listing fee for unique and valuable domains only.",
+    "Discover premium KNS domains listed on the kaspadomains marketplace. One-time 287 KAS listing fee for unique and valuable domains only.",
 };
 
 export default function Home() {
@@ -17,7 +17,7 @@ export default function Home() {
           kaspadomains KNS Domain Marketplace
         </h1>
         <p className="text-lg md:text-xl max-w-2xl mx-auto mb-8 text-white/90">
-          List or discover valuable Kaspa domains. Only premium domains accepted with a 100 KAS one-time listing fee.
+          List or discover valuable Kaspa domains. Only premium domains accepted with a 287 KAS one-time listing fee.
         </p>
         <Link
           href="/list-domain"
@@ -87,7 +87,7 @@ export default function Home() {
         </h2>
         <p className="text-lg text-gray-300 leading-relaxed">
           This marketplace curates only premium KNS domains — names with real value, brand potential,
-          or cultural relevance. With a one-time listing fee of 100 KAS, only special domains make
+          or cultural relevance. With a one-time listing fee of 287 KAS, only special domains make
           it in. Categories like characters, tech, finance, and gaming help buyers quickly find
           what they’re looking for.
         </p>

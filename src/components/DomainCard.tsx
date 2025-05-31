@@ -1,90 +1,87 @@
-// src/components/DomainCard.tsx
 "use client";
 
 import { Domain } from "@/data/types";
+import Link from "next/link";
+import { JsonLd } from "./JsonLd"; // your existing reusable component
 
 export function DomainCard({ domain }: { domain: Domain }) {
-  // Safe telegram username without @ and only if defined
-  const telegramUsername = domain.sellerTelegram
-    ? domain.sellerTelegram.replace("@", "")
-    : null;
+  const telegramUsername = domain.sellerTelegram?.replace("@", "") || null;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: domain.name,
+    description:
+      "Premium KNS domain pointing to a Kaspa wallet. Perfect for identity, payments, or branding.",
+    sku: `KNS-${domain.name}`,
+    productID: domain.name,
+    url: `https://kaspadomains.com/domain/${domain.name}`,
+    category: "KNS Domain",
+    offers: {
+      "@type": "Offer",
+      price: domain.price,
+      priceCurrency: "KAS",
+      availability: domain.listed
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
+      seller: {
+        "@type": "Person",
+        name: telegramUsername || "Unknown",
+      },
+    },
+    additionalProperty: [
+      {
+        "@type": "PropertyValue",
+        name: "KNS Type",
+        value: "Kaspa Domain Name",
+      },
+    ],
+  };
 
   return (
-    <div className="border rounded-xl p-4 shadow-md bg-white flex flex-col gap-2">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">{domain.name}</h2>
-        <span
-          className={`text-xs font-semibold px-2 py-1 rounded-full ${
-            domain.listed
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
-        >
-          {domain.listed ? "Listed" : "Unlisted"}
-        </span>
-      </div>
-      <p>
-        <strong>Price:</strong> {domain.price} KAS
-      </p>
-
-      {telegramUsername && (
-        <p>
-          <strong>Seller Telegram:</strong>{" "}
-          <a
-            href={`https://t.me/${telegramUsername}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 underline"
-          >
-            @{telegramUsername}
-          </a>
-        </p>
-      )}
-
-      <a
-        href={domain.kaspaLink}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-sm text-purple-700 underline"
+    <>
+      <Link
+        href={`/domain/${domain.name}`}
+        className="block bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-purple-400 transition-all duration-200"
       >
-        View on Kaspa.com →
-      </a>
+        <div className="flex justify-between items-start mb-3">
+          <h2 className="text-2xl font-bold text-gray-900">{domain.name}</h2>
+          <span
+            className={`text-xs px-3 py-1 rounded-full font-medium ${
+              domain.listed
+                ? "bg-green-100 text-green-700"
+                : "bg-gray-200 text-gray-600"
+            }`}
+          >
+            {domain.listed ? "Listed" : "Unlisted"}
+          </span>
+        </div>
 
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Product",
-            name: domain.name,
-            description:
-              "Premium KNS domain pointing to a Kaspa wallet. Perfect for identity, payments, or branding.",
-            sku: `KNS-${domain.name}`,
-            productID: domain.name,
-            url: domain.kaspaLink,
-            category: "KNS Domain",
-            offers: {
-              "@type": "Offer",
-              price: domain.price,
-              priceCurrency: "KAS",
-              availability: domain.listed
-                ? "https://schema.org/InStock"
-                : "https://schema.org/OutOfStock",
-              seller: {
-                "@type": "Person",
-                name: telegramUsername || "Unknown",
-              },
-            },
-            additionalProperty: [
-              {
-                "@type": "PropertyValue",
-                name: "KNS Type",
-                value: "Kaspa Domain Name",
-              },
-            ],
-          }),
-        }}
-      />
-    </div>
+        <div className="text-gray-800 mb-2">
+          <strong className="font-medium">Price:</strong> {domain.price} KAS
+        </div>
+
+        {telegramUsername && (
+          <div className="mb-2">
+            <strong className="font-medium">Seller Telegram:</strong>{" "}
+            <span className="text-blue-600">@{telegramUsername}</span>
+          </div>
+        )}
+
+        <div className="mt-2">
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(domain.kaspaLink, "_blank", "noopener,noreferrer");
+            }}
+            className="text-purple-600 text-sm underline hover:text-purple-800 cursor-pointer"
+          >
+            View on Kaspa.com →
+          </span>
+        </div>
+      </Link>
+
+      <JsonLd data={jsonLd} />
+    </>
   );
 }

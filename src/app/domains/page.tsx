@@ -34,7 +34,7 @@ const DomainPage = () => {
           </p>
           <p>
             We filter and categorize each domain by type – from <strong>Clubs</strong> and <strong>Characters</strong> to <strong>Memes</strong> and <strong>Finance</strong> – making it easy to browse and discover exactly what you&apos;re looking for.
-            There&apos;s a <strong>one-time 100 KAS listing fee</strong>, which ensures only serious and valuable domains make it to the market. Nobody will pay 100 KAS to list “whatbbhshj.kas” – but something like <strong>bartsimpson.kas</strong> definitely earns its spot.
+            There&apos;s a <strong>one-time 287 KAS listing fee</strong>, which ensures only serious and valuable domains make it to the market. Nobody will pay 287 KAS to list “whatbbhshj.kas” – but something like <strong>bartsimpson.kas</strong> definitely earns its spot.
           </p>
         </div>
       </div>
