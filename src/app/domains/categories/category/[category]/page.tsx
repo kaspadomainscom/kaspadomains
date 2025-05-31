@@ -50,28 +50,34 @@ export async function generateMetadata({
   };
 }
 
-export default function CategoryPage({
+//   params,
+// }: {
+//   params: Promise<{ name: string }>;
+// }) {
+
+export default async function CategoryPage({
   params,
 }: {
-  params: { category: string };
+  params: Promise<{ category: string }>;
 }) {
+  const { category } = await params;
   const categories = categoriesData;
-  const category = categories[params.category];
+  const categoryPath = categories[category];
   if (!category) return notFound();
 
   return (
     <main className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">{category.title}</h1>
+      <h1 className="text-3xl font-bold mb-6">{categoryPath.title}</h1>
       <JsonLd
         data={{
           "@context": "https://schema.org",
           "@type": "ItemList",
-          name: `${category.title} KNS Domains`,
-          description: `Premium Kaspa KNS domains in the ${category.title} category.`,
-          itemListElement: category.domains.map((domain, index) => ({
+          name: `${categoryPath.title} KNS Domains`,
+          description: `Premium Kaspa KNS domains in the ${categoryPath.title} category.`,
+          itemListElement: categoryPath.domains.map((domain, index) => ({
             "@type": "ListItem",
             position: index + 1,
-            url: `https://kaspadomains.com/domains/categories/${params.category}#${domain.name}`,
+            url: `https://kaspadomains.com/domains/categories/${category}#${domain.name}`,
             name: domain.name,
             additionalProperty: [
               {
@@ -89,7 +95,7 @@ export default function CategoryPage({
         }}
       />
       <div className="grid gap-4">
-        {category.domains.map((domain, i) => (
+        {categoryPath.domains.map((domain, i) => (
           <DomainCard key={i} domain={domain} />
         ))}
       </div>
