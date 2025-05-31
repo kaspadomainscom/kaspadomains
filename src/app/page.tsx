@@ -1,7 +1,6 @@
 // src/app/page.tsx
 import Link from "next/link";
 import { categoriesData } from "@/data/categoriesManifest";
-import Head from "next/head";
 
 export const metadata = {
   title: "Kaspa Domains — Premium Kaspa KNS Marketplace",
