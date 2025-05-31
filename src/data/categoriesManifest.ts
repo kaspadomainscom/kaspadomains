@@ -16,15 +16,15 @@ export const categoriesData: Record<
     domains: Domain[];
   }
 > = {
-  club10k: {
+  "10kclub": {
     title: "10k club",
     domains: club10k,
   },
-  club100k: {
+  "100kclub": {
     title: "100k club",
     domains: club100k,
   },
-  club999: {
+  "999club": {
     title: "999 club",
     domains: club999,
   },
