@@ -1,3 +1,4 @@
+// src/app/domains/categories/page.tsx
 import Link from "next/link";
 import { categoriesData } from "@/data/categoriesManifest";
 import { Metadata } from "next";
