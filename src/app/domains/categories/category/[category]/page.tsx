@@ -26,11 +26,11 @@ export async function generateMetadata({ params }: { params: { category: string 
     openGraph: {
       title,
       description,
-      url: `https://yourdomain.com/domains/categories/${params.category}`,
+      url: `https://kaspadomains.com/domains/categories/${params.category}`,
       siteName: "kaspadomains.com",
       images: [
         {
-          url: "https://yourdomain.com/og-image.png",
+          url: "https://kaspadomains.com/og-image.png",
           width: 1200,
           height: 630,
           alt: "kaspadomains.com",
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: { params: { category: string 
       card: "summary_large_image",
       title,
       description,
-      images: ["https://yourdomain.com/twitter-image.png"],
+      images: ["https://kaspadomains.com/twitter-image.png"],
     },
   };
 }
@@ -65,7 +65,7 @@ export default async function CategoryPage({ params }: { params: { category: str
           itemListElement: category.domains.map((domain, index) => ({
             "@type": "ListItem",
             position: index + 1,
-            url: `https://yourdomain.com/domains/categories/${params.category}#${domain.name}`,
+            url: `https://kaspadomains.com/domains/categories/${params.category}#${domain.name}`,
             name: domain.name,
             additionalProperty: [
               {
