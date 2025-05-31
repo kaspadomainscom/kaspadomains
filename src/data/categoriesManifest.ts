@@ -3,7 +3,7 @@ import { club100k } from "./categories/100kclub";
 import { club10k } from "./categories/10kclub";
 import { club999 } from "./categories/999club";
 import { charactersDomains } from "./categories/characters";
-import { financeDomains } from "./categories/finance";
+import { finance } from "./categories/finance";
 import { gamingDomains } from "./categories/gaming";
 import { memeDomains } from "./categories/meme";
 import { Domain } from "./types";
@@ -29,7 +29,7 @@ export const categoriesData: Record<
   },
   finance: {
     title: "Finance Domains",
-    domains: financeDomains,
+    domains: finance,
   },
   gaming: {
     title: "Gaming Domains",

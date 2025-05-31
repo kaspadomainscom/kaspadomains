@@ -1,5 +1,5 @@
 // src/data/categories/finance.ts
-export const financeDomains = [
+export const finance = [
   {
     name: "finance123.kas",
     listed: true,
