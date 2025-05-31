@@ -7,6 +7,8 @@ import { finance } from "./categories/finance";
 import { gamingDomains } from "./categories/gaming";
 import { memeDomains } from "./categories/meme";
 import { namesDomains } from "./categories/short";
+import { techDomains } from "./categories/tech";
+import { web3Domains } from "./categories/web3";
 import { Domain } from "./types";
 
 export const categoriesData: Record<
@@ -36,19 +38,35 @@ export const categoriesData: Record<
     title: "Gaming Domains",
     domains: gamingDomains,
   },
+  web3: {
+    title: "Web 3 Domains",
+    domains: web3Domains,
+  },
   characters: {
     title: "Known Characters",
     domains: charactersDomains,
   },
-  
   memes: {
     title: "Memes & Internet Culture",
     domains: memeDomains,
   },
   short: {
-    title: "Memes & Internet Culture",
+    title: "Short Names",
     domains: namesDomains,
   },
+  brandables: {
+    title: "Brandables",
+    domains: namesDomains,
+  },
+  "ai-tech": {
+    title: "Ai & Tech",
+    domains: techDomains,
+  },
+  "real-words": {
+    title: "Real Words",
+    domains: namesDomains,
+  }
+
   // etc...
   // Add other categories similarly
 };
