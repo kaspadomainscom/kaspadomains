@@ -6,6 +6,7 @@ import { charactersDomains } from "./categories/characters";
 import { finance } from "./categories/finance";
 import { gamingDomains } from "./categories/gaming";
 import { memeDomains } from "./categories/meme";
+import { namesDomains } from "./categories/short";
 import { Domain } from "./types";
 
 export const categoriesData: Record<
@@ -39,9 +40,14 @@ export const categoriesData: Record<
     title: "Known Characters",
     domains: charactersDomains,
   },
+  
   memes: {
     title: "Memes & Internet Culture",
     domains: memeDomains,
+  },
+  short: {
+    title: "Memes & Internet Culture",
+    domains: namesDomains,
   },
   // etc...
   // Add other categories similarly
