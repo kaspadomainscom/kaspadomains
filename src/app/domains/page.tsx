@@ -54,7 +54,7 @@ const DomainPage = () => {
           {categories.map(({ key, title }) => (
             <Link
               key={key}
-              href={`/domains/category/${key}`}
+              href={`/domains/categories/category/${key}`}
               className="px-4 py-2 bg-[#70C7BA] text-white rounded-xl shadow hover:bg-[#54B2A1] transition"
             >
               {title}
