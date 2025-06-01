@@ -3,9 +3,9 @@ import React from "react";
 import Link from "next/link";
 
 const domainsData = [
-  { domain: "999club.kas", category: "Clubs", price: "99900", sold: false, rednoseAllocation: "0.999", buyLink: "https://www.kaspa.com/domains/marketplace/999club.kas/4579926d02dfc1eed2d578f7cb81b356f327c2fac3fbb1be9c81d794e98184b5i0" },
-  { domain: "10kclub.kas", category: "Clubs", price: "25,000 KAS", sold: true, rednoseAllocation: "0.25%", buyLink: "https://www.kaspa.com/domains/marketplace/10kclub.kas/78d202e1304900088dd09bd6e6de789073bf11f22c061bf76864fd5e3c78e3d3i0" },
-  { domain: "bartsimpson.kas", category: "Characters", price: "5,000 KAS", sold: false, rednoseAllocation: "0.05%", buyLink: "https://www.kaspa.com/domains/marketplace/bartsimpson.kas/..." },
+  { domain: "999club.kas", category: "999club", price: "99900", sold: false, rednoseAllocation: "0.999", buyLink: "https://www.kaspa.com/domains/marketplace/999club.kas/4579926d02dfc1eed2d578f7cb81b356f327c2fac3fbb1be9c81d794e98184b5i0" },
+  { domain: "10kclub.kas", category: "10kclub", price: "25,000 KAS", sold: true, rednoseAllocation: "0.25%", buyLink: "https://www.kaspa.com/domains/marketplace/10kclub.kas/78d202e1304900088dd09bd6e6de789073bf11f22c061bf76864fd5e3c78e3d3i0" },
+  { domain: "bartsimpson.kas", category: "characters", price: "5,000 KAS", sold: false, rednoseAllocation: "0.05%", buyLink: "https://www.kaspa.com/domains/marketplace/bartsimpson.kas/..." },
   // ...rest of the domains
 ];
 
