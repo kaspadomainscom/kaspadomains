@@ -3,11 +3,13 @@ import { club100k } from "./categories/100kclub";
 import { club10k } from "./categories/10kclub";
 import { club999 } from "./categories/999club";
 import { brandablesDomains } from "./categories/brandables";
+import { businessDomains } from "./categories/business";
 import { charactersDomains } from "./categories/characters";
 import { finance } from "./categories/finance";
 import { gamingDomains } from "./categories/gaming";
 import { memeDomains } from "./categories/meme";
-import { namesDomains } from "./categories/short";
+import { realWordsDomains } from "./categories/realWords";
+import { shortNamesDomains } from "./categories/short";
 import { techDomains } from "./categories/tech";
 import { web3Domains } from "./categories/web3";
 import { Domain } from "./types";
@@ -53,7 +55,7 @@ export const categoriesData: Record<
   },
   short: {
     title: "Short Names",
-    domains: namesDomains,
+    domains: shortNamesDomains,
   },
   brandables: {
     title: "Brandables",
@@ -65,7 +67,11 @@ export const categoriesData: Record<
   },
   "real-words": {
     title: "Real Words",
-    domains: namesDomains,
+    domains: realWordsDomains,
+  },
+    business: {
+    title: "Real Words",
+    domains: businessDomains,
   }
 
   // etc...

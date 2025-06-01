@@ -4,7 +4,7 @@ export const charactersDomains = [
     listed: true,
     price: 1500,
     sellerTelegram: "@kaspadomainscom",
-    kaspaLink: "https://kaspa.com/domain/999club.kas",
+    kaspaLink: "https://kaspa.com/domain/characters.kas",
   },
   // more domains...
 ];

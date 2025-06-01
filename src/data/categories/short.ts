@@ -1,4 +1,4 @@
-export const namesDomains = [
+export const shortNamesDomains = [
   {
     name: "shira.kas",
     listed: true,

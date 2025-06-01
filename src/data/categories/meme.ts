@@ -1,10 +1,10 @@
 export const memeDomains = [
   {
-    name: "characters.kas",
+    name: "meme.kas",
     listed: true,
     price: 1500,
     sellerTelegram: "@kaspadomainscom",
-    kaspaLink: "https://kaspa.com/domain/999club.kas",
+    kaspaLink: "https://kaspa.com/domain/meme.kas",
   },
   // more domains...
 ];
