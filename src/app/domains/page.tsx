@@ -1,27 +1,38 @@
-// src/app/domains/page.tsx
-import React from "react";
+'use client';
+
+import React, { useState } from "react";
 import Link from "next/link";
+import { categoriesData } from "@/data/categoriesManifest";
+import { Domain } from "@/data/types";
 
-const domainsData = [
-  { domain: "999club.kas", category: "999club", price: "99900", sold: false, rednoseAllocation: "0.999", buyLink: "https://www.kaspa.com/domains/marketplace/999club.kas/4579926d02dfc1eed2d578f7cb81b356f327c2fac3fbb1be9c81d794e98184b5i0" },
-  { domain: "10kclub.kas", category: "10kclub", price: "25,000 KAS", sold: true, rednoseAllocation: "0.25%", buyLink: "https://www.kaspa.com/domains/marketplace/10kclub.kas/78d202e1304900088dd09bd6e6de789073bf11f22c061bf76864fd5e3c78e3d3i0" },
-  { domain: "bartsimpson.kas", category: "characters", price: "5,000 KAS", sold: false, rednoseAllocation: "0.05%", buyLink: "https://www.kaspa.com/domains/marketplace/bartsimpson.kas/..." },
-  // ...rest of the domains
-];
+// Flatten all domains and tag them with category
+const allDomains: (Domain & { category: string })[] = Object.entries(categoriesData).flatMap(
+  ([categoryKey, { domains }]) =>
+    domains.map((domain) => ({
+      ...domain,
+      category: categoryKey,
+    }))
+);
 
-const categories = [...new Set(domainsData.map(d => d.category).filter(Boolean))];
-
-const parseKasValue = (price: string): number =>
-  parseFloat(price.replace(/,/g, "").replace(/\s*KAS$/, ""));
-
-const parsePercentValue = (percent: string): number =>
-  parseFloat(percent.replace("%", ""));
+// Get all category labels
+const categories = Object.entries(categoriesData).map(([key, { title }]) => ({
+  key,
+  title,
+}));
 
 const DomainPage = () => {
-  const totalKasSold = domainsData.filter(d => d.sold).reduce((sum, d) => sum + parseKasValue(d.price), 0);
-  const totalAllocationSold = domainsData.filter(d => d.sold).reduce((sum, d) => sum + parsePercentValue(d.rednoseAllocation), 0);
-  const totalAllocationAll = domainsData.reduce((sum, d) => sum + parsePercentValue(d.rednoseAllocation), 0);
-  const totalKasTarget = domainsData.reduce((sum, d) => sum + parseKasValue(d.price), 0);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+  const filteredDomains =
+    selectedCategory === "all"
+      ? allDomains
+      : allDomains.filter((d) => d.category === selectedCategory);
+
+  const totalKasSold = filteredDomains
+    .filter((d) => !d.listed)
+    .reduce((sum, d) => sum + d.price, 0);
+
+  const totalKasTarget = filteredDomains.reduce((sum, d) => sum + d.price, 0);
 
   return (
     <section className="max-w-7xl mx-auto px-6 py-6 space-y-12">
@@ -30,11 +41,9 @@ const DomainPage = () => {
         <div className="lg:columns-2 lg:gap-8 text-gray-700 text-lg leading-relaxed">
           <p>
             Welcome to the <strong>kaspadomains premium domain marketplace</strong> – a curated platform showcasing only the most unique and valuable domains in the Kaspa ecosystem.
-            Every domain listed here is special: it&apos;s either a recognizable name, a strong brand candidate, or a high-potential investment.
           </p>
           <p>
-            We filter and categorize each domain by type – from <strong>Clubs</strong> and <strong>Characters</strong> to <strong>Memes</strong> and <strong>Finance</strong> – making it easy to browse and discover exactly what you&apos;re looking for.
-            There&apos;s a <strong>one-time 287 KAS listing fee</strong>, which ensures only serious and valuable domains make it to the market. Nobody will pay 287 KAS to list “whatbbhshj.kas” – but something like <strong>bartsimpson.kas</strong> definitely earns its spot.
+            Each domain listed is carefully categorized — from <strong>Clubs</strong> to <strong>Characters</strong> to <strong>Trending Memes</strong>. A <strong>287 KAS listing fee</strong> ensures only high-quality domains appear here.
           </p>
         </div>
       </div>
@@ -42,13 +51,13 @@ const DomainPage = () => {
       <div className="space-y-4">
         <h2 className="text-3xl font-bold text-gray-900">Browse by Category</h2>
         <div className="flex flex-wrap gap-3">
-          {categories.map((category) => (
+          {categories.map(({ key, title }) => (
             <Link
-              key={category}
-              href={`/domains/category/${category.toLowerCase()}`}
+              key={key}
+              href={`/domains/category/${key}`}
               className="px-4 py-2 bg-[#70C7BA] text-white rounded-xl shadow hover:bg-[#54B2A1] transition"
             >
-              {category}
+              {title}
             </Link>
           ))}
         </div>
@@ -56,18 +65,38 @@ const DomainPage = () => {
 
       <div className="space-y-6">
         <h2 className="text-4xl font-bold text-center text-gray-900">Market Stats Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {[
-            { label: "Total KAS Sold", value: `${totalKasSold.toLocaleString()} KAS` },
-            { label: "Total KAS Target", value: `${totalKasTarget.toLocaleString()} KAS` },
-            { label: "Allocation Sold", value: `${totalAllocationSold.toFixed(3)}%` },
-            { label: "Total Allocation", value: `${totalAllocationAll.toFixed(3)}%` }
-          ].map((stat) => (
-            <div key={stat.label} className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition">
-              <p className="text-xl font-medium text-gray-600 mb-2">{stat.label}</p>
-              <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-            </div>
-          ))}
+
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+            {[
+              { label: "Total KAS Sold", value: `${totalKasSold.toLocaleString()} KAS` },
+              { label: "Total KAS Target", value: `${totalKasTarget.toLocaleString()} KAS` },
+            ].map((stat) => (
+              <div key={stat.label} className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition">
+                <p className="text-xl font-medium text-gray-600 mb-2">{stat.label}</p>
+                <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="w-full md:w-auto">
+            <label htmlFor="categoryFilter" className="block text-lg font-medium text-gray-700 mb-2">
+              Filter by Category
+            </label>
+            <select
+              id="categoryFilter"
+              className="px-4 py-2 border rounded-xl shadow w-full md:w-64"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
+              <option value="all">All Categories</option>
+              {categories.map(({ key, title }) => (
+                <option key={key} value={key}>
+                  {title}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -75,35 +104,34 @@ const DomainPage = () => {
         <table className="min-w-full table-auto divide-y divide-gray-200">
           <thead className="bg-gradient-to-r from-[#70C7BA] to-[#54B2A1] text-white">
             <tr>
-              {["Domain", "Category", "Price", "Allocation", "Sold", "Action"].map((h) => (
+              {["Domain", "Category", "Price", "Status", "Action"].map((h) => (
                 <th key={h} className="px-6 py-4 text-left font-medium">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody className="bg-white">
-            {domainsData.map((d, i) => (
+            {filteredDomains.map((d, i) => (
               <tr key={i} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4">{d.domain}</td>
-                <td className="px-6 py-4">{d.category}</td>
-                <td className="px-6 py-4">{d.price}</td>
-                <td className="px-6 py-4">{d.rednoseAllocation}</td>
+                <td className="px-6 py-4">{d.name}</td>
+                <td className="px-6 py-4">{categoriesData[d.category].title}</td>
+                <td className="px-6 py-4">{d.price.toLocaleString()} KAS</td>
                 <td className="px-6 py-4">
-                  <span className={`text-${d.sold ? "red" : "green"}-500 font-semibold`}>
-                    {d.sold ? "Sold" : "Available"}
+                  <span className={`font-semibold ${d.listed ? "text-green-500" : "text-red-500"}`}>
+                    {d.listed ? "Available" : "Sold"}
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  {d.sold ? (
-                    <span className="text-gray-500">Sold Out</span>
-                  ) : (
+                  {d.listed ? (
                     <a
-                      href={d.buyLink}
+                      href={d.kaspaLink}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[#70C7BA] font-medium hover:text-[#54B2A1]"
                     >
                       Buy Now
                     </a>
+                  ) : (
+                    <span className="text-gray-500">Sold Out</span>
                   )}
                 </td>
               </tr>
