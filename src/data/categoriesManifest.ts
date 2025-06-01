@@ -11,6 +11,7 @@ import { memeDomains } from "./categories/meme";
 import { realWordsDomains } from "./categories/realWords";
 import { shortNamesDomains } from "./categories/short";
 import { techDomains } from "./categories/tech";
+import { trendingDomains } from "./categories/trending";
 import { web3Domains } from "./categories/web3";
 import { Domain } from "./types";
 
@@ -72,8 +73,11 @@ export const categoriesData: Record<
     business: {
     title: "Real Words",
     domains: businessDomains,
+  },
+  trending: {
+    title: "Trending",
+    domains: trendingDomains,
   }
-
   // etc...
   // Add other categories similarly
 };
