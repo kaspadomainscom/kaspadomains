@@ -6,6 +6,11 @@ import "./globals.css";
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Sidebar from '@/components/Sidebar';
+import { headers } from 'next/headers';
+import { NonceProvider } from "@/context/NonceProvider";
+
+
+export const dynamic = 'force-dynamic';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,11 +40,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+  const headersList = await headers();
+  const nonce = headersList.get('x-csp-nonce') ?? '';
+
+
   return (
     <html lang="en">
       <body
@@ -48,7 +58,13 @@ export default function RootLayout({
         <Header />
         <div className="flex flex-col md:flex-row min-h-screen">
           <Sidebar />
-          <main className="flex-1">{children}</main>
+
+          <main className="flex-1">
+            <NonceProvider value={nonce}>
+              {children}
+            </NonceProvider>
+          </main>
+
         </div>
         <Footer />
       </body>
