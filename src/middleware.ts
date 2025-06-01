@@ -1,16 +1,20 @@
-// src/middleware.ts
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
 
-export async function middleware(req: NextRequest) {
+function base64url(arrayBuffer: Uint8Array) {
+  let binary = '';
+  for (let i = 0; i < arrayBuffer.byteLength; i++) {
+    binary += String.fromCharCode(arrayBuffer[i]);
+  }
+  const base64 = Buffer.from(binary, 'binary').toString('base64');
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+export async function middleware() {
   // Generate 16 random bytes
   const randomBytes = crypto.getRandomValues(new Uint8Array(16));
 
   // Convert to base64url string
-  const nonce = btoa(String.fromCharCode(...randomBytes))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
+  const nonce = base64url(randomBytes);
 
   const res = NextResponse.next();
 
@@ -25,7 +29,6 @@ export async function middleware(req: NextRequest) {
   return res;
 }
 
-// Optional: limit middleware to only run on specific routes
 export const config = {
   matcher: ['/', '/(app|api)/:path*'], // adjust as needed
 };

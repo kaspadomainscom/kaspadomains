@@ -1,3 +1,4 @@
+// src/context/NonceProvider.tsx
 import { ReactNode } from 'react';
 import { NonceContext } from './NonceContext';
 
