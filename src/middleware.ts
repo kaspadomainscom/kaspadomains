@@ -18,9 +18,17 @@ export async function middleware() {
 
   const res = NextResponse.next();
 
+  // Base CSP script-src with nonce
+  let scriptSrc = `'self' 'nonce-${nonce}'`;
+
+  // Add 'unsafe-eval' in development ONLY
+  if (process.env.NODE_ENV === 'development') {
+    scriptSrc += " 'unsafe-eval'";
+  }
+
   res.headers.set(
     'Content-Security-Policy',
-    `script-src 'self' 'nonce-${nonce}'; object-src 'none'; base-uri 'self';`
+    `script-src ${scriptSrc}; object-src 'none'; base-uri 'self';`
   );
 
   // Pass nonce to the app via a custom header
