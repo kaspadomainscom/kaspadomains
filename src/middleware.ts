@@ -1,3 +1,4 @@
+// src/middleware.ts
 import { NextResponse } from 'next/server';
 
 function base64url(arrayBuffer: Uint8Array) {

@@ -60,7 +60,7 @@ export default async function RootLayout({
           <Sidebar />
 
           <main className="flex-1">
-            <NonceProvider value={nonce}>
+            <NonceProvider nonce={nonce}>
               {children}
             </NonceProvider>
           </main>

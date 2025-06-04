@@ -1,7 +1,8 @@
 // src/components/NonceWrapper.tsx
 'use client';
 
-import { NonceProvider } from '@/context/NonceProvider';
+import { NonceProvider } from "@/context/NonceProvider";
+
 
 export function NonceWrapper({
   nonce,
@@ -10,5 +11,5 @@ export function NonceWrapper({
   nonce: string;
   children: React.ReactNode;
 }) {
-  return <NonceProvider value={nonce}>{children}</NonceProvider>;
+  return <NonceProvider nonce={nonce}>{children}</NonceProvider>;
 }

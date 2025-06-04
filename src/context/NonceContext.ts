@@ -1,7 +1,7 @@
-// src/context/NonceContext.ts
-'use client';
+// // src/context/NonceContext.ts
+// 'use client';
 
-import { createContext } from 'react';
+// import { createContext } from 'react';
 
-// ✅ Export must be named
-export const NonceContext = createContext<string | undefined>(undefined);
+// // ✅ Export must be named
+// export const NonceContext = createContext<string | undefined>(undefined);

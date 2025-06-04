@@ -2,7 +2,6 @@
 import { notFound } from "next/navigation";
 import { categoriesData } from "@/data/categoriesManifest";
 import { Metadata } from "next";
-import { JsonLd } from "@/components/JsonLd";
 import Link from "next/link";
 
 export interface Domain {
@@ -111,32 +110,7 @@ export default async function DomainPage({
           View on Kaspa.com
         </Link>
       </p>
-
-      <JsonLd
-        data={{
-          "@context": "https://schema.org",
-          "@type": "Product",
-          name: domain.name,
-          description: `Premium KNS domain in ${categoryTitle}`,
-          category: categoryTitle,
-          offers: {
-            "@type": "Offer",
-            priceCurrency: "KAS",
-            price: domain.price,
-            availability: domain.listed
-              ? "https://schema.org/InStock"
-              : "https://schema.org/OutOfStock",
-            url: `https://kaspadomains.com/domain/${domain.name}`,
-          },
-          ...(domain.sellerTelegram && {
-            seller: {
-              "@type": "Person",
-              name: domain.sellerTelegram.replace("@", "") || "Unknown",
-
-            },
-          }),
-        }}
-      />
+      
     </main>
   );
 }

@@ -35,7 +35,7 @@ export default function Home() {
         <div className="grid md:grid-cols-3 gap-8">
           {Object.entries(categoriesData).map(([key, value]) => (
             <Link
-              href={`/domains/categories/${key}`}
+              href={`/domains/categories/category/${key}`}
               key={key}
               className="block bg-[#121E28] p-6 rounded-2xl shadow hover:shadow-lg transition"
             >
