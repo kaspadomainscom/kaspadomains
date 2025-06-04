@@ -1,4 +1,4 @@
-// app/head.tsx
+// src/app/head.tsx
 import { getWebsiteJsonLd, getItemListJsonLd } from '@/lib/jsonld';
 import { headers } from 'next/headers';
 
@@ -9,6 +9,9 @@ export default async function Head() {
   const websiteJsonLd = getWebsiteJsonLd();
   const itemListJsonLd = getItemListJsonLd();
 
+  // Combine both into one JSON-LD array
+  const combinedJsonLd = [websiteJsonLd, itemListJsonLd];
+
   return (
     <>
       <link rel="icon" href="/favicon.ico" />
@@ -18,12 +21,7 @@ export default async function Head() {
       <script
         type="application/ld+json"
         nonce={nonce || undefined}
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        nonce={nonce || undefined}
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(combinedJsonLd) }}
       />
     </>
   );

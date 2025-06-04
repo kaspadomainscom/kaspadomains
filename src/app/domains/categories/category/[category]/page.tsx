@@ -18,10 +18,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { category } = await params;
   const categoryData = categoriesData[category];
-  if (!categoryData) return {};
+  if (!categoryData) return { title: "Category Not Found" };
 
   const title = `${categoryData.title} | Kaspa Domains`;
-  const description = `Browse ${categoryData.domains.length} premium ${category} KNS domains.`;
+  const description = `Explore ${categoryData.domains.length} premium KNS domains in the ${category} category. Perfect for Kaspa wallets, identity, and branding.`;
 
   return {
     title,
@@ -30,13 +30,13 @@ export async function generateMetadata({
       title,
       description,
       url: `https://kaspadomains.com/domains/categories/${category}`,
-      siteName: "kaspadomains.com",
+      siteName: "Kaspa Domains",
       images: [
         {
           url: "https://kaspadomains.com/og-image.png",
           width: 1200,
           height: 630,
-          alt: "kaspadomains.com",
+          alt: "Kaspa Domains",
         },
       ],
       locale: "en_US",
@@ -62,11 +62,11 @@ export default async function CategoryPage({
   if (!categoryData) return notFound();
 
   return (
-    <main className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">{categoryData.title}</h1>
-      <div className="grid gap-4">
-        {categoryData.domains.map((domain, i) => (
-          <DomainCard key={i} domain={domain} />
+    <main className="p-6 max-w-5xl mx-auto">
+      <h1 className="text-3xl font-semibold mb-6">{categoryData.title}</h1>
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+        {categoryData.domains.map((domain) => (
+          <DomainCard key={domain.name} domain={domain} />
         ))}
       </div>
     </main>

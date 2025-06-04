@@ -8,6 +8,21 @@ export type DomainJsonLdInput = {
   seller?: string;
 };
 
+type ListItem = {
+  "@type": "ListItem";
+  position: number;
+  url: string;
+  name: string;
+};
+
+type ItemListJsonLd = {
+  "@context": string;
+  "@type": "ItemList";
+  "@id": string;
+  name: string;
+  itemListElement: ListItem[];
+};
+
 export function getWebsiteJsonLd() {
   return {
     "@context": "https://schema.org",
@@ -50,7 +65,7 @@ export function getDomainJsonLd({
     },
     offers: {
       "@type": "Offer",
-      price: typeof price === "string" ? parseFloat(price) : price,
+      price: typeof price === "string" ? parseFloat(price) || 0 : price,
       priceCurrency: "KAS",
       availability: listed
         ? "https://schema.org/InStock"
@@ -74,8 +89,7 @@ export function getDomainJsonLd({
   };
 }
 
-/** New function to generate recent domains list for homepage or categories */
-export function getItemListJsonLd(limit = 6) {
+export function getItemListJsonLd(limit = 6): ItemListJsonLd {
   const recentDomains = Object.values(categoriesData)
     .flatMap((cat) => cat.domains)
     .filter((d) => d.listed)
@@ -84,6 +98,7 @@ export function getItemListJsonLd(limit = 6) {
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
+    "@id": "https://kaspadomains.com/#recent-domains",
     name: "Recent Premium Kaspa Domains",
     itemListElement: recentDomains.map((domain, index) => ({
       "@type": "ListItem",

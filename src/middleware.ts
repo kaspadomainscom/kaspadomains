@@ -1,43 +1,65 @@
-// src/middleware.ts
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-function base64url(arrayBuffer: Uint8Array) {
-  let binary = '';
-  for (let i = 0; i < arrayBuffer.byteLength; i++) {
-    binary += String.fromCharCode(arrayBuffer[i]);
-  }
-  const base64 = Buffer.from(binary, 'binary').toString('base64');
-  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+function base64url(bytes: Uint8Array): string {
+  return Buffer.from(bytes)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
 }
 
-export async function middleware() {
-  // Generate 16 random bytes
-  const randomBytes = crypto.getRandomValues(new Uint8Array(16));
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-  // Convert to base64url string
-  const nonce = base64url(randomBytes);
+  // Exclude static files and Next internals
+  const excludedExtensions = /\.(png|jpg|jpeg|svg|webp|ico|css|js)$/;
+  const isExcluded =
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname === '/favicon.ico' ||
+    pathname === '/robots.txt' ||
+    pathname === '/sitemap.xml' ||
+    excludedExtensions.test(pathname);
 
-  const res = NextResponse.next();
-
-  // Base CSP script-src with nonce
-  let scriptSrc = `'self' 'nonce-${nonce}'`;
-
-  // Add 'unsafe-eval' in development ONLY
-  if (process.env.NODE_ENV === 'development') {
-    scriptSrc += " 'unsafe-eval'";
+  if (isExcluded) {
+    return NextResponse.next();
   }
 
-  res.headers.set(
-    'Content-Security-Policy',
-    `script-src ${scriptSrc}; object-src 'none'; base-uri 'self';`
-  );
+  const nonce = base64url(crypto.getRandomValues(new Uint8Array(16)));
+  const response = NextResponse.next();
 
-  // Pass nonce to the app via a custom header
-  res.headers.set('x-csp-nonce', nonce);
+  const scriptSrc = [
+    `'self'`,
+    `'nonce-${nonce}'`,
+    process.env.NODE_ENV === 'development' ? `'unsafe-eval'` : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
-  return res;
+  const csp = [
+    `default-src 'self'`,
+    `script-src ${scriptSrc}`,
+    `object-src 'none'`,
+    `base-uri 'self'`,
+    `img-src 'self' data: https://kaspadomains.com`,
+    `style-src 'self' 'unsafe-inline'`,
+    `connect-src 'self' https://kaspadomains.com`,
+    `frame-ancestors 'none'`,
+  ].join('; ');
+
+  response.headers.set('Content-Security-Policy', csp);
+  response.headers.set('x-csp-nonce', nonce);
+
+  return response;
 }
 
 export const config = {
-  matcher: ['/', '/(app|api)/:path*'], // adjust as needed
+  matcher: [
+    '/',
+    '/learn/:path*',
+    '/docs/:path*',
+    '/domain/:path*',
+    '/domains/:path*',
+  ],
 };
