@@ -1,14 +1,13 @@
-// src/app/head.tsx
-
-import { getWebsiteJsonLd } from '@/lib/jsonld';
+// app/head.tsx
+import { getWebsiteJsonLd, getItemListJsonLd } from '@/lib/jsonld';
 import { headers } from 'next/headers';
-
 
 export default async function Head() {
   const headersList = await headers();
   const nonce = headersList.get('x-csp-nonce');
 
-  const jsonLd = getWebsiteJsonLd();
+  const websiteJsonLd = getWebsiteJsonLd();
+  const itemListJsonLd = getItemListJsonLd();
 
   return (
     <>
@@ -19,9 +18,13 @@ export default async function Head() {
       <script
         type="application/ld+json"
         nonce={nonce || undefined}
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        nonce={nonce || undefined}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
       />
     </>
   );
 }
-

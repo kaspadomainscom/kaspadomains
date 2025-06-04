@@ -1,4 +1,3 @@
-// src/app/page.tsx
 import Link from "next/link";
 import { categoriesData } from "@/data/categoriesManifest";
 
@@ -9,8 +8,33 @@ export const metadata = {
 };
 
 export default function Home() {
+  const recentDomains = Object.values(categoriesData)
+    .flatMap((cat) => cat.domains)
+    .filter((d) => d.listed)
+    .slice(0, 6);
+
+  const itemListJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Recent Premium Kaspa Domains",
+    itemListElement: recentDomains.map((domain, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `https://kaspadomains.com/domain/${domain.name}`,
+      name: `${domain.name}.kas`,
+    })),
+  };
+
   return (
     <main className="space-y-28 bg-[#0E1E25] text-gray-100">
+      {/* 👇 Inject ItemList JSON-LD only (you already have WebSite JSON-LD in head.tsx) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(itemListJsonLd),
+        }}
+      />
+
       {/* Hero */}
       <section className="bg-gradient-to-br from-[#00AEEF] to-[#0E1E25] py-28 text-center px-6 md:px-8">
         <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-snug mb-5">
@@ -56,27 +80,25 @@ export default function Home() {
           Recent Premium Domains
         </h2>
         <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
-          {Object.values(categoriesData)
-            .flatMap(cat => cat.domains)
-            .filter(d => d.listed)
-            .slice(0, 6)
-            .map((domain, i) => (
-              <article
-                key={i}
-                className="bg-[#121E28] p-5 rounded-2xl shadow hover:shadow-md transition text-left"
+          {recentDomains.map((domain, i) => (
+            <article
+              key={i}
+              className="bg-[#121E28] p-5 rounded-2xl shadow hover:shadow-md transition text-left"
+            >
+              <h3 className="text-lg font-semibold text-white">{domain.name}</h3>
+              <p className="text-sm text-gray-400 mb-2">
+                Price: {domain.price} KAS
+              </p>
+              <a
+                href={domain.kaspaLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#FFD700] underline text-sm"
               >
-                <h3 className="text-lg font-semibold text-white">{domain.name}</h3>
-                <p className="text-sm text-gray-400 mb-2">Price: {domain.price} KAS</p>
-                <a
-                  href={domain.kaspaLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#FFD700] underline text-sm"
-                >
-                  View on Kaspa
-                </a>
-              </article>
-            ))}
+                View on Kaspa
+              </a>
+            </article>
+          ))}
         </div>
       </section>
 
