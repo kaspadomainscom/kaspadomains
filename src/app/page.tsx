@@ -1,6 +1,7 @@
 // src/app/page.tsx
 import Link from "next/link";
 import { categoriesData } from "@/data/categoriesManifest";
+import { headers } from "next/headers";
 
 export const metadata = {
   title: "Kaspa Domains — Premium Kaspa KNS Marketplace",
@@ -8,7 +9,12 @@ export const metadata = {
     "Discover premium KNS domains listed on the kaspadomains marketplace. One-time 287 KAS listing fee for unique and valuable domains only.",
 };
 
-export default function Home() {
+export default async function Home() {
+
+
+const headersList = await headers(); // ✅ await the Promise
+const nonce = headersList.get("x-csp-nonce");
+
   const recentDomains = Object.values(categoriesData)
     .flatMap((cat) => cat.domains)
     .filter((d) => d.listed)
@@ -30,6 +36,7 @@ export default function Home() {
     <main className="space-y-28 bg-[#0E1E25] text-gray-100">
       {/* 👇 Inject ItemList JSON-LD only (you already have WebSite JSON-LD in head.tsx) */}
       <script
+        nonce={nonce || undefined}
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(itemListJsonLd),
