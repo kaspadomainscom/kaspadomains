@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { getDomainJsonLd } from "@/lib/jsonld";
 import { findDomainByName } from "@/data/domainLookup";
 import type { Domain } from "@/data/types";
+import { categoriesData } from "@/data/categoriesManifest";
 
 /**
  * Ensure the incoming string is lowercase and ends with ".kas"
@@ -28,10 +29,23 @@ export default async function Head({
   const domainData: Domain | undefined = findDomainByName(canonicalName);
   if (!domainData) return null;
 
-  // Remove leading "@" if present
+  // Determine category title for meta description
+  const category = (() => {
+    const normalized = domainData.name.trim().toLowerCase().replace(/\.kas$/, "");
+    for (const cat of Object.values(categoriesData)) {
+      if (cat.domains.some((d) => d.name.trim().toLowerCase().replace(/\.kas$/, "") === normalized)) {
+        return cat.title;
+      }
+    }
+    return "Unknown";
+  })();
+
+  const pageTitle = `${domainData.name} — Premium ${category} Domain | KaspaDomains.com`;
+  const pageDescription = `Buy ${domainData.name}, a premium KNS domain listed in the ${category} category.`;
+
+  // Remove leading "@" from Telegram handle (if present)
   const sellerName =
-    typeof domainData.sellerTelegram === "string" &&
-    domainData.sellerTelegram.trim()
+    typeof domainData.sellerTelegram === "string" && domainData.sellerTelegram.trim()
       ? domainData.sellerTelegram.replace(/^@/, "")
       : undefined;
 
@@ -43,10 +57,43 @@ export default async function Head({
   });
 
   return (
-    <script
-      type="application/ld+json"
-      nonce={nonce || undefined}
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-    />
+    <>
+      {/* Primary meta tags */}
+      <title>{pageTitle}</title>
+      <meta name="description" content={pageDescription} />
+      <meta name="robots" content="index,follow" />
+
+      {/* Open Graph tags */}
+      <meta property="og:type" content="website" />
+      <meta property="og:title" content={pageTitle} />
+      <meta property="og:description" content={pageDescription} />
+      <meta
+        property="og:url"
+        content={`https://kaspadomains.com/domain/${domainData.name}`}
+      />
+      <meta
+        property="og:image"
+        content="https://kaspadomains.com/og-image.png"
+      />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content={domainData.name} />
+
+      {/* Twitter Card tags */}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={pageTitle} />
+      <meta name="twitter:description" content={pageDescription} />
+      <meta
+        name="twitter:image"
+        content="https://kaspadomains.com/og-image.png"
+      />
+
+      {/* JSON-LD structured data */}
+      <script
+        type="application/ld+json"
+        nonce={nonce || undefined}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+    </>
   );
 }

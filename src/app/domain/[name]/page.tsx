@@ -71,7 +71,8 @@ export async function generateMetadata({
 
   return {
     title: `${domainData.name} — Premium ${category} Domain | kaspadomains.com`,
-    description: `Buy ${domainData.name}, a premium KNS domain listed in the ${category} category.`,
+    description: `Buy ${domainData.name}, a premium KNS domain listed in the ${category} category.` +
+      (domainData.ownerBio ? ` ${domainData.ownerBio.slice(0, 160)}` : ""),
     openGraph: {
       title: domainData.name,
       description: `Premium KNS domain in ${category}`,
@@ -127,10 +128,19 @@ export default async function DomainPage({
 
   return (
     <main className="max-w-3xl mx-auto p-6">
+      <nav className="text-sm text-gray-500 mb-4">
+        <Link href="/" className="hover:underline">Home</Link>
+        <span className="mx-2">/</span>
+        <Link href="/domains" className="hover:underline">Domains</Link>
+        <span className="mx-2">/</span>
+        <span className="text-gray-700">{domainData.name}</span>
+      </nav>
+
       <header>
         <h1 className="text-4xl font-bold text-gray-900 mb-6">
           {domainData.name}
         </h1>
+        <p className="text-gray-600 mb-4">Premium KNS Domain in {category}</p>
       </header>
 
       <section className="space-y-4 text-gray-700 text-base">
@@ -139,16 +149,14 @@ export default async function DomainPage({
         </p>
         <p>
           <span className="font-medium">Status:</span>{" "}
-          <span
-            className={domainData.listed ? "text-green-600" : "text-gray-500"}
-          >
+          <span className={domainData.listed ? "text-green-600" : "text-gray-500"}>
             {domainData.listed ? "Listed" : "Unlisted"}
           </span>
         </p>
         <p>
           <span className="font-medium">Price:</span>{" "}
           <span className="text-green-700 font-semibold">
-            {domainData.price} KAS
+            {domainData.price?.toLocaleString() ?? "0"} KAS
           </span>
         </p>
 
@@ -161,7 +169,35 @@ export default async function DomainPage({
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline"
             >
-              @{domainData.sellerTelegram}
+              @{domainData.sellerTelegram.replace(/^@/, "")}
+            </Link>
+          </p>
+        )}
+
+        {domainData.sellerTwitter && (
+          <p>
+            <span className="font-medium">Seller Twitter:</span>{" "}
+            <Link
+              href={`https://x.com/${domainData.sellerTwitter.replace(/^@/, "")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              @{domainData.sellerTwitter.replace(/^@/, "")}
+            </Link>
+          </p>
+        )}
+
+        {domainData.linkedWebsite && (
+          <p>
+            <span className="font-medium">Website:</span>{" "}
+            <Link
+              href={domainData.linkedWebsite}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline break-all"
+            >
+              {domainData.linkedWebsite.replace(/^https?:\/\//, "")}
             </Link>
           </p>
         )}
@@ -180,6 +216,13 @@ export default async function DomainPage({
           </p>
         )}
       </section>
+
+      {domainData.ownerBio && (
+        <div className="mt-8 bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <h2 className="font-semibold text-lg text-gray-900 mb-2">About the Owner</h2>
+          <p className="text-gray-700 whitespace-pre-wrap">{domainData.ownerBio}</p>
+        </div>
+      )}
     </main>
   );
 }

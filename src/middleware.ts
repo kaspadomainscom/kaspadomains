@@ -1,3 +1,4 @@
+// src/middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -29,6 +30,7 @@ export function middleware(request: NextRequest) {
   const nonce = base64url(crypto.getRandomValues(new Uint8Array(16)));
   const response = NextResponse.next();
 
+
   const scriptSrc = [
     `'self'`,
     `'nonce-${nonce}'`,
@@ -43,7 +45,7 @@ export function middleware(request: NextRequest) {
     `object-src 'none'`,
     `base-uri 'self'`,
     `img-src 'self' data: https://kaspadomains.com`,
-    `style-src 'self' 'unsafe-inline'`,
+    `style-src 'self'`,
     `connect-src 'self' https://kaspadomains.com`,
     `frame-ancestors 'none'`,
   ].join('; ');
