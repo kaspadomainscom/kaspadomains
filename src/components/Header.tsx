@@ -207,12 +207,6 @@ export default function Header() {
           </button>
         </nav>
       )}
-
-      <style jsx>{`
-        .glow-green {
-          text-shadow: 0 0 6px #3DFDAD, 0 0 12px #3DFDAD;
-        }
-      `}</style>
     </header>
   );
 }

@@ -1,4 +1,4 @@
-/* src/styles/globals.css */
+/* src/app/globals.css */
 
 /* Import Tailwind CSS */
 @import "tailwindcss";
@@ -67,6 +67,14 @@ body {
   background-size: cover;
   background-position: center;
 } */
+
+.glowText {
+  text-shadow: 0 0 3px #3DFDAD, 0 0 5px #3DFDAD;
+}
+
+.glow-green {
+  text-shadow: 0 0 6px #3DFDAD, 0 0 12px #3DFDAD;
+}
 
 /* ✅ Utility classes for Kaspa theme */
 .text-kaspaGreen {

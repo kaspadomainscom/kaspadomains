@@ -1,3 +1,4 @@
+// src/components/KaspaDomainsLogo.tsx
 'use client';
 
 import Image from 'next/image';
@@ -16,11 +17,7 @@ export default function KaspaDomainsLogo() {
       />
       <span className="text-2xl md:text-3xl font-bold tracking-tight text-white">
         Kaspa
-        <span
-            className="text-[#3DFDAD]"
-            style={{
-            textShadow: '0 0 3px #3DFDAD, 0 0 5px #3DFDAD'
-            }}>
+        <span className="text-[#3DFDAD] glowText">
           Domains
         </span>
       </span>

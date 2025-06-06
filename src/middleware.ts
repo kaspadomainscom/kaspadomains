@@ -13,7 +13,6 @@ function base64url(bytes: Uint8Array): string {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Exclude static files and Next internals
   const excludedExtensions = /\.(png|jpg|jpeg|svg|webp|ico|css|js)$/;
   const isExcluded =
     pathname.startsWith('/_next') ||
@@ -30,7 +29,6 @@ export function middleware(request: NextRequest) {
   const nonce = base64url(crypto.getRandomValues(new Uint8Array(16)));
   const response = NextResponse.next();
 
-
   const scriptSrc = [
     `'self'`,
     `'nonce-${nonce}'`,
@@ -39,13 +37,18 @@ export function middleware(request: NextRequest) {
     .filter(Boolean)
     .join(' ');
 
+  const styleSrc = [
+    `'self'`,
+    `'nonce-${nonce}'`,
+  ].join(' ');
+
   const csp = [
     `default-src 'self'`,
     `script-src ${scriptSrc}`,
+    `style-src ${styleSrc}`,
     `object-src 'none'`,
     `base-uri 'self'`,
     `img-src 'self' data: https://kaspadomains.com`,
-    `style-src 'self'`,
     `connect-src 'self' https://kaspadomains.com`,
     `frame-ancestors 'none'`,
   ].join('; ');
