@@ -8,9 +8,8 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/(.*)", // Apply to all routes
+        source: "/(.*)", // Apply headers to all routes
         headers: [
-          // Remove CSP here to avoid overriding middleware CSP
           {
             key: "Referrer-Policy",
             value: "strict-origin-when-cross-origin",
@@ -26,6 +25,10 @@ const nextConfig: NextConfig = {
           {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
+          },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
           },
         ],
       },

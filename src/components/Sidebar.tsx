@@ -32,9 +32,9 @@ export default function Sidebar() {
 
   const toggleSidebar = () => {
     if (isMobile) {
-      setMobileOpen(!mobileOpen);
+      setMobileOpen((prev) => !prev);
     } else {
-      setIsCollapsed(!isCollapsed);
+      setIsCollapsed((prev) => !prev);
     }
   };
 
@@ -44,25 +44,19 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`
-        transition-all duration-300 ease-in-out
-        ${isMobile ? (mobileOpen ? 'h-auto' : 'h-14') : 'min-h-screen'}
-        ${isMobile ? 'w-full border-t md:border-t-0' : collapsed ? 'w-16' : 'w-64'}
-        bg-[#0F2F2E] text-white relative z-10 border-r border-[#3DFDAD]/20 shadow-lg
-      `}
+      className={[
+        'transition-all duration-300 ease-in-out z-10 relative text-white shadow-lg border-r border-[#3DFDAD]/20',
+        isMobile ? (mobileOpen ? 'h-auto' : 'h-14 w-full border-t md:border-t-0') : collapsed ? 'w-16 min-h-screen' : 'w-64 min-h-screen',
+        'bg-[#0F2F2E]',
+      ].join(' ')}
     >
       {/* Toggle Button */}
       <button
         onClick={toggleSidebar}
-        className={`
-          absolute top-3 right-3 z-20
-          bg-[#1C4745] border border-[#3DFDAD]/40 rounded-full w-9 h-9
-          flex items-center justify-center text-[#3DFDAD] hover:bg-[#1a403d]
-          transition-colors duration-200
-        `}
+        className="absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center bg-[#1C4745] text-[#3DFDAD] border border-[#3DFDAD]/40 rounded-full hover:bg-[#1a403d] transition-colors duration-200"
         title="Toggle Sidebar"
       >
-        <span className="text-[18px] align-middle leading-none">
+        <span className="text-[18px] leading-none">
           {isMobile ? (
             mobileOpen ? <FiChevronUp /> : <FiChevronDown />
           ) : collapsed ? (
@@ -77,11 +71,12 @@ export default function Sidebar() {
         <div className="h-full overflow-y-auto pt-5 pb-6 space-y-3">
           {/* Header */}
           <div
-            className={`bg-[#162f2d] text-[#3DFDAD] px-4 py-2 text-[11px] font-semibold tracking-wider uppercase rounded-md mx-2
-              flex items-center ${collapsed ? 'justify-center' : 'justify-start'}
-            `}
+            className={[
+              'flex items-center px-4 py-2 rounded-md mx-2 bg-[#162f2d] text-[#3DFDAD] text-[11px] font-semibold tracking-wider uppercase',
+              collapsed ? 'justify-center' : 'justify-start',
+            ].join(' ')}
           >
-            <span className="text-sm mr-2 align-middle leading-none">
+            <span className="text-sm mr-2 leading-none">
               <FiFolder />
             </span>
             {!collapsed && <span>Categories</span>}
@@ -95,7 +90,7 @@ export default function Sidebar() {
                 placeholder="Search categories..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-[#1a403d] text-white rounded-md border border-[#3DFDAD]/20 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#3DFDAD]/50"
+                className="w-full px-3 py-2 text-sm text-white placeholder-white/50 bg-[#1a403d] rounded-md border border-[#3DFDAD]/20 focus:outline-none focus:ring-2 focus:ring-[#3DFDAD]/50"
               />
             </div>
           )}
@@ -157,12 +152,13 @@ function SidebarLink({
   return (
     <Link
       href={href}
-      className={`
-        flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium
-        transition-all duration-200
-        ${active ? 'bg-[#1c403d] text-[#3DFDAD] font-semibold' : 'text-white/80 hover:bg-[#1a403d] hover:text-[#3DFDAD]'}
-        ${collapsed ? 'justify-center' : 'justify-start'}
-      `}
+      className={[
+        'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200',
+        collapsed ? 'justify-center' : 'justify-start',
+        active
+          ? 'bg-[#1c403d] text-[#3DFDAD] font-semibold'
+          : 'text-white/80 hover:bg-[#1a403d] hover:text-[#3DFDAD]',
+      ].join(' ')}
     >
       <span className="text-base">{icon}</span>
       {!collapsed && <span>{label}</span>}
