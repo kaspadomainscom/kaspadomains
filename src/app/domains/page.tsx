@@ -1,9 +1,10 @@
+// src/app/domains/page.tsx
 'use client';
 
 import React, { useState } from "react";
 import Link from "next/link";
 import { categoriesData } from "@/data/categoriesManifest";
-import { Domain } from "@/data/types";
+import type { Domain } from "@/data/types";
 
 // Flatten all domains and tag them with category
 const allDomains: (Domain & { category: string })[] = Object.entries(categoriesData).flatMap(
@@ -28,22 +29,31 @@ const DomainPage = () => {
       ? allDomains
       : allDomains.filter((d) => d.category === selectedCategory);
 
+  // Safely sum prices, defaulting undefined to 0
   const totalKasSold = filteredDomains
     .filter((d) => !d.listed)
-    .reduce((sum, d) => sum + d.price, 0);
+    .reduce((sum, d) => sum + (d.price ?? 0), 0);
 
-  const totalKasTarget = filteredDomains.reduce((sum, d) => sum + d.price, 0);
+  const totalKasTarget = filteredDomains.reduce(
+    (sum, d) => sum + (d.price ?? 0),
+    0
+  );
 
   return (
     <section className="max-w-7xl mx-auto px-6 py-6 space-y-12">
       <div className="space-y-4">
-        <h1 className="text-5xl font-semibold text-center text-gray-900">kaspadomains Market</h1>
+        <h1 className="text-5xl font-semibold text-center text-gray-900">
+          kaspadomains Market
+        </h1>
         <div className="lg:columns-2 lg:gap-8 text-gray-700 text-lg leading-relaxed">
           <p>
-            Welcome to the <strong>kaspadomains premium domain marketplace</strong> – a curated platform showcasing only the most unique and valuable domains in the Kaspa ecosystem.
+            Welcome to the <strong>kaspadomains premium domain marketplace</strong> – a curated
+            platform showcasing only the most unique and valuable domains in the Kaspa ecosystem.
           </p>
           <p>
-            Each domain listed is carefully categorized — from <strong>Clubs</strong> to <strong>Characters</strong> to <strong>Trending Memes</strong>. A <strong>287 KAS listing fee</strong> ensures only high-quality domains appear here.
+            Each domain listed is carefully categorized — from <strong>Clubs</strong> to{" "}
+            <strong>Characters</strong> to <strong>Trending Memes</strong>. A{" "}
+            <strong>287 KAS listing fee</strong> ensures only high-quality domains appear here.
           </p>
         </div>
       </div>
@@ -72,7 +82,10 @@ const DomainPage = () => {
               { label: "Total KAS Sold", value: `${totalKasSold.toLocaleString()} KAS` },
               { label: "Total KAS Target", value: `${totalKasTarget.toLocaleString()} KAS` },
             ].map((stat) => (
-              <div key={stat.label} className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition">
+              <div
+                key={stat.label}
+                className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition"
+              >
                 <p className="text-xl font-medium text-gray-600 mb-2">{stat.label}</p>
                 <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
               </div>
@@ -80,7 +93,10 @@ const DomainPage = () => {
           </div>
 
           <div className="w-full md:w-auto">
-            <label htmlFor="categoryFilter" className="block text-lg font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="categoryFilter"
+              className="block text-lg font-medium text-gray-700 mb-2"
+            >
               Filter by Category
             </label>
             <select
@@ -105,7 +121,9 @@ const DomainPage = () => {
           <thead className="bg-gradient-to-r from-[#70C7BA] to-[#54B2A1] text-white">
             <tr>
               {["Domain", "Category", "Price", "Status", "Action"].map((h) => (
-                <th key={h} className="px-6 py-4 text-left font-medium">{h}</th>
+                <th key={h} className="px-6 py-4 text-left font-medium">
+                  {h}
+                </th>
               ))}
             </tr>
           </thead>
@@ -114,9 +132,15 @@ const DomainPage = () => {
               <tr key={i} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4">{d.name}</td>
                 <td className="px-6 py-4">{categoriesData[d.category].title}</td>
-                <td className="px-6 py-4">{d.price.toLocaleString()} KAS</td>
                 <td className="px-6 py-4">
-                  <span className={`font-semibold ${d.listed ? "text-green-500" : "text-red-500"}`}>
+                  {(d.price ?? 0).toLocaleString()} KAS
+                </td>
+                <td className="px-6 py-4">
+                  <span
+                    className={`font-semibold ${
+                      d.listed ? "text-green-500" : "text-red-500"
+                    }`}
+                  >
                     {d.listed ? "Available" : "Sold"}
                   </span>
                 </td>

@@ -70,7 +70,7 @@ export const categoriesData: Record<
     title: "Real Words",
     domains: realWordsDomains,
   },
-    business: {
+  business: {
     title: "Real Words",
     domains: businessDomains,
   },
