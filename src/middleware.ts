@@ -2,12 +2,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+
 function base64url(bytes: Uint8Array): string {
-  return Buffer.from(bytes)
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
+  let binary = '';
+  bytes.forEach((b) => (binary += String.fromCharCode(b)));
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 export function middleware(request: NextRequest) {
