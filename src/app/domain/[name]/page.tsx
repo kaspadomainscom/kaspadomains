@@ -1,7 +1,7 @@
 // src/app/domain/[name]/page.tsx
 
 import { notFound, redirect } from "next/navigation";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { findDomainByName, getAllDomains } from "@/data/domainLookup";
 import { categoriesData } from "@/data/categoriesManifest";
@@ -9,220 +9,204 @@ import type { Domain } from "@/data/types";
 
 type StaticParam = { name: string };
 
-/**
- * Ensure the incoming string is always lowercase and ends with ".kas"
- */
 function ensureKasSuffix(name: string): string {
   const base = name.trim().toLowerCase();
   return base.endsWith(".kas") ? base : `${base}.kas`;
 }
 
-/**
- * Normalize to lowercase and strip ".kas"
- */
 function normalizeDomainName(name: string): string {
   return name.trim().toLowerCase().replace(/\.kas$/, "");
 }
 
-/**
- * Given a domain like "foo.kas", find its category title
- */
 function findCategoryTitleByDomainName(domainName: string): string | undefined {
   const normalized = normalizeDomainName(domainName);
-  for (const category of Object.values(categoriesData)) {
-    if (
-      category.domains.some(
-        (d) => normalizeDomainName(d.name) === normalized
-      )
-    ) {
-      return category.title;
-    }
-  }
-  return undefined;
+  return Object.values(categoriesData).find((category) =>
+    category.domains.some((d) => normalizeDomainName(d.name) === normalized)
+  )?.title;
 }
 
-/**
- * Build the list of all [name] parameters for static generation.
- * Each generated param will be something like { name: "foo.kas" }.
- */
 export function generateStaticParams(): StaticParam[] {
   return getAllDomains().map((domain: Domain) => ({
     name: ensureKasSuffix(domain.name),
   }));
 }
 
-/**
- * SEO metadata for each domain page
- */
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ name: string }>;
 }): Promise<Metadata> {
   const { name } = await params;
-  const incoming = ensureKasSuffix(name);
-  const domainData: Domain | undefined = findDomainByName(incoming);
-  if (!domainData) {
-    notFound();
-  }
+  const canonical = ensureKasSuffix(name);
+  const domain = findDomainByName(canonical);
+  if (!domain) notFound();
 
-  const category =
-    findCategoryTitleByDomainName(domainData.name) ?? "Unknown";
+  const category = findCategoryTitleByDomainName(domain.name) ?? "Unknown";
+
+  const description = `Buy ${domain.name}, a premium KNS domain listed in the ${category} category.` +
+    (domain.ownerBio ? ` ${domain.ownerBio.slice(0, 160)}` : "");
 
   return {
-    title: `${domainData.name} — Premium ${category} Domain | kaspadomains.com`,
-    description: `Buy ${domainData.name}, a premium KNS domain listed in the ${category} category.` +
-      (domainData.ownerBio ? ` ${domainData.ownerBio.slice(0, 160)}` : ""),
+    title: `${domain.name} — Premium ${category} Domain | kaspadomains.com`,
+    description,
     openGraph: {
-      title: domainData.name,
+      title: domain.name,
       description: `Premium KNS domain in ${category}`,
-      url: `https://kaspadomains.com/domain/${domainData.name}`,
+      url: `https://kaspadomains.com/domain/${domain.name}`,
       images: [
         {
           url: "https://kaspadomains.com/og-image.png",
           width: 1200,
           height: 630,
-          alt: domainData.name,
+          alt: domain.name,
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: domainData.name,
+      title: domain.name,
       description: `Premium KNS domain in ${category}`,
     },
   };
 }
 
-/**
- * Actual page component for /domain/[name]
- */
 export default async function DomainPage({
   params,
 }: {
   params: Promise<{ name: string }>;
 }) {
-  const { name: domainParam } = await params;
-  if (!domainParam) {
-    console.warn("No domain param");
-    return notFound();
-  }
+  const { name: rawName } = await params;
+  if (!rawName) return notFound();
 
-  // Canonicalize to lowercase + ensure ".kas"
-  const canonical = ensureKasSuffix(domainParam);
+  const canonical = ensureKasSuffix(rawName);
+  if (rawName !== canonical) redirect(`/domain/${canonical}`);
 
-  // Redirect if URL is not the canonical form
-  if (domainParam !== canonical) {
-    redirect(`/domain/${canonical}`);
-  }
+  const domain = findDomainByName(canonical);
+  if (!domain) return notFound();
 
-  // Look up the domain using the imported function
-  const domainData: Domain | undefined = findDomainByName(canonical);
-  if (!domainData) {
-    console.warn(`Domain not found: ${canonical}`);
-    return notFound();
-  }
-
-  const category =
-    findCategoryTitleByDomainName(domainData.name) ?? "Unknown";
+  const category = findCategoryTitleByDomainName(domain.name) ?? "Unknown";
 
   return (
-    <main className="max-w-3xl mx-auto p-6">
-      <nav className="text-sm text-gray-500 mb-4">
+    <main className="max-w-3xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
+      {/* Breadcrumb */}
+      <nav className="text-sm text-gray-500 mb-6 flex gap-2 flex-wrap" aria-label="Breadcrumb">
         <Link href="/" className="hover:underline">Home</Link>
-        <span className="mx-2">/</span>
+        <span>/</span>
         <Link href="/domains" className="hover:underline">Domains</Link>
-        <span className="mx-2">/</span>
-        <span className="text-gray-700">{domainData.name}</span>
+        <span>/</span>
+        <span className="text-gray-700">{domain.name}</span>
       </nav>
 
-      <header>
-        <h1 className="text-4xl font-bold text-gray-900 mb-6">
-          {domainData.name}
-        </h1>
-        <p className="text-gray-600 mb-4">Premium KNS Domain in {category}</p>
+      {/* Title Section */}
+      <header className="mb-8">
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{domain.name}</h1>
+        <p className="text-base md:text-lg text-gray-600">
+          Premium KNS domain in <span className="font-medium">{category}</span>
+        </p>
       </header>
 
-      <section className="space-y-4 text-gray-700 text-base">
-        <p>
-          <span className="font-medium">Category:</span> {category}
-        </p>
-        <p>
-          <span className="font-medium">Status:</span>{" "}
-          <span className={domainData.listed ? "text-green-600" : "text-gray-500"}>
-            {domainData.listed ? "Listed" : "Unlisted"}
-          </span>
-        </p>
-        <p>
-          <span className="font-medium">Price:</span>{" "}
-          <span className="text-green-700 font-semibold">
-            {domainData.price?.toLocaleString() ?? "0"} KAS
-          </span>
-        </p>
+      {/* Info Panel */}
+      <section className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm space-y-4 text-gray-800">
+        <Detail label="Category" value={category} />
+        <Detail
+          label="Status"
+          value={domain.listed ? "Listed" : "Unlisted"}
+          valueClass={domain.listed ? "text-green-600" : "text-gray-500"}
+        />
+        <Detail
+          label="Price"
+          value={`${domain.price?.toLocaleString() ?? "0"} KAS`}
+          valueClass="text-green-700 font-semibold"
+        />
 
-        {domainData.sellerTelegram && (
-          <p>
-            <span className="font-medium">Seller Telegram:</span>{" "}
-            <Link
-              href={`https://t.me/${domainData.sellerTelegram}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              @{domainData.sellerTelegram.replace(/^@/, "")}
-            </Link>
-          </p>
+        {domain.sellerTelegram && (
+          <Detail
+            label="Seller Telegram"
+            value={
+              <Link
+                href={`https://t.me/${domain.sellerTelegram.replace(/^@/, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                @{domain.sellerTelegram.replace(/^@/, "")}
+              </Link>
+            }
+          />
         )}
 
-        {domainData.sellerTwitter && (
-          <p>
-            <span className="font-medium">Seller Twitter:</span>{" "}
-            <Link
-              href={`https://x.com/${domainData.sellerTwitter.replace(/^@/, "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              @{domainData.sellerTwitter.replace(/^@/, "")}
-            </Link>
-          </p>
+        {domain.sellerTwitter && (
+          <Detail
+            label="Seller Twitter"
+            value={
+              <Link
+                href={`https://x.com/${domain.sellerTwitter.replace(/^@/, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                @{domain.sellerTwitter.replace(/^@/, "")}
+              </Link>
+            }
+          />
         )}
 
-        {domainData.linkedWebsite && (
-          <p>
-            <span className="font-medium">Website:</span>{" "}
-            <Link
-              href={domainData.linkedWebsite}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline break-all"
-            >
-              {domainData.linkedWebsite.replace(/^https?:\/\//, "")}
-            </Link>
-          </p>
+        {domain.linkedWebsite && (
+          <Detail
+            label="Website"
+            value={
+              <Link
+                href={domain.linkedWebsite}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline break-all"
+              >
+                {domain.linkedWebsite.replace(/^https?:\/\//, "")}
+              </Link>
+            }
+          />
         )}
 
-        {domainData.kaspaLink && (
-          <p>
+        {domain.kaspaLink && (
+          <div className="pt-1">
             <Link
-              href={domainData.kaspaLink}
+              href={domain.kaspaLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-purple-600 hover:underline"
-              aria-label={`View ${domainData.name} on Kaspa.com`}
+              className="inline-block text-purple-600 hover:underline font-medium"
+              aria-label={`View ${domain.name} on Kaspa.com`}
             >
               View on Kaspa.com
             </Link>
-          </p>
+          </div>
         )}
       </section>
 
-      {domainData.ownerBio && (
-        <div className="mt-8 bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <h2 className="font-semibold text-lg text-gray-900 mb-2">About the Owner</h2>
-          <p className="text-gray-700 whitespace-pre-wrap">{domainData.ownerBio}</p>
-        </div>
+      {/* Owner Bio */}
+      {domain.ownerBio && (
+        <section className="mt-10 bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">About the Owner</h2>
+          <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{domain.ownerBio}</p>
+        </section>
       )}
     </main>
+  );
+}
+
+/** Reusable Detail Row */
+function Detail({
+  label,
+  value,
+  valueClass = "",
+}: {
+  label: string;
+  value: React.ReactNode;
+  valueClass?: string;
+}) {
+  return (
+    <div className="flex gap-2 text-sm md:text-base">
+      <span className="font-medium text-gray-700 min-w-[120px]">{label}:</span>
+      <span className={valueClass}>{value}</span>
+    </div>
   );
 }

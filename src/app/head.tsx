@@ -9,15 +9,11 @@ export default async function Head() {
   const websiteJsonLd = getWebsiteJsonLd();
   const itemListJsonLd = getItemListJsonLd();
 
-  // Combine both into one JSON-LD array
   const combinedJsonLd = [websiteJsonLd, itemListJsonLd];
 
   return (
     <>
-      <link rel="icon" href="/favicon.ico" />
-      {/* Optional fallbacks */}
       <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-
       <script
         type="application/ld+json"
         nonce={nonce || undefined}

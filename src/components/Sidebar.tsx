@@ -3,12 +3,19 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FiMenu, FiX, FiChevronLeft, FiChevronRight, FiFolder } from 'react-icons/fi';
+import {
+  FiChevronLeft,
+  FiChevronRight,
+  FiChevronUp,
+  FiChevronDown,
+  FiFolder,
+} from 'react-icons/fi';
 
 export default function Sidebar() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const pathname = usePathname();
 
   useEffect(() => {
@@ -31,58 +38,82 @@ export default function Sidebar() {
     }
   };
 
+  const filteredLinks = categoryLinks.filter(({ label }) =>
+    label.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <aside
       className={`
         transition-all duration-300 ease-in-out
         ${isMobile ? (mobileOpen ? 'h-auto' : 'h-14') : 'min-h-screen'}
         ${isMobile ? 'w-full border-t md:border-t-0' : collapsed ? 'w-16' : 'w-64'}
-        bg-[#0F2F2E] text-white relative z-10 shadow-inner border-r border-[#3DFDAD]/20
+        bg-[#0F2F2E] text-white relative z-10 border-r border-[#3DFDAD]/20 shadow-lg
       `}
     >
       {/* Toggle Button */}
       <button
         onClick={toggleSidebar}
         className={`
-          absolute top-4 right-4 z-20
-          bg-[#1C4745] border border-[#3DFDAD]/30 rounded-full w-8 h-8
-          flex items-center justify-center text-sm text-[#3DFDAD]
-          hover:bg-[#1a403d]
+          absolute top-3 right-3 z-20
+          bg-[#1C4745] border border-[#3DFDAD]/40 rounded-full w-9 h-9
+          flex items-center justify-center text-[#3DFDAD] hover:bg-[#1a403d]
+          transition-colors duration-200
         `}
         title="Toggle Sidebar"
       >
         {isMobile ? (
-          mobileOpen ? <FiX size={16} /> : <FiMenu size={16} />
+          mobileOpen ? <FiChevronUp size={18} /> : <FiChevronDown size={18} />
         ) : collapsed ? (
-          <FiChevronRight size={16} />
+          <FiChevronRight size={18} />
         ) : (
-          <FiChevronLeft size={16} />
+          <FiChevronLeft size={18} />
         )}
       </button>
 
-      {/* Sidebar Content */}
       {(mobileOpen || !isMobile) && (
-        <div className="h-full overflow-y-auto pt-4 pb-8 space-y-2">
+        <div className="h-full overflow-y-auto pt-5 pb-6 space-y-3">
           {/* Header */}
           <div
-            className={`bg-[#152d2b] text-[#3DFDAD] px-3 py-2 text-xs font-semibold tracking-wide uppercase flex items-center ${collapsed ? 'justify-center' : 'justify-start'}`}
+            className={`bg-[#162f2d] text-[#3DFDAD] px-4 py-2 text-[11px] font-semibold tracking-wider uppercase rounded-md mx-2
+              flex items-center ${collapsed ? 'justify-center' : 'justify-start'}
+            `}
           >
-            <FiFolder className="mr-2" />
+            <FiFolder className="mr-2 text-sm" />
             {!collapsed && <span>Categories</span>}
           </div>
 
-          {/* Links */}
-          <nav className="px-1 space-y-1">
-            {categoryLinks.map(({ icon, label, href }) => (
-              <SidebarLink
-                key={href}
-                icon={icon}
-                label={label}
-                href={href}
-                collapsed={collapsed}
-                active={pathname === href}
+          {/* Search Filter */}
+          {!collapsed && (
+            <div className="px-3">
+              <input
+                type="text"
+                placeholder="Search categories..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-[#1a403d] text-white rounded-md border border-[#3DFDAD]/20 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#3DFDAD]/50"
               />
-            ))}
+            </div>
+          )}
+
+          {/* Category Links */}
+          <nav className="space-y-1 px-2">
+            {filteredLinks.length > 0 ? (
+              filteredLinks.map(({ icon, label, href }) => (
+                <SidebarLink
+                  key={href}
+                  icon={icon}
+                  label={label}
+                  href={href}
+                  collapsed={collapsed}
+                  active={pathname === href}
+                />
+              ))
+            ) : (
+              !collapsed && (
+                <p className="text-sm text-white/50 px-3 pt-2">No categories found</p>
+              )
+            )}
           </nav>
         </div>
       )}
@@ -123,13 +154,13 @@ function SidebarLink({
     <Link
       href={href}
       className={`
-        flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium
-        transition-colors duration-200
+        flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium
+        transition-all duration-200
         ${active ? 'bg-[#1c403d] text-[#3DFDAD] font-semibold' : 'text-white/80 hover:bg-[#1a403d] hover:text-[#3DFDAD]'}
         ${collapsed ? 'justify-center' : 'justify-start'}
       `}
     >
-      <span>{icon}</span>
+      <span className="text-base">{icon}</span>
       {!collapsed && <span>{label}</span>}
     </Link>
   );

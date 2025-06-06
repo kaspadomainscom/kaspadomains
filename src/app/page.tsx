@@ -1,68 +1,43 @@
 // src/app/page.tsx
 import Link from "next/link";
 import { categoriesData } from "@/data/categoriesManifest";
-import { headers } from "next/headers";
 
 export const metadata = {
-  title: "Kaspa Domains — Premium Kaspa KNS Marketplace",
+  title: "Kaspa Domains — Premium KNS Domains Index & Listing",
   description:
-    "Discover premium KNS domains listed on the kaspadomains marketplace. One-time 287 KAS listing fee for unique and valuable domains only.",
+    "KaspaDomains is the premier index for premium .kas domains. List your unique KNS domain for a one-time 287 KAS fee and gain visibility among Kaspa enthusiasts and projects worldwide.",
 };
 
 export default async function Home() {
-
-
-const headersList = await headers(); // ✅ await the Promise
-const nonce = headersList.get("x-csp-nonce");
-
   const recentDomains = Object.values(categoriesData)
     .flatMap((cat) => cat.domains)
     .filter((d) => d.listed)
     .slice(0, 6);
 
-  const itemListJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    name: "Recent Premium Kaspa Domains",
-    itemListElement: recentDomains.map((domain, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      url: `https://kaspadomains.com/domain/${domain.name}`,
-      name: `${domain.name}.kas`,
-    })),
-  };
-
   return (
     <main className="space-y-28 bg-[#0E1E25] text-gray-100">
-      {/* 👇 Inject ItemList JSON-LD only (you already have WebSite JSON-LD in head.tsx) */}
-      <script
-        nonce={nonce || undefined}
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(itemListJsonLd),
-        }}
-      />
-
-      {/* Hero */}
+      {/* Hero Section */}
       <section className="bg-gradient-to-br from-[#00AEEF] to-[#0E1E25] py-28 text-center px-6 md:px-8">
         <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-snug mb-5">
-          kaspadomains KNS Domain Marketplace
+          KaspaDomains: Premium KNS Domains Index & Listing
         </h1>
-        <p className="text-lg md:text-xl max-w-2xl mx-auto mb-8 text-white/90">
-          List or discover valuable Kaspa domains. Only premium domains accepted with a 287 KAS one-time listing fee.
+        <p className="text-lg md:text-xl max-w-3xl mx-auto mb-8 text-white/90">
+          KaspaDomains is the authoritative index for premium <strong>.kas</strong> domains — showcasing verified crypto projects, personal brands, and community names.
+          <br />
+          <strong>List your unique KNS domain today with a one-time 287 KAS fee</strong> to reach an engaged audience of Kaspa enthusiasts, traders, and projects worldwide.
         </p>
         <Link
           href="/list-domain"
           className="inline-block bg-[#FFD700] text-[#0E1E25] px-8 py-3 rounded-full font-semibold shadow hover:bg-yellow-400 transition"
         >
-          List Your Domain
+          List Your Domain Now
         </Link>
       </section>
 
       {/* Categories Overview */}
       <section className="max-w-7xl mx-auto px-6 md:px-8">
         <h2 className="text-3xl font-bold mb-12 text-center text-white">
-          Explore Categories
+          Explore .kas Domains by Category
         </h2>
         <div className="grid md:grid-cols-3 gap-8">
           {Object.entries(categoriesData).map(([key, value]) => (
@@ -71,12 +46,8 @@ const nonce = headersList.get("x-csp-nonce");
               key={key}
               className="block bg-[#121E28] p-6 rounded-2xl shadow hover:shadow-lg transition"
             >
-              <h3 className="text-xl font-semibold mb-1 text-white">
-                {value.title}
-              </h3>
-              <p className="text-sm text-gray-400">
-                {value.domains.length} premium domains listed
-              </p>
+              <h3 className="text-xl font-semibold mb-1 text-white">{value.title}</h3>
+              <p className="text-sm text-gray-400">{value.domains.length} premium domains indexed</p>
             </Link>
           ))}
         </div>
@@ -85,7 +56,7 @@ const nonce = headersList.get("x-csp-nonce");
       {/* Recent Premium Domains */}
       <section className="bg-[#101C26] py-24 text-center px-6 md:px-8">
         <h2 className="text-3xl font-bold mb-10 text-white">
-          Recent Premium Domains
+          Recently Indexed Premium .kas Domains
         </h2>
         <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
           {recentDomains.map((domain, i) => (
@@ -94,33 +65,38 @@ const nonce = headersList.get("x-csp-nonce");
               className="bg-[#121E28] p-5 rounded-2xl shadow hover:shadow-md transition text-left"
             >
               <h3 className="text-lg font-semibold text-white">{domain.name}</h3>
-              <p className="text-sm text-gray-400 mb-2">
-                Price: {domain.price} KAS
-              </p>
+              <p className="text-sm text-gray-400 mb-2">Price: {domain.price} KAS</p>
               <a
                 href={domain.kaspaLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#FFD700] underline text-sm"
               >
-                View on Kaspa
+                View on Kaspa Explorer
               </a>
             </article>
           ))}
         </div>
       </section>
 
-      {/* Marketplace Description */}
+      {/* Why List Section */}
       <section className="max-w-4xl mx-auto text-center px-6 md:px-8 pb-28">
-        <h2 className="text-3xl font-bold mb-6 text-white">
-          Why Kaspadomains.com?
-        </h2>
-        <p className="text-lg text-gray-300 leading-relaxed">
-          This marketplace curates only premium KNS domains — names with real value, brand potential,
-          or cultural relevance. With a one-time listing fee of 287 KAS, only special domains make
-          it in. Categories like characters, tech, finance, and gaming help buyers quickly find
-          what they’re looking for.
+        <h2 className="text-3xl font-bold mb-6 text-white">Why List Your Domain on KaspaDomains?</h2>
+        <p className="text-lg text-gray-300 leading-relaxed mb-6">
+          Listing your premium <strong>.kas</strong> domain on KaspaDomains ensures maximum visibility within the growing Kaspa ecosystem. Our curated index features verified domains connected to crypto projects, personal brands, and vibrant communities.
         </p>
+        <p className="text-lg text-gray-300 leading-relaxed mb-6">
+          Each listing is enriched with metadata such as official websites, Twitter/X profiles, and Telegram contacts, building trust and authority for your domain.
+        </p>
+        <p className="text-lg text-gray-300 leading-relaxed mb-6">
+          For a <strong>one-time 287 KAS listing fee</strong>, your domain gains permanent exposure to active buyers, collaborators, and Kaspa enthusiasts worldwide.
+        </p>
+        <Link
+          href="/list-domain"
+          className="inline-block bg-[#FFD700] text-[#0E1E25] px-8 py-3 rounded-full font-semibold shadow hover:bg-yellow-400 transition"
+        >
+          List Your Domain Today
+        </Link>
       </section>
     </main>
   );
