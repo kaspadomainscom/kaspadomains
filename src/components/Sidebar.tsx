@@ -62,13 +62,15 @@ export default function Sidebar() {
         `}
         title="Toggle Sidebar"
       >
-        {isMobile ? (
-          mobileOpen ? <FiChevronUp size={18} /> : <FiChevronDown size={18} />
-        ) : collapsed ? (
-          <FiChevronRight size={18} />
-        ) : (
-          <FiChevronLeft size={18} />
-        )}
+        <span className="text-[18px] align-middle leading-none">
+          {isMobile ? (
+            mobileOpen ? <FiChevronUp /> : <FiChevronDown />
+          ) : collapsed ? (
+            <FiChevronRight />
+          ) : (
+            <FiChevronLeft />
+          )}
+        </span>
       </button>
 
       {(mobileOpen || !isMobile) && (
@@ -79,7 +81,9 @@ export default function Sidebar() {
               flex items-center ${collapsed ? 'justify-center' : 'justify-start'}
             `}
           >
-            <FiFolder className="mr-2 text-sm" />
+            <span className="text-sm mr-2 align-middle leading-none">
+              <FiFolder />
+            </span>
             {!collapsed && <span>Categories</span>}
           </div>
 
