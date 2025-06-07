@@ -33,7 +33,7 @@ export function middleware(request: NextRequest) {
   const scriptSrc = [
     `'self'`,
     `'nonce-${nonce}'`,
-    process.env.NODE_ENV === 'development' ? `'unsafe-eval'` : '',
+    `'unsafe-eval'`,
   ]
     .filter(Boolean)
     .join(' ');
