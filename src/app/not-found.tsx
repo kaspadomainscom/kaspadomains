@@ -1,5 +1,3 @@
-// src/app/not-found.tsx
-
 import Link from "next/link";
 
 export default function NotFound() {
@@ -22,6 +20,7 @@ export default function NotFound() {
           <Link
             href="https://t.me/KaspadomainsSupport"
             target="_blank"
+            rel="noopener noreferrer"
             className="underline text-blue-600"
           >
             Contact us on Telegram

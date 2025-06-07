@@ -10,6 +10,7 @@ function base64url(bytes: Uint8Array): string {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Exclude static assets, API routes, and common files from CSP injection
   const excludedExtensions = /\.(png|jpg|jpeg|svg|webp|ico|css|js|map|json|woff2?)$/i;
   const isExcluded =
     pathname.startsWith("/_next") ||
@@ -23,25 +24,25 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Generate a fresh base64url nonce per request
   const nonce = base64url(crypto.getRandomValues(new Uint8Array(16)));
-  const response = NextResponse.next();
 
-  const scriptSrc = [`'self'`, `'nonce-${nonce}'`].join(" ");
-  const styleSrc = [`'self'`, `'nonce-${nonce}'`].join(" ");
-
+  // Compose CSP with nonce for scripts and styles, and all required directives
   const csp = [
     `default-src 'self'`,
-    `script-src ${scriptSrc}`,
-    `style-src ${styleSrc}`,
-    `style-src-attr 'self'`, // no 'unsafe-inline'
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`, // strict-dynamic to trust nonce-based scripts
+    `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com`, // allow Google Fonts stylesheets with nonce
+    `img-src 'self' data: https://kaspadomains.com`,
+    `connect-src 'self' https://kaspadomains.com https://supabase.com`,
+    `font-src 'self' https://fonts.gstatic.com`,
     `object-src 'none'`,
     `base-uri 'self'`,
-    `img-src 'self' data: https://kaspadomains.com`,
-    `connect-src 'self' https://kaspadomains.com`,
     `frame-ancestors 'none'`,
     `upgrade-insecure-requests`,
   ].join("; ");
 
+  // Set CSP and nonce headers on the response
+  const response = NextResponse.next();
   response.headers.set("Content-Security-Policy", csp);
   response.headers.set("x-csp-nonce", nonce);
 
@@ -50,12 +51,13 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/:path*",
-    // "/learn/:path*",
-    // "/docs/:path*",
-    // "/domain/:path*",
-    // "/domains/:path*",
-    // "/list-domain/:path*",
-    // "/search/:path*",
+    {
+      // Run middleware on all paths except api, _next static files, images, and favicon.ico
+      source: "/((?!api|_next/static|_next/image|favicon.ico).*)",
+      missing: [
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ],
+    },
   ],
 };

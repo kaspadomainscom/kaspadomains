@@ -62,6 +62,7 @@ export function getDomainJsonLd({
     brand: {
       "@type": "Brand",
       name: "Kaspa Domains",
+      url: "https://kaspadomains.com",
     },
     offers: {
       "@type": "Offer",
