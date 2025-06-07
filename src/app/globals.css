@@ -3,7 +3,6 @@
 /* Import Tailwind CSS */
 @import "tailwindcss";
 
-
 /* Light and Dark Theme Variables */
 :root {
   --background: #ffffff;
@@ -14,7 +13,7 @@
   --kaspaDark: #231F20;
   --kaspaGray: #B6B6B6;
 
-  /* ✅ Additional Kaspa color palette */
+  /* Additional Kaspa color palette */
   --kaspaMint: #7EF4CC;
   --kaspaAqua: #38E8DC;
   --kaspaBlue: #0091AD;
@@ -32,52 +31,33 @@
   }
 }
 
-/* ✅ Global body styling with reset */
-body {
-  margin: 0;
-  padding: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Tell Tailwind about your CSS variables as theme colors */
+@theme {
+  --background: var(--background);
+  --foreground: var(--foreground);
+  --kaspaGreen: var(--kaspaGreen);
+  --kaspaGreenLight: var(--kaspaGreenLight);
+  --kaspaDark: var(--kaspaDark);
+  --kaspaGray: var(--kaspaGray);
+  --kaspaMint: var(--kaspaMint);
+  --kaspaAqua: var(--kaspaAqua);
+  --kaspaBlue: var(--kaspaBlue);
+  --kaspaTeal: var(--kaspaTeal);
+  --kaspaDarkGreen: var(--kaspaDarkGreen);
+  --kaspaGold: var(--kaspaGold);
+  --kaspaWhite: var(--kaspaWhite);
 }
 
-/* .pre-loading {
-  width: 100%;
-  height: 100vh;
-  position: fixed;
-  top: 0;
-  left: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  z-index: 9999;
+/* Base styles using Tailwind utilities with CSS variables */
+@layer base {
+  body {
+    @apply bg-[var(--background)] text-[var(--foreground)] font-sans;
+    margin: 0;
+    padding: 0;
+  }
 }
 
-.loader {
-  width: 100px;
-  max-width: 10rem;
-  height: 3rem;
-  display: inline-block;
-  border: 10px solid var(--kaspaGreen);
-  border-top: 10px solid var(--kaspaDark);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  background-image: url(../public/loader.gif);
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center;
-} */
-
-.glowText {
-  text-shadow: 0 0 3px #3DFDAD, 0 0 5px #3DFDAD;
-}
-
-.glow-green {
-  text-shadow: 0 0 6px #3DFDAD, 0 0 12px #3DFDAD;
-}
-
-/* ✅ Utility classes for Kaspa theme */
+/* Your custom utility classes for Kaspa colors */
 .text-kaspaGreen {
   color: var(--kaspaGreen);
 }
@@ -153,7 +133,16 @@ body {
   background-color: var(--kaspaWhite);
 }
 
-/* ✅ Custom animation utilities */
+/* Glow text utilities */
+.glowText {
+  text-shadow: 0 0 3px #3DFDAD, 0 0 5px #3DFDAD;
+}
+
+.glow-green {
+  text-shadow: 0 0 6px #3DFDAD, 0 0 12px #3DFDAD;
+}
+
+/* Animation utilities */
 @layer utilities {
   .animate-marquee {
     animation: marquee 25s linear infinite;
@@ -167,6 +156,10 @@ body {
       transform: translateX(-100%);
     }
   }
+
+  .animate-slide-down {
+    animation: slideDown 0.25s ease-out forwards;
+  }
 }
 
 @keyframes slideDown {
@@ -178,8 +171,4 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.animate-slide-down {
-  animation: slideDown 0.25s ease-out forwards;
 }
