@@ -33,7 +33,6 @@ export function middleware(request: NextRequest) {
   const scriptSrc = [
     `'self'`,
     `'nonce-${nonce}'`,
-    `'unsafe-eval'`, // ✅ add this back
   ]
     .filter(Boolean)
     .join(' ');
@@ -43,9 +42,10 @@ export function middleware(request: NextRequest) {
   const csp = [
     `default-src 'self'`,
     `script-src ${scriptSrc}`,
+    `script-src-elem 'self' 'unsafe-inline'`,    
     `style-src ${styleSrc}`,
-    `object-src 'none'`,
     `style-src-attr 'self' 'unsafe-inline'`,
+    `object-src 'none'`,
     `base-uri 'self'`,
     `img-src 'self' data: https://kaspadomains.com`,
     `connect-src 'self' https://kaspadomains.com`,
