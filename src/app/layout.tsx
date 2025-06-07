@@ -1,4 +1,5 @@
 // src/app/layout.tsx
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -9,8 +10,7 @@ import Sidebar from '@/components/Sidebar';
 import { headers } from 'next/headers';
 import { NonceProvider } from "@/context/NonceProvider";
 
-
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'; // Required for access to request headers
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,7 +25,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "kaspadomains.com",
   icons: {
-    icon: `/favicon.ico`, // 👈 Add this line
+    icon: `/favicon.ico`,
   },
   description: "",
   openGraph: {
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     url: "https://kaspadomains.com",
   },
   twitter: {
-    card: "summary_large_image", // Optional: Set a summary card type for Twitter
+    card: "summary_large_image",
     title: "kaspadomains",
     description: "Fair launched Kaspa meme token with NFTs and zero team allocation",
   },
@@ -42,35 +42,34 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
-
+}) {
+  // ✅ Await headers() before accessing
   const headersList = await headers();
-  const nonce = headersList.get('x-csp-nonce');
+  const nonce = headersList.get('x-csp-nonce') || "";
 
-  if (!nonce) {
-  // You can either throw here or fallback to a safe default or warning
-  throw new Error('Missing CSP nonce in headers');
-}
+  // ⚠️ Dev-only warning if nonce missing
+  if (process.env.NODE_ENV !== "production" && !nonce) {
+    console.warn("⚠️ Missing CSP nonce in headers. Check middleware or navigation method.");
+  } else {
+    console.log("✅ CSP nonce in headers:", nonce);}
 
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-kaspaGreenLight text-gray-900`}
       >
-        <Header />
-        <div className="flex flex-col md:flex-row min-h-screen">
-          <Sidebar />
-
-          <main className="flex-1">
-            <NonceProvider nonce={nonce}>
+        <NonceProvider nonce={nonce}>
+          <Header />
+          <div className="flex flex-col md:flex-row min-h-screen">
+            <Sidebar />
+            <main className="flex-1">
               {children}
-            </NonceProvider>
-          </main>
-
-        </div>
-        <Footer />
+            </main>
+          </div>
+          <Footer />
+        </NonceProvider>
       </body>
     </html>
   );

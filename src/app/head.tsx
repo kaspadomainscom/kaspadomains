@@ -3,8 +3,8 @@ import { getWebsiteJsonLd, getItemListJsonLd } from '@/lib/jsonld';
 import { headers } from 'next/headers';
 
 export default async function Head() {
-  const headersList = await headers();
-  const nonce = headersList.get('x-csp-nonce');
+
+  const nonce = (await headers()).get('x-csp-nonce');
 
   const websiteJsonLd = getWebsiteJsonLd();
   const itemListJsonLd = getItemListJsonLd();
