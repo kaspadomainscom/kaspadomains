@@ -34,6 +34,7 @@ export function middleware(request: NextRequest) {
     `default-src 'self'`,
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
     `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com`,
+    `style-src-attr 'nonce-${nonce}'`,
     `img-src 'self' data: https://kaspadomains.com`,
     `connect-src 'self' https://kaspadomains.com https://supabase.com`,
     `font-src 'self' https://fonts.gstatic.com`,
