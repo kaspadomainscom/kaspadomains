@@ -33,21 +33,22 @@ export function middleware(request: NextRequest) {
   const scriptSrc = [
     `'self'`,
     `'nonce-${nonce}'`,
+    process.env.NODE_ENV === 'development' ? `'unsafe-eval'` : '',
   ]
     .filter(Boolean)
     .join(' ');
 
-  // const styleSrc = [`'self'`, `'nonce-${nonce}'`].join(' ');
-  const styleSrc = [`'self'`, `'nonce-${nonce}'`, `'unsafe-inline'`].join(' ');
+  const styleSrc = [`'self'`, `'nonce-${nonce}'`].join(' ');
 
   const csp = [
     `default-src 'self'`,
     `script-src ${scriptSrc}`,
     `style-src ${styleSrc}`,
     `object-src 'none'`,
+    `style-src-attr 'self' 'unsafe-inline'`,
     `base-uri 'self'`,
-    `img-src 'self' data: https://kaspadomains.com https://kaspa.com https://x.com`,
-    `connect-src 'self' https://kaspadomains.com https://kaspa.com https://x.com`,
+    `img-src 'self' data: https://kaspadomains.com`,
+    `connect-src 'self' https://kaspadomains.com`,
     `frame-ancestors 'none'`,
   ].join('; ');
 
