@@ -3,6 +3,7 @@
 /* Import Tailwind CSS */
 @import "tailwindcss";
 
+
 /* Light and Dark Theme Variables */
 :root {
   --background: #ffffff;
@@ -26,7 +27,7 @@
 /* Dark mode preferences */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #4c3737;
     --foreground: #ededed;
   }
 }
