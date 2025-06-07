@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   trailingSlash: true,
+  poweredByHeader: false,
   images: {
     unoptimized: true,
   },
@@ -9,7 +10,6 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/(.*)", // Apply headers to all routes
-        poweredByHeader: false,
         headers: [
           {
             key: "Referrer-Policy",

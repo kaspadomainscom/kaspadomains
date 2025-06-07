@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+// Helper: Generate base64url nonce
 function base64url(bytes: Uint8Array): string {
   let binary = "";
   bytes.forEach((b) => (binary += String.fromCharCode(b)));
@@ -10,7 +11,7 @@ function base64url(bytes: Uint8Array): string {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Exclude static assets, API routes, common files, and well-known endpoints
+  // Exclude static assets, API routes, and common files
   const excludedExtensions = /\.(png|jpg|jpeg|svg|webp|ico|css|js|map|json|woff2?)$/i;
   const isExcluded =
     pathname.startsWith("/_next") ||
@@ -18,18 +19,17 @@ export function middleware(request: NextRequest) {
     pathname === "/favicon.ico" ||
     pathname === "/robots.txt" ||
     pathname === "/sitemap.xml" ||
-    pathname.startsWith("/.well-known") || // exclude .well-known to avoid warnings
+    pathname.startsWith("/.well-known") ||
     excludedExtensions.test(pathname);
 
   if (isExcluded) {
-    // No nonce or CSP header for excluded paths
     return NextResponse.next();
   }
 
-  // Generate a fresh base64url nonce per request
+  // Generate a fresh nonce per request
   const nonce = base64url(crypto.getRandomValues(new Uint8Array(16)));
 
-  // Compose CSP header with nonce in script-src and style-src
+  // CSP with nonce
   const csp = [
     `default-src 'self'`,
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
@@ -47,8 +47,9 @@ export function middleware(request: NextRequest) {
 
   response.headers.set("Content-Security-Policy", csp);
   response.headers.set("x-csp-nonce", nonce);
+  response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+  response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
 
-  // Debug logging only in development to track nonce injection
   if (process.env.NODE_ENV !== "production") {
     console.log(`[middleware] Injected nonce: ${nonce} for ${pathname}`);
   }
@@ -56,6 +57,7 @@ export function middleware(request: NextRequest) {
   return response;
 }
 
+// Match all routes
 export const config = {
   matcher: "/:path*",
 };
