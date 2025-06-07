@@ -1,4 +1,5 @@
 // src/app/domain/[name]/head.tsx
+export const dynamic = 'force-dynamic'; // Required for access to request headers
 
 import { headers } from "next/headers";
 import { getDomainJsonLd } from "@/lib/jsonld";

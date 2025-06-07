@@ -2,6 +2,8 @@
 import { getWebsiteJsonLd, getItemListJsonLd } from '@/lib/jsonld';
 import { headers } from 'next/headers';
 
+export const dynamic = 'force-dynamic'; // Required for access to request headers
+
 export default async function Head() {
 
   const nonce = (await headers()).get('x-csp-nonce');

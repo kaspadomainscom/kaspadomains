@@ -2,11 +2,12 @@
 
 import { headers } from "next/headers";
 import { categoriesData } from "@/data/categoriesManifest";
+export const dynamic = 'force-dynamic'; // Required for access to request headers
 
 export default async function Head() {
   const headersList = await headers();
   const nonce = headersList.get("x-csp-nonce");
-  
+
   if (!nonce) { 
     console.error("csp nonce missing domains/head.tsx");
   }

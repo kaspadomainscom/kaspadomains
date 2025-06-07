@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { categoriesData } from "@/data/categoriesManifest";
+export const dynamic = 'force-dynamic'; // Required for access to request headers
 
 export default async function Head({ params }: { params: { category: string } }) {
   const headersList = await headers();
