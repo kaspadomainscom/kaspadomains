@@ -1,7 +1,7 @@
 // src/app/layout.tsx
 
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+// import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import Header from '@/components/Header';
@@ -12,15 +12,15 @@ import { NonceProvider } from "@/context/NonceProvider";
 
 export const dynamic = 'force-dynamic'; // Required for access to request headers
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+// const geistSans = Geist({
+//   variable: "--font-geist-sans",
+//   subsets: ["latin"],
+// });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// const geistMono = Geist_Mono({
+//   variable: "--font-geist-mono",
+//   subsets: ["latin"],
+// });
 
 export const metadata: Metadata = {
   title: "kaspadomains.com",
@@ -58,7 +58,8 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-kaspaGreenLight text-gray-900`}
+      // ${geistSans.variable} ${geistMono.variable} 
+        className={`antialiased bg-kaspaGreenLight text-gray-900`}
       >
         <NonceProvider nonce={nonce}>
           <Header />
