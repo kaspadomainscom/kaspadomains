@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  FiChevronLeft,
-  FiChevronRight,
-  FiChevronUp,
-  FiChevronDown,
-  FiFolder,
-} from 'react-icons/fi';
+// import {
+//   FiChevronLeft,
+//   FiChevronRight,
+//   FiChevronUp,
+//   FiChevronDown,
+//   FiFolder,
+// } from 'react-icons/fi';
 
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(true);
@@ -64,7 +64,7 @@ export default function Sidebar() {
         title="Toggle Sidebar"
         aria-label="Toggle Sidebar"
       >
-        {isMobile ? (
+        {/* {isMobile ? (
           mobileOpen ? (
             <FiChevronUp size={18} />
           ) : (
@@ -74,7 +74,7 @@ export default function Sidebar() {
           <FiChevronRight size={18} />
         ) : (
           <FiChevronLeft size={18} />
-        )}
+        )} */}
       </button>
 
       {(mobileOpen || !isMobile) && (
@@ -86,7 +86,7 @@ export default function Sidebar() {
               collapsed ? 'justify-center' : 'justify-start',
             ].join(' ')}
           >
-            <FiFolder className="text-sm mr-2 leading-none" />
+            {/* <FiFolder className="text-sm mr-2 leading-none" /> */}
             {!collapsed && <span>Categories</span>}
           </div>
 
