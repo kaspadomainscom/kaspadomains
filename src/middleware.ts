@@ -31,7 +31,7 @@ export function middleware(request: NextRequest) {
 
   // CSP with nonce
   const csp = [
-    `default-src 'self'`,
+    `default-src 'none'`,
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
     `style-src 'self' 'nonce-${nonce}'`,
     `style-src-attr 'nonce-${nonce}'`,
@@ -49,6 +49,12 @@ export function middleware(request: NextRequest) {
   response.headers.set("x-csp-nonce", nonce);
   response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
   response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
+
+    // Strong HSTS header with preload + subdomains + 1 year max-age
+  response.headers.set(
+    "Strict-Transport-Security",
+    "max-age=31536000; includeSubDomains; preload"
+  );
 
   if (process.env.NODE_ENV !== "production") {
     console.log(`[middleware] Injected nonce: ${nonce} for ${pathname}`);

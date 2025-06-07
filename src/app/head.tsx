@@ -11,6 +11,12 @@ export default async function Head() {
   const websiteJsonLd = getWebsiteJsonLd();
   const itemListJsonLd = getItemListJsonLd();
 
+  if (process.env.NODE_ENV !== "production" && !nonce) {
+    console.warn("⚠️ app/head.tsx | Missing CSP nonce in x-csp-nonce headers. Check middleware or navigation method.");
+  } else {
+    console.log("✅ app/head.tsx |CSP nonce in headers:", nonce);
+  }
+
   const combinedJsonLd = [websiteJsonLd, itemListJsonLd];
 
   return (

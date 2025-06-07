@@ -7,7 +7,7 @@ export default async function Head() {
   const nonce = headersList.get("x-csp-nonce");
 
   if (!nonce) {
-    console.error("csp nonce missing domains/head.tsx");
+    console.error("domains/head.tsx |csp nonce missing");
   }
 
   const allListedDomains = Object.entries(categoriesData).flatMap(
