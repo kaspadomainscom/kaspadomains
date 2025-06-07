@@ -33,12 +33,12 @@ export function middleware(request: NextRequest) {
   const scriptSrc = [
     `'self'`,
     `'nonce-${nonce}'`,
-    `'unsafe-eval'`,
   ]
     .filter(Boolean)
     .join(' ');
 
-  const styleSrc = [`'self'`, `'nonce-${nonce}'`].join(' ');
+  // const styleSrc = [`'self'`, `'nonce-${nonce}'`].join(' ');
+  const styleSrc = [`'self'`, `'nonce-${nonce}'`, `'unsafe-inline'`].join(' ');
 
   const csp = [
     `default-src 'self'`,
