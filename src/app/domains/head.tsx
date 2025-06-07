@@ -1,19 +1,15 @@
-// src/app/domains/head.tsx
-
 import { headers } from "next/headers";
 import { categoriesData } from "@/data/categoriesManifest";
-export const dynamic = 'force-dynamic'; // Required for access to request headers
+export const dynamic = 'force-dynamic';
 
 export default async function Head() {
   const headersList = await headers();
   const nonce = headersList.get("x-csp-nonce");
 
-  if (!nonce) { 
+  if (!nonce) {
     console.error("csp nonce missing domains/head.tsx");
   }
 
-  // Suppress unused vars warning since we keep categoryKey and title in output for future use
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const allListedDomains = Object.entries(categoriesData).flatMap(
     ([categoryKey, { title, domains }]) =>
       domains
