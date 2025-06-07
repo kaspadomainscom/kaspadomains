@@ -36,15 +36,15 @@ export function DomainCard({ domain }: { domain: Domain }) {
       )}
 
       <div className="mt-2">
-        <span
-          onClick={(e) => {
-            e.stopPropagation();
-            window.open(domain.kaspaLink, "_blank", "noopener,noreferrer");
-          }}
+        <a
+          href={domain.kaspaLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
           className="text-purple-600 text-sm underline hover:text-purple-800 cursor-pointer"
         >
           View on Kaspa.com →
-        </span>
+        </a>
       </div>
     </Link>
   );
