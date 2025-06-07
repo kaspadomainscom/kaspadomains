@@ -1,11 +1,12 @@
 // src/app/domain/[name]/head.tsx
-export const dynamic = 'force-dynamic'; // Required for access to request headers
 
 import { headers } from "next/headers";
 import { getDomainJsonLd } from "@/lib/jsonld";
 import { findDomainByName } from "@/data/domainLookup";
 import type { Domain } from "@/data/types";
 import { categoriesData } from "@/data/categoriesManifest";
+
+export const dynamic = 'force-dynamic'; // Required for access to request headers
 
 /**
  * Ensure the incoming string is lowercase and ends with ".kas"

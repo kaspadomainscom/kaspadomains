@@ -4,7 +4,11 @@ import { Domain } from "@/data/types";
 import Link from "next/link";
 
 export function DomainCard({ domain }: { domain: Domain }) {
-  const telegramUsername = domain.sellerTelegram?.replace("@", "") || null;
+  // const telegramUsername = domain.sellerTelegram?.replace("@", "") || null;
+
+  const telegramUsername = domain.sellerTelegram?.startsWith("@") 
+  ? domain.sellerTelegram.slice(1) 
+  : domain.sellerTelegram || null;
 
   return (
     <Link
