@@ -28,6 +28,7 @@ export default function Sidebar() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Sidebar collapsed state for desktop, always expanded for mobile when open
   const collapsed = isMobile ? false : isCollapsed;
 
   const toggleSidebar = () => {
@@ -38,6 +39,7 @@ export default function Sidebar() {
     }
   };
 
+  // Filter links by search term
   const filteredLinks = categoryLinks.filter(({ label }) =>
     label.toLowerCase().includes(search.toLowerCase())
   );
@@ -45,9 +47,14 @@ export default function Sidebar() {
   return (
     <aside
       className={[
-        'transition-all duration-300 ease-in-out z-10 relative text-white shadow-lg border-r border-[#3DFDAD]/20',
-        isMobile ? (mobileOpen ? 'h-auto' : 'h-14 w-full border-t md:border-t-0') : collapsed ? 'w-16 min-h-screen' : 'w-64 min-h-screen',
-        'bg-[#0F2F2E]',
+        'transition-all duration-300 ease-in-out z-10 relative text-white shadow-lg border-r border-[#3DFDAD]/20 bg-[#0F2F2E]',
+        isMobile
+          ? mobileOpen
+            ? 'h-auto w-full border-t md:border-t-0'
+            : 'h-14 w-full border-t md:border-t-0'
+          : collapsed
+          ? 'w-16 min-h-screen'
+          : 'w-64 min-h-screen',
       ].join(' ')}
     >
       {/* Toggle Button */}
@@ -55,16 +62,19 @@ export default function Sidebar() {
         onClick={toggleSidebar}
         className="absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center bg-[#1C4745] text-[#3DFDAD] border border-[#3DFDAD]/40 rounded-full hover:bg-[#1a403d] transition-colors duration-200"
         title="Toggle Sidebar"
+        aria-label="Toggle Sidebar"
       >
-        <span className="text-[18px] leading-none">
-          {isMobile ? (
-            mobileOpen ? <FiChevronUp /> : <FiChevronDown />
-          ) : collapsed ? (
-            <FiChevronRight />
+        {isMobile ? (
+          mobileOpen ? (
+            <FiChevronUp size={18} />
           ) : (
-            <FiChevronLeft />
-          )}
-        </span>
+            <FiChevronDown size={18} />
+          )
+        ) : collapsed ? (
+          <FiChevronRight size={18} />
+        ) : (
+          <FiChevronLeft size={18} />
+        )}
       </button>
 
       {(mobileOpen || !isMobile) && (
@@ -76,9 +86,7 @@ export default function Sidebar() {
               collapsed ? 'justify-center' : 'justify-start',
             ].join(' ')}
           >
-            <span className="text-sm mr-2 leading-none">
-              <FiFolder />
-            </span>
+            <FiFolder className="text-sm mr-2 leading-none" />
             {!collapsed && <span>Categories</span>}
           </div>
 
@@ -90,13 +98,14 @@ export default function Sidebar() {
                 placeholder="Search categories..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full px-3 py-2 text-sm text-white placeholder-white/50 bg-[#1a403d] rounded-md border border-[#3DFDAD]/20 focus:outline-none focus:ring-2 focus:ring-[#3DFDAD]/50"
+                className="w-full px-3 py-2 text-sm text-white placeholder-white/50 bg-[#1a403d] rounded-md border border-[#3DFDAD]/20 focus:outline-none focus:ring-2 focus:ring-[#3DFDAD]/50 transition"
+                aria-label="Search categories"
               />
             </div>
           )}
 
           {/* Category Links */}
-          <nav className="space-y-1 px-2">
+          <nav className="space-y-1 px-2" aria-label="Category Links">
             {filteredLinks.length > 0 ? (
               filteredLinks.map(({ icon, label, href }) => (
                 <SidebarLink
@@ -159,6 +168,7 @@ function SidebarLink({
           ? 'bg-[#1c403d] text-[#3DFDAD] font-semibold'
           : 'text-white/80 hover:bg-[#1a403d] hover:text-[#3DFDAD]',
       ].join(' ')}
+      aria-current={active ? 'page' : undefined}
     >
       <span className="text-base">{icon}</span>
       {!collapsed && <span>{label}</span>}

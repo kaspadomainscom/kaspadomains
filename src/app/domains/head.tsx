@@ -6,7 +6,10 @@ import { categoriesData } from "@/data/categoriesManifest";
 export default async function Head() {
   const headersList = await headers();
   const nonce = headersList.get("x-csp-nonce");
-  if (!nonce) return "csp nonce missing domains/head.tsx";
+  
+  if (!nonce) { 
+    console.error("csp nonce missing domains/head.tsx");
+  }
 
   // Suppress unused vars warning since we keep categoryKey and title in output for future use
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -40,7 +43,7 @@ export default async function Head() {
       />
       <script
         type="application/ld+json"
-        nonce={nonce}
+        nonce={nonce || undefined}
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(jsonLd),
         }}
