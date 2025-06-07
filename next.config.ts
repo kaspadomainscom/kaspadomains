@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/(.*)", // Apply headers to all routes
+        poweredByHeader: false,
         headers: [
           {
             key: "Referrer-Policy",
