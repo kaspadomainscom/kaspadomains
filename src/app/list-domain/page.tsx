@@ -13,7 +13,7 @@ export default function ListDomainPage() {
             {category.domains.map((domain) => (
               <li key={domain.name}>
                 <Link
-                  href={`/domains/${domain.name}`}
+                  href={`/domain/${domain.name}`}
                   className="text-blue-600 underline hover:text-blue-800"
                 >
                   {domain.name}

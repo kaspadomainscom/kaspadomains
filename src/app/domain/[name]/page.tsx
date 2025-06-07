@@ -58,7 +58,7 @@ export async function generateMetadata({
           url: "https://kaspadomains.com/og-image.png",
           width: 1200,
           height: 630,
-          alt: domain.name,
+          alt: `${domain.name} Premium KNS Domain`,
         },
       ],
     },

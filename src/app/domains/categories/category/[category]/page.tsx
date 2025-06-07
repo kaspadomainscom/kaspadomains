@@ -29,7 +29,7 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      url: `https://kaspadomains.com/domains/categories/${category}`,
+      url: `https://kaspadomains.com/domains/categories/category/${category}`,
       siteName: "Kaspa Domains",
       images: [
         {
@@ -46,7 +46,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title,
       description,
-      images: ["https://kaspadomains.com/twitter-image.png"],
+      images: ["https://kaspadomains.com/kaspadomains-logo.jpg"],
     },
   };
 }

@@ -46,8 +46,8 @@ export function middleware(request: NextRequest) {
     `style-src ${styleSrc}`,
     `object-src 'none'`,
     `base-uri 'self'`,
-    `img-src 'self' data: https://kaspadomains.com`,
-    `connect-src 'self' https://kaspadomains.com`,
+    `img-src 'self' data: https://kaspadomains.com https://kaspa.com https://x.com`,
+    `connect-src 'self' https://kaspadomains.com https://kaspa.com https://x.com`,
     `frame-ancestors 'none'`,
   ].join('; ');
 
