@@ -3,13 +3,25 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-// import {
-//   FiChevronLeft,
-//   FiChevronRight,
-//   FiChevronUp,
-//   FiChevronDown,
-//   FiFolder,
-// } from 'react-icons/fi';
+
+import {
+  IconFolder,
+  IconChevronLeft,
+  IconChevronRight,
+  IconChevronUp,
+  IconChevronDown,
+  IconShortNames,
+  IconClub,
+  IconTag,
+  IconGlobe,
+  IconBriefcase,
+  IconGamepad,
+  IconBrain,
+  IconMoney,
+  IconNetwork,
+  IconTeddy,
+  IconTrending,
+} from '@/components/icons';
 
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(true);
@@ -28,7 +40,6 @@ export default function Sidebar() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Sidebar collapsed state for desktop, always expanded for mobile when open
   const collapsed = isMobile ? false : isCollapsed;
 
   const toggleSidebar = () => {
@@ -39,7 +50,6 @@ export default function Sidebar() {
     }
   };
 
-  // Filter links by search term
   const filteredLinks = categoryLinks.filter(({ label }) =>
     label.toLowerCase().includes(search.toLowerCase())
   );
@@ -64,17 +74,17 @@ export default function Sidebar() {
         title="Toggle Sidebar"
         aria-label="Toggle Sidebar"
       >
-        {/* {isMobile ? (
+        {isMobile ? (
           mobileOpen ? (
-            <FiChevronUp size={18} />
+            <IconChevronUp width={18} height={18} />
           ) : (
-            <FiChevronDown size={18} />
+            <IconChevronDown width={18} height={18} />
           )
         ) : collapsed ? (
-          <FiChevronRight size={18} />
+          <IconChevronRight width={18} height={18} />
         ) : (
-          <FiChevronLeft size={18} />
-        )} */}
+          <IconChevronLeft width={18} height={18} />
+        )}
       </button>
 
       {(mobileOpen || !isMobile) && (
@@ -86,7 +96,7 @@ export default function Sidebar() {
               collapsed ? 'justify-center' : 'justify-start',
             ].join(' ')}
           >
-            {/* <FiFolder className="text-sm mr-2 leading-none" /> */}
+            <IconFolder className="text-sm mr-2 leading-none" width={16} height={16} />
             {!collapsed && <span>Categories</span>}
           </div>
 
@@ -107,10 +117,10 @@ export default function Sidebar() {
           {/* Category Links */}
           <nav className="space-y-1 px-2" aria-label="Category Links">
             {filteredLinks.length > 0 ? (
-              filteredLinks.map(({ icon, label, href }) => (
+              filteredLinks.map(({ icon: IconComp, label, href }) => (
                 <SidebarLink
                   key={href}
-                  icon={icon}
+                  icon={IconComp}
                   label={label}
                   href={href}
                   collapsed={collapsed}
@@ -129,30 +139,31 @@ export default function Sidebar() {
   );
 }
 
+// Update categoryLinks to reference the SVG components
 const categoryLinks = [
-  { icon: '🔤', label: 'Short Names', href: '/domains/categories/category/short' },
-  { icon: '#️⃣', label: '999 Club', href: '/domains/categories/category/999club' },
-  { icon: '🔢', label: '10k Club', href: '/domains/categories/category/10kclub' },
-  { icon: '💯', label: '100k Club', href: '/domains/categories/category/100kclub' },
-  { icon: '🏷️', label: 'Brandables', href: '/domains/categories/category/brandables' },
-  { icon: '🌍', label: 'Real Words', href: '/domains/categories/category/real-words' },
-  { icon: '💼', label: 'Business', href: '/domains/categories/category/business' },
-  { icon: '🎮', label: 'Gaming', href: '/domains/categories/category/gaming' },
-  { icon: '🧠', label: 'AI & Tech', href: '/domains/categories/category/ai-tech' },
-  { icon: '💰', label: 'Finance', href: '/domains/categories/category/finance' },
-  { icon: '🌐', label: 'Web3 / dApps', href: '/domains/categories/category/web3' },
-  { icon: '🧸', label: 'Memes & Fun', href: '/domains/categories/category/memes' },
-  { icon: '📈', label: 'Trending', href: '/domains/categories/category/trending' },
+  { icon: IconShortNames, label: 'Short Names', href: '/domains/categories/category/short' },
+  { icon: IconClub, label: '999 Club', href: '/domains/categories/category/999club' },
+  { icon: IconClub, label: '10k Club', href: '/domains/categories/category/10kclub' },
+  { icon: IconClub, label: '100k Club', href: '/domains/categories/category/100kclub' },
+  { icon: IconTag, label: 'Brandables', href: '/domains/categories/category/brandables' },
+  { icon: IconGlobe, label: 'Real Words', href: '/domains/categories/category/real-words' },
+  { icon: IconBriefcase, label: 'Business', href: '/domains/categories/category/business' },
+  { icon: IconGamepad, label: 'Gaming', href: '/domains/categories/category/gaming' },
+  { icon: IconBrain, label: 'AI & Tech', href: '/domains/categories/category/ai-tech' },
+  { icon: IconMoney, label: 'Finance', href: '/domains/categories/category/finance' },
+  { icon: IconNetwork, label: 'Web3 / dApps', href: '/domains/categories/category/web3' },
+  { icon: IconTeddy, label: 'Memes & Fun', href: '/domains/categories/category/memes' },
+  { icon: IconTrending, label: 'Trending', href: '/domains/categories/category/trending' },
 ];
 
 function SidebarLink({
-  icon,
+  icon: Icon,
   label,
   href,
   collapsed,
   active,
 }: {
-  icon: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   label: string;
   href: string;
   collapsed: boolean;
@@ -170,7 +181,7 @@ function SidebarLink({
       ].join(' ')}
       aria-current={active ? 'page' : undefined}
     >
-      <span className="text-base">{icon}</span>
+      <Icon width={20} height={20} />
       {!collapsed && <span>{label}</span>}
     </Link>
   );
