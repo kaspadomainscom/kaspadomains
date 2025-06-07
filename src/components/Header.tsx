@@ -9,22 +9,13 @@ import { findDomainByName } from '@/data/domainLookup';
 const navItems = [
   { label: 'Home', href: '/' },
   { label: 'Domains', href: '/domains' },
-  { label: 'Categories', href: '/domains/categories' },
+  // { label: 'Categories', href: '/domains/categories' },
   { label: 'Learn', href: '/learn' },
 ];
 
-const premiumDomains = [
-  'wallet.kas',
-  'pay.kas',
-  'nft.kas',
-  'dex.kas',
-  'ai.kas',
-  'btc.kas',
-  'eth.kas',
-  'chat.kas',
-  'swap.kas',
-  'gas.kas',
-];
+import { categoriesData } from '@/data/categoriesManifest';
+
+const trendingDomains = categoriesData.trending.domains.map(d => d.name);
 
 const isPathActive = (pathname: string, href: string) => {
   if (href === '/') return pathname === href;
@@ -160,21 +151,22 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Premium Domains Ticker */}
+      {/* Trending Domain Marquee */}
       <div className="bg-[#0F2F2E] border-t border-[#3DFDAD]/20 overflow-hidden">
         <div className="animate-marquee flex gap-8 py-2 px-4 text-[#3DFDAD] text-sm md:text-base font-medium tracking-tight hover:[animation-play-state:paused]">
-          {premiumDomains.map((domain) => (
+          {trendingDomains.map((domain) => (
             <Link
               key={domain}
               href={`/domain/${domain.replace('.kas', '')}`}
-              className="flex-shrink-0 whitespace-nowrap hover:underline transition duration-200 glow-green"
+              className="flex-shrink-0 whitespace-nowrap hover:underline glow-green transition duration-200"
             >
-              🔥 <span className="font-semibold">{domain}</span> —{' '}
-              <span className="underline underline-offset-4">Buy&nbsp;Now</span>
+              🔥 <span className="font-semibold">{domain}</span> — <span className="underline underline-offset-4">Buy&nbsp;Now</span>
             </Link>
           ))}
         </div>
       </div>
+
+
 
       {/* Mobile Nav */}
       {menuOpen && (

@@ -31,27 +31,13 @@
   }
 }
 
-/* Tell Tailwind about your CSS variables as theme colors */
-@theme {
-  --background: var(--background);
-  --foreground: var(--foreground);
-  --kaspaGreen: var(--kaspaGreen);
-  --kaspaGreenLight: var(--kaspaGreenLight);
-  --kaspaDark: var(--kaspaDark);
-  --kaspaGray: var(--kaspaGray);
-  --kaspaMint: var(--kaspaMint);
-  --kaspaAqua: var(--kaspaAqua);
-  --kaspaBlue: var(--kaspaBlue);
-  --kaspaTeal: var(--kaspaTeal);
-  --kaspaDarkGreen: var(--kaspaDarkGreen);
-  --kaspaGold: var(--kaspaGold);
-  --kaspaWhite: var(--kaspaWhite);
-}
 
 /* Base styles using Tailwind utilities with CSS variables */
 @layer base {
   body {
-    @apply bg-[var(--background)] text-[var(--foreground)] font-sans;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: system-ui, sans-serif;
     margin: 0;
     padding: 0;
   }
