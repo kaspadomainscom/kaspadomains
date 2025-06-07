@@ -47,8 +47,12 @@ export default async function RootLayout({
 }>) {
 
   const headersList = await headers();
-  const nonce = headersList.get('x-csp-nonce') ?? '';
+  const nonce = headersList.get('x-csp-nonce');
 
+  if (!nonce) {
+  // You can either throw here or fallback to a safe default or warning
+  throw new Error('Missing CSP nonce in headers');
+}
 
   return (
     <html lang="en">
