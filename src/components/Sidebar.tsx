@@ -175,12 +175,17 @@ function SidebarLink({
   isMobile?: boolean;
   onClick?: () => void;
 }) {
+  const handleClick = () => {
+    if (isMobile && onClick) {
+      // Let the navigation happen first, then close the sidebar
+      setTimeout(() => onClick(), 300); // Delay slightly to allow page transition
+    }
+  };
+
   return (
     <Link
       href={href}
-      onClick={() => {
-        if (isMobile && onClick) onClick();
-      }}
+      onClick={handleClick}
       className={[
         'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200',
         collapsed ? 'justify-center' : 'justify-start',
@@ -195,3 +200,4 @@ function SidebarLink({
     </Link>
   );
 }
+
