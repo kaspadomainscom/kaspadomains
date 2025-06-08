@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useKasware } from '@/hooks/kns/useKasware'; // ✅ Adjust path if needed
+import { useKasware } from '@/hooks/kns/useKasware'; // ✅ Your wallet hook
 
 async function fetchDomainOwner(domain: string): Promise<string> {
   const encoded = encodeURIComponent(domain.toLowerCase());
@@ -19,7 +19,15 @@ function normalizeAddress(addr: string | null | undefined) {
 
 export default function EditDomainPage() {
   const { name: domainSlug } = useParams() as { name: string };
-  const { address: walletAddress, connect } = useKasware();
+  const { address: walletAddress, connecting } = useKasware();
+
+  // Derive status from wallet state
+  const status = connecting
+    ? 'connecting'
+    : walletAddress
+    ? 'connected'
+    : 'disconnected';
+
   const [domainName, setDomainName] = useState('');
   const [owner, setOwner] = useState('');
   const [loading, setLoading] = useState(true);
@@ -32,17 +40,20 @@ export default function EditDomainPage() {
   useEffect(() => {
     if (!domainSlug) return;
 
-    const fullDomain = `${domainSlug}.kas`;
+    const fullDomain = domainSlug.endsWith('.kas') ? domainSlug : `${domainSlug}.kas`;
+    console.log('🔍 domainSlug:', domainSlug);
+    console.log('➡️ fullDomain:', fullDomain);
 
     async function loadDomain() {
       setLoading(true);
       setError('');
       try {
         const fetchedOwner = await fetchDomainOwner(fullDomain);
+        console.log('✅ fetchedOwner:', fetchedOwner);
         setDomainName(fullDomain);
         setOwner(fetchedOwner);
       } catch (err) {
-        console.error(err);
+        console.error('❌ fetchDomainOwner error:', err);
         setError('❌ Failed to fetch domain owner.');
       } finally {
         setLoading(false);
@@ -51,6 +62,12 @@ export default function EditDomainPage() {
 
     loadDomain();
   }, [domainSlug]);
+
+  useEffect(() => {
+    console.log('🧠 walletAddress:', walletAddress);
+    console.log('🔐 normalizedOwner:', normalizeAddress(owner));
+    console.log('🔑 normalizedWallet:', normalizeAddress(walletAddress));
+  }, [owner, walletAddress]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +78,7 @@ export default function EditDomainPage() {
       setSaving(true);
       // TODO: Replace with actual domain update logic
       await new Promise((resolve) => setTimeout(resolve, 500));
-      setMessage(`✅ Domain "${domainName}" updated successfully.`);
+      setMessage(`✅ Domain &apos;${domainName}&apos; updated successfully.`);
     } catch {
       setError('❌ Failed to update domain.');
     } finally {
@@ -69,8 +86,7 @@ export default function EditDomainPage() {
     }
   };
 
-  // UI States
-  if (loading) {
+  if (loading || status === 'connecting') {
     return (
       <main className="max-w-xl mx-auto p-6 mt-10 text-center text-gray-600">
         Loading domain data...
@@ -78,18 +94,13 @@ export default function EditDomainPage() {
     );
   }
 
-  if (!walletAddress) {
+  if (status === 'disconnected') {
     return (
       <main className="max-w-xl mx-auto p-6 mt-10 text-center text-red-500">
         ❌ Please connect your Kaspa wallet to edit this domain.
-        <div className="mt-4">
-          <button
-            onClick={connect}
-            className="bg-kaspaGreen text-white px-4 py-2 rounded hover:bg-kaspaMint transition"
-          >
-            Connect Wallet
-          </button>
-        </div>
+        <p className="mt-4 text-sm text-gray-500">
+          Use the &apos;Connect Wallet&apos; button in the header.
+        </p>
       </main>
     );
   }
@@ -97,7 +108,7 @@ export default function EditDomainPage() {
   if (!isOwner) {
     return (
       <main className="max-w-xl mx-auto p-6 mt-10 text-center text-red-500">
-        ❌ You are not the owner of <strong>{domainName}</strong>. Access denied.
+        ❌ You are not the owner of <strong>{domainName || '(unknown)'}</strong>. Access denied.
       </main>
     );
   }
