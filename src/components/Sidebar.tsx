@@ -125,6 +125,8 @@ export default function Sidebar() {
                   href={href}
                   collapsed={collapsed}
                   active={pathname === href}
+                  isMobile={isMobile}
+                  onClick={toggleSidebar}
                 />
               ))
             ) : (
@@ -162,16 +164,23 @@ function SidebarLink({
   href,
   collapsed,
   active,
+  isMobile,
+  onClick,
 }: {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   label: string;
   href: string;
   collapsed: boolean;
   active?: boolean;
+  isMobile?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <Link
       href={href}
+      onClick={() => {
+        if (isMobile && onClick) onClick();
+      }}
       className={[
         'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200',
         collapsed ? 'justify-center' : 'justify-start',
