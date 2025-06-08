@@ -1,44 +1,49 @@
 // src/app/domain/edit/[name]/page.tsx
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import { useKasware } from '@/hooks/kns/useKasware'; // ✅ Adjust path if needed
 
-// Helper to fetch domain owner from KNS Domain API
 async function fetchDomainOwner(domain: string): Promise<string> {
   const encoded = encodeURIComponent(domain.toLowerCase());
-  const res = await fetch(`https://api.knsdomains.org/v1/domain/${encoded}`);
-  if (!res.ok) {
-    throw new Error("Failed to fetch domain data");
-  }
+  const res = await fetch(`https://api.knsdomains.org/mainnet/api/v1/${encoded}/owner`);
+  if (!res.ok) throw new Error('Failed to fetch domain owner');
   const data = await res.json();
-  return data?.owner ?? "";
+  return data?.data?.owner ?? '';
+}
+
+function normalizeAddress(addr: string | null | undefined) {
+  return addr?.toLowerCase().replace(/^kaspa(:test:|:)?/, '') ?? '';
 }
 
 export default function EditDomainPage() {
   const { name: domainSlug } = useParams() as { name: string };
-
-  const [domainName, setDomainName] = useState("");
-  const [owner, setOwner] = useState("");
-  const [message, setMessage] = useState("");
+  const { address: walletAddress, connect } = useKasware();
+  const [domainName, setDomainName] = useState('');
+  const [owner, setOwner] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+
+  const isOwner = normalizeAddress(owner) === normalizeAddress(walletAddress);
 
   useEffect(() => {
     if (!domainSlug) return;
 
+    const fullDomain = `${domainSlug}.kas`;
+
     async function loadDomain() {
       setLoading(true);
-      setError("");
+      setError('');
       try {
-        const fullDomain = `${domainSlug}.kas`;
         const fetchedOwner = await fetchDomainOwner(fullDomain);
         setDomainName(fullDomain);
         setOwner(fetchedOwner);
       } catch (err) {
         console.error(err);
-        setError("❌ Failed to fetch domain owner.");
+        setError('❌ Failed to fetch domain owner.');
       } finally {
         setLoading(false);
       }
@@ -49,26 +54,22 @@ export default function EditDomainPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage("");
-    setError("");
-
-    if (!owner) {
-      setError("Owner field cannot be empty.");
-      return;
-    }
+    setMessage('');
+    setError('');
 
     try {
       setSaving(true);
-      // TODO: Replace with actual update logic (e.g., Supabase, Kaspad RPC, smart contract)
-      await new Promise((resolve) => setTimeout(resolve, 500)); // Simulated save
+      // TODO: Replace with actual domain update logic
+      await new Promise((resolve) => setTimeout(resolve, 500));
       setMessage(`✅ Domain "${domainName}" updated successfully.`);
     } catch {
-      setError("❌ Failed to update domain.");
+      setError('❌ Failed to update domain.');
     } finally {
       setSaving(false);
     }
   };
 
+  // UI States
   if (loading) {
     return (
       <main className="max-w-xl mx-auto p-6 mt-10 text-center text-gray-600">
@@ -77,11 +78,33 @@ export default function EditDomainPage() {
     );
   }
 
+  if (!walletAddress) {
+    return (
+      <main className="max-w-xl mx-auto p-6 mt-10 text-center text-red-500">
+        ❌ Please connect your Kaspa wallet to edit this domain.
+        <div className="mt-4">
+          <button
+            onClick={connect}
+            className="bg-kaspaGreen text-white px-4 py-2 rounded hover:bg-kaspaMint transition"
+          >
+            Connect Wallet
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (!isOwner) {
+    return (
+      <main className="max-w-xl mx-auto p-6 mt-10 text-center text-red-500">
+        ❌ You are not the owner of <strong>{domainName}</strong>. Access denied.
+      </main>
+    );
+  }
+
   return (
     <main className="max-w-xl mx-auto p-6 bg-white dark:bg-neutral-900 rounded shadow-md mt-8">
-      <h1 className="text-2xl font-bold mb-4 text-kaspaGreen">
-        Edit Kaspa Domain
-      </h1>
+      <h1 className="text-2xl font-bold mb-4 text-kaspaGreen">Edit Kaspa Domain</h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
@@ -97,26 +120,12 @@ export default function EditDomainPage() {
           />
         </div>
 
-        <div>
-          <label htmlFor="owner" className="block font-medium mb-1">
-            Owner (Kaspa wallet address)
-          </label>
-          <input
-            id="owner"
-            type="text"
-            value={owner}
-            onChange={(e) => setOwner(e.target.value)}
-            className="w-full border border-gray-300 dark:border-neutral-700 rounded px-3 py-2"
-            required
-          />
-        </div>
-
         <button
           type="submit"
           disabled={saving}
           className="bg-kaspaGreen px-4 py-2 rounded text-white hover:bg-kaspaMint transition disabled:opacity-50"
         >
-          {saving ? "Saving..." : "Save Changes"}
+          {saving ? 'Saving...' : 'Save Changes'}
         </button>
       </form>
 

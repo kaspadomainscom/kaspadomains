@@ -8,25 +8,56 @@ import Footer from '@/components/Footer';
 import Sidebar from '@/components/Sidebar';
 import { headers } from 'next/headers';
 import { NonceProvider } from "@/context/NonceProvider";
+import { QueryProvider } from "./providers/query-provider";
 
-export const dynamic = 'force-dynamic'; // Required for access to request headers
-
+export const dynamic = 'force-dynamic'; // Needed to access request headers per request
 
 export const metadata: Metadata = {
-  title: "kaspadomains.com",
+  title: "Kaspadomains – Explore the Kaspa Name System",
+
+  description:
+    "Explore and learn about KNS domains on the Kaspa blockchain. Search domain names, check availability, and understand ownership via kaspadomains.com.",
+
   icons: {
-    icon: `/favicon.ico`,
+    icon: "/favicon.ico",
   },
-  description: "",
+
+  metadataBase: new URL("https://kaspadomains.com"),
+
+  alternates: {
+    canonical: "https://kaspadomains.com",
+  },
+
   openGraph: {
-    title: "Kaspadomains",
-    description: "KNS domain marketplace",
+    title: "Kaspadomains – Explore the Kaspa Name System",
+    description: "Discover available KNS domains and learn how Kaspa Name Service works.",
     url: "https://kaspadomains.com",
+    siteName: "Kaspadomains",
+    type: "website",
+    images: [
+      {
+        url: "https://kaspadomains.com/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Kaspadomains Open Graph Image",
+      },
+    ],
   },
+
   twitter: {
     card: "summary_large_image",
-    title: "kaspadomains",
-    description: "Fair launched Kaspa meme token with NFTs and zero team allocation",
+    title: "Kaspadomains",
+    description: "Search and explore Kaspa Name Service domains with helpful tools and learning guides.",
+    images: ["https://kaspadomains.com/twitter-image.png"],
+    creator: "@yourTwitterHandle", // replace if available
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+    "max-video-preview": -1,
+    "max-image-preview": "large",
+    "max-snippet": -1,
   },
 };
 
@@ -35,25 +66,33 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // ✅ Await headers() before accessing
+  // Await the request headers for each request (dynamic)
   const headersList = await headers();
 
+  // Extract CSP nonce from request headers (set in middleware or server)
   const nonce = headersList.get('x-csp-nonce') || "";
 
   return (
-    <html lang="en">
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <body
-      // ${geistSans.variable} ${geistMono.variable} 
-        className={`antialiased bg-kaspaGreenLight text-gray-900`}
+        className="antialiased bg-kaspaGreenLight text-gray-900 selection:bg-kaspaMint selection:text-black"
       >
+        {/* Provide CSP nonce via React context */}
         <NonceProvider nonce={nonce}>
+          {/* Header is outside flex wrapper for consistent layout */}
           <Header />
+
           <div className="flex flex-col md:flex-row min-h-screen">
+            {/* Sidebar for navigation or filters */}
             <Sidebar />
-            <main className="flex-1">
-              {children}
+
+            {/* Main content area with React Query provider */}
+            <main className="flex-1 min-w-0">
+              <QueryProvider>{children}</QueryProvider>
             </main>
           </div>
+
+          {/* Footer for site info and links */}
           <Footer />
         </NonceProvider>
       </body>

@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import { useKasware } from '@/hooks/useKasware'; // adjust path as needed
+import { useKasware } from '@/hooks/kns/useKasware'; // adjust path as needed
 
 export default function ConnectButton() {
   const { address, connect, disconnect, connecting, isInstalled } = useKasware();
