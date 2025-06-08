@@ -5,12 +5,10 @@ import { categoriesData } from "@/data/categoriesManifest";
 export const dynamic = 'force-dynamic'; // Required for access to request headers
 
 export default async function Head({ params }: { params: { category: string } }) {
+  
   const headersList = await headers();
 
   const nonce = headersList.get("x-csp-nonce");
-  if (!nonce) {
-    console.error("[category]/head.tsx |csp nonce missing");
-  }
   
   const categoryKey = params.category;
   const category = categoriesData[categoryKey];

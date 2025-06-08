@@ -21,7 +21,9 @@ export default async function Head({
 }: {
   params: { name: string };
 }) {
+  
   const headersList = await headers();
+
   const nonce = headersList.get("x-csp-nonce");
 
   // Canonicalize to lowercase + ".kas"

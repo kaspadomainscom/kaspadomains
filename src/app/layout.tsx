@@ -36,17 +36,9 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   // ✅ Await headers() before accessing
-
   const headersList = await headers();
+
   const nonce = headersList.get('x-csp-nonce') || "";
-
-  // ⚠️ Dev-only warning if nonce missing
-  if (process.env.NODE_ENV !== "production" && !nonce) {
-    console.warn("⚠️ Missing CSP nonce in x-csp-nonce headers. Check middleware or navigation method.");
-  } else {
-    console.log("✅ CSP nonce in headers:", nonce);
-  }
-
 
   return (
     <html lang="en">

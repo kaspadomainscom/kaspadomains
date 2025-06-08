@@ -1,14 +1,16 @@
 // src/components/icons.tsx
 import React from 'react';
 
+/* Navigation & UI Icons */
+
 export function IconFolder(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
-      viewBox="0 0 24 24"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-label="Folder"
@@ -22,10 +24,10 @@ export function IconChevronRight(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
-      viewBox="0 0 24 24"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-label="Chevron Right"
@@ -39,10 +41,10 @@ export function IconChevronLeft(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
-      viewBox="0 0 24 24"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-label="Chevron Left"
@@ -56,10 +58,10 @@ export function IconChevronUp(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
-      viewBox="0 0 24 24"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-label="Chevron Up"
@@ -73,10 +75,10 @@ export function IconChevronDown(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
-      viewBox="0 0 24 24"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-label="Chevron Down"
@@ -86,20 +88,25 @@ export function IconChevronDown(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-// Category icons — text-based but improved positioning and styling
+/* Category Icons – Stylized */
 
 export function IconShortNames(props: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg {...props} viewBox="0 0 24 24" fill="currentColor" aria-label="Short Names">
+    <svg
+      {...props}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-label="Short Names"
+    >
       <text
         x="50%"
-        y="65%"
+        y="55%"
         textAnchor="middle"
         fontSize="16"
         fontWeight="700"
         fontFamily="Arial, sans-serif"
-        fill="currentColor"
         dominantBaseline="middle"
+        fill="currentColor"
       >
         A
       </text>
@@ -127,14 +134,16 @@ export function IconClub(props: React.SVGProps<SVGSVGElement>) {
         fontSize="14"
         fontWeight="700"
         fontFamily="Arial, sans-serif"
-        fill="currentColor"
         dominantBaseline="middle"
+        fill="currentColor"
       >
         #
       </text>
     </svg>
   );
 }
+
+/* Category Icons – Visual */
 
 export function IconTag(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -158,10 +167,10 @@ export function IconGlobe(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
-      viewBox="0 0 24 24"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-label="Globe"
@@ -177,10 +186,10 @@ export function IconBriefcase(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
-      viewBox="0 0 24 24"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-label="Briefcase"
@@ -195,10 +204,10 @@ export function IconGamepad(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
-      viewBox="0 0 24 24"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-label="Gamepad"
@@ -215,10 +224,10 @@ export function IconBrain(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
-      viewBox="0 0 24 24"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-label="Brain"
@@ -232,10 +241,10 @@ export function IconMoney(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
-      viewBox="0 0 24 24"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-label="Money"
@@ -251,10 +260,10 @@ export function IconNetwork(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
-      viewBox="0 0 24 24"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-label="Network"
@@ -272,10 +281,10 @@ export function IconTeddy(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
-      viewBox="0 0 24 24"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-label="Teddy"
@@ -292,10 +301,10 @@ export function IconTrending(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
-      viewBox="0 0 24 24"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-label="Trending"
