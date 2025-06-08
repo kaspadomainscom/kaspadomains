@@ -4,8 +4,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function Head() {
   const headersList = await headers();
-  const nonce = headersList.get("x-csp-nonce");
 
+  const nonce = headersList.get("x-csp-nonce");
   if (!nonce) {
     console.error("domains/head.tsx |csp nonce missing");
   }
