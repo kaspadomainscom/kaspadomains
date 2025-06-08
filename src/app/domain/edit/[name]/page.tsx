@@ -1,9 +1,8 @@
-// src/app/domain/edit/[name]/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useKasware } from '@/hooks/kns/useKasware'; // ✅ Your wallet hook
+import { useKasware } from '@/hooks/kns/useKasware';
 
 async function fetchDomainOwner(domain: string): Promise<string> {
   const encoded = encodeURIComponent(domain.toLowerCase());
@@ -21,7 +20,6 @@ export default function EditDomainPage() {
   const { name: domainSlug } = useParams() as { name: string };
   const { address: walletAddress, connecting } = useKasware();
 
-  // Derive status from wallet state
   const status = connecting
     ? 'connecting'
     : walletAddress
@@ -78,7 +76,7 @@ export default function EditDomainPage() {
       setSaving(true);
       // TODO: Replace with actual domain update logic
       await new Promise((resolve) => setTimeout(resolve, 500));
-      setMessage(`✅ Domain &apos;${domainName}&apos; updated successfully.`);
+      setMessage(`✅ Domain '${domainName}' updated successfully.`);
     } catch {
       setError('❌ Failed to update domain.');
     } finally {
@@ -90,6 +88,9 @@ export default function EditDomainPage() {
     return (
       <main className="max-w-xl mx-auto p-6 mt-10 text-center text-gray-600">
         Loading domain data...
+        <pre className="mt-4 text-xs text-gray-400">
+          {`domainSlug: ${domainSlug}\ndomainName: ${domainName}\nloading: ${loading}`}
+        </pre>
       </main>
     );
   }
@@ -109,6 +110,15 @@ export default function EditDomainPage() {
     return (
       <main className="max-w-xl mx-auto p-6 mt-10 text-center text-red-500">
         ❌ You are not the owner of <strong>{domainName || '(unknown)'}</strong>. Access denied.
+        <div className="mt-4 text-left text-xs text-gray-500 dark:text-gray-400">
+          <p>Raw domainSlug: {domainSlug || '(empty)'}</p>
+          <p>domainName state: {domainName || '(empty)'}</p>
+          <p>Error message: {error || '(none)'}</p>
+          <p>Owner address: {owner || '(empty)'}</p>
+          <p>Wallet address: {walletAddress || '(empty)'}</p>
+          <p>Normalized owner: {normalizeAddress(owner)}</p>
+          <p>Normalized wallet: {normalizeAddress(walletAddress)}</p>
+        </div>
       </main>
     );
   }
