@@ -178,7 +178,7 @@ function SidebarLink({
   const handleClick = () => {
     if (isMobile && onClick) {
       // Let the navigation happen first, then close the sidebar
-      setTimeout(() => onClick(), 300); // Delay slightly to allow page transition
+      setTimeout(() => onClick(), 500); // Delay slightly to allow page transition
     }
   };
 
