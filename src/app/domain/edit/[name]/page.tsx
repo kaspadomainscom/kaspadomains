@@ -1,3 +1,4 @@
+// src/app/domain/edit/[name]/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -7,9 +8,20 @@ import { useKasware } from '@/hooks/kns/useKasware';
 async function fetchDomainOwner(domain: string): Promise<string> {
   const encoded = encodeURIComponent(domain.toLowerCase());
   const res = await fetch(`https://api.knsdomains.org/mainnet/api/v1/${encoded}/owner`);
-  if (!res.ok) throw new Error('Failed to fetch domain owner');
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to fetch domain owner: ${res.status} ${res.statusText} - ${text}`);
+  }
+
   const data = await res.json();
-  return data?.data?.owner ?? '';
+  console.log('🐞 API response:', data);
+
+  if (data?.success && data?.data?.owner) {
+    return data.data.owner;
+  }
+
+  throw new Error('Owner data missing in API response');
 }
 
 function normalizeAddress(addr: string | null | undefined) {
@@ -52,7 +64,8 @@ export default function EditDomainPage() {
         setOwner(fetchedOwner);
       } catch (err) {
         console.error('❌ fetchDomainOwner error:', err);
-        setError('❌ Failed to fetch domain owner.');
+        setDomainName(fullDomain); // Always set domainName even if fetch fails
+        setError(`❌ Failed to fetch domain owner: ${(err as Error).message}`);
       } finally {
         setLoading(false);
       }
