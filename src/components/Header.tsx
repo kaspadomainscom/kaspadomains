@@ -17,9 +17,9 @@ const navItems = [
 const trendingDomains = categoriesData.trending.domains.map(d => d.name);
 
 function ConnectButton() {
-  const { connect, account, isCorrectNetwork, switchNetwork, isConnecting } = useMetaMask();
+  const { connect, account, isCorrectNetwork, switchNetwork, isConnecting, disconnect } = useMetaMask();
 
-  const handleClick = async () => {
+  const handleConnectClick = async () => {
     if (!account) {
       await connect();
     } else if (!isCorrectNetwork) {
@@ -31,9 +31,32 @@ function ConnectButton() {
     ? `${account.slice(0, 6)}...${account.slice(-4)}`
     : 'Connect Wallet';
 
+  if (account) {
+    return (
+      <div className="flex items-center space-x-2">
+        <button
+          onClick={handleConnectClick}
+          disabled={isConnecting}
+          className="bg-kaspaMint hover:bg-[#3DFDAD]/90 text-[#0F2F2E] font-semibold py-1.5 px-4 rounded-lg transition disabled:opacity-50"
+          type="button"
+        >
+          {isConnecting ? 'Connecting...' : shortAddress}
+        </button>
+        <button
+          onClick={disconnect}
+          className="bg-red-600 hover:bg-red-700 text-white font-semibold py-1.5 px-3 rounded-lg transition"
+          type="button"
+          aria-label="Disconnect wallet"
+        >
+          Logout
+        </button>
+      </div>
+    );
+  }
+
   return (
     <button
-      onClick={handleClick}
+      onClick={handleConnectClick}
       disabled={isConnecting}
       className="bg-kaspaMint hover:bg-[#3DFDAD]/90 text-[#0F2F2E] font-semibold py-1.5 px-4 rounded-lg transition disabled:opacity-50"
       type="button"
@@ -42,6 +65,7 @@ function ConnectButton() {
     </button>
   );
 }
+
 
 function DesktopNav({
   searchTerm,

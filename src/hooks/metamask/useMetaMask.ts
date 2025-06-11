@@ -22,6 +22,7 @@ interface MetaMaskState {
   isCorrectNetwork: boolean;
   connect: () => Promise<void>;
   switchNetwork: () => Promise<void>;
+  disconnect: () => void; // <-- new
   error: string | null;
 }
 
@@ -90,6 +91,14 @@ export function useMetaMask(): MetaMaskState {
     }
   }, []);
 
+  // New disconnect function: resets state in your app only
+  const disconnect = useCallback(() => {
+    setAccount(null);
+    setStatus('idle');
+    setError(null);
+    setChainId(null);
+  }, []);
+
   useEffect(() => {
     const ethereum = window.ethereum;
     if (!ethereum) return;
@@ -143,6 +152,7 @@ export function useMetaMask(): MetaMaskState {
     error,
     connect,
     switchNetwork,
+    disconnect, // <-- expose disconnect
     isConnecting: status === 'connecting',
     isCorrectNetwork: chainId === KASPLEX_TESTNET.chainId,
   };
