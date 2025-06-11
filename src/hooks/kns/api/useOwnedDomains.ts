@@ -18,7 +18,7 @@ const fetchOwnedDomains = async (address: string): Promise<DomainAsset[]> => {
   const data = await res.json();
 
   if (!Array.isArray(data.assets)) {
-    throw new Error('Invalid API response');
+    throw new Error(data + " " + data.assets);
   }
 
   return data.assets || [];
