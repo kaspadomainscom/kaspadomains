@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { KASPLEX_TESTNET } from '@/lib/kasplex';
 
 declare global {
   interface Window {
@@ -23,19 +24,6 @@ interface MetaMaskState {
   switchNetwork: () => Promise<void>;
   error: string | null;
 }
-
-const KASPLEX_CHAIN_ID = '0x28cdc'; // 167012 in hex
-const KASPLEX_PARAMS = {
-  chainId: KASPLEX_CHAIN_ID,
-  chainName: 'Kasplex Network Testnet',
-  rpcUrls: ['https://rpc.kasplextest.xyz'],
-  nativeCurrency: {
-    name: 'Kaspa',
-    symbol: 'KAS',
-    decimals: 18,
-  },
-  blockExplorerUrls: ['https://frontend.kasplextest.xyz'],
-};
 
 function getErrorMessage(error: unknown): string {
   if (
@@ -93,9 +81,9 @@ export function useMetaMask(): MetaMaskState {
     try {
       await ethereum.request({
         method: 'wallet_addEthereumChain',
-        params: [KASPLEX_PARAMS],
+        params: [KASPLEX_TESTNET],
       });
-      setChainId(KASPLEX_CHAIN_ID);
+      setChainId(KASPLEX_TESTNET.chainId);
     } catch (err: unknown) {
       console.error('Network switch error:', err);
       setError(getErrorMessage(err));
@@ -156,6 +144,6 @@ export function useMetaMask(): MetaMaskState {
     connect,
     switchNetwork,
     isConnecting: status === 'connecting',
-    isCorrectNetwork: chainId === KASPLEX_CHAIN_ID,
+    isCorrectNetwork: chainId === KASPLEX_TESTNET.chainId,
   };
 }
