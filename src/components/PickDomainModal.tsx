@@ -2,7 +2,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useWallet as useMetaMask } from '@/hooks/metamask/useWallet';
+import { useWallet as useMetaMask } from '@/hooks/wallet/useWallet';
 import { useOwnedDomains } from '@/hooks/kns/api/useOwnedDomains';
 
 export default function PickDomainModal() {
