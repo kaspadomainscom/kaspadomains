@@ -8,16 +8,6 @@ import KaspaDomainsRegistryAbi from "@/abi/KaspaDomainsRegistry.json";
 const CONTRACT_ADDRESS = "0xYourContractAddressHere";
 const DOMAIN_FEE = ethers.parseEther("287");
 
-// Add ethereum to window type for MetaMask compatibility
-declare global {
-  interface Window {
-    ethereum?: {
-      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-      on?: (event: string, handler: (...args: unknown[]) => void) => void;
-      removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
-    };
-  }
-}
 
 type DomainInput = {
   domain: string;

@@ -7,7 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import KaspaDomainsLogo from './KaspaDomainsLogo';
 import { findDomainByName } from '@/data/domainLookup';
 import { categoriesData } from '@/data/categoriesManifest';
-import { useMetaMask } from '@/hooks/metamask/useMetaMask';
+import { useWallet as useMetaMask } from '@/hooks/metamask/useWallet';
 
 const navItems = [
   { label: 'Home', href: '/' },
@@ -15,14 +15,26 @@ const navItems = [
   { label: 'Learn', href: '/learn' },
 ];
 
+// Prepare trending domain names without .kas suffix if any
 const trendingDomains = categoriesData.trending.domains.map(d => d.name);
 
 function ConnectButton() {
-  const { connect, account, isCorrectNetwork, switchNetwork, isConnecting, disconnect } = useMetaMask();
+  const {
+    connect,
+    account,
+    isCorrectNetwork,
+    switchNetwork,
+    disconnect,
+    status,
+    error,
+  } = useMetaMask();
+
+  const isConnecting = status === 'connecting';
+  const isConnected = status === 'connected';
 
   const handleConnectClick = async () => {
     if (!account) {
-      await connect();
+      await connect('metamask');
     } else if (!isCorrectNetwork) {
       await switchNetwork();
     }
@@ -32,13 +44,14 @@ function ConnectButton() {
     ? `${account.slice(0, 6)}...${account.slice(-4)}`
     : 'Connect Wallet';
 
-  return account ? (
+  return isConnected ? (
     <div className="flex items-center space-x-2">
       <button
         onClick={handleConnectClick}
         disabled={isConnecting}
         className="bg-kaspaMint hover:bg-[#3DFDAD]/90 text-[#0F2F2E] font-semibold py-1.5 px-4 rounded-lg transition disabled:opacity-50"
         type="button"
+        aria-label="Connect or switch wallet network"
       >
         {isConnecting ? 'Connecting...' : shortAddress}
       </button>
@@ -57,23 +70,28 @@ function ConnectButton() {
       disabled={isConnecting}
       className="bg-kaspaMint hover:bg-[#3DFDAD]/90 text-[#0F2F2E] font-semibold py-1.5 px-4 rounded-lg transition disabled:opacity-50"
       type="button"
+      aria-label="Connect wallet"
     >
       {isConnecting ? 'Connecting...' : shortAddress}
+      {error && (
+        <p className="text-red-500 text-xs mt-1">
+          {error}
+        </p>
+      )}
     </button>
+      
   );
 }
 
-function DesktopNav({
-  searchTerm,
-  setSearchTerm,
-  handleSearchKeyDown,
-  isPathActive,
-}: {
+
+interface DesktopNavProps {
   searchTerm: string;
   setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
   handleSearchKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   isPathActive: (href: string) => boolean;
-}) {
+}
+
+function DesktopNav({ searchTerm, setSearchTerm, handleSearchKeyDown, isPathActive }: DesktopNavProps) {
   return (
     <nav className="hidden md:flex items-center space-x-6">
       <div className="flex space-x-4">
@@ -117,17 +135,18 @@ function DesktopNav({
       </div>
 
       <ConnectButton />
+      
     </nav>
   );
 }
 
-function MobileMenu({
-  menuOpen,
-  setMenuOpen,
-}: {
+
+interface MobileMenuProps {
   menuOpen: boolean;
   setMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) {
+}
+
+function MobileMenu({ menuOpen, setMenuOpen }: MobileMenuProps) {
   if (!menuOpen) return null;
 
   return (

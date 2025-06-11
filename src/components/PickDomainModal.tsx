@@ -2,8 +2,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useMetaMask } from '@/hooks/metamask/useMetaMask';
-import { useOwnedDomains } from '@/hooks/kns/useOwnedDomains';
+import { useWallet as useMetaMask } from '@/hooks/metamask/useWallet';
+import { useOwnedDomains } from '@/hooks/kns/api/useOwnedDomains';
 
 export default function PickDomainModal() {
   const router = useRouter();

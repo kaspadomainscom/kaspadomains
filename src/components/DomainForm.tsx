@@ -1,6 +1,6 @@
 'use client';
 
-import { useCheckDomainAvailability } from '@/hooks/kns/useCheckDomainAvailability';
+import { useCheckDomainAvailability } from '@/hooks/kns/api/useCheckDomainAvailability';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 
