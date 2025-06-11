@@ -7,6 +7,8 @@ import { KASPLEX_TESTNET } from '@/lib/kasplex';
 type WalletType = 'metamask' | 'kasware' | null;
 type WalletStatus = 'idle' | 'connecting' | 'connected' | 'error' | 'unavailable';
 
+// declare global in src/types/global.d.ts
+
 interface WalletState {
   walletType: WalletType;
   account: string | null;
