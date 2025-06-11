@@ -1,7 +1,21 @@
-// src/hooks/kns/useOwnedDomains.ts
 import { useQuery } from '@tanstack/react-query';
-
 import { DomainAsset } from '../types';
+
+// Define the structure of the API response asset
+interface RawDomainAsset {
+  assetId: string;
+  mimeType?: string;
+  asset: string;
+  creationBlockTime: string;
+  owner?: string;
+  isDomain: boolean;
+  isVerifiedDomain: boolean;
+  status?: string;
+}
+
+interface KNSApiResponse {
+  assets: RawDomainAsset[];
+}
 
 const fetchOwnedDomains = async (address: string): Promise<DomainAsset[]> => {
   const url = new URL('https://api.knsdomains.org/mainnet/api/v1/assets');
@@ -12,16 +26,31 @@ const fetchOwnedDomains = async (address: string): Promise<DomainAsset[]> => {
   const res = await fetch(url.toString());
 
   if (!res.ok) {
+    const errorText = await res.text();
+    console.error(`HTTP error ${res.status}:`, errorText);
     throw new Error(`HTTP error: ${res.status}`);
   }
 
-  const data = await res.json();
+  const data: KNSApiResponse = await res.json();
+  console.log('KNS API response:', data);
 
   if (!Array.isArray(data.assets)) {
-    throw new Error(data + " " + data.assets);
+    console.error('Invalid API response structure:', data);
+    throw new Error('Invalid API response: expected "assets" array');
   }
 
-  return data.assets || [];
+  const formattedAssets: DomainAsset[] = data.assets.map((asset) => ({
+    assetId: asset.assetId,
+    mimeType: asset.mimeType ?? '',
+    asset: asset.asset,
+    creationBlockTime: asset.creationBlockTime,
+    owner: asset.owner ?? address,
+    isDomain: asset.isDomain,
+    isVerifiedDomain: asset.isVerifiedDomain,
+    status: asset.status ?? 'default',
+  }));
+
+  return formattedAssets;
 };
 
 export function useOwnedDomains(address: string | null) {
@@ -31,8 +60,8 @@ export function useOwnedDomains(address: string | null) {
       if (!address) throw new Error('No address provided');
       return fetchOwnedDomains(address);
     },
-    enabled: !!address, // Skip if address is null
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    enabled: !!address,
+    staleTime: 1000 * 60 * 5,
     retry: 1,
     refetchOnWindowFocus: false,
   });
