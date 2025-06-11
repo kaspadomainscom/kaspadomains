@@ -31,30 +31,26 @@ function ConnectButton() {
     ? `${account.slice(0, 6)}...${account.slice(-4)}`
     : 'Connect Wallet';
 
-  if (account) {
-    return (
-      <div className="flex items-center space-x-2">
-        <button
-          onClick={handleConnectClick}
-          disabled={isConnecting}
-          className="bg-kaspaMint hover:bg-[#3DFDAD]/90 text-[#0F2F2E] font-semibold py-1.5 px-4 rounded-lg transition disabled:opacity-50"
-          type="button"
-        >
-          {isConnecting ? 'Connecting...' : shortAddress}
-        </button>
-        <button
-          onClick={disconnect}
-          className="bg-red-600 hover:bg-red-700 text-white font-semibold py-1.5 px-3 rounded-lg transition"
-          type="button"
-          aria-label="Disconnect wallet"
-        >
-          Logout
-        </button>
-      </div>
-    );
-  }
-
-  return (
+  return account ? (
+    <div className="flex items-center space-x-2">
+      <button
+        onClick={handleConnectClick}
+        disabled={isConnecting}
+        className="bg-kaspaMint hover:bg-[#3DFDAD]/90 text-[#0F2F2E] font-semibold py-1.5 px-4 rounded-lg transition disabled:opacity-50"
+        type="button"
+      >
+        {isConnecting ? 'Connecting...' : shortAddress}
+      </button>
+      <button
+        onClick={disconnect}
+        className="bg-red-600 hover:bg-red-700 text-white font-semibold py-1.5 px-3 rounded-lg transition"
+        type="button"
+        aria-label="Disconnect wallet"
+      >
+        Logout
+      </button>
+    </div>
+  ) : (
     <button
       onClick={handleConnectClick}
       disabled={isConnecting}
@@ -65,7 +61,6 @@ function ConnectButton() {
     </button>
   );
 }
-
 
 function DesktopNav({
   searchTerm,

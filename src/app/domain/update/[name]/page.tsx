@@ -27,7 +27,7 @@ function normalizeAddress(addr?: string | null) {
   return addr?.toLowerCase().replace(/^kaspa(:test:|:)?/, '') ?? '';
 }
 
-export default function EditDomainPage() {
+export default function UpdateDomainPage() {
   const { name: domainSlug } = useParams() as { name: string };
   const { address: walletAddress, connecting } = useKasware();
 

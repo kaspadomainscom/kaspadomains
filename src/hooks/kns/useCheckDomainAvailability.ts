@@ -1,3 +1,4 @@
+// src/hooks/kns/useCheckDomainAvailability.ts
 import { useMutation } from '@tanstack/react-query';
 
 type DomainCheckRequest = {
