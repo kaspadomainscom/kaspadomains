@@ -1,4 +1,5 @@
 // src/hooks/kns/types.ts
+
 export interface DomainAsset {
   assetId: string;
   mimeType?: string;
@@ -10,10 +11,10 @@ export interface DomainAsset {
   status: 'default' | 'listed' | string;
 }
 
-
 export interface Pagination {
   currentPage: number;
   pageSize: number;
   totalItems: number;
   totalPages: number;
 }
+

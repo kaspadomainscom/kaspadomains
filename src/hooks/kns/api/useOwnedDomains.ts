@@ -1,27 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
-import { DomainAsset } from '../types';
+import { DomainAsset, Pagination } from '../types';
 
-// Define the structure of the API response asset
-interface RawDomainAsset {
-  assetId: string;
-  mimeType?: string;
-  asset: string;
-  creationBlockTime: string;
-  owner?: string;
-  isDomain: boolean;
-  isVerifiedDomain: boolean;
-  status?: string;
-}
-
+// Match KNS API's actual response
 interface KNSApiResponse {
-  assets: RawDomainAsset[];
+  assets: DomainAsset[];
+  pagination: Pagination;
 }
 
 const fetchOwnedDomains = async (address: string): Promise<DomainAsset[]> => {
   const url = new URL('https://api.knsdomains.org/mainnet/api/v1/assets');
   url.searchParams.set('owner', address);
   url.searchParams.set('type', 'domain');
-  url.searchParams.set('pageSize', '100');
+  url.searchParams.set('pageSize', '100'); // max allowed
 
   const res = await fetch(url.toString());
 
@@ -32,25 +22,23 @@ const fetchOwnedDomains = async (address: string): Promise<DomainAsset[]> => {
   }
 
   const data: KNSApiResponse = await res.json();
-  console.log('KNS API response:', data);
 
+  // Validate structure
   if (!Array.isArray(data.assets)) {
     console.error('Invalid API response structure:', data);
     throw new Error('Invalid API response: expected "assets" array');
   }
 
-  const formattedAssets: DomainAsset[] = data.assets.map((asset) => ({
+  return data.assets.map((asset) => ({
     assetId: asset.assetId,
     mimeType: asset.mimeType ?? '',
     asset: asset.asset,
     creationBlockTime: asset.creationBlockTime,
-    owner: asset.owner ?? address,
+    owner: asset.owner,
     isDomain: asset.isDomain,
     isVerifiedDomain: asset.isVerifiedDomain,
     status: asset.status ?? 'default',
   }));
-
-  return formattedAssets;
 };
 
 export function useOwnedDomains(address: string | null) {
