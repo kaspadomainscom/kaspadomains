@@ -1,13 +1,12 @@
-// src/components/Header.tsx
 'use client';
 
 import React, { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import KaspaDomainsLogo from './KaspaDomainsLogo';
-import ConnectButton from './ConnectButton'; // ✅ Modular connect wallet button
 import { findDomainByName } from '@/data/domainLookup';
 import { categoriesData } from '@/data/categoriesManifest';
+import { useMetaMask } from '@/hooks/metamask/useMetaMask';
 
 const navItems = [
   { label: 'Home', href: '/' },
@@ -15,8 +14,33 @@ const navItems = [
   { label: 'Learn', href: '/learn' },
 ];
 
-// Extract trending domain names (without .kas for URL)
 const trendingDomains = categoriesData.trending.domains.map(d => d.name);
+
+function ConnectButton() {
+  const { connect, account, isCorrectNetwork, switchNetwork, isConnecting } = useMetaMask();
+
+  const handleClick = async () => {
+    if (!account) {
+      await connect();
+    } else if (!isCorrectNetwork) {
+      await switchNetwork();
+    }
+  };
+
+  const shortAddress = account
+    ? `${account.slice(0, 6)}...${account.slice(-4)}`
+    : 'Connect Wallet';
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={isConnecting}
+      className="bg-kaspaMint hover:bg-[#3DFDAD]/90 text-[#0F2F2E] font-semibold py-1.5 px-4 rounded-lg transition disabled:opacity-50"
+    >
+      {isConnecting ? 'Connecting...' : shortAddress}
+    </button>
+  );
+}
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -47,7 +71,6 @@ export default function Header() {
       <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3 md:py-4">
         <KaspaDomainsLogo />
 
-        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
           <div className="flex space-x-4">
             {navItems.map(({ label, href }) => (
@@ -65,7 +88,6 @@ export default function Header() {
             ))}
           </div>
 
-          {/* Search input */}
           <div className="relative">
             <input
               type="search"
@@ -87,11 +109,9 @@ export default function Header() {
             </svg>
           </div>
 
-          {/* Wallet connect */}
           <ConnectButton />
         </nav>
 
-        {/* Mobile menu toggle */}
         <button
           onClick={() => setMenuOpen(open => !open)}
           className="md:hidden text-white p-2"
@@ -110,7 +130,6 @@ export default function Header() {
         </button>
       </div>
 
-      {/* Trending domains marquee */}
       <div className="bg-[#0F2F2E] border-t border-[#3DFDAD]/20 overflow-hidden">
         <div className="animate-marquee flex gap-8 py-2 px-4 text-[#3DFDAD] text-sm md:text-base font-medium tracking-tight hover:[animation-play-state:paused]">
           {trendingDomains.map(domain => (
@@ -126,7 +145,6 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile menu */}
       {menuOpen && (
         <nav className="md:hidden bg-[#0F2F2E] px-4 py-4 space-y-3">
           {navItems.map(({ label, href }) => (
