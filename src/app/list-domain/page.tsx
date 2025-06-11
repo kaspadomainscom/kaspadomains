@@ -1,4 +1,3 @@
-// src/app/list-domain/page.tsx
 'use client';
 
 import React from 'react';
@@ -18,10 +17,12 @@ export default function ListDomainPage() {
 
   // 2️⃣ Fetch domains for that Kasware address
   const {
-    data: domains,
+    data: domainData,
     isLoading: domainsLoading,
     error: domainsError,
   } = useOwnedDomains(account);
+
+  const ownedDomains = domainData?.domains;
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-12 space-y-16">
@@ -71,10 +72,10 @@ export default function ListDomainPage() {
             <p>Loading your domains…</p>
           ) : domainsError ? (
             <p className="text-red-400">Error loading domains: {domainsError.message}</p>
-          ) : !domains || domains.length === 0 ? (
+          ) : !ownedDomains || ownedDomains.length === 0 ? (
             <p>You don’t own any .kas domains.</p>
           ) : (
-            <PickDomainModal domains={domains} />
+            <PickDomainModal domains={ownedDomains} />
           )}
 
           {walletError && <p className="text-red-400 text-sm mt-2">{walletError}</p>}
