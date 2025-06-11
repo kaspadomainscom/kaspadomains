@@ -24,11 +24,11 @@ const fetchOwnedDomains = async (address: string): Promise<DomainAsset[]> => {
 
   const data = await res.json();
 
-  if (!data.assets) {
-    throw new Error('No domains found');
+  if (!Array.isArray(data.assets)) {
+    throw new Error('Invalid API response');
   }
 
-  return data.assets;
+  return data.assets || [];
 };
 
 export function useOwnedDomains(address: string | null) {
