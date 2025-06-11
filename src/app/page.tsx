@@ -1,3 +1,4 @@
+// src/app/page.tsx
 import Link from "next/link";
 import { categoriesData } from "@/data/categoriesManifest";
 
@@ -14,11 +15,11 @@ export default async function Home() {
     .slice(0, 6);
 
   return (
-    <main className="space-y-28 bg-[#0E1E25] text-gray-100">
+    <main className="space-y-28 bg-[#0E1E25] text-gray-100 min-h-screen">
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-[#00AEEF] to-[#0E1E25] py-28 text-center px-6 md:px-8">
         <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-snug mb-5">
-          Discover Premium .kas Domains
+          Discover Premium <span className="text-yellow-400">.kas</span> Domains
         </h1>
         <p className="text-lg md:text-xl max-w-3xl mx-auto mb-8 text-white/90">
           Explore the most exclusive <strong>.kas</strong> domains in the Kaspa Name System.
@@ -28,7 +29,7 @@ export default async function Home() {
         </p>
         <Link
           href="/list-domain"
-          className="inline-block bg-[#FFD700] text-[#0E1E25] px-8 py-3 rounded-full font-semibold shadow hover:bg-yellow-400 transition"
+          className="inline-block bg-yellow-400 text-[#0E1E25] px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-yellow-300 transition"
         >
           List Your Domain
         </Link>
@@ -68,7 +69,7 @@ export default async function Home() {
                 href={domain.kaspaLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#FFD700] underline text-sm"
+                className="text-yellow-400 underline text-sm"
               >
                 View on Kaspa Explorer
               </a>
@@ -82,7 +83,7 @@ export default async function Home() {
         <h2 className="text-3xl font-bold mb-6 text-white">Why List on KaspaDomains?</h2>
         <div className="text-lg text-gray-300 leading-relaxed space-y-6 mb-10">
           <p>
-            KaspaDomains isn&apos;t a marketplace &mdash; it&apos;s a curated discovery layer for the best .kas domains.
+            KaspaDomains isn&apos;t a marketplace &mdash; it&apos;s a curated discovery layer for the best <strong>.kas</strong> domains.
             We filter out low-quality names so your identity stands out.
           </p>
           <p>
@@ -95,7 +96,7 @@ export default async function Home() {
         </div>
         <Link
           href="/list-domain"
-          className="inline-block bg-[#FFD700] text-[#0E1E25] px-8 py-3 rounded-full font-semibold shadow hover:bg-yellow-400 transition"
+          className="inline-block bg-yellow-400 text-[#0E1E25] px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-yellow-300 transition"
         >
           Submit Your Domain
         </Link>
