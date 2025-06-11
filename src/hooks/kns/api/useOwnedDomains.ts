@@ -1,14 +1,7 @@
 // src/hooks/kns/useOwnedDomains.ts
 import { useQuery } from '@tanstack/react-query';
 
-export type DomainAsset = {
-  assetId: string;
-  asset: string;
-  isDomain: boolean;
-  isVerifiedDomain: boolean;
-  status: string;
-  creationBlockTime: string;
-};
+import { DomainAsset } from '../types';
 
 const fetchOwnedDomains = async (address: string): Promise<DomainAsset[]> => {
   const url = new URL('https://api.knsdomains.org/mainnet/api/v1/assets');

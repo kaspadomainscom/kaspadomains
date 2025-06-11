@@ -1,9 +1,28 @@
 // src/app/list-domain/page.tsx
 'use client';
 
+import React from 'react';
 import PickDomainModal from '@/components/PickDomainModal';
+import { useWallet } from '@/hooks/wallet/useWallet';
+import { useOwnedDomains } from '@/hooks/kns/api/useOwnedDomains';
 
 export default function ListDomainPage() {
+  // 1️⃣ Get the connected wallet (Kasware only)
+  const {
+    account,
+    connect,
+    status: walletStatus,
+    error: walletError,
+    walletType,
+  } = useWallet();
+
+  // 2️⃣ Fetch domains for that Kasware address
+  const {
+    data: domains,
+    isLoading: domainsLoading,
+    error: domainsError,
+  } = useOwnedDomains(account);
+
   return (
     <main className="max-w-6xl mx-auto px-6 py-12 space-y-16">
       {/* Page Header */}
@@ -19,8 +38,9 @@ export default function ListDomainPage() {
         <div className="space-y-6">
           <h2 className="text-3xl font-bold text-white">List Your .kas Domain</h2>
           <p className="text-gray-300 leading-relaxed">
-            Listing your domain costs a one-time fee of <span className="font-semibold text-yellow-400">287 KAS</span>. 
-            Once listed, it remains permanently accessible in our directory, search, and community spotlight—no renewals required.
+            Listing your domain costs a one-time fee of{' '}
+            <span className="font-semibold text-yellow-400">287 KAS</span>. Once listed, it remains
+            permanently accessible—no renewals required.
           </p>
 
           <div className="bg-[#101A23] p-5 rounded-xl border border-[#1f2c38]">
@@ -34,11 +54,30 @@ export default function ListDomainPage() {
           </div>
 
           <p className="text-sm text-gray-400">
-            *You must own the domain on the <strong>KNS</strong> contract and be connected to Kasplex Testnet to create a listing.
+            *You must own the domain on the <strong>KNS</strong> contract and be connected with Kasware (Kaspa wallet) on
+            the Kasplex Testnet.
           </p>
 
-          {/* Replace direct link with PickDomainModal */}
-          <PickDomainModal />
+          {/* 🔗 Kasware-only connect/loading/error/domains */}
+          {!account || walletType !== 'kasware' ? (
+            <button
+              onClick={() => connect('kasware')}
+              disabled={walletStatus === 'connecting'}
+              className="bg-[#5183f5] hover:bg-[#4169c9] text-white font-semibold py-2 px-6 rounded-lg transition disabled:opacity-50"
+            >
+              {walletStatus === 'connecting' ? 'Connecting…' : 'Connect Kasware'}
+            </button>
+          ) : domainsLoading ? (
+            <p>Loading your domains…</p>
+          ) : domainsError ? (
+            <p className="text-red-400">Error loading domains: {domainsError.message}</p>
+          ) : !domains || domains.length === 0 ? (
+            <p>You don’t own any .kas domains.</p>
+          ) : (
+            <PickDomainModal domains={domains} />
+          )}
+
+          {walletError && <p className="text-red-400 text-sm mt-2">{walletError}</p>}
         </div>
       </section>
     </main>

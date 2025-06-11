@@ -10,6 +10,7 @@ export interface DomainAsset {
   status: 'default' | 'listed' | string;
 }
 
+
 export interface Pagination {
   currentPage: number;
   pageSize: number;

@@ -1,24 +1,35 @@
-// src/components/PickDomainModal.tsx
 'use client';
 
 import { useRouter } from 'next/navigation';
 import { useWallet as useMetaMask } from '@/hooks/wallet/useWallet';
 import { useOwnedDomains } from '@/hooks/kns/api/useOwnedDomains';
+import { DomainAsset } from '@/hooks/kns/types';
 
-export default function PickDomainModal() {
+type PickDomainModalProps = {
+  domains?: DomainAsset[]; // Optional external domains list
+};
+
+export default function PickDomainModal({ domains: externalDomains }: PickDomainModalProps) {
   const router = useRouter();
   const { account } = useMetaMask();
-  const { data: domains, isLoading, isError, error } = useOwnedDomains(account);
+  const {
+    data: walletDomains,
+    isLoading,
+    isError,
+    error,
+  } = useOwnedDomains(account);
+
+  const domains = externalDomains ?? walletDomains;
 
   if (!account) {
     return <p className="text-center mt-10">Connect your wallet to continue.</p>;
   }
 
-  if (isLoading) {
+  if (!externalDomains && isLoading) {
     return <p className="text-center mt-10">Loading your domains...</p>;
   }
 
-  if (isError) {
+  if (!externalDomains && isError) {
     return <p className="text-center mt-10 text-red-500">Error: {error.message}</p>;
   }
 
