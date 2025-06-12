@@ -18,7 +18,7 @@ export interface WalletState {
   error:            string | null;
 }
 
-/** Standard EIP-1193 provider (MetaMask, others) */
+/** Standard EIP-1193 provider (MetaMask, Kasware) */
 type EIP1193Provider = {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
   isMetaMask?:   boolean;
@@ -28,7 +28,7 @@ type EIP1193Provider = {
   removeListener?: (event: string, handler: (payload: unknown) => void) => void;
 };
 
-/** Kasware’s legacy API shape */
+/** Kasware legacy window object interface */
 interface KaswareLegacyProvider {
   getAccounts(): Promise<string[]>;
   requestAccounts(): Promise<string[]>;
@@ -38,15 +38,13 @@ interface KaswareLegacyProvider {
   isKasware?: boolean;
 }
 
-/** Union of the two patterns */
+/** Union type for supported providers */
 type Provider = EIP1193Provider | KaswareLegacyProvider;
 
-/** Narrow to EIP-1193 */
-function isEIP1193(p: Provider): p is EIP1193Provider {
-  return typeof (p as EIP1193Provider).request === 'function';
+function isEIP1193(provider: Provider): provider is EIP1193Provider {
+  return typeof (provider as EIP1193Provider).request === 'function';
 }
 
-/** Friendly error text */
 function getErrorMessage(e: unknown): string {
   if (typeof e === 'object' && e !== null && 'message' in e) {
     return String((e as { message: unknown }).message);
@@ -54,16 +52,10 @@ function getErrorMessage(e: unknown): string {
   return String(e);
 }
 
-/**
- * Find the provider matching the chosen wallet type:
- * 1. window.ethereum.providers[] (multi-injected)
- * 2. window.ethereum flags    (single-injected)
- * 3. window.kasware global    (Kasware legacy)
- */
 function findProvider(type: WalletType): Provider | undefined {
   const eth = window.ethereum as EIP1193Provider | undefined;
 
-  // 1) multi-wallet
+  // 1. Multi-injected providers
   if (Array.isArray(eth?.providers)) {
     for (const p of eth.providers!) {
       if (type === 'metamask' && p.isMetaMask) return p;
@@ -71,18 +63,17 @@ function findProvider(type: WalletType): Provider | undefined {
     }
   }
 
-  // 2) single-wallet
+  // 2. Single-injected provider
   if (eth) {
     if (type === 'metamask' && eth.isMetaMask) return eth;
     if (type === 'kasware'  && eth.isKasware)  return eth;
   }
 
-  // 3) Kasware-specific
+  // 3. Kasware legacy global
   const kws = window.kasware as KaswareLegacyProvider | undefined;
   if (type === 'kasware' && kws) return kws;
 }
 
-/** Cross-provider account request */
 async function requestAccounts(provider: Provider): Promise<string[]> {
   if (isEIP1193(provider)) {
     const res = await provider.request({ method: 'eth_requestAccounts' });
@@ -92,8 +83,7 @@ async function requestAccounts(provider: Provider): Promise<string[]> {
   }
 }
 
-/** Cross-provider chainId request */
-async function requestChainId(provider: Provider): Promise<string|undefined> {
+async function requestChainId(provider: Provider): Promise<string | undefined> {
   if (isEIP1193(provider)) {
     const res = await provider.request({ method: 'eth_chainId' });
     return typeof res === 'string' ? res : undefined;
@@ -103,18 +93,18 @@ async function requestChainId(provider: Provider): Promise<string|undefined> {
 
 export function useWallet(): WalletState {
   const [walletType, setWalletType] = useState<WalletType>(null);
-  const [account,    setAccount]    = useState<string|null>(null);
-  const [status,     setStatus]     = useState<WalletStatus>('idle');
-  const [chainId,    setChainId]    = useState<string|null>(null);
-  const [error,      setError]      = useState<string|null>(null);
+  const [account, setAccount] = useState<string | null>(null);
+  const [status, setStatus] = useState<WalletStatus>('idle');
+  const [chainId, setChainId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  /** connect logic */
   const connect = useCallback(async (type: WalletType) => {
     if (type !== 'metamask' && type !== 'kasware') {
       setError('Unsupported wallet type');
       setStatus('error');
       return;
     }
+
     const provider = findProvider(type);
     if (!provider) {
       setError(`${type} wallet not found or untrusted`);
@@ -142,13 +132,13 @@ export function useWallet(): WalletState {
     }
   }, []);
 
-  /** network-switch logic (EIP-1193 only) */
   const switchNetwork = useCallback(async () => {
     const provider = findProvider(walletType);
     if (!provider || !isEIP1193(provider)) {
       setError('Cannot switch network on this wallet');
       return;
     }
+
     try {
       await provider.request({
         method: 'wallet_addEthereumChain',
@@ -161,7 +151,6 @@ export function useWallet(): WalletState {
     }
   }, [walletType]);
 
-  /** disconnect logic */
   const disconnect = useCallback(() => {
     setWalletType(null);
     setAccount(null);
@@ -171,9 +160,8 @@ export function useWallet(): WalletState {
     localStorage.removeItem('walletType');
   }, []);
 
-  /** on mount: restore or auto-detect */
   useEffect(() => {
-    const saved = localStorage.getItem('walletType') as WalletType|null;
+    const saved = localStorage.getItem('walletType') as WalletType | null;
     if (saved && findProvider(saved)) {
       setWalletType(saved);
     } else {
@@ -183,34 +171,34 @@ export function useWallet(): WalletState {
     }
   }, []);
 
-  /** subscribe to provider events */
   useEffect(() => {
     const provider = findProvider(walletType);
     if (!provider || typeof provider.on !== 'function') return;
 
-    const onAccounts = (arg: unknown) => {
-      if (Array.isArray(arg)) {
-        const a = (arg[0] as string) || null;
+    const onAccounts = (payload: unknown) => {
+      if (Array.isArray(payload)) {
+        const a = (payload[0] as string) || null;
         setAccount(a);
         setStatus(a ? 'connected' : 'idle');
         setError(a ? null : 'Disconnected');
       }
     };
-    const onChain = (arg: unknown) => {
-      if (typeof arg === 'string') {
-        setChainId(arg);
-        if (arg.toLowerCase() === KASPLEX_TESTNET.chainId.toLowerCase()) {
+
+    const onChain = (payload: unknown) => {
+      if (typeof payload === 'string') {
+        setChainId(payload);
+        if (payload.toLowerCase() === KASPLEX_TESTNET.chainId.toLowerCase()) {
           setError(null);
         }
       }
     };
 
     provider.on('accountsChanged', onAccounts);
-    provider.on('chainChanged',    onChain);
+    provider.on('chainChanged', onChain);
 
     return () => {
       provider.removeListener?.('accountsChanged', onAccounts);
-      provider.removeListener?.('chainChanged',    onChain);
+      provider.removeListener?.('chainChanged', onChain);
     };
   }, [walletType]);
 
