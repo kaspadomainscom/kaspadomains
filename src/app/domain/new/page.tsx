@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ethers } from 'ethers';
 import KaspaDomainsRegistryAbi from '@/abi/KaspaDomainsRegistry.json';
 
-// Replace with your deployed contract address
 const CONTRACT_ADDRESS = '0xYourContractAddressHere';
 const DOMAIN_FEE = ethers.parseEther('287'); // 287 KAS in wei
 
@@ -22,6 +21,7 @@ export default function NewDomainPage() {
   const searchParams = useSearchParams();
   const domainFromQuery = searchParams.get('name') || '';
 
+  // Form state
   const [domainName, setDomainName] = useState(domainFromQuery);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -30,29 +30,31 @@ export default function NewDomainPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [newLink, setNewLink] = useState('');
   const [newCategory, setNewCategory] = useState('');
+
+  // UI state
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Sync domain name if query param changes
+  // Sync domain name with query param
   useEffect(() => {
     setDomainName(domainFromQuery);
   }, [domainFromQuery]);
 
-  const handleAddItem = (
+  // Utility to add unique trimmed items to a list
+  function addUniqueItem(
     item: string,
-    setter: (val: string[]) => void,
     list: string[],
-    label: 'link' | 'category'
-  ) => {
+    setter: (val: string[]) => void,
+    resetInput: () => void
+  ) {
     const trimmed = item.trim();
     if (trimmed && !list.includes(trimmed)) {
       setter([...list, trimmed]);
-      if (label === 'link') setNewLink('');
-      else setNewCategory('');
+      resetInput();
     }
-  };
+  }
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setMessage('');
 
@@ -63,28 +65,21 @@ export default function NewDomainPage() {
       return;
     }
 
+    if (!window.ethereum) {
+      setMessage('❌ MetaMask or Ethereum wallet not found.');
+      return;
+    }
+
     try {
       setLoading(true);
       setMessage('🔌 Connecting to wallet...');
-
-      if (!window.ethereum) {
-        setMessage('❌ MetaMask or Ethereum wallet not found.');
-        setLoading(false);
-        return;
-      }
 
       const provider = new ethers.BrowserProvider(window.ethereum);
       await provider.send('eth_requestAccounts', []);
       const signer = await provider.getSigner();
       const userAddress = await signer.getAddress();
 
-      const contract = new ethers.Contract(
-        CONTRACT_ADDRESS,
-        KaspaDomainsRegistryAbi,
-        signer
-      );
-
-      // Check if the user is contract owner (exempt from fee)
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, KaspaDomainsRegistryAbi, signer);
       const contractOwner = await contract.owner();
       const isOwner = contractOwner.toLowerCase() === userAddress.toLowerCase();
 
@@ -99,8 +94,7 @@ export default function NewDomainPage() {
 
       setMessage('⏳ Sending transaction...');
 
-      // The function name and signature must match your smart contract!
-      // Assuming listDomain accepts a struct with domain metadata
+      // Call the contract function — adjust name/params to your contract
       const tx = await contract.listDomain(domainInput, {
         value: isOwner ? 0 : DOMAIN_FEE,
       });
@@ -121,102 +115,105 @@ export default function NewDomainPage() {
       setNewCategory('');
     } catch (err) {
       console.error(err);
-      if (err instanceof Error) {
-        setMessage(`❌ Error: ${err.message}`);
-      } else {
-        setMessage('❌ Unknown error occurred.');
-      }
+      if (err instanceof Error) setMessage(`❌ Error: ${err.message}`);
+      else setMessage('❌ Unknown error occurred.');
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const InputBlock = ({
+  // Controlled input component (input or textarea)
+  function InputField({
     label,
     value,
     setValue,
-    type = 'text',
     placeholder = '',
     required = false,
     textarea = false,
+    type = 'text',
   }: {
     label: string;
     value: string;
     setValue: (val: string) => void;
-    type?: string;
     placeholder?: string;
     required?: boolean;
     textarea?: boolean;
-  }) => (
-    <div>
-      <label className="block font-semibold text-kaspaMint mb-1">{label}</label>
-      {textarea ? (
-        <textarea
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          className="w-full bg-[#112524] border border-kaspaMint text-white rounded px-3 py-2 placeholder:text-gray-400"
-          placeholder={placeholder}
-          required={required}
-          rows={4}
-        />
-      ) : (
-        <input
-          type={type}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          className="w-full bg-[#112524] border border-kaspaMint text-white rounded px-3 py-2 placeholder:text-gray-400"
-          placeholder={placeholder}
-          required={required}
-        />
-      )}
-    </div>
-  );
+    type?: string;
+  }) {
+    return (
+      <div>
+        <label className="block font-semibold text-kaspaMint mb-1">{label}</label>
+        {textarea ? (
+          <textarea
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder={placeholder}
+            required={required}
+            rows={4}
+            className="w-full bg-[#112524] border border-kaspaMint text-white rounded px-3 py-2 placeholder:text-gray-400"
+          />
+        ) : (
+          <input
+            type={type}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder={placeholder}
+            required={required}
+            className="w-full bg-[#112524] border border-kaspaMint text-white rounded px-3 py-2 placeholder:text-gray-400"
+          />
+        )}
+      </div>
+    );
+  }
 
-  const DynamicListInput = ({
+  // Component for dynamic list input with add button
+  function DynamicListInput({
     label,
     items,
     newItem,
     setNewItem,
     onAdd,
-    type = 'text',
     placeholder = '',
+    type = 'text',
   }: {
     label: string;
     items: string[];
     newItem: string;
     setNewItem: (val: string) => void;
     onAdd: () => void;
-    type?: string;
     placeholder?: string;
-  }) => (
-    <div>
-      <label className="block font-semibold text-kaspaMint mb-1">{label}</label>
-      <div className="flex gap-2">
-        <input
-          type={type}
-          value={newItem}
-          onChange={(e) => setNewItem(e.target.value)}
-          className="flex-1 bg-[#112524] border border-kaspaMint text-white rounded px-3 py-2 placeholder:text-gray-400"
-          placeholder={placeholder}
-        />
-        <button
-          type="button"
-          onClick={onAdd}
-          disabled={!newItem.trim()}
-          className="bg-kaspaGreen hover:bg-kaspaMint disabled:opacity-50 disabled:cursor-not-allowed text-[#0F2F2E] font-semibold px-4 py-2 rounded transition"
-        >
-          Add
-        </button>
+    type?: string;
+  }) {
+    return (
+      <div>
+        <label className="block font-semibold text-kaspaMint mb-1">{label}</label>
+        <div className="flex gap-2">
+          <input
+            type={type}
+            value={newItem}
+            onChange={(e) => setNewItem(e.target.value)}
+            placeholder={placeholder}
+            className="flex-1 bg-[#112524] border border-kaspaMint text-white rounded px-3 py-2 placeholder:text-gray-400"
+          />
+          <button
+            type="button"
+            onClick={onAdd}
+            disabled={!newItem.trim()}
+            className="bg-kaspaGreen hover:bg-kaspaMint disabled:opacity-50 disabled:cursor-not-allowed text-[#0F2F2E] font-semibold px-4 py-2 rounded transition"
+          >
+            Add
+          </button>
+        </div>
+        {items.length > 0 && (
+          <ul className="mt-2 text-sm text-kaspaMint list-disc pl-5 space-y-1">
+            {items.map((item, i) => (
+              <li key={i}>{item}</li>
+            ))}
+          </ul>
+        )}
       </div>
-      {items.length > 0 && (
-        <ul className="mt-2 text-sm text-kaspaMint list-disc pl-5 space-y-1">
-          {items.map((item, i) => (
-            <li key={i}>{item}</li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
+    );
+  }
 
   return (
     <main className="max-w-2xl mx-auto p-8 mt-12 bg-[#0F2F2E] border border-kaspaMint rounded-xl shadow-md">
@@ -225,33 +222,23 @@ export default function NewDomainPage() {
       </h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <InputBlock
+        <InputField
           label="Domain Name"
           value={domainName}
           setValue={setDomainName}
           placeholder="e.g. myproject.kas"
           required
         />
-        <InputBlock label="Title" value={title} setValue={setTitle} />
-        <InputBlock
-          label="Description"
-          value={description}
-          setValue={setDescription}
-          textarea
-        />
-        <InputBlock
-          label="Image URL"
-          type="url"
-          value={image}
-          setValue={setImage}
-        />
+        <InputField label="Title" value={title} setValue={setTitle} />
+        <InputField label="Description" value={description} setValue={setDescription} textarea />
+        <InputField label="Image URL" type="url" value={image} setValue={setImage} />
 
         <DynamicListInput
           label="Links"
           items={links}
           newItem={newLink}
           setNewItem={setNewLink}
-          onAdd={() => handleAddItem(newLink, setLinks, links, 'link')}
+          onAdd={() => addUniqueItem(newLink, links, setLinks, () => setNewLink(''))}
           type="url"
           placeholder="https://twitter.com/yourhandle"
         />
@@ -261,9 +248,7 @@ export default function NewDomainPage() {
           items={categories}
           newItem={newCategory}
           setNewItem={setNewCategory}
-          onAdd={() =>
-            handleAddItem(newCategory, setCategories, categories, 'category')
-          }
+          onAdd={() => addUniqueItem(newCategory, categories, setCategories, () => setNewCategory(''))}
           placeholder="e.g. NFT, wallet, DEX"
         />
 
