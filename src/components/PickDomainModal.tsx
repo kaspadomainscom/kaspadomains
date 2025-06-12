@@ -33,7 +33,7 @@ export default function PickDomainModal({ domains: externalDomains }: PickDomain
   if (!externalDomains && isError) {
     return (
       <pre className="text-center mt-10 text-red-500 whitespace-pre-wrap bg-red-100 p-4 rounded text-sm">
-        Error: {error.message}
+        Error: {error?.message ?? 'Unknown error'}
       </pre>
     );
   }
