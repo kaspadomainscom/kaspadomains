@@ -1,7 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useWallet } from '@/hooks/wallet/useWallet'; // Kasware or MetaMask wallet hook
 import { useOwnedDomains } from '@/hooks/kns/api/useOwnedDomains';
 import { DomainAsset } from '@/hooks/kns/types';
 
@@ -11,14 +11,23 @@ type PickDomainModalProps = {
 
 export default function PickDomainModal({ domains: externalDomains }: PickDomainModalProps) {
   const router = useRouter();
-  const { account, walletType, isCorrectNetwork } = useWallet(); // Includes Kasware + MetaMask
+  const [account, setAccount] = useState<string | null>(null);
+
+  // Get connected address from localStorage (Kasware or MetaMask)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedAccount =
+        localStorage.getItem('kasware:address') || localStorage.getItem('wallet:address');
+      if (savedAccount) setAccount(savedAccount);
+    }
+  }, []);
 
   const {
     data: walletDomainsData,
     isLoading,
     isError,
     error,
-  } = useOwnedDomains(account);
+  } = useOwnedDomains(account); // avoid null calls
 
   const domains: DomainAsset[] | undefined = externalDomains ?? walletDomainsData?.domains;
 
@@ -26,14 +35,6 @@ export default function PickDomainModal({ domains: externalDomains }: PickDomain
     return (
       <p className="text-center mt-10 text-white">
         Connect your wallet to continue.
-      </p>
-    );
-  }
-
-  if (walletType === 'metamask' && !isCorrectNetwork) {
-    return (
-      <p className="text-center mt-10 text-yellow-300">
-        Please switch to the <strong>Kasplex Testnet</strong> in MetaMask to continue.
       </p>
     );
   }
