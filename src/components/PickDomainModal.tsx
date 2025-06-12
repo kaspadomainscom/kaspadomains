@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOwnedDomains } from '@/hooks/kns/api/useOwnedDomains';
 import { DomainAsset } from '@/hooks/kns/types';
+import { useWalletContext } from '@/context/WalletContext';
 
 type PickDomainModalProps = {
   domains?: DomainAsset[];
@@ -11,23 +11,14 @@ type PickDomainModalProps = {
 
 export default function PickDomainModal({ domains: externalDomains }: PickDomainModalProps) {
   const router = useRouter();
-  const [account, setAccount] = useState<string | null>(null);
-
-  // Get connected address from localStorage (Kasware or MetaMask)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedAccount =
-        localStorage.getItem('kasware:address') || localStorage.getItem('wallet:address');
-      if (savedAccount) setAccount(savedAccount);
-    }
-  }, []);
+  const { account } = useWalletContext();
 
   const {
     data: walletDomainsData,
     isLoading,
     isError,
     error,
-  } = useOwnedDomains(account); // avoid null calls
+  } = useOwnedDomains(account ?? null); // pass null if no account
 
   const domains: DomainAsset[] | undefined = externalDomains ?? walletDomainsData?.domains;
 

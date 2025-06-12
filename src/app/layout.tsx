@@ -9,6 +9,7 @@ import Sidebar from '@/components/Sidebar';
 import { headers } from 'next/headers';
 import { NonceProvider } from "@/context/NonceProvider";
 import { QueryProvider } from "./providers/query-provider";
+import { WalletProvider } from "@/context/WalletContext";
 
 export const dynamic = 'force-dynamic'; // Needed to access request headers per request
 
@@ -88,7 +89,9 @@ export default async function RootLayout({
 
             {/* Main content area with React Query provider */}
             <main className="flex-1 min-w-0">
-              <QueryProvider>{children}</QueryProvider>
+              <WalletProvider>
+                <QueryProvider>{children}</QueryProvider>
+              </WalletProvider>
             </main>
           </div>
 

@@ -7,7 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import KaspaDomainsLogo from './KaspaDomainsLogo';
 import { findDomainByName } from '@/data/domainLookup';
 import { categoriesData } from '@/data/categoriesManifest';
-import { useWallet } from '@/hooks/wallet/useWallet';
+import { useWalletContext } from '@/context/WalletContext';  // updated import
 
 const NAV_ITEMS = [
   { label: 'Home', href: '/' },
@@ -20,6 +20,7 @@ const trendingDomains = categoriesData.trending.domains
   .map(d => d.name.replace(/\.kas$/i, ''));
 
 function ConnectButton() {
+  // Use the wallet context instead of the useWallet hook
   const {
     connect,
     account,
@@ -29,7 +30,7 @@ function ConnectButton() {
     disconnect,
     status,
     error,
-  } = useWallet();
+  } = useWalletContext();
 
   const isConnecting = status === 'connecting';
   const isConnected  = status === 'connected';
