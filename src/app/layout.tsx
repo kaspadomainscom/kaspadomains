@@ -80,23 +80,23 @@ export default async function RootLayout({
       >
         {/* Provide CSP nonce via React context */}
         <NonceProvider nonce={nonce}>
-          {/* Header is outside flex wrapper for consistent layout */}
-          <Header />
+          <WalletProvider>
+            {/* Header is outside flex wrapper for consistent layout */}
+            <Header />
 
-          <div className="flex flex-col md:flex-row min-h-screen">
-            {/* Sidebar for navigation or filters */}
-            <Sidebar />
+            <div className="flex flex-col md:flex-row min-h-screen">
+              {/* Sidebar for navigation or filters */}
+              <Sidebar />
 
-            {/* Main content area with React Query provider */}
-            <main className="flex-1 min-w-0">
-              <WalletProvider>
-                <QueryProvider>{children}</QueryProvider>
-              </WalletProvider>
-            </main>
-          </div>
+              {/* Main content area with React Query provider */}
+              <main className="flex-1 min-w-0">
+                  <QueryProvider>{children}</QueryProvider>
+              </main>
+            </div>
 
-          {/* Footer for site info and links */}
-          <Footer />
+            {/* Footer for site info and links */}
+            <Footer />
+          </WalletProvider>
         </NonceProvider>
       </body>
     </html>
