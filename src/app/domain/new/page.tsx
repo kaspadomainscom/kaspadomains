@@ -1,6 +1,8 @@
+// src/app/domain/new/page.tsx
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ethers } from 'ethers';
 import KaspaDomainsRegistryAbi from '@/abi/KaspaDomainsRegistry.json';
 
@@ -18,7 +20,10 @@ type DomainInput = {
 };
 
 export default function NewDomainPage() {
-  const [domainName, setDomainName] = useState('');
+  const searchParams = useSearchParams();
+  const domainFromQuery = searchParams.get('name') || '';
+
+  const [domainName, setDomainName] = useState(domainFromQuery);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [image, setImage] = useState('');
@@ -28,6 +33,11 @@ export default function NewDomainPage() {
   const [newCategory, setNewCategory] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Update domainName if query param changes client-side
+  useEffect(() => {
+    setDomainName(domainFromQuery);
+  }, [domainFromQuery]);
 
   const handleAddItem = (
     item: string,
