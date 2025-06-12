@@ -23,12 +23,11 @@ const fetchOwnedDomains = async (address: string): Promise<UseOwnedDomainsResult
     const contentType = res.headers.get('content-type');
     let errorDetails: string | Record<string, unknown> = await res.text();
 
-    // Try to parse JSON if content-type indicates JSON
     if (contentType?.includes('application/json')) {
       try {
         errorDetails = await res.json();
       } catch {
-        // If parsing fails, keep original text
+        // fallback to original text if JSON parsing fails
       }
     }
 
@@ -55,6 +54,7 @@ const fetchOwnedDomains = async (address: string): Promise<UseOwnedDomainsResult
     );
   }
 
+  // Map the assets to DomainAsset, ensuring fields exist or fallback
   const domains: DomainAsset[] = data.assets.map((asset): DomainAsset => ({
     assetId: asset.assetId,
     mimeType: asset.mimeType ?? '',
