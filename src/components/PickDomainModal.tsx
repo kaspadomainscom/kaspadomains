@@ -20,7 +20,11 @@ export default function PickDomainModal({ domains: externalDomains }: PickDomain
     error,
   } = useOwnedDomains(account ?? null); // pass null if no account
 
+  // Use externally passed domains or fetched wallet domains
   const domains: DomainAsset[] | undefined = externalDomains ?? walletDomainsData?.domains;
+
+  // Filter only verified domains (adjust the property name accordingly)
+  const verifiedDomains = domains?.filter(domain => domain.isVerifiedDomain === true);
 
   if (!account) {
     return (
@@ -46,10 +50,10 @@ export default function PickDomainModal({ domains: externalDomains }: PickDomain
     );
   }
 
-  if (!domains || domains.length === 0) {
+  if (!verifiedDomains || verifiedDomains.length === 0) {
     return (
       <p className="text-center mt-10 text-white">
-        No KNS domains found for this wallet.
+        No verified KNS domains found for this wallet.
       </p>
     );
   }
@@ -60,12 +64,12 @@ export default function PickDomainModal({ domains: externalDomains }: PickDomain
 
       {walletDomainsData?.pagination && (
         <p className="text-sm text-kaspaMint mb-2">
-          Total domains: {walletDomainsData.pagination.totalItems}
+          Total verified domains: {verifiedDomains.length}
         </p>
       )}
 
       <ul className="space-y-2">
-        {domains.map((domain) => (
+        {verifiedDomains.map((domain) => (
           <li key={domain.assetId}>
             <button
               onClick={() => router.push(`/domain/new?name=${encodeURIComponent(domain.asset)}`)}
