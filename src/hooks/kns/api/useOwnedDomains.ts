@@ -20,16 +20,39 @@ const fetchOwnedDomains = async (address: string): Promise<UseOwnedDomainsResult
   const res = await fetch(url.toString());
 
   if (!res.ok) {
-    const errorText = await res.text();
-    console.error(`HTTP error ${res.status}:`, errorText);
-    throw new Error(`HTTP error: ${res.status}`);
+    const contentType = res.headers.get('content-type');
+    let errorDetails: string | Record<string, unknown> = await res.text();
+
+    // Try to parse JSON if content-type indicates JSON
+    if (contentType?.includes('application/json')) {
+      try {
+        errorDetails = await res.json();
+      } catch {
+        // If parsing fails, keep original text
+      }
+    }
+
+    console.error(`HTTP ${res.status} error:`, errorDetails);
+
+    throw new Error(
+      `API request failed with status ${res.status}:\n` +
+        (typeof errorDetails === 'string'
+          ? errorDetails
+          : JSON.stringify(errorDetails, null, 2))
+    );
   }
 
   const data: KNSApiResponse = await res.json();
 
   if (!Array.isArray(data.assets)) {
     console.error('Invalid API response structure:', data);
-    throw new Error('Invalid API response: expected "assets" array');
+    throw new Error(
+      `Invalid API response: expected "assets" array.\nResponse:\n${JSON.stringify(
+        data,
+        null,
+        2
+      )}`
+    );
   }
 
   const domains: DomainAsset[] = data.assets.map((asset): DomainAsset => ({

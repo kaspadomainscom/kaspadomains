@@ -31,7 +31,11 @@ export default function PickDomainModal({ domains: externalDomains }: PickDomain
   }
 
   if (!externalDomains && isError) {
-    return <p className="text-center mt-10 text-red-500">Error: {error.message}</p>;
+    return (
+      <pre className="text-center mt-10 text-red-500 whitespace-pre-wrap bg-red-100 p-4 rounded text-sm">
+        Error: {error.message}
+      </pre>
+    );
   }
 
   if (!domains || domains.length === 0) {
