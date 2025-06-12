@@ -1,21 +1,39 @@
 import { useQuery } from '@tanstack/react-query';
 import { DomainAsset, Pagination } from '../types';
 
+interface KNSApiResponseData {
+  assets: DomainAssetRaw[];
+  pagination?: Pagination;
+}
+
 interface KNSApiResponse {
-  assets: DomainAsset[];
-  pagination: Pagination;
+  success: boolean;
+  data: KNSApiResponseData;
+}
+
+interface DomainAssetRaw {
+  id: string;
+  assetId: string;
+  mimeType?: string;
+  asset: string;
+  owner: string;
+  creationBlockTime: string;
+  isDomain: boolean;
+  isVerifiedDomain: boolean;
+  status?: string;
+  transactionId?: string;
 }
 
 interface UseOwnedDomainsResult {
   domains: DomainAsset[];
-  pagination: Pagination;
+  pagination?: Pagination;
 }
 
 const fetchOwnedDomains = async (address: string): Promise<UseOwnedDomainsResult> => {
   const url = new URL('https://api.knsdomains.org/mainnet/api/v1/assets');
   url.searchParams.set('owner', address);
   url.searchParams.set('type', 'domain');
-  url.searchParams.set('pageSize', '100'); // Max allowed
+  url.searchParams.set('pageSize', '100');
 
   const res = await fetch(url.toString());
 
@@ -41,21 +59,27 @@ const fetchOwnedDomains = async (address: string): Promise<UseOwnedDomainsResult
     );
   }
 
-  const data: KNSApiResponse = await res.json();
+  const json: KNSApiResponse = await res.json();
 
-  if (!Array.isArray(data.assets)) {
-    console.error('Invalid API response structure:', data);
+  if (!json.success) {
+    throw new Error(`API responded with success=false: ${JSON.stringify(json)}`);
+  }
+
+  const data = json.data;
+
+  if (!data || !Array.isArray(data.assets)) {
+    console.error('Invalid API response structure:', json);
     throw new Error(
-      `Invalid API response: expected "assets" array.\nResponse:\n${JSON.stringify(
-        data,
+      `Invalid API response: expected "data.assets" array.\nResponse:\n${JSON.stringify(
+        json,
         null,
         2
       )}`
     );
   }
 
-  // Map the assets to DomainAsset, ensuring fields exist or fallback
-  const domains: DomainAsset[] = data.assets.map((asset): DomainAsset => ({
+  // Map the raw assets to DomainAsset type (adjust to your DomainAsset interface)
+  const domains: DomainAsset[] = data.assets.map((asset) => ({
     assetId: asset.assetId,
     mimeType: asset.mimeType ?? '',
     asset: asset.asset,
@@ -64,6 +88,9 @@ const fetchOwnedDomains = async (address: string): Promise<UseOwnedDomainsResult
     isDomain: asset.isDomain,
     isVerifiedDomain: asset.isVerifiedDomain,
     status: asset.status ?? 'default',
+    // Optionally add id and transactionId if your DomainAsset supports them
+    // id: asset.id,
+    // transactionId: asset.transactionId,
   }));
 
   return {
@@ -80,7 +107,7 @@ export function useOwnedDomains(address: string | null) {
       return fetchOwnedDomains(address);
     },
     enabled: !!address,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
     retry: 1,
     refetchOnWindowFocus: false,
   });
