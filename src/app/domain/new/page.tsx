@@ -1,4 +1,3 @@
-// src/app/domain/new/page.tsx
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
@@ -34,7 +33,7 @@ export default function NewDomainPage() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Update domainName if query param changes client-side
+  // Sync domain name if query param changes
   useEffect(() => {
     setDomainName(domainFromQuery);
   }, [domainFromQuery]);
@@ -57,7 +56,9 @@ export default function NewDomainPage() {
     e.preventDefault();
     setMessage('');
 
-    if (!domainName.trim().toLowerCase().endsWith('.kas')) {
+    const domainTrimmed = domainName.trim();
+
+    if (!domainTrimmed.toLowerCase().endsWith('.kas')) {
       setMessage('❌ Domain must end with .kas');
       return;
     }
@@ -83,12 +84,12 @@ export default function NewDomainPage() {
         signer
       );
 
-      // Check ownership: assuming contract.owner() returns owner address
+      // Check if the user is contract owner (exempt from fee)
       const contractOwner = await contract.owner();
       const isOwner = contractOwner.toLowerCase() === userAddress.toLowerCase();
 
       const domainInput: DomainInput = {
-        domain: domainName.trim(),
+        domain: domainTrimmed,
         title: title.trim(),
         description: description.trim(),
         image: image.trim(),
@@ -98,6 +99,8 @@ export default function NewDomainPage() {
 
       setMessage('⏳ Sending transaction...');
 
+      // The function name and signature must match your smart contract!
+      // Assuming listDomain accepts a struct with domain metadata
       const tx = await contract.listDomain(domainInput, {
         value: isOwner ? 0 : DOMAIN_FEE,
       });
@@ -105,7 +108,7 @@ export default function NewDomainPage() {
       setMessage('⏳ Transaction sent. Waiting for confirmation...');
       await tx.wait();
 
-      setMessage(`✅ Success! Domain "${domainName.trim()}" listed.`);
+      setMessage(`✅ Success! Domain "${domainTrimmed}" listed.`);
 
       // Clear form
       setDomainName('');
