@@ -21,6 +21,7 @@ import {
   IconNetwork,
   IconTeddy,
   IconTrending,
+  IconUser,
 } from '@/components/icons';
 
 export default function Sidebar() {
@@ -114,6 +115,19 @@ export default function Sidebar() {
             </div>
           )}
 
+          {/* My Domains Link */}
+          <nav className="space-y-1 px-2">
+            <SidebarLink
+              icon={IconUser}
+              label="My Domains"
+              href="/domains/mine"
+              collapsed={collapsed}
+              active={pathname === '/domains/mine'}
+              isMobile={isMobile}
+              onClick={toggleSidebar}
+            />
+          </nav>
+
           {/* Category Links */}
           <nav className="space-y-1 px-2" aria-label="Category Links">
             {filteredLinks.length > 0 ? (
@@ -141,7 +155,6 @@ export default function Sidebar() {
   );
 }
 
-// Update categoryLinks to reference the SVG components
 const categoryLinks = [
   { icon: IconShortNames, label: 'Short Names', href: '/domains/categories/category/short' },
   { icon: IconClub, label: '999 Club', href: '/domains/categories/category/999club' },
@@ -177,8 +190,7 @@ function SidebarLink({
 }) {
   const handleClick = () => {
     if (isMobile && onClick) {
-      // Let the navigation happen first, then close the sidebar
-      setTimeout(() => onClick(), 400); // Delay slightly to allow page transition
+      setTimeout(() => onClick(), 400);
     }
   };
 
@@ -200,4 +212,3 @@ function SidebarLink({
     </Link>
   );
 }
-
