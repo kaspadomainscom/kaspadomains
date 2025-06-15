@@ -5,6 +5,22 @@ export const metadata = {
   title: "KaspaDomains — Premium .kas Domains for the Kaspa Ecosystem",
   description:
     "Claim your identity on Kaspa. Register your .kas name for a one-time fee of 287 KAS and get permanent visibility across the ecosystem. Discover and list premium KNS domains now.",
+  openGraph: {
+    title: "KaspaDomains — Premium .kas Domains for the Kaspa Ecosystem",
+    description:
+      "Explore and register premium .kas domains. KaspaDomains gives you a lifetime identity in the Kaspa network for only 287 KAS.",
+    url: "https://kaspadomains.com",
+    siteName: "KaspaDomains",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: ".kas domain showcase",
+      },
+    ],
+    type: "website",
+  },
 };
 
 export default async function Home() {
@@ -41,54 +57,65 @@ export default async function Home() {
           Browse by Category
         </h2>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {Object.entries(categoriesData).map(([key, value]) => (
+          {Object.entries(categoriesData).map(([key, { title, domains }]) => (
             <Link
-              href={`/domains/categories/category/${key}`}
               key={key}
-              className="block bg-[#121E28] p-6 rounded-2xl shadow hover:shadow-lg hover:bg-[#1C2B37] transition"
+              href={`/domains/categories/category/${key}`}
+              className="block bg-[#121E28] p-6 rounded-2xl shadow-sm hover:shadow-lg hover:bg-[#1C2B37] transition"
+              aria-label={`View category ${title}`}
             >
-              <h3 className="text-xl font-semibold mb-1 text-white">{value.title}</h3>
-              <p className="text-sm text-gray-400">{value.domains.length} domains listed</p>
+              <h3 className="text-xl font-semibold mb-1 text-white">{title}</h3>
+              <p className="text-sm text-gray-400">{domains.length} domains listed</p>
             </Link>
           ))}
         </div>
       </section>
 
       {/* Recently Indexed */}
-      <section className="bg-[#101C26] py-24 text-center px-6 md:px-8">
-        <h2 className="text-3xl font-bold mb-10 text-white">Recently Indexed Domains</h2>
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
-          {recentDomains.map((domain, i) => (
-            <article
-              key={i}
-              className="bg-[#121E28] p-5 rounded-2xl shadow hover:shadow-md transition text-left"
-            >
-              <h3 className="text-lg font-semibold text-white">{domain.name}</h3>
-              <p className="text-sm text-gray-400 mb-2">Price: {domain.price} KAS</p>
-              <a
-                href={domain.kaspaLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-yellow-400 underline text-sm"
+      {recentDomains.length > 0 && (
+        <section className="bg-[#101C26] py-24 text-center px-6 md:px-8">
+          <h2 className="text-3xl font-bold mb-10 text-white">
+            Recently Indexed Domains
+          </h2>
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
+            {recentDomains.map((domain, i) => (
+              <article
+                key={`${domain.name}-${i}`}
+                className="bg-[#121E28] p-5 rounded-2xl shadow-sm hover:shadow-md transition text-left"
               >
-                View on Kaspa Explorer
-              </a>
-            </article>
-          ))}
-        </div>
-      </section>
+                <h3 className="text-lg font-semibold text-white mb-1">
+                  {domain.name}
+                </h3>
+                <p className="text-sm text-gray-400 mb-2">
+                  Price: {domain.price ?? "N/A"} KAS
+                </p>
+                {domain.kaspaLink && (
+                  <a
+                    href={domain.kaspaLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-yellow-400 underline text-sm"
+                  >
+                    View on Kaspa Explorer
+                  </a>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Why List Section */}
       <section className="max-w-4xl mx-auto text-center px-6 md:px-8 pb-28">
-        <h2 className="text-3xl font-bold mb-6 text-white">Why Use KaspaDomains?</h2>
+        <h2 className="text-3xl font-bold mb-6 text-white">
+          Why Use KaspaDomains?
+        </h2>
         <div className="text-lg text-gray-300 leading-relaxed space-y-6 mb-10">
           <p>
-            KaspaDomains is a curated index for the best <strong>.kas</strong> domains —
-            hand-selected for brandability, trust, and long-term value.
+            KaspaDomains is a curated index for the best <strong>.kas</strong> domains — hand-selected for brandability, trust, and long-term value.
           </p>
           <p>
-            Every listing gets a personalized page with your social links, Kaspa address, and bio.
-            It’s more than a domain — it’s your proof-of-presence in the Kaspa ecosystem.
+            Every listing gets a personalized page with your social links, Kaspa address, and bio. It’s more than a domain — it’s your proof-of-presence in the Kaspa ecosystem.
           </p>
           <p>
             Pay once (287 KAS) and join the fastest-growing digital identity layer on Kaspa.
