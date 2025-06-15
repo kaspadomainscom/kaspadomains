@@ -1,11 +1,10 @@
-// src/app/page.tsx
 import Link from "next/link";
 import { categoriesData } from "@/data/categoriesManifest";
 
 export const metadata = {
-  title: "KaspaDomains — Premium .kas Domain Index for the Kaspa Ecosystem",
+  title: "KaspaDomains — Premium .kas Domains for the Kaspa Ecosystem",
   description:
-    "KaspaDomains is the leading index for premium .kas domains. List your verified KNS name with a one-time 287 KAS fee and get discovered by builders, collectors, and Kaspa projects worldwide.",
+    "Claim your identity on Kaspa. Register your .kas name for a one-time fee of 287 KAS and get permanent visibility across the ecosystem. Discover and list premium KNS domains now.",
 };
 
 export default async function Home() {
@@ -18,14 +17,15 @@ export default async function Home() {
     <main className="space-y-28 bg-[#0E1E25] text-gray-100 min-h-screen">
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-[#00AEEF] to-[#0E1E25] py-28 text-center px-6 md:px-8">
-        <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-snug mb-5">
-          Discover Premium <span className="text-yellow-400">.kas</span> Domains
+        <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-snug mb-4">
+          Own Your Digital Identity with <span className="text-yellow-400">.kas</span>
         </h1>
-        <p className="text-lg md:text-xl max-w-3xl mx-auto mb-8 text-white/90">
-          Explore the most exclusive <strong>.kas</strong> domains in the Kaspa Name System.
-          Each listing is hand-selected for brandability, trust, and long-term value.
-          <br />
-          <strong>Index your premium name for just 287 KAS</strong> — one time, lifetime visibility.
+        <p className="text-lg md:text-xl max-w-3xl mx-auto mb-6 text-white/90">
+          KaspaDomains is the gateway to trusted <strong>.kas</strong> identities.
+          Get discovered by builders, creators, and Kaspa-native apps.
+        </p>
+        <p className="text-md md:text-lg max-w-2xl mx-auto mb-10 text-white/60">
+          Register your verified domain for just <strong>287 KAS</strong> — permanent visibility, lifetime presence.
         </p>
         <Link
           href="/list-domain"
@@ -35,12 +35,12 @@ export default async function Home() {
         </Link>
       </section>
 
-      {/* Category Overview */}
+      {/* Categories */}
       <section className="max-w-7xl mx-auto px-6 md:px-8">
         <h2 className="text-3xl font-bold mb-12 text-center text-white">
           Browse by Category
         </h2>
-        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {Object.entries(categoriesData).map(([key, value]) => (
             <Link
               href={`/domains/categories/category/${key}`}
@@ -56,8 +56,8 @@ export default async function Home() {
 
       {/* Recently Indexed */}
       <section className="bg-[#101C26] py-24 text-center px-6 md:px-8">
-        <h2 className="text-3xl font-bold mb-10 text-white">Recently Indexed</h2>
-        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3 max-w-7xl mx-auto">
+        <h2 className="text-3xl font-bold mb-10 text-white">Recently Indexed Domains</h2>
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
           {recentDomains.map((domain, i) => (
             <article
               key={i}
@@ -80,18 +80,18 @@ export default async function Home() {
 
       {/* Why List Section */}
       <section className="max-w-4xl mx-auto text-center px-6 md:px-8 pb-28">
-        <h2 className="text-3xl font-bold mb-6 text-white">Why List on KaspaDomains?</h2>
+        <h2 className="text-3xl font-bold mb-6 text-white">Why Use KaspaDomains?</h2>
         <div className="text-lg text-gray-300 leading-relaxed space-y-6 mb-10">
           <p>
-            KaspaDomains isn&apos;t a marketplace &mdash; it&apos;s a curated discovery layer for the best <strong>.kas</strong> domains.
-            We filter out low-quality names so your identity stands out.
+            KaspaDomains is a curated index for the best <strong>.kas</strong> domains —
+            hand-selected for brandability, trust, and long-term value.
           </p>
           <p>
-            Every indexed domain gets a dedicated page — complete with your social links, website, and an optional bio.
-            Show the Kaspa ecosystem you&apos;re real.
+            Every listing gets a personalized page with your social links, Kaspa address, and bio.
+            It’s more than a domain — it’s your proof-of-presence in the Kaspa ecosystem.
           </p>
           <p>
-            For a <strong>one-time fee of 287 KAS</strong>, your domain is featured permanently and becomes part of Kaspa&apos;s trusted digital identity layer.
+            Pay once (287 KAS) and join the fastest-growing digital identity layer on Kaspa.
           </p>
         </div>
         <Link
