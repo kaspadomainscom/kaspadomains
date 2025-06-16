@@ -3,7 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 export interface DomainAsset {
   name: string;
   type: 'domain' | 'text';
-  // add other relevant fields as needed
+  image?: string;
+  description?: string;
+  website?: string;
+  twitter?: string;
+  bio?: string;
+  [extraProps: string]: unknown; // use `unknown` instead of `any` for future-proofing
 }
 
 export interface Pagination {
@@ -13,7 +18,7 @@ export interface Pagination {
   totalItems: number;
 }
 
-export function usePaginatedDomains(params: {
+interface UsePaginatedDomainsParams {
   page?: number;
   pageSize?: number;
   owner?: string;
@@ -21,37 +26,51 @@ export function usePaginatedDomains(params: {
   status?: 'default' | 'listed';
   type?: 'domain' | 'text';
   collection?: string;
-}) {
-  return useQuery({
+}
+
+interface ApiResponse {
+  assets: DomainAsset[];
+  pagination: Pagination;
+}
+
+export function usePaginatedDomains(params: UsePaginatedDomainsParams) {
+  return useQuery<{
+    domains: DomainAsset[];
+    pagination: Pagination;
+  }, Error>({
     queryKey: ['kns', 'paginated', params],
     queryFn: async () => {
       const url = new URL('https://api.knsdomains.org/mainnet/api/v1/assets');
 
-      const finalParams = {
-        page: params.page ?? 1,
-        pageSize: params.pageSize ?? 12,
-        ...params,
+      const queryParams: Record<string, string> = {
+        page: String(params.page ?? 1),
+        pageSize: String(params.pageSize ?? 12),
       };
 
-      Object.entries(finalParams).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          url.searchParams.set(key, String(value));
-        }
+      if (params.owner) queryParams.owner = params.owner;
+      if (params.asset) queryParams.asset = params.asset;
+      if (params.status) queryParams.status = params.status;
+      if (params.type) queryParams.type = params.type;
+      if (params.collection) queryParams.collection = params.collection;
+
+      Object.entries(queryParams).forEach(([key, value]) => {
+        url.searchParams.set(key, value);
       });
 
       const res = await fetch(url.toString());
 
       if (!res.ok) {
-        throw new Error(`API error: ${res.statusText}`);
+        throw new Error(`KNS API error: ${res.status} ${res.statusText}`);
       }
 
-      const data = await res.json();
+      const data: ApiResponse = await res.json();
 
       return {
-        domains: data.assets as DomainAsset[],
-        pagination: data.pagination as Pagination,
+        domains: data.assets,
+        pagination: data.pagination,
       };
     },
-    staleTime: 60_000, // 1 minute
+    staleTime: 60_000,
+    enabled: !!params.owner,
   });
 }

@@ -4,23 +4,31 @@ import { useWalletContext } from '@/context/WalletContext';
 import { usePaginatedDomains } from '@/hooks/kns/api/usePaginatedDomains';
 import { DomainCard } from '@/components/DomainCard';
 import Loader from '@/components/Loader';
+import { useState } from 'react';
 
 export default function MyDomainsPage() {
   const { account, status } = useWalletContext();
+  const [page, setPage] = useState(1);
+  const pageSize = 12;
 
   const {
     data,
     isLoading,
     isError,
     error,
+    isFetching,
   } = usePaginatedDomains({
     owner: account || '',
     type: 'domain',
-    page: 1,
-    pageSize: 100,
+    page,
+    pageSize,
   });
 
   const domains = data?.domains || [];
+  const totalPages = data?.pagination?.totalPages || 1;
+
+  const handlePrev = () => setPage((prev) => Math.max(prev - 1, 1));
+  const handleNext = () => setPage((prev) => Math.min(prev + 1, totalPages));
 
   if (status === 'connecting') {
     return <Loader text="Connecting wallet…" />;
@@ -51,11 +59,33 @@ export default function MyDomainsPage() {
         <p className="text-white text-center">You don’t own any domains yet.</p>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {domains.map(domain => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+        {domains.map((domain) => (
           <DomainCard key={domain.name} domain={domain} />
         ))}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4 text-white">
+          <button
+            onClick={handlePrev}
+            disabled={page === 1 || isFetching}
+            className="px-4 py-2 bg-kaspaGreen rounded disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="text-lg">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            onClick={handleNext}
+            disabled={page === totalPages || isFetching}
+            className="px-4 py-2 bg-kaspaGreen rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }
