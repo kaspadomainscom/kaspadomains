@@ -22,6 +22,11 @@ import {
   IconTeddy,
   IconTrending,
   IconUser,
+  IconVault,
+  IconActivity,
+  IconHeart,
+  IconSettings,
+  IconTool,
 } from '@/components/icons';
 
 export default function Sidebar() {
@@ -90,7 +95,65 @@ export default function Sidebar() {
 
       {(mobileOpen || !isMobile) && (
         <div className="h-full overflow-y-auto pt-5 pb-6 space-y-3">
-          {/* Header */}
+          {/* Main Tools */}
+          <nav className="space-y-1 px-2" aria-label="My Tools">
+            <SidebarLink
+              icon={IconUser}
+              label="My Domains"
+              href="/domains/mine"
+              collapsed={collapsed}
+              active={pathname === '/domains/mine'}
+              isMobile={isMobile}
+              onClick={toggleSidebar}
+            />
+            <SidebarLink
+              icon={IconVault}
+              label="Vault"
+              href="/vault"
+              collapsed={collapsed}
+              active={pathname === '/vault'}
+              isMobile={isMobile}
+              onClick={toggleSidebar}
+            />
+            <SidebarLink
+              icon={IconActivity}
+              label="Activity"
+              href="/activity"
+              collapsed={collapsed}
+              active={pathname === '/activity'}
+              isMobile={isMobile}
+              onClick={toggleSidebar}
+            />
+            <SidebarLink
+              icon={IconTool}
+              label="Creator Tools"
+              href="/creator-tools"
+              collapsed={collapsed}
+              active={pathname === '/creator-tools'}
+              isMobile={isMobile}
+              onClick={toggleSidebar}
+            />
+            <SidebarLink
+              icon={IconHeart}
+              label="Favorites"
+              href="/favorites"
+              collapsed={collapsed}
+              active={pathname === '/favorites'}
+              isMobile={isMobile}
+              onClick={toggleSidebar}
+            />
+            <SidebarLink
+              icon={IconSettings}
+              label="Settings"
+              href="/settings"
+              collapsed={collapsed}
+              active={pathname === '/settings'}
+              isMobile={isMobile}
+              onClick={toggleSidebar}
+            />
+          </nav>
+
+          {/* Category Header */}
           <div
             className={[
               'flex items-center px-4 py-2 rounded-md mx-2 bg-[#162f2d] text-[#3DFDAD] text-[11px] font-semibold tracking-wider uppercase',
@@ -101,7 +164,7 @@ export default function Sidebar() {
             {!collapsed && <span>Categories</span>}
           </div>
 
-          {/* Search Filter */}
+          {/* Search */}
           {!collapsed && (
             <div className="px-3">
               <input
@@ -114,19 +177,6 @@ export default function Sidebar() {
               />
             </div>
           )}
-
-          {/* My Domains Link */}
-          <nav className="space-y-1 px-2">
-            <SidebarLink
-              icon={IconUser}
-              label="My Domains"
-              href="/domains/mine"
-              collapsed={collapsed}
-              active={pathname === '/domains/mine'}
-              isMobile={isMobile}
-              onClick={toggleSidebar}
-            />
-          </nav>
 
           {/* Category Links */}
           <nav className="space-y-1 px-2" aria-label="Category Links">
@@ -166,10 +216,19 @@ const categoryLinks = [
   { icon: IconGamepad, label: 'Gaming', href: '/domains/categories/category/gaming' },
   { icon: IconBrain, label: 'AI & Tech', href: '/domains/categories/category/ai-tech' },
   { icon: IconMoney, label: 'Finance', href: '/domains/categories/category/finance' },
+
   { icon: IconNetwork, label: 'Web3 / dApps', href: '/domains/categories/category/web3' },
+  { icon: IconUser, label: 'Profiles', href: '/domains/categories/category/profiles' },  // Added IconUser with a logical label
   { icon: IconTeddy, label: 'Memes & Fun', href: '/domains/categories/category/memes' },
+
+  { icon: IconVault, label: 'Vaults', href: '/domains/categories/category/vaults' },
+  { icon: IconActivity, label: 'Active Projects', href: '/domains/categories/category/active-projects' },
+  { icon: IconHeart, label: 'Loved', href: '/domains/categories/category/loved' },
+  { icon: IconSettings, label: 'Utilities', href: '/domains/categories/category/utilities' },
+  { icon: IconTool, label: 'Tools', href: '/domains/categories/category/tools' },
   { icon: IconTrending, label: 'Trending', href: '/domains/categories/category/trending' },
 ];
+
 
 function SidebarLink({
   icon: Icon,
