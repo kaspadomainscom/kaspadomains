@@ -1,3 +1,4 @@
+// src/hooks/kns/api/useOwnedDomains.ts
 import { useQuery } from '@tanstack/react-query';
 import { DomainAsset, Pagination } from '../types';
 

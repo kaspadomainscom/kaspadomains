@@ -1,3 +1,4 @@
+// src/hooks/kns/api/usePaginatedDomains.ts
 import { useQuery } from '@tanstack/react-query';
 
 export interface DomainAsset {
@@ -8,7 +9,7 @@ export interface DomainAsset {
   website?: string;
   twitter?: string;
   bio?: string;
-  [extraProps: string]: unknown; // use `unknown` instead of `any` for future-proofing
+  [extraProps: string]: unknown;
 }
 
 export interface Pagination {
@@ -29,48 +30,88 @@ interface UsePaginatedDomainsParams {
 }
 
 interface ApiResponse {
-  assets: DomainAsset[];
+  success: boolean;
+  data: {
+    assets: DomainAsset[];
+    pagination: Pagination;
+  };
+}
+
+interface UsePaginatedDomainsResult {
+  domains: DomainAsset[];
   pagination: Pagination;
 }
 
-export function usePaginatedDomains(params: UsePaginatedDomainsParams) {
-  return useQuery<{
-    domains: DomainAsset[];
-    pagination: Pagination;
-  }, Error>({
-    queryKey: ['kns', 'paginated', params],
-    queryFn: async () => {
-      const url = new URL('https://api.knsdomains.org/mainnet/api/v1/assets');
+const fetchPaginatedDomains = async (
+  params: UsePaginatedDomainsParams
+): Promise<UsePaginatedDomainsResult> => {
+  const url = new URL('https://api.knsdomains.org/mainnet/api/v1/assets');
 
-      const queryParams: Record<string, string> = {
-        page: String(params.page ?? 1),
-        pageSize: String(params.pageSize ?? 12),
-      };
+  const queryParams: Record<string, string> = {
+    page: String(params.page ?? 1),
+    pageSize: String(params.pageSize ?? 12),
+  };
 
-      if (params.owner) queryParams.owner = params.owner;
-      if (params.asset) queryParams.asset = params.asset;
-      if (params.status) queryParams.status = params.status;
-      if (params.type) queryParams.type = params.type;
-      if (params.collection) queryParams.collection = params.collection;
+  if (params.owner) queryParams.owner = params.owner;
+  if (params.asset) queryParams.asset = params.asset;
+  if (params.status) queryParams.status = params.status;
+  if (params.type) queryParams.type = params.type;
+  if (params.collection) queryParams.collection = params.collection;
 
-      Object.entries(queryParams).forEach(([key, value]) => {
-        url.searchParams.set(key, value);
-      });
+  Object.entries(queryParams).forEach(([key, value]) => {
+    url.searchParams.set(key, value);
+  });
 
-      const res = await fetch(url.toString());
+  const res = await fetch(url.toString());
 
-      if (!res.ok) {
-        throw new Error(`KNS API error: ${res.status} ${res.statusText}`);
+  if (!res.ok) {
+    const contentType = res.headers.get('content-type');
+    let errorDetails: string | Record<string, unknown> = await res.text();
+
+    if (contentType?.includes('application/json')) {
+      try {
+        errorDetails = await res.json();
+      } catch {
+        // Ignore JSON parse failure
       }
+    }
 
-      const data: ApiResponse = await res.json();
+    console.error(`HTTP ${res.status} error:`, errorDetails);
+    throw new Error(
+      `API request failed with status ${res.status}:\n${
+        typeof errorDetails === 'string'
+          ? errorDetails
+          : JSON.stringify(errorDetails, null, 2)
+      }`
+    );
+  }
 
-      return {
-        domains: data.assets,
-        pagination: data.pagination,
-      };
-    },
-    staleTime: 60_000,
-    enabled: !!params.owner,
+  const json: ApiResponse = await res.json();
+
+  if (!json.success || !Array.isArray(json.data.assets)) {
+    console.error('Invalid API response structure:', json);
+    throw new Error(
+      `Invalid API response: expected "data.assets" array.\nResponse:\n${JSON.stringify(
+        json,
+        null,
+        2
+      )}`
+    );
+  }
+
+  return {
+    domains: json.data.assets,
+    pagination: json.data.pagination,
+  };
+};
+
+export function usePaginatedDomains(params: UsePaginatedDomainsParams) {
+  return useQuery<UsePaginatedDomainsResult, Error>({
+    queryKey: ['kns', 'paginated', params],
+    queryFn: () => fetchPaginatedDomains(params),
+    staleTime: 60_000, // 1 minute
+    enabled: !!params.owner, // only fetch if `owner` is set
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
 }
