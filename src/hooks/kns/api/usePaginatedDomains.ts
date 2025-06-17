@@ -1,14 +1,33 @@
 import { useQuery } from '@tanstack/react-query';
 
+// export interface DomainAsset {
+//   name: string;
+//   type: 'domain' | 'text';
+//   image?: string;
+//   description?: string;
+//   website?: string;
+//   twitter?: string;
+//   bio?: string;
+//   [extraProps: string]: unknown;
+// }
+
 export interface DomainAsset {
-  name: string;
-  type: 'domain' | 'text';
-  image?: string;
-  description?: string;
-  website?: string;
-  twitter?: string;
-  bio?: string;
-  [extraProps: string]: unknown;
+  id: string;
+  assetId: string;
+  asset: string;
+  owner: string;
+  status: string;
+  transactionId: string;
+  mimeType?: string;
+  creationBlockTime?: string;
+  isDomain?: boolean;
+  isVerifiedDomain?: boolean;
+  listed?: {
+    transactionId: string;
+    blockTime: string;
+    seller: string;
+    inputIndex: number;
+  };
 }
 
 export interface Pagination {

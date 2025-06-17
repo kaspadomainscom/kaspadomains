@@ -6,18 +6,45 @@ import { usePaginatedDomains } from '@/hooks/kns/api/usePaginatedDomains';
 import { DomainCard } from '@/components/DomainCard';
 import Loader from '@/components/Loader';
 
-interface DomainAsset {
+
+
+export interface DomainAsset {
+  id: string;
+  assetId: string;
   asset: string;
   owner: string;
   status: string;
+  transactionId: string;
+  mimeType?: string;
+  creationBlockTime?: string;
+  isDomain?: boolean;
+  isVerifiedDomain?: boolean;
   listed?: {
     transactionId: string;
     blockTime: string;
     seller: string;
     inputIndex: number;
   };
-  id?: string;
-  // add other fields if needed
+}
+
+
+// Assuming this is the Domain type expected by DomainCard
+interface Domain {
+  name: string;
+  price: number;
+  listed: boolean;
+  kaspaLink: string;
+  sellerTelegram?: string;
+}
+
+function mapDomainAssetToDomain(asset: DomainAsset): Domain {
+  return {
+    name: asset.asset,
+    price: 0, // Placeholder; update if you have price info
+    listed: !!asset.listed,
+    kaspaLink: `https://kaspa.com/asset/${encodeURIComponent(asset.asset)}`,
+    sellerTelegram: undefined, // Fill if you have this info
+  };
 }
 
 export default function MyDomainsPage() {
@@ -64,7 +91,7 @@ export default function MyDomainsPage() {
       <div className="max-w-2xl mx-auto py-12 text-center text-white">
         <h1 className="text-2xl font-bold mb-4">My Domains</h1>
         <p className="text-lg">
-          {status === 'disconnected'
+          {status === 'idle' || status === 'unavailable'
             ? 'Please connect your wallet to view your domains.'
             : 'Wallet not detected or unsupported.'}
         </p>
@@ -101,7 +128,7 @@ export default function MyDomainsPage() {
             return null;
           }
 
-          return <DomainCard key={key} domain={domain} />;
+          return <DomainCard key={key} domain={mapDomainAssetToDomain(domain)} />;
         })}
       </div>
 
