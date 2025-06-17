@@ -62,6 +62,8 @@ const fetchPaginatedDomains = async (
     url.searchParams.set(key, value);
   });
 
+  console.debug('[usePaginatedDomains] Fetching with URL:', url.toString());
+
   const res = await fetch(url.toString());
 
   if (!res.ok) {
@@ -72,7 +74,7 @@ const fetchPaginatedDomains = async (
       try {
         errorDetails = await res.json();
       } catch {
-        // Ignore JSON parse failure
+        // Ignore
       }
     }
 
@@ -87,6 +89,7 @@ const fetchPaginatedDomains = async (
   }
 
   const json: ApiResponse = await res.json();
+  console.debug('[usePaginatedDomains] Response JSON:', json);
 
   if (!json.success || !Array.isArray(json.data.assets)) {
     console.error('Invalid API response structure:', json);
@@ -109,8 +112,8 @@ export function usePaginatedDomains(params: UsePaginatedDomainsParams) {
   return useQuery<UsePaginatedDomainsResult, Error>({
     queryKey: ['kns', 'paginated', params],
     queryFn: () => fetchPaginatedDomains(params),
-    staleTime: 60_000, // 1 minute
-    enabled: !!params.owner, // only fetch if `owner` is set
+    staleTime: 60_000,
+    enabled: !!params.owner,
     retry: 1,
     refetchOnWindowFocus: false,
   });

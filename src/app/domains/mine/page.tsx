@@ -4,7 +4,7 @@ import { useWalletContext } from '@/context/WalletContext';
 import { usePaginatedDomains } from '@/hooks/kns/api/usePaginatedDomains';
 import { DomainCard } from '@/components/DomainCard';
 import Loader from '@/components/Loader';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function MyDomainsPage() {
   const { account, status } = useWalletContext();
@@ -26,6 +26,12 @@ export default function MyDomainsPage() {
 
   const domains = data?.domains || [];
   const totalPages = data?.pagination?.totalPages || 1;
+
+  useEffect(() => {
+    console.debug('[MyDomainsPage] Wallet status:', status);
+    console.debug('[MyDomainsPage] Connected account:', account);
+    console.debug('[MyDomainsPage] Domains fetched:', domains);
+  }, [status, account, domains]);
 
   const handlePrev = () => setPage((prev) => Math.max(prev - 1, 1));
   const handleNext = () => setPage((prev) => Math.min(prev + 1, totalPages));
