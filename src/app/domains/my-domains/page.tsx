@@ -1,11 +1,24 @@
-// src/app/domains/my-domains/page.tsx
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useWalletContext } from '@/context/WalletContext';
 import { usePaginatedDomains } from '@/hooks/kns/api/usePaginatedDomains';
 import { DomainCard } from '@/components/DomainCard';
 import Loader from '@/components/Loader';
-import { useEffect, useState } from 'react';
+
+interface DomainAsset {
+  asset: string;
+  owner: string;
+  status: string;
+  listed?: {
+    transactionId: string;
+    blockTime: string;
+    seller: string;
+    inputIndex: number;
+  };
+  id?: string;
+  // add other fields if needed
+}
 
 export default function MyDomainsPage() {
   const { account, status } = useWalletContext();
@@ -25,7 +38,7 @@ export default function MyDomainsPage() {
     pageSize,
   });
 
-  const domains = data?.domains ?? [];
+  const domains: DomainAsset[] = data?.domains ?? [];
   const totalPages = data?.pagination?.totalPages ?? 1;
 
   useEffect(() => {
@@ -34,8 +47,13 @@ export default function MyDomainsPage() {
     console.debug('[MyDomainsPage] Domains fetched:', domains);
   }, [status, account, domains]);
 
-  const handlePrev = () => setPage((prev) => Math.max(prev - 1, 1));
-  const handleNext = () => setPage((prev) => Math.min(prev + 1, totalPages));
+  const handlePrev = () => {
+    if (page > 1) setPage((prev) => prev - 1);
+  };
+
+  const handleNext = () => {
+    if (page < totalPages) setPage((prev) => prev + 1);
+  };
 
   if (status === 'connecting') {
     return <Loader text="Connecting wallet…" />;
@@ -43,33 +61,48 @@ export default function MyDomainsPage() {
 
   if (status !== 'connected') {
     return (
-      <div className="max-w-2xl mx-auto py-10 text-center text-white">
+      <div className="max-w-2xl mx-auto py-12 text-center text-white">
         <h1 className="text-2xl font-bold mb-4">My Domains</h1>
-        <p className="text-lg">Please connect your wallet to view your domains.</p>
+        <p className="text-lg">
+          {status === 'disconnected'
+            ? 'Please connect your wallet to view your domains.'
+            : 'Wallet not detected or unsupported.'}
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto py-10 px-4">
+    <div className="max-w-5xl mx-auto py-12 px-4">
       <h1 className="text-3xl font-bold text-white mb-6">My Domains</h1>
 
-      {isLoading && domains.length === 0 && <Loader text="Loading your domains…" />}
+      {isLoading && domains.length === 0 && (
+        <Loader text="Loading your domains…" />
+      )}
 
       {isError && (
-        <p className="text-red-500 text-center mb-4">
+        <div className="text-center text-red-500 mb-6">
           {error?.message ?? 'Failed to load your domains.'}
-        </p>
+        </div>
       )}
 
-      {!isLoading && domains.length === 0 && (
-        <p className="text-white text-center">You don’t own any domains yet.</p>
+      {!isLoading && domains.length === 0 && !isError && (
+        <div className="text-white text-center mb-6">
+          You don’t own any domains yet.
+        </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
-        {domains.map((domain) => (
-          <DomainCard key={domain.name} domain={domain} />
-        ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
+        {domains.map((domain) => {
+          const key = domain.asset || domain.id || crypto.randomUUID();
+
+          if (!domain.asset) {
+            console.warn('[MyDomainsPage] Domain missing asset field:', domain);
+            return null;
+          }
+
+          return <DomainCard key={key} domain={domain} />;
+        })}
       </div>
 
       {totalPages > 1 && (
@@ -77,7 +110,8 @@ export default function MyDomainsPage() {
           <button
             onClick={handlePrev}
             disabled={page === 1 || isFetching}
-            className="px-4 py-2 bg-kaspaGreen rounded disabled:opacity-50"
+            className="px-4 py-2 bg-kaspaGreen rounded hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-kaspaGreen/70 disabled:opacity-50"
+            aria-label="Previous page"
           >
             Previous
           </button>
@@ -87,7 +121,8 @@ export default function MyDomainsPage() {
           <button
             onClick={handleNext}
             disabled={page === totalPages || isFetching}
-            className="px-4 py-2 bg-kaspaGreen rounded disabled:opacity-50"
+            className="px-4 py-2 bg-kaspaGreen rounded hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-kaspaGreen/70 disabled:opacity-50"
+            aria-label="Next page"
           >
             Next
           </button>
