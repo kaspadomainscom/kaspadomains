@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+// Icons
 import {
   IconFolder,
   IconChevronLeft,
@@ -81,11 +82,7 @@ export default function Sidebar() {
         aria-label="Toggle Sidebar"
       >
         {isMobile ? (
-          mobileOpen ? (
-            <IconChevronUp width={18} height={18} />
-          ) : (
-            <IconChevronDown width={18} height={18} />
-          )
+          mobileOpen ? <IconChevronUp width={18} height={18} /> : <IconChevronDown width={18} height={18} />
         ) : collapsed ? (
           <IconChevronRight width={18} height={18} />
         ) : (
@@ -95,62 +92,20 @@ export default function Sidebar() {
 
       {(mobileOpen || !isMobile) && (
         <div className="h-full overflow-y-auto pt-5 pb-6 space-y-3">
-          {/* Main Tools */}
+          {/* My Tools */}
           <nav className="space-y-1 px-2" aria-label="My Tools">
-            <SidebarLink
-              icon={IconUser}
-              label="My Domains"
-              href="/domains/mine"
-              collapsed={collapsed}
-              active={pathname === '/domains/mine'}
-              isMobile={isMobile}
-              onClick={toggleSidebar}
-            />
-            <SidebarLink
-              icon={IconVault}
-              label="Vault"
-              href="/vault"
-              collapsed={collapsed}
-              active={pathname === '/vault'}
-              isMobile={isMobile}
-              onClick={toggleSidebar}
-            />
-            <SidebarLink
-              icon={IconActivity}
-              label="Activity"
-              href="/activity"
-              collapsed={collapsed}
-              active={pathname === '/activity'}
-              isMobile={isMobile}
-              onClick={toggleSidebar}
-            />
-            <SidebarLink
-              icon={IconTool}
-              label="Creator Tools"
-              href="/creator-tools"
-              collapsed={collapsed}
-              active={pathname === '/creator-tools'}
-              isMobile={isMobile}
-              onClick={toggleSidebar}
-            />
-            <SidebarLink
-              icon={IconHeart}
-              label="Favorites"
-              href="/favorites"
-              collapsed={collapsed}
-              active={pathname === '/favorites'}
-              isMobile={isMobile}
-              onClick={toggleSidebar}
-            />
-            <SidebarLink
-              icon={IconSettings}
-              label="Settings"
-              href="/settings"
-              collapsed={collapsed}
-              active={pathname === '/settings'}
-              isMobile={isMobile}
-              onClick={toggleSidebar}
-            />
+            {toolLinks.map(({ icon, label, href }) => (
+              <SidebarLink
+                key={href}
+                icon={icon}
+                label={label}
+                href={href}
+                collapsed={collapsed}
+                active={pathname === href}
+                isMobile={isMobile}
+                onClick={toggleSidebar}
+              />
+            ))}
           </nav>
 
           {/* Category Header */}
@@ -164,7 +119,7 @@ export default function Sidebar() {
             {!collapsed && <span>Categories</span>}
           </div>
 
-          {/* Search */}
+          {/* Search Field */}
           {!collapsed && (
             <div className="px-3">
               <input
@@ -181,10 +136,10 @@ export default function Sidebar() {
           {/* Category Links */}
           <nav className="space-y-1 px-2" aria-label="Category Links">
             {filteredLinks.length > 0 ? (
-              filteredLinks.map(({ icon: IconComp, label, href }) => (
+              filteredLinks.map(({ icon, label, href }) => (
                 <SidebarLink
                   key={href}
-                  icon={IconComp}
+                  icon={icon}
                   label={label}
                   href={href}
                   collapsed={collapsed}
@@ -194,9 +149,7 @@ export default function Sidebar() {
                 />
               ))
             ) : (
-              !collapsed && (
-                <p className="text-sm text-white/50 px-3 pt-2">No categories found</p>
-              )
+              !collapsed && <p className="text-sm text-white/50 px-3 pt-2">No categories found</p>
             )}
           </nav>
         </div>
@@ -204,6 +157,15 @@ export default function Sidebar() {
     </aside>
   );
 }
+
+const toolLinks = [
+  { icon: IconUser, label: 'My Domains', href: '/domains/my-domains' },
+  { icon: IconVault, label: 'Vault', href: '/vault' },
+  { icon: IconActivity, label: 'Activity', href: '/activity' },
+  { icon: IconTool, label: 'Creator Tools', href: '/creator-tools' },
+  { icon: IconHeart, label: 'Favorites', href: '/favorites' },
+  { icon: IconSettings, label: 'Settings', href: '/settings' },
+];
 
 const categoryLinks = [
   { icon: IconShortNames, label: 'Short Names', href: '/domains/categories/category/short' },
@@ -216,11 +178,9 @@ const categoryLinks = [
   { icon: IconGamepad, label: 'Gaming', href: '/domains/categories/category/gaming' },
   { icon: IconBrain, label: 'AI & Tech', href: '/domains/categories/category/ai-tech' },
   { icon: IconMoney, label: 'Finance', href: '/domains/categories/category/finance' },
-
   { icon: IconNetwork, label: 'Web3 / dApps', href: '/domains/categories/category/web3' },
-  { icon: IconUser, label: 'Profiles', href: '/domains/categories/category/profiles' },  // Added IconUser with a logical label
+  { icon: IconUser, label: 'Profiles', href: '/domains/categories/category/profiles' },
   { icon: IconTeddy, label: 'Memes & Fun', href: '/domains/categories/category/memes' },
-
   { icon: IconVault, label: 'Vaults', href: '/domains/categories/category/vaults' },
   { icon: IconActivity, label: 'Active Projects', href: '/domains/categories/category/active-projects' },
   { icon: IconHeart, label: 'Loved', href: '/domains/categories/category/loved' },
@@ -228,7 +188,6 @@ const categoryLinks = [
   { icon: IconTool, label: 'Tools', href: '/domains/categories/category/tools' },
   { icon: IconTrending, label: 'Trending', href: '/domains/categories/category/trending' },
 ];
-
 
 function SidebarLink({
   icon: Icon,
