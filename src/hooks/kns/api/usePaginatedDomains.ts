@@ -1,4 +1,3 @@
-// src/hooks/kns/api/usePaginatedDomains.ts
 import { useQuery } from '@tanstack/react-query';
 
 export interface DomainAsset {
@@ -74,7 +73,7 @@ const fetchPaginatedDomains = async (
       try {
         errorDetails = await res.json();
       } catch {
-        // Ignore
+        // JSON parse failed
       }
     }
 

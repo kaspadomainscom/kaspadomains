@@ -1,3 +1,4 @@
+// src/app/domains/my-domains/page.tsx
 'use client';
 
 import { useWalletContext } from '@/context/WalletContext';
@@ -24,8 +25,8 @@ export default function MyDomainsPage() {
     pageSize,
   });
 
-  const domains = data?.domains || [];
-  const totalPages = data?.pagination?.totalPages || 1;
+  const domains = data?.domains ?? [];
+  const totalPages = data?.pagination?.totalPages ?? 1;
 
   useEffect(() => {
     console.debug('[MyDomainsPage] Wallet status:', status);
@@ -57,7 +58,7 @@ export default function MyDomainsPage() {
 
       {isError && (
         <p className="text-red-500 text-center mb-4">
-          {(error as Error)?.message || 'Failed to load your domains.'}
+          {error?.message ?? 'Failed to load your domains.'}
         </p>
       )}
 
