@@ -1,12 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useWalletContext } from '@/context/WalletContext';
 import { usePaginatedDomains } from '@/hooks/kns/api/usePaginatedDomains';
 import { DomainCard } from '@/components/DomainCard';
 import Loader from '@/components/Loader';
-
-
 
 export interface DomainAsset {
   id: string;
@@ -27,8 +25,6 @@ export interface DomainAsset {
   };
 }
 
-
-// Assuming this is the Domain type expected by DomainCard
 interface Domain {
   name: string;
   price: number;
@@ -43,7 +39,7 @@ function mapDomainAssetToDomain(asset: DomainAsset): Domain {
     price: 0, // Placeholder; update if you have price info
     listed: !!asset.listed,
     kaspaLink: `https://kaspa.com/asset/${encodeURIComponent(asset.asset)}`,
-    sellerTelegram: undefined, // Fill if you have this info
+    sellerTelegram: undefined,
   };
 }
 
@@ -65,7 +61,7 @@ export default function MyDomainsPage() {
     pageSize,
   });
 
-  const domains: DomainAsset[] = data?.domains ?? [];
+  const domains: DomainAsset[] = useMemo(() => data?.domains ?? [], [data]);
   const totalPages = data?.pagination?.totalPages ?? 1;
 
   useEffect(() => {

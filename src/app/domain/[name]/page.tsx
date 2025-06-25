@@ -1,4 +1,3 @@
-// src/app/domain/[name]/page.tsx
 
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -6,6 +5,7 @@ import Link from "next/link";
 import { findDomainByName, getAllDomains } from "@/data/domainLookup";
 import { categoriesData } from "@/data/categoriesManifest";
 import type { Domain } from "@/data/types";
+import { DomainLikeCount } from "@/components/contracts/DomainLikesManager/DomainLikeCount";
 
 type StaticParam = { name: string };
 
@@ -117,6 +117,11 @@ export default async function DomainPage({
           label="Price"
           value={`${domain.price?.toLocaleString() ?? "0"} KAS`}
           valueClass="text-green-700 font-semibold"
+        />
+        <Detail
+          label="Likes"
+          value={<DomainLikeCount domain={domain.name} />}
+          valueClass="text-pink-600 font-semibold"
         />
 
         {domain.sellerTelegram && (
