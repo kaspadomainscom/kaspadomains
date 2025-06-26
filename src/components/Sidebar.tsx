@@ -155,8 +155,9 @@ export default function Sidebar() {
 
 const toolLinks = [
   { icon: IconUser, label: 'My Domains', href: '/domains/my-domains' },
-  { icon: IconHeart, label: 'Votes', href: '/votes' },
-  { icon: IconActivity, label: 'New Listings', href: '/new' },
+  { icon: IconHeart, label: 'My Votes', href: '/domains/my-votes' },
+  { icon: IconTrending, label: 'Top Voted', href: '/domains/top-voted' },
+  { icon: IconActivity, label: 'New Listings', href: '/domains/new-listings' },
   { icon: IconSettings, label: 'Settings', href: '/settings' },
 ];
 
