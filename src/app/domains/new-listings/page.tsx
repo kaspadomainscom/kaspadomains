@@ -6,14 +6,13 @@ import { ethers } from 'ethers';
 import KaspaDomainsRegistryAbi from '@/abi/KaspaDomainsRegistry.json';
 
 const CONTRACT_ADDRESS = '0xYourContractAddressHere';
-const DOMAIN_FEE = ethers.parseEther('287'); // 287 KAS in wei
+const DOMAIN_FEE = ethers.parseEther('999'); // 999 KAS in wei
 
 type DomainInput = {
   domain: string;
   title: string;
   description: string;
-  image: string;
-  links: string[];
+  website: string;
   categories: string[];
 };
 
@@ -21,26 +20,20 @@ export default function NewDomainPage() {
   const searchParams = useSearchParams();
   const domainFromQuery = searchParams.get('name') || '';
 
-  // Form state
   const [domainName, setDomainName] = useState(domainFromQuery);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [image, setImage] = useState('');
-  const [links, setLinks] = useState<string[]>([]);
+  const [website, setWebsite] = useState('');
   const [categories, setCategories] = useState<string[]>([]);
-  const [newLink, setNewLink] = useState('');
   const [newCategory, setNewCategory] = useState('');
 
-  // UI state
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Sync domain name with query param
   useEffect(() => {
     setDomainName(domainFromQuery);
   }, [domainFromQuery]);
 
-  // Utility to add unique trimmed items to a list
   function addUniqueItem(
     item: string,
     list: string[],
@@ -87,31 +80,25 @@ export default function NewDomainPage() {
         domain: domainTrimmed,
         title: title.trim(),
         description: description.trim(),
-        image: image.trim(),
-        links,
+        website: website.trim(),
         categories,
       };
 
       setMessage('⏳ Sending transaction...');
-
-      // Call the contract function — adjust name/params to your contract
       const tx = await contract.listDomain(domainInput, {
         value: isOwner ? 0 : DOMAIN_FEE,
       });
 
-      setMessage('⏳ Transaction sent. Waiting for confirmation...');
+      setMessage('⏳ Waiting for confirmation...');
       await tx.wait();
 
-      setMessage(`✅ Success! Domain "${domainTrimmed}" listed.`);
+      setMessage(`✅ Domain "${domainTrimmed}" successfully listed.`);
 
-      // Clear form
       setDomainName('');
       setTitle('');
       setDescription('');
-      setImage('');
-      setLinks([]);
+      setWebsite('');
       setCategories([]);
-      setNewLink('');
       setNewCategory('');
     } catch (err) {
       console.error(err);
@@ -122,7 +109,6 @@ export default function NewDomainPage() {
     }
   }
 
-  // Controlled input component (input or textarea)
   function InputField({
     label,
     value,
@@ -166,7 +152,6 @@ export default function NewDomainPage() {
     );
   }
 
-  // Component for dynamic list input with add button
   function DynamicListInput({
     label,
     items,
@@ -231,17 +216,7 @@ export default function NewDomainPage() {
         />
         <InputField label="Title" value={title} setValue={setTitle} />
         <InputField label="Description" value={description} setValue={setDescription} textarea />
-        <InputField label="Image URL" type="url" value={image} setValue={setImage} />
-
-        <DynamicListInput
-          label="Links"
-          items={links}
-          newItem={newLink}
-          setNewItem={setNewLink}
-          onAdd={() => addUniqueItem(newLink, links, setLinks, () => setNewLink(''))}
-          type="url"
-          placeholder="https://twitter.com/yourhandle"
-        />
+        <InputField label="Website URL" type="url" value={website} setValue={setWebsite} />
 
         <DynamicListInput
           label="Categories"
