@@ -21,13 +21,13 @@ import {
   IconMoney,
   IconNetwork,
   IconTeddy,
+  IconTool,
+  IconVault,
   IconTrending,
   IconUser,
-  IconVault,
   IconActivity,
   IconHeart,
   IconSettings,
-  IconTool,
 } from '@/components/icons';
 
 export default function Sidebar() {
@@ -74,7 +74,6 @@ export default function Sidebar() {
           : 'w-64 min-h-screen',
       ].join(' ')}
     >
-      {/* Toggle Button */}
       <button
         onClick={toggleSidebar}
         className="absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center bg-[#1C4745] text-[#3DFDAD] border border-[#3DFDAD]/40 rounded-full hover:bg-[#1a403d] transition-colors duration-200"
@@ -92,7 +91,6 @@ export default function Sidebar() {
 
       {(mobileOpen || !isMobile) && (
         <div className="h-full overflow-y-auto pt-5 pb-6 space-y-3">
-          {/* My Tools */}
           <nav className="space-y-1 px-2" aria-label="My Tools">
             {toolLinks.map(({ icon, label, href }) => (
               <SidebarLink
@@ -108,7 +106,6 @@ export default function Sidebar() {
             ))}
           </nav>
 
-          {/* Category Header */}
           <div
             className={[
               'flex items-center px-4 py-2 rounded-md mx-2 bg-[#162f2d] text-[#3DFDAD] text-[11px] font-semibold tracking-wider uppercase',
@@ -119,7 +116,6 @@ export default function Sidebar() {
             {!collapsed && <span>Categories</span>}
           </div>
 
-          {/* Search Field */}
           {!collapsed && (
             <div className="px-3">
               <input
@@ -133,7 +129,6 @@ export default function Sidebar() {
             </div>
           )}
 
-          {/* Category Links */}
           <nav className="space-y-1 px-2" aria-label="Category Links">
             {filteredLinks.length > 0 ? (
               filteredLinks.map(({ icon, label, href }) => (
@@ -160,10 +155,8 @@ export default function Sidebar() {
 
 const toolLinks = [
   { icon: IconUser, label: 'My Domains', href: '/domains/my-domains' },
-  { icon: IconVault, label: 'Vault', href: '/vault' },
-  { icon: IconActivity, label: 'Activity', href: '/activity' },
-  { icon: IconTool, label: 'Creator Tools', href: '/creator-tools' },
-  { icon: IconHeart, label: 'Favorites', href: '/favorites' },
+  { icon: IconHeart, label: 'Votes', href: '/votes' },
+  { icon: IconActivity, label: 'New Listings', href: '/new' },
   { icon: IconSettings, label: 'Settings', href: '/settings' },
 ];
 
