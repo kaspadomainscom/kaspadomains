@@ -4,21 +4,36 @@ import { useState } from 'react';
 import { contracts } from '@/lib/contracts';
 import { kasplexClient } from '@/lib/viemClient';
 import { parseEther, createWalletClient, custom } from 'viem';
-import { kasplexTestnet } from '@/lib/viemChains'; // ✅ your chain config
+import { kasplexTestnet } from '@/lib/viemChains';
 import { useWallet } from '@/hooks/wallet/useWallet';
 
+/**
+ * Safely gets the MetaMask provider even if multiple wallets are injected (e.g., KasWare).
+ */
 function getMetaMaskWalletClient(account: `0x${string}`) {
-  const provider = typeof window !== 'undefined' && window?.ethereum?.providers
-    ? window.ethereum.providers.find((p) => p.isMetaMask)
-    : window?.ethereum;
+  const provider = (() => {
+    if (typeof window === 'undefined') return null;
+
+    // Multi-provider case (e.g., MetaMask + KasWare)
+    if (Array.isArray(window.ethereum?.providers)) {
+      return window.ethereum.providers.find((p) => p.isMetaMask);
+    }
+
+    // Single provider fallback (ensure it's MetaMask)
+    if (window.ethereum?.isMetaMask) {
+      return window.ethereum;
+    }
+
+    return null;
+  })();
 
   if (!provider || !provider.isMetaMask) {
-    throw new Error('MetaMask provider not found.');
+    throw new Error('MetaMask provider not found. Please install MetaMask.');
   }
 
   return createWalletClient({
     account,
-    chain: kasplexTestnet, // use your testnet or mainnet config
+    chain: kasplexTestnet,
     transport: custom(provider),
   });
 }
@@ -28,7 +43,7 @@ export function useListDomain() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { account, connect } = useWallet(); // MetaMask (EVM wallet)
+  const { account, connect } = useWallet(); // should manage MetaMask (EVM wallet)
 
   async function listDomain(domain: string) {
     setError(null);
@@ -36,7 +51,7 @@ export function useListDomain() {
     setIsLoading(true);
 
     try {
-      // Ensure MetaMask wallet is connected
+      // Ensure MetaMask is connected
       if (!account || !account.startsWith('0x') || account.length !== 42) {
         console.warn('MetaMask not connected. Attempting to connect...');
         await connect('metamask');
@@ -44,7 +59,7 @@ export function useListDomain() {
       }
 
       const evmAccount = account as `0x${string}`;
-      const walletClient = getMetaMaskWalletClient(evmAccount); // ✅ use MetaMask only
+      const walletClient = getMetaMaskWalletClient(evmAccount); // ✅ MetaMask only
 
       const tx = await walletClient.writeContract({
         address: contracts.KaspaDomainsRegistry.address,
@@ -52,7 +67,7 @@ export function useListDomain() {
         functionName: 'listDomain',
         args: [domain],
         account: evmAccount,
-        value: parseEther('420'), // 420 KAS wrapped in EVM
+        value: parseEther('420'), // 420 KAS
       });
 
       setTxHash(tx);
