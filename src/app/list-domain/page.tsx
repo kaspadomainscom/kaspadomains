@@ -2,27 +2,23 @@
 
 import React from 'react';
 import PickDomainModal from '@/components/PickDomainModal';
-import { useWallet } from '@/hooks/wallet/useWallet';
+import { useBaseWallet } from '@/hooks/wallet/internal/useBaseWallet';
 import { useOwnedDomains } from '@/hooks/kns/api/useOwnedDomains';
 
 export default function ListDomainPage() {
-  const {
-    account,
-    connect,
-    status: walletStatus,
-    error: walletError,
-    walletType,
-  } = useWallet();
+  const kasware = useBaseWallet('kasware');   // Kaspa wallet - domain ownership
+  const metamask = useBaseWallet('metamask'); // EVM wallet - contract interaction
 
   const {
     data: domainData,
     isLoading: domainsLoading,
     error: domainsError,
-  } = useOwnedDomains(account);
+  } = useOwnedDomains(kasware.account);
 
-  const ownedDomains = domainData?.domains;
+  const ownedDomains = domainData?.domains || [];
 
-  const isEvmAddress = account?.startsWith('0x');
+  const showKaswareConnect = !kasware.account;
+  const showMetamaskConnect = !metamask.account;
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-12 space-y-16">
@@ -34,7 +30,7 @@ export default function ListDomainPage() {
         </p>
       </header>
 
-      {/* Listing Details */}
+      {/* Listing Section */}
       <section className="relative rounded-3xl border border-[#1e2d38] bg-gradient-to-br from-[#121E28] to-[#0E1E25] p-8 md:p-10 shadow-xl text-gray-200">
         <div className="space-y-6">
           <h2 className="text-3xl font-bold text-white">Listing Benefits</h2>
@@ -54,35 +50,52 @@ export default function ListDomainPage() {
           </div>
 
           <p className="text-sm text-gray-400">
-            * You must own the domain on the <strong>KNS</strong> contract and be connected with <strong>Kasware</strong> (Kaspa wallet) on Kasplex Testnet.
+            * You must own the domain on the <strong>KNS</strong> contract (Kasware) and list it using your EVM wallet (MetaMask).
           </p>
 
-          {/* Wallet Connect Logic */}
-          {!account || walletType !== 'kasware' ? (
+          {/* Wallet connection logic */}
+          {showKaswareConnect ? (
             <button
-              onClick={() => connect('kasware')}
-              disabled={walletStatus === 'connecting'}
+              onClick={() => kasware.connect()}
+              disabled={kasware.status === 'connecting'}
               className="bg-[#5183f5] hover:bg-[#4169c9] text-white font-semibold py-2 px-6 rounded-lg transition disabled:opacity-50"
             >
-              {walletStatus === 'connecting' ? 'Connecting…' : 'Connect Kasware'}
+              {kasware.status === 'connecting' ? 'Connecting Kasware…' : 'Connect Kasware'}
             </button>
           ) : domainsLoading ? (
             <p className="text-white">Loading your domains…</p>
           ) : domainsError ? (
             <p className="text-red-400">Error loading domains: {domainsError.message}</p>
-          ) : !ownedDomains || ownedDomains.length === 0 ? (
+          ) : ownedDomains.length === 0 ? (
             <p className="text-white">You don’t own any .kas domains.</p>
-          ) : !isEvmAddress ? (
-            <p className="text-yellow-400 font-medium">
-              ⚠️ You’re connected with a Kaspa wallet (<code>{account}</code>). Listing requires an <strong>EVM-compatible wallet</strong> (starts with <code>0x...</code>).
-            </p>
+          ) : showMetamaskConnect ? (
+            <div className="space-y-2">
+              <p className="text-yellow-400 font-medium">
+                ⚠️ Detected Kasware account (<code>{kasware.account}</code>)<br />
+                To list domains on-chain, connect your EVM wallet:
+              </p>
+              <button
+                onClick={() => metamask.connect()}
+                disabled={metamask.status === 'connecting'}
+                className="bg-[#7c5cfc] hover:bg-[#684ae3] text-white font-semibold py-2 px-6 rounded-lg transition disabled:opacity-50"
+              >
+                {metamask.status === 'connecting' ? 'Connecting MetaMask…' : 'Connect MetaMask'}
+              </button>
+            </div>
           ) : (
-            <PickDomainModal domains={ownedDomains} />
+            <PickDomainModal
+              domains={ownedDomains}
+              evmAccount={metamask.account}
+              kaspaAccount={kasware.account}
+            />
+
           )}
 
-          {/* Wallet Error */}
-          {walletError && (
-            <p className="text-red-400 text-sm mt-2">{walletError}</p>
+          {/* Wallet Errors */}
+          {(kasware.error || metamask.error) && (
+            <p className="text-red-400 text-sm mt-4">
+              {kasware.error || metamask.error}
+            </p>
           )}
         </div>
       </section>

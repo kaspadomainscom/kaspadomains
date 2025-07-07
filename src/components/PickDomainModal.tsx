@@ -1,45 +1,30 @@
-// src/components/PickDomainModal.tsx
 'use client';
 
-import { useOwnedDomains } from '@/hooks/kns/api/useOwnedDomains';
 import { DomainAsset } from '@/hooks/kns/types';
-import { useWalletContext } from '@/context/WalletContext';
 import { useListDomain } from '@/hooks/domain/useListDomain';
 import { useState } from 'react';
 
 type PickDomainModalProps = {
   domains?: DomainAsset[];
+  evmAccount?: string | null;
+  kaspaAccount?: string | null;
 };
 
-export default function PickDomainModal({ domains: externalDomains }: PickDomainModalProps) {
-  const { account } = useWalletContext();
+export default function PickDomainModal({
+  domains,
+  evmAccount,
+  kaspaAccount,
+}: PickDomainModalProps) {
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
-
-  const {
-    data: walletDomainsData,
-    isLoading,
-    isError,
-    error,
-  } = useOwnedDomains(account ?? null);
-
   const { listDomain, txHash, isLoading: listing, error: listError } = useListDomain();
 
-  const domains: DomainAsset[] | undefined = externalDomains ?? walletDomainsData?.domains;
   const verifiedDomains = domains?.filter((domain) => domain.isVerifiedDomain === true);
 
-  if (!account) {
-    return <p className="text-center mt-10 text-white">Connect your wallet to continue.</p>;
-  }
-
-  if (!externalDomains && isLoading) {
-    return <p className="text-center mt-10 text-white">Loading your domains...</p>;
-  }
-
-  if (!externalDomains && isError) {
+  if (!evmAccount || !kaspaAccount) {
     return (
-      <pre className="text-center mt-10 text-red-500 whitespace-pre-wrap bg-red-100 p-4 rounded text-sm">
-        Error: {error?.message ?? 'Unknown error'}
-      </pre>
+      <p className="text-center mt-10 text-white">
+        Connect both Kasware and MetaMask wallets to continue.
+      </p>
     );
   }
 
@@ -55,11 +40,9 @@ export default function PickDomainModal({ domains: externalDomains }: PickDomain
     <div className="max-w-lg mx-auto mt-10 bg-[#0F2F2E] border border-kaspaMint rounded-xl p-6 shadow-md">
       <h2 className="text-xl font-semibold text-white mb-4">Pick a domain to list</h2>
 
-      {walletDomainsData?.pagination && (
-        <p className="text-sm text-kaspaMint mb-2">
-          Total verified domains: {verifiedDomains.length}
-        </p>
-      )}
+      <p className="text-sm text-kaspaMint mb-2">
+        Total verified domains: {verifiedDomains.length}
+      </p>
 
       <ul className="space-y-2">
         {verifiedDomains.map((domain) => (
