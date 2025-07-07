@@ -5,7 +5,7 @@ import { contracts } from '@/lib/contracts';
 import { kasplexClient } from '@/lib/viemClient';
 import { parseEther, createWalletClient, custom } from 'viem';
 import { kasplexTestnet } from '@/lib/viemChains';
-import { useWallet } from '@/hooks/wallet/useWallet';
+import { useMetamaskWallet } from '@/hooks/wallet/internal/useMetamaskWallet';
 
 /**
  * Returns a viem WalletClient using MetaMask.
@@ -39,7 +39,7 @@ export function useListDomain() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { account, connect } = useWallet(); // MetaMask only
+  const { account, connect } = useMetamaskWallet(); // MetaMask only
 
   async function listDomain(domain: string) {
     setError(null);
@@ -49,7 +49,7 @@ export function useListDomain() {
     try {
       if (!account || !account.startsWith('0x') || account.length !== 42) {
         console.warn('MetaMask not connected. Attempting to connect...');
-        await connect('metamask');
+        await connect();
         throw new Error('Please connect your MetaMask wallet to continue.');
       }
 
