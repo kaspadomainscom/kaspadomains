@@ -57,9 +57,7 @@ export default function PickDomainModal({
             >
               <span>{domain.asset}</span>
               <span className="text-xs text-[#0F2F2E] font-semibold">
-                {listing && selectedDomain === domain.asset
-                  ? 'Listing…'
-                  : 'List for 420 KAS'}
+                {listing && selectedDomain === domain.asset ? 'Listing…' : 'List for 420 KAS'}
               </span>
             </button>
           </li>

@@ -69,26 +69,19 @@ export default function ListDomainPage() {
           ) : ownedDomains.length === 0 ? (
             <p className="text-white">You don’t own any .kas domains.</p>
           ) : showMetamaskConnect ? (
-            <div className="space-y-2">
-              <p className="text-yellow-400 font-medium">
-                ⚠️ Detected Kasware account (<code>{kasware.account}</code>)<br />
-                To list domains on-chain, connect your EVM wallet:
-              </p>
-              <button
-                onClick={() => metamask.connect()}
-                disabled={metamask.status === 'connecting'}
-                className="bg-[#7c5cfc] hover:bg-[#684ae3] text-white font-semibold py-2 px-6 rounded-lg transition disabled:opacity-50"
-              >
-                {metamask.status === 'connecting' ? 'Connecting MetaMask…' : 'Connect MetaMask'}
-              </button>
-            </div>
+            <button
+              onClick={() => metamask.connect()}
+              disabled={metamask.status === 'connecting'}
+              className="bg-[#7c5cfc] hover:bg-[#684ae3] text-white font-semibold py-2 px-6 rounded-lg transition disabled:opacity-50"
+            >
+              {metamask.status === 'connecting' ? 'Connecting MetaMask…' : 'Connect MetaMask'}
+            </button>
           ) : (
             <PickDomainModal
               domains={ownedDomains}
               evmAccount={metamask.account}
               kaspaAccount={kasware.account}
             />
-
           )}
 
           {/* Wallet Errors */}
