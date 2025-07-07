@@ -1,4 +1,3 @@
-// src/app/list-domain/page.tsx
 'use client';
 
 import React from 'react';
@@ -7,7 +6,6 @@ import { useWallet } from '@/hooks/wallet/useWallet';
 import { useOwnedDomains } from '@/hooks/kns/api/useOwnedDomains';
 
 export default function ListDomainPage() {
-  // 🔐 Wallet state
   const {
     account,
     connect,
@@ -16,7 +14,6 @@ export default function ListDomainPage() {
     walletType,
   } = useWallet();
 
-  // 🧠 Fetch domains owned by this address
   const {
     data: domainData,
     isLoading: domainsLoading,
@@ -24,6 +21,8 @@ export default function ListDomainPage() {
   } = useOwnedDomains(account);
 
   const ownedDomains = domainData?.domains;
+
+  const isEvmAddress = account?.startsWith('0x');
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-12 space-y-16">
@@ -73,11 +72,15 @@ export default function ListDomainPage() {
             <p className="text-red-400">Error loading domains: {domainsError.message}</p>
           ) : !ownedDomains || ownedDomains.length === 0 ? (
             <p className="text-white">You don’t own any .kas domains.</p>
+          ) : !isEvmAddress ? (
+            <p className="text-yellow-400 font-medium">
+              ⚠️ You’re connected with a Kaspa wallet (<code>{account}</code>). Listing requires an <strong>EVM-compatible wallet</strong> (starts with <code>0x...</code>).
+            </p>
           ) : (
             <PickDomainModal domains={ownedDomains} />
           )}
 
-          {/* Error Message */}
+          {/* Wallet Error */}
           {walletError && (
             <p className="text-red-400 text-sm mt-2">{walletError}</p>
           )}
