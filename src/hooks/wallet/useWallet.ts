@@ -55,24 +55,27 @@ function getErrorMessage(e: unknown): string {
 function findProvider(type: WalletType): Provider | undefined {
   const eth = window.ethereum as EIP1193Provider | undefined;
 
-  // 1. Multi-injected providers
+  // Multi-injected: search by exact match
   if (Array.isArray(eth?.providers)) {
-    for (const p of eth.providers!) {
-      if (type === 'metamask' && p.isMetaMask) return p;
-      if (type === 'kasware'  && p.isKasware)  return p;
-    }
+    return eth.providers.find((p) =>
+      (type === 'metamask' && p.isMetaMask && !p.isKasware) ||
+      (type === 'kasware'  && p.isKasware  && !p.isMetaMask)
+    );
   }
 
-  // 2. Single-injected provider
+  // Single provider: check by type
   if (eth) {
-    if (type === 'metamask' && eth.isMetaMask) return eth;
-    if (type === 'kasware'  && eth.isKasware)  return eth;
+    if (type === 'metamask' && eth.isMetaMask && !eth.isKasware) return eth;
+    if (type === 'kasware'  && eth.isKasware  && !eth.isMetaMask) return eth;
   }
 
-  // 3. Kasware legacy global
+  // Kasware legacy global
   const kws = window.kasware as KaswareLegacyProvider | undefined;
   if (type === 'kasware' && kws) return kws;
+
+  return undefined;
 }
+
 
 async function requestAccounts(provider: Provider): Promise<string[]> {
   if (isEIP1193(provider)) {
