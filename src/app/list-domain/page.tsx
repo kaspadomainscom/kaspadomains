@@ -54,34 +54,45 @@ export default function ListDomainPage() {
           </p>
 
           {/* Wallet connection logic */}
-          {showKaswareConnect ? (
-            <button
-              onClick={() => kasware.connect()}
-              disabled={kasware.status === 'connecting'}
-              className="bg-[#5183f5] hover:bg-[#4169c9] text-white font-semibold py-2 px-6 rounded-lg transition disabled:opacity-50"
-            >
-              {kasware.status === 'connecting' ? 'Connecting Kasware…' : 'Connect Kasware'}
-            </button>
-          ) : domainsLoading ? (
-            <p className="text-white">Loading your domains…</p>
-          ) : domainsError ? (
-            <p className="text-red-400">Error loading domains: {domainsError.message}</p>
-          ) : ownedDomains.length === 0 ? (
-            <p className="text-white">You don’t own any .kas domains.</p>
-          ) : showMetamaskConnect ? (
-            <button
-              onClick={() => metamask.connect()}
-              disabled={metamask.status === 'connecting'}
-              className="bg-[#7c5cfc] hover:bg-[#684ae3] text-white font-semibold py-2 px-6 rounded-lg transition disabled:opacity-50"
-            >
-              {metamask.status === 'connecting' ? 'Connecting MetaMask…' : 'Connect MetaMask'}
-            </button>
-          ) : (
-            <PickDomainModal
-              domains={ownedDomains}
-              evmAccount={metamask.account}
-              kaspaAccount={kasware.account}
-            />
+          <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0">
+            {showKaswareConnect && (
+              <button
+                onClick={() => kasware.connect()}
+                disabled={kasware.status === 'connecting'}
+                className="bg-[#5183f5] hover:bg-[#4169c9] text-white font-semibold py-2 px-6 rounded-lg transition disabled:opacity-50"
+              >
+                {kasware.status === 'connecting' ? 'Connecting Kasware…' : 'Connect Kasware'}
+              </button>
+            )}
+
+            {showMetamaskConnect && (
+              <button
+                onClick={() => metamask.connect()}
+                disabled={metamask.status === 'connecting'}
+                className="bg-[#7c5cfc] hover:bg-[#684ae3] text-white font-semibold py-2 px-6 rounded-lg transition disabled:opacity-50"
+              >
+                {metamask.status === 'connecting' ? 'Connecting MetaMask…' : 'Connect MetaMask'}
+              </button>
+            )}
+          </div>
+
+          {/* Domain logic */}
+          {!showKaswareConnect && !showMetamaskConnect && (
+            <>
+              {domainsLoading ? (
+                <p className="text-white">Loading your domains…</p>
+              ) : domainsError ? (
+                <p className="text-red-400">Error loading domains: {domainsError.message}</p>
+              ) : ownedDomains.length === 0 ? (
+                <p className="text-white">You don’t own any .kas domains.</p>
+              ) : (
+                <PickDomainModal
+                  domains={ownedDomains}
+                  evmAccount={metamask.account}
+                  kaspaAccount={kasware.account}
+                />
+              )}
+            </>
           )}
 
           {/* Wallet Errors */}

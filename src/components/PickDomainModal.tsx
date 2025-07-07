@@ -6,19 +6,19 @@ import { useState } from 'react';
 
 type PickDomainModalProps = {
   domains?: DomainAsset[];
-  evmAccount?: string | null;
-  kaspaAccount?: string | null;
+  evmAccount: string | null;      // now required
+  kaspaAccount: string | null;    // now required
 };
 
 export default function PickDomainModal({
-  domains,
+  domains = [],
   evmAccount,
   kaspaAccount,
 }: PickDomainModalProps) {
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
   const { listDomain, txHash, isLoading: listing, error: listError } = useListDomain();
 
-  const verifiedDomains = domains?.filter((domain) => domain.isVerifiedDomain === true);
+  const verifiedDomains = domains.filter((domain) => domain.isVerifiedDomain === true);
 
   if (!evmAccount || !kaspaAccount) {
     return (
@@ -28,7 +28,7 @@ export default function PickDomainModal({
     );
   }
 
-  if (!verifiedDomains || verifiedDomains.length === 0) {
+  if (verifiedDomains.length === 0) {
     return (
       <p className="text-center mt-10 text-white">
         No verified KNS domains found for this wallet.
@@ -50,7 +50,7 @@ export default function PickDomainModal({
             <button
               onClick={async () => {
                 setSelectedDomain(domain.asset);
-                await listDomain(domain.asset);
+                await listDomain(domain.asset); // ✅ only pass EVM address
               }}
               disabled={listing && selectedDomain === domain.asset}
               className="w-full flex items-center justify-between px-4 py-2 bg-kaspaMint text-[#0F2F2E] hover:bg-[#3DFDAD]/90 rounded-md transition"
