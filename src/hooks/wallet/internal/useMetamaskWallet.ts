@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import detectEthereumProvider from '@metamask/detect-provider';
 import { KASPLEX_TESTNET } from '@/lib/kasplex';
 
 export type WalletStatus = 'idle' | 'connecting' | 'connected' | 'error' | 'unavailable';
@@ -15,36 +16,19 @@ export interface WalletState {
   error: string | null;
 }
 
-type EIP1193Provider = {
-  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+// Define MetaMask provider interface with needed properties and methods
+interface MetaMaskProvider {
   isMetaMask?: boolean;
+  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
   on?: (event: string, handler: (payload: unknown) => void) => void;
   removeListener?: (event: string, handler: (payload: unknown) => void) => void;
-};
-
-type MultiInjectedProvider = EIP1193Provider & {
-  providers?: EIP1193Provider[];
-};
-
-// --------------------
-// MetaMask Provider Helper
-// --------------------
-
-function getMetaMaskProvider(): EIP1193Provider | undefined {
-  const eth = window.ethereum as MultiInjectedProvider | undefined;
-
-  if (eth?.providers?.length) {
-    return eth.providers.find((p) => p.isMetaMask);
-  }
-
-  if (eth?.isMetaMask) return eth;
-
-  return undefined;
 }
 
-// --------------------
-// Error Helper
-// --------------------
+async function getMetaMaskProvider(): Promise<MetaMaskProvider | null> {
+  const provider = (await detectEthereumProvider()) as MetaMaskProvider | null;
+  if (provider?.isMetaMask) return provider;
+  return null;
+}
 
 function getErrorMessage(e: unknown): string {
   if (typeof e === 'object' && e !== null && 'message' in e) {
@@ -53,10 +37,6 @@ function getErrorMessage(e: unknown): string {
   return String(e);
 }
 
-// --------------------
-// Main Hook
-// --------------------
-
 export function useMetamaskWallet(): WalletState {
   const [account, setAccount] = useState<string | null>(null);
   const [status, setStatus] = useState<WalletStatus>('idle');
@@ -64,7 +44,7 @@ export function useMetamaskWallet(): WalletState {
   const [error, setError] = useState<string | null>(null);
 
   const connect = useCallback(async () => {
-    const provider = getMetaMaskProvider();
+    const provider = await getMetaMaskProvider();
     if (!provider) {
       setStatus('unavailable');
       setError('MetaMask not found');
@@ -75,15 +55,10 @@ export function useMetamaskWallet(): WalletState {
     setError(null);
 
     try {
-      const accounts = await provider.request({
-        method: 'eth_requestAccounts',
-      }) as string[];
+      const accounts = (await provider.request({ method: 'eth_requestAccounts' })) as string[];
+      if (!accounts.length) throw new Error('No accounts returned');
 
-      if (!accounts?.length) throw new Error('No accounts returned');
-
-      const chainId = await provider.request({
-        method: 'eth_chainId',
-      }) as string;
+      const chainId = (await provider.request({ method: 'eth_chainId' })) as string;
 
       setAccount(accounts[0]);
       setChainId(chainId);
@@ -95,7 +70,7 @@ export function useMetamaskWallet(): WalletState {
   }, []);
 
   const switchNetwork = useCallback(async () => {
-    const provider = getMetaMaskProvider();
+    const provider = await getMetaMaskProvider();
     if (!provider) {
       setError('MetaMask not available');
       return;
@@ -120,34 +95,36 @@ export function useMetamaskWallet(): WalletState {
     setError(null);
   }, []);
 
-  // --------------------
-  // Event Listeners
-  // --------------------
-
   useEffect(() => {
-    const provider = getMetaMaskProvider();
-    if (!provider?.on) return;
+    let mounted = true;
+    getMetaMaskProvider().then((provider) => {
+      if (!mounted || !provider?.on) return;
 
-    const handleAccountsChanged = (accounts: unknown) => {
-      if (Array.isArray(accounts)) {
-        const newAccount = accounts[0] || null;
-        setAccount(newAccount);
-        setStatus(newAccount ? 'connected' : 'idle');
-      }
-    };
+      const handleAccountsChanged = (accounts: unknown) => {
+        if (Array.isArray(accounts)) {
+          const acc = accounts[0] || null;
+          setAccount(acc);
+          setStatus(acc ? 'connected' : 'idle');
+        }
+      };
 
-    const handleChainChanged = (chain: unknown) => {
-      if (typeof chain === 'string') {
-        setChainId(chain);
-      }
-    };
+      const handleChainChanged = (cid: unknown) => {
+        if (typeof cid === 'string') {
+          setChainId(cid);
+        }
+      };
 
-    provider.on('accountsChanged', handleAccountsChanged);
-    provider.on('chainChanged', handleChainChanged);
+      provider.on('accountsChanged', handleAccountsChanged);
+      provider.on('chainChanged', handleChainChanged);
+
+      return () => {
+        provider.removeListener?.('accountsChanged', handleAccountsChanged);
+        provider.removeListener?.('chainChanged', handleChainChanged);
+      };
+    });
 
     return () => {
-      provider.removeListener?.('accountsChanged', handleAccountsChanged);
-      provider.removeListener?.('chainChanged', handleChainChanged);
+      mounted = false;
     };
   }, []);
 
