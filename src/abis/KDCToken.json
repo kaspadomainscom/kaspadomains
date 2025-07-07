@@ -3,12 +3,7 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_minter",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "_liquidityManager",
+				"name": "_paymentsMinter",
 				"type": "address"
 			}
 		],
@@ -138,25 +133,13 @@
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "userAmount",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "managerAmount",
+				"name": "currentReward",
 				"type": "uint256"
 			},
 			{
 				"indexed": false,
 				"internalType": "uint256",
 				"name": "totalMinted",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "currentReward",
 				"type": "uint256"
 			}
 		],
@@ -357,32 +340,6 @@
 			}
 		],
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "liquidityManager",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "to",
-				"type": "address"
-			}
-		],
-		"name": "mintRegistryReward",
-		"outputs": [],
-		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{

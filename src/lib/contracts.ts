@@ -9,27 +9,27 @@ import { Abi } from 'viem';
 
 export const contracts = {
   KaspaDomainsRegistry: {
-    address: '0x20eB1B077Bb08d9E26D69f8da0dC0a028BDa1C2E',
+    address: '0x93d15A1d6F799CAE3c0fda37257ae4dD83f02f20',
     abi: KaspaDomainsRegistryABI as Abi,
   },
   DomainLinksStorage: {
-    address: '0xBa91BE62AEC812f829b9AB6b655bbE8005a5D6Bd',
+    address: '0x1B1D19d94b3355CE1521f9d565B517Bd84AB4B6C',
     abi: DomainLinksStorageABI as Abi,
   },
   DomainDataStorage: {
-    address: '0xC2568Ce754e5568Ba0712A61AA1eD5397511D07A',
+    address: '0xFd1a17b63478cf58b96c33aBbD4584b300F122b8',
     abi: DomainDataStorageABI as Abi,
   },
   DomainCategoriesStorage: {
-    address: '0x20FD0609FCd7bc952Bd2A0b8f7427163a3604852',
+    address: '0xAa29E4376Ddd8a20f811b33B592bE35619B31934',
     abi: DomainCategoriesStorageABI as Abi,
   },
   DomainLikesManager: {
-    address: '0xB18461Ad6f5B6f753c7487CeadBd7fa04273dA5A',
+    address: '0xaf0e6aF9ac8ED8367A565FB3b006c07a9e148D03',
     abi: DomainLikesManagerABI as Abi,
   },
   KDCToken: {
-    address: '0x246fBCb9C661E24e10A59Cf92aB448fA76dF4C29',
+    address: '0xAEc5f6B24e503e6D874Bf94Ce56E8e5bbF9c0741',
     abi: KDCTokenABI as Abi,
   },
 } as const;

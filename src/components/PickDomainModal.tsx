@@ -1,45 +1,37 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useOwnedDomains } from '@/hooks/kns/api/useOwnedDomains';
 import { DomainAsset } from '@/hooks/kns/types';
 import { useWalletContext } from '@/context/WalletContext';
+import { useListDomain } from '@/hooks/domain/useListDomain';
+import { useState } from 'react';
 
 type PickDomainModalProps = {
   domains?: DomainAsset[];
 };
 
 export default function PickDomainModal({ domains: externalDomains }: PickDomainModalProps) {
-  const router = useRouter();
   const { account } = useWalletContext();
+  const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
 
   const {
     data: walletDomainsData,
     isLoading,
     isError,
     error,
-  } = useOwnedDomains(account ?? null); // pass null if no account
+  } = useOwnedDomains(account ?? null);
 
-  // Use externally passed domains or fetched wallet domains
+  const { listDomain, txHash, isLoading: listing, error: listError } = useListDomain();
+
   const domains: DomainAsset[] | undefined = externalDomains ?? walletDomainsData?.domains;
-
-  // Filter only verified domains (adjust the property name accordingly)
-  const verifiedDomains = domains?.filter(domain => domain.isVerifiedDomain === true);
+  const verifiedDomains = domains?.filter((domain) => domain.isVerifiedDomain === true);
 
   if (!account) {
-    return (
-      <p className="text-center mt-10 text-white">
-        Connect your wallet to continue.
-      </p>
-    );
+    return <p className="text-center mt-10 text-white">Connect your wallet to continue.</p>;
   }
 
   if (!externalDomains && isLoading) {
-    return (
-      <p className="text-center mt-10 text-white">
-        Loading your domains...
-      </p>
-    );
+    return <p className="text-center mt-10 text-white">Loading your domains...</p>;
   }
 
   if (!externalDomains && isError) {
@@ -60,7 +52,7 @@ export default function PickDomainModal({ domains: externalDomains }: PickDomain
 
   return (
     <div className="max-w-lg mx-auto mt-10 bg-[#0F2F2E] border border-kaspaMint rounded-xl p-6 shadow-md">
-      <h2 className="text-xl font-semibold text-white mb-4">Pick a domain to configure</h2>
+      <h2 className="text-xl font-semibold text-white mb-4">Pick a domain to list</h2>
 
       {walletDomainsData?.pagination && (
         <p className="text-sm text-kaspaMint mb-2">
@@ -72,14 +64,39 @@ export default function PickDomainModal({ domains: externalDomains }: PickDomain
         {verifiedDomains.map((domain) => (
           <li key={domain.assetId}>
             <button
-              onClick={() => router.push(`/domain/new?name=${encodeURIComponent(domain.asset)}`)}
-              className="w-full text-left px-4 py-2 bg-kaspaMint text-[#0F2F2E] hover:bg-[#3DFDAD]/90 rounded-md transition"
+              onClick={async () => {
+                setSelectedDomain(domain.asset);
+                await listDomain(domain.asset);
+              }}
+              disabled={listing && selectedDomain === domain.asset}
+              className="w-full flex items-center justify-between px-4 py-2 bg-kaspaMint text-[#0F2F2E] hover:bg-[#3DFDAD]/90 rounded-md transition"
             >
-              {domain.asset}
+              <span>{domain.asset}</span>
+              <span className="text-xs text-[#0F2F2E] font-semibold">
+                {listing && selectedDomain === domain.asset
+                  ? 'Listing…'
+                  : 'List for 420 KAS'}
+              </span>
             </button>
           </li>
         ))}
       </ul>
+
+      {txHash && (
+        <p className="text-green-400 text-sm mt-4 break-all">
+          Domain listed! Tx:{' '}
+          <a
+            href={`https://frontend.kasplextest.xyz/tx/${txHash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            {txHash.slice(0, 12)}...
+          </a>
+        </p>
+      )}
+
+      {listError && <p className="text-red-400 text-sm mt-2">Error: {listError}</p>}
     </div>
   );
 }

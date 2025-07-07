@@ -20,12 +20,12 @@ export function useListDomain() {
 
     try {
       if (!account) {
-        await connect('kasware');
+        await connect('kasware'); // ensure wallet is connected
         throw new Error('Wallet not connected');
       }
 
       const walletClient = getWalletClient(account as `0x${string}`);
-      const value = parseEther('999');
+      const value = parseEther('420'); // 420 KAS
 
       const txHash = await walletClient.writeContract({
         address: contracts.KaspaDomainsRegistry.address,
@@ -38,7 +38,7 @@ export function useListDomain() {
 
       setTxHash(txHash);
 
-      // ✅ use public client to wait for confirmation
+      // Wait for transaction to be mined via public client
       await kasplexClient.waitForTransactionReceipt({ hash: txHash });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
