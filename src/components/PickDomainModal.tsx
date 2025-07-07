@@ -1,3 +1,4 @@
+// src/components/PickDomainModal.tsx
 'use client';
 
 import { useOwnedDomains } from '@/hooks/kns/api/useOwnedDomains';
