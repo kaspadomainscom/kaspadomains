@@ -6,8 +6,8 @@ import { useState } from 'react';
 
 type PickDomainModalProps = {
   domains?: DomainAsset[];
-  evmAccount: string | null;      // now required
-  kaspaAccount: string | null;    // now required
+  evmAccount: string | null;
+  kaspaAccount: string | null;
 };
 
 export default function PickDomainModal({
@@ -50,7 +50,7 @@ export default function PickDomainModal({
             <button
               onClick={async () => {
                 setSelectedDomain(domain.asset);
-                await listDomain(domain.asset); // ✅ only pass EVM address
+                await listDomain(domain.asset); // ✅ explicitly use MetaMask account
               }}
               disabled={listing && selectedDomain === domain.asset}
               className="w-full flex items-center justify-between px-4 py-2 bg-kaspaMint text-[#0F2F2E] hover:bg-[#3DFDAD]/90 rounded-md transition"
