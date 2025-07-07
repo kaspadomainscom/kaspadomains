@@ -1,5 +1,5 @@
 import { BrowserProvider, Contract, Signer } from "ethers";
-import ABI from "@/abi/KaspaDomainsRegistry.json";
+import ABI from "@/abis/KaspaDomainsRegistry.json";
 
 const CONTRACT_ADDRESS = "0xYourContractAddress"; // replace
 

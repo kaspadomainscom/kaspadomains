@@ -7,7 +7,9 @@ import { businessDomains } from "./categories/business";
 import { charactersDomains } from "./categories/characters";
 import { finance } from "./categories/finance";
 import { gamingDomains } from "./categories/gaming";
+import { geoDomains } from "./categories/geo";
 import { memeDomains } from "./categories/meme";
+import { otherDomains } from "./categories/other";
 import { realWordsDomains } from "./categories/realWords";
 import { shortNamesDomains } from "./categories/short";
 import { techDomains } from "./categories/tech";
@@ -71,13 +73,19 @@ export const categoriesData: Record<
     domains: realWordsDomains,
   },
   business: {
-    title: "Real Words",
+    title: "Business",
     domains: businessDomains,
   },
   trending: {
     title: "Trending",
     domains: trendingDomains,
+  },
+  geo: {
+    title: "Geo", // Countries, cities
+    domains: geoDomains,
+  },
+  other: {
+    title: "other", // Countries, cities
+    domains: otherDomains,
   }
-  // etc...
-  // Add other categories similarly
 };

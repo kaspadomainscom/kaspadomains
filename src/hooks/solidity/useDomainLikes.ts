@@ -6,7 +6,7 @@ import {
   Provider,
   ContractTransactionResponse,
 } from "ethers";
-import { DomainLikesManagerABI } from "@/abi/DomainLikesManagerABI";
+import { DomainLikesManagerABI } from "@/abis/DomainLikesManagerABI";
 
 // Replace with your deployed contract address
 const DOMAIN_LIKES_MANAGER_ADDRESS = "0xYourContractAddressHere";

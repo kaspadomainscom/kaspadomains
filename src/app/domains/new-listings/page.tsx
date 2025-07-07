@@ -3,7 +3,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ethers } from 'ethers';
-import KaspaDomainsRegistryAbi from '@/abi/KaspaDomainsRegistry.json';
+import KaspaDomainsRegistryAbi from '@/abis/KaspaDomainsRegistry.json';
 
 const CONTRACT_ADDRESS = '0xYourContractAddressHere';
 const DOMAIN_FEE = ethers.parseEther('999'); // 999 KAS in wei

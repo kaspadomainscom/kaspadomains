@@ -3,7 +3,7 @@
 
 import { useCallback, useState } from "react";
 import { ethers } from "ethers";
-import KaspaDomainsRegistryAbi from "@/abi/KaspaDomainsRegistry.json";
+import KaspaDomainsRegistryAbi from "@/abis/KaspaDomainsRegistry.json";
 
 const CONTRACT_ADDRESS = "0xYourKaspaDomainsRegistryAddress"; // Replace with your actual address
 
