@@ -2,12 +2,13 @@
 
 import React from 'react';
 import PickDomainModal from '@/components/PickDomainModal';
-import { useBaseWallet } from '@/hooks/wallet/internal/useBaseWallet';
 import { useOwnedDomains } from '@/hooks/kns/api/useOwnedDomains';
+import { useWallet } from '@/hooks/wallet/useWallet';
+import { useMetamaskWallet } from '@/hooks/wallet/internal/useMetamaskWallet';
 
 export default function ListDomainPage() {
-  const kasware = useBaseWallet('kasware');   // Kaspa wallet - domain ownership
-  const metamask = useBaseWallet('metamask'); // EVM wallet - contract interaction
+  const metamask = useMetamaskWallet(); // EVM wallet - contract interaction
+  const kasware = useWallet();   // Kaspa wallet - domain ownership
 
   const {
     data: domainData,
@@ -57,7 +58,7 @@ export default function ListDomainPage() {
           <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0">
             {showKaswareConnect && (
               <button
-                onClick={() => kasware.connect()}
+                onClick={() => kasware.connect('kasware')}
                 disabled={kasware.status === 'connecting'}
                 className="bg-[#5183f5] hover:bg-[#4169c9] text-white font-semibold py-2 px-6 rounded-lg transition disabled:opacity-50"
               >
