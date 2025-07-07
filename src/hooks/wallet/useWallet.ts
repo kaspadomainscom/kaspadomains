@@ -52,10 +52,14 @@ function getErrorMessage(e: unknown): string {
   return String(e);
 }
 
+/**
+ * Find the wallet provider by type, handling multi-provider injections
+ * and legacy Kasware window global.
+ */
 function findProvider(type: WalletType): Provider | undefined {
   const eth = window.ethereum as EIP1193Provider | undefined;
 
-  // Multi-injected: search by exact match
+  // Multi-injected wallets: find exact matching provider
   if (Array.isArray(eth?.providers)) {
     return eth.providers.find((p) =>
       (type === 'metamask' && p.isMetaMask && !p.isKasware) ||
@@ -63,19 +67,18 @@ function findProvider(type: WalletType): Provider | undefined {
     );
   }
 
-  // Single provider: check by type
+  // Single provider scenario
   if (eth) {
     if (type === 'metamask' && eth.isMetaMask && !eth.isKasware) return eth;
     if (type === 'kasware'  && eth.isKasware  && !eth.isMetaMask) return eth;
   }
 
-  // Kasware legacy global
+  // Legacy Kasware global object fallback
   const kws = window.kasware as KaswareLegacyProvider | undefined;
   if (type === 'kasware' && kws) return kws;
 
   return undefined;
 }
-
 
 async function requestAccounts(provider: Provider): Promise<string[]> {
   if (isEIP1193(provider)) {
@@ -163,6 +166,7 @@ export function useWallet(): WalletState {
     localStorage.removeItem('walletType');
   }, []);
 
+  // On mount: load saved wallet or detect default provider
   useEffect(() => {
     const saved = localStorage.getItem('walletType') as WalletType | null;
     if (saved && findProvider(saved)) {
@@ -174,6 +178,7 @@ export function useWallet(): WalletState {
     }
   }, []);
 
+  // Subscribe to provider events for account & network changes
   useEffect(() => {
     const provider = findProvider(walletType);
     if (!provider || typeof provider.on !== 'function') return;

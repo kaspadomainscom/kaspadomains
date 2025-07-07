@@ -20,6 +20,7 @@ export default function PickDomainModal({
 
   const verifiedDomains = domains.filter((domain) => domain.isVerifiedDomain === true);
 
+  // Require both wallets connected
   if (!evmAccount || !kaspaAccount) {
     return (
       <p className="text-center mt-10 text-white">
@@ -28,6 +29,7 @@ export default function PickDomainModal({
     );
   }
 
+  // No verified domains found
   if (verifiedDomains.length === 0) {
     return (
       <p className="text-center mt-10 text-white">
@@ -50,13 +52,24 @@ export default function PickDomainModal({
             <button
               onClick={async () => {
                 setSelectedDomain(domain.asset);
-                await listDomain(domain.asset); // ✅ explicitly use MetaMask account
+                try {
+                  await listDomain(domain.asset);
+                } catch {
+                  // error handled inside useListDomain
+                }
               }}
-              disabled={listing && selectedDomain === domain.asset}
-              className="w-full flex items-center justify-between px-4 py-2 bg-kaspaMint text-[#0F2F2E] hover:bg-[#3DFDAD]/90 rounded-md transition"
+              disabled={listing}
+              className={`w-full flex items-center justify-between px-4 py-2 rounded-md transition
+                ${listing && selectedDomain === domain.asset
+                  ? 'bg-[#3DFDAD]/90 text-[#0F2F2E] cursor-wait'
+                  : 'bg-kaspaMint text-[#0F2F2E] hover:bg-[#3DFDAD]/90 cursor-pointer'
+                }`}
+              aria-busy={listing && selectedDomain === domain.asset}
+              aria-disabled={listing}
+              type="button"
             >
               <span>{domain.asset}</span>
-              <span className="text-xs text-[#0F2F2E] font-semibold">
+              <span className="text-xs font-semibold">
                 {listing && selectedDomain === domain.asset ? 'Listing…' : 'List for 420 KAS'}
               </span>
             </button>
@@ -73,7 +86,7 @@ export default function PickDomainModal({
             rel="noopener noreferrer"
             className="underline"
           >
-            {txHash.slice(0, 12)}...
+            {txHash.slice(0, 12)}…
           </a>
         </p>
       )}
