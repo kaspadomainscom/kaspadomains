@@ -8,34 +8,30 @@ import { kasplexTestnet } from '@/lib/viemChains';
 import { useWallet } from '@/hooks/wallet/useWallet';
 
 /**
- * Safely gets the MetaMask provider even if multiple wallets are injected (e.g., KasWare).
+ * Returns a viem WalletClient using MetaMask.
+ * Throws if MetaMask is not installed or available.
  */
-function getMetaMaskWalletClient(account: `0x${string}`) {
-  if (typeof window === 'undefined') return null;
+function createMetaMaskClient(account: `0x${string}`) {
+  if (typeof window === 'undefined') {
+    throw new Error('Window is not defined.');
+  }
 
-  // Multi-provider case (e.g., MetaMask + KasWare)
-  if (Array.isArray(window.ethereum?.providers)) {
-    const metaMaskProvider = window.ethereum.providers.find((p) => p.isMetaMask);
-    if (!metaMaskProvider) {
-      throw new Error('MetaMask provider not found. Please install MetaMask.');
+  const provider = (() => {
+    if (Array.isArray(window.ethereum?.providers)) {
+      return window.ethereum.providers.find((p) => p.isMetaMask);
     }
-    return createWalletClient({
-      account,
-      chain: kasplexTestnet,
-      transport: custom(metaMaskProvider),
-    });
+    return window.ethereum?.isMetaMask ? window.ethereum : null;
+  })();
+
+  if (!provider) {
+    throw new Error('MetaMask not found. Please install MetaMask and refresh the page.');
   }
 
-  // Single provider fallback (ensure it's MetaMask)
-  if (window.ethereum?.isMetaMask) {
-    return createWalletClient({
-      account,
-      chain: kasplexTestnet,
-      transport: custom(window.ethereum),
-    });
-  }
-
-  throw new Error('MetaMask provider not found. Please install MetaMask.');
+  return createWalletClient({
+    account,
+    chain: kasplexTestnet,
+    transport: custom(provider),
+  });
 }
 
 export function useListDomain() {
@@ -43,7 +39,7 @@ export function useListDomain() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { account, connect } = useWallet(); // Should be MetaMask only
+  const { account, connect } = useWallet(); // MetaMask only
 
   async function listDomain(domain: string) {
     setError(null);
@@ -51,21 +47,16 @@ export function useListDomain() {
     setIsLoading(true);
 
     try {
-      // Check MetaMask account validity
       if (!account || !account.startsWith('0x') || account.length !== 42) {
         console.warn('MetaMask not connected. Attempting to connect...');
-        await connect('metamask'); // connect() connects MetaMask only in your updated useWallet
-        throw new Error('Please connect your MetaMask wallet.');
+        await connect('metamask');
+        throw new Error('Please connect your MetaMask wallet to continue.');
       }
 
       const evmAccount = account as `0x${string}`;
-      const walletClient = getMetaMaskWalletClient(evmAccount);
+      const walletClient = createMetaMaskClient(evmAccount);
 
-      if (!walletClient) {
-        throw new Error('MetaMask wallet client could not be created.');
-      }
-
-      const tx = await walletClient.writeContract({
+      const txHash = await walletClient.writeContract({
         address: contracts.KaspaDomainsRegistry.address,
         abi: contracts.KaspaDomainsRegistry.abi,
         functionName: 'listDomain',
@@ -74,13 +65,13 @@ export function useListDomain() {
         value: parseEther('420'), // 420 KAS
       });
 
-      setTxHash(tx);
-      console.log('Transaction sent:', tx);
+      setTxHash(txHash);
+      console.log('Transaction sent:', txHash);
 
-      await kasplexClient.waitForTransactionReceipt({ hash: tx });
-      console.log('Transaction confirmed:', tx);
+      await kasplexClient.waitForTransactionReceipt({ hash: txHash });
+      console.log('Transaction confirmed:', txHash);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
+      const message = err instanceof Error ? err.message : 'Unknown error occurred.';
       console.error('List domain error:', message);
       setError(message);
     } finally {
