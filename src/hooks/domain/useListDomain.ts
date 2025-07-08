@@ -8,8 +8,7 @@ import { kasplexTestnet } from '@/lib/viemChains';
 import { useMetamaskWallet } from '@/hooks/wallet/internal/useMetamaskWallet';
 
 /**
- * Returns a viem WalletClient using MetaMask.
- * Throws if MetaMask is not installed or available.
+ * Create a MetaMask-specific WalletClient
  */
 function createMetaMaskClient(account: `0x${string}`) {
   if (typeof window === 'undefined') {
@@ -39,45 +38,47 @@ export function useListDomain() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { account, connect } = useMetamaskWallet(); // MetaMask only
+  const { account, connect } = useMetamaskWallet();
 
-  async function listDomain(domain: string) {
+  const listDomain = async (domain: string) => {
     setError(null);
     setTxHash(null);
     setIsLoading(true);
 
     try {
-      if (!account || !account.startsWith('0x') || account.length !== 42) {
-        console.warn('MetaMask not connected. Attempting to connect...');
+      const evmAccount = account;
+
+      // If not connected or invalid address, attempt to connect
+      if (!evmAccount || !evmAccount.startsWith('0x') || evmAccount.length !== 42) {
+        console.warn('MetaMask not connected. Attempting connection...');
         await connect();
         throw new Error('Please connect your MetaMask wallet to continue.');
       }
 
-      const evmAccount = account as `0x${string}`;
-      const walletClient = createMetaMaskClient(evmAccount);
+      const walletClient = createMetaMaskClient(evmAccount as `0x${string}`);
 
-      const txHash = await walletClient.writeContract({
+      const hash = await walletClient.writeContract({
         address: contracts.KaspaDomainsRegistry.address,
         abi: contracts.KaspaDomainsRegistry.abi,
         functionName: 'listDomain',
         args: [domain],
-        account: evmAccount,
+        account: evmAccount as `0x${string}`,
         value: parseEther('420'), // 420 KAS
       });
 
-      setTxHash(txHash);
-      console.log('Transaction sent:', txHash);
+      setTxHash(hash);
+      console.log('Transaction hash:', hash);
 
-      await kasplexClient.waitForTransactionReceipt({ hash: txHash });
-      console.log('Transaction confirmed:', txHash);
+      await kasplexClient.waitForTransactionReceipt({ hash });
+      console.log('Transaction confirmed:', hash);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error occurred.';
-      console.error('List domain error:', message);
+      console.error('List domain failed:', message);
       setError(message);
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   return {
     listDomain,
