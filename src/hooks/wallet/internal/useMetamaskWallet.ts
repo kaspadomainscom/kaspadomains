@@ -28,45 +28,50 @@ interface ExtendedProvider extends MetaMaskInpageProvider {
   selectedAddress: string | null;
 }
 
+async function isGenuineMetaMask(provider: unknown): Promise<boolean> {
+  try {
+    const p = provider as Partial<MetaMaskInpageProvider> & {
+      _metamask?: { isUnlocked?: () => boolean };
+      isKasware?: boolean;
+      isPhantom?: boolean;
+      isCoinbaseWallet?: boolean;
+    };
+
+    return (
+      !!p.isMetaMask &&
+      !p.isKasware &&
+      !p.isPhantom &&
+      !p.isCoinbaseWallet &&
+      typeof p._metamask?.isUnlocked === 'function'
+    );
+  } catch {
+    return false;
+  }
+}
+
+
 async function getMetaMaskProvider(): Promise<MetaMaskInpageProvider | null> {
   if (typeof window === 'undefined') return null;
 
   const eth = window.ethereum as EthereumWithProviders & MetaMaskInpageProvider;
 
-  // Multi-provider mode
   if (Array.isArray(eth?.providers)) {
-    console.log('[MetaMask] Multiple providers detected:', eth.providers);
-    const metamask = eth.providers.find((p) => {
-      const provider = p as ExtendedProvider;
-      return (
-        provider.isMetaMask &&
-        !provider.isKasware &&
-        !provider.isPhantom &&
-        !provider.isCoinbaseWallet
-      );
-    });
-    if (metamask) {
-      console.log('[MetaMask] Valid MetaMask provider found (filtered):', metamask);
-      return metamask as MetaMaskInpageProvider;
+    console.log('[MetaMask] Multiple providers detected');
+    for (const p of eth.providers) {
+      if (await isGenuineMetaMask(p)) {
+        console.log('[MetaMask] Valid MetaMask provider selected:', p);
+        return p as MetaMaskInpageProvider;
+      }
     }
   }
 
-  // Single-provider fallback
-  const provider = (await detectEthereumProvider()) as MetaMaskInpageProvider | null;
-  const ext = provider as ExtendedProvider;
-
-  if (
-    provider &&
-    ext?.isMetaMask &&
-    !ext.isKasware &&
-    !ext.isPhantom &&
-    !ext.isCoinbaseWallet
-  ) {
-    console.log('[MetaMask] Single provider valid MetaMask detected');
-    return provider;
+  const fallback = (await detectEthereumProvider()) as MetaMaskInpageProvider | null;
+  if (fallback && (await isGenuineMetaMask(fallback))) {
+    console.log('[MetaMask] Single valid MetaMask detected');
+    return fallback;
   }
 
-  console.warn('[MetaMask] No valid MetaMask provider found');
+  console.warn('[MetaMask] No valid MetaMask provider found (Kasware blocked)');
   return null;
 }
 
@@ -103,6 +108,7 @@ export function useMetamaskWallet(): WalletState {
       setAccount(accounts[0]);
       setChainId(currentChainId);
       setStatus('connected');
+      setError(null);
 
       console.log('[MetaMask] Connected to:', accounts[0]);
     } catch (err) {
@@ -166,7 +172,6 @@ export function useMetamaskWallet(): WalletState {
       provider = prov;
 
       console.log('[MetaMask] Provider mounted, selectedAddress:', (provider as ExtendedProvider).selectedAddress);
-
       provider.on?.('accountsChanged', handleAccountsChanged);
       provider.on?.('chainChanged', handleChainChanged);
     });
