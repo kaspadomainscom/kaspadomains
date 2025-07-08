@@ -27,28 +27,17 @@ interface EthereumWithProviders {
 async function getMetaMaskProvider(): Promise<MetaMaskInpageProvider | null> {
   if (typeof window === 'undefined') return null;
 
-  const anyWindow = window as typeof window & {
-    ethereum?: EthereumWithProviders & MetaMaskInpageProvider;
-  };
+  const eth = window.ethereum as EthereumWithProviders & MetaMaskInpageProvider;
 
-  if (Array.isArray(anyWindow.ethereum?.providers)) {
-    const metamaskProvider = anyWindow.ethereum.providers.find(
-      (p) => (p as MetaMaskInpageProvider)?.isMetaMask
-    ) as MetaMaskInpageProvider | undefined;
-
-    if (metamaskProvider) {
-      // Force MetaMask to be the selected provider
-      anyWindow.ethereum = metamaskProvider;
-      return metamaskProvider;
-    }
+  // If multiple providers (e.g. MetaMask + Kasware), find MetaMask explicitly
+  if (Array.isArray(eth?.providers)) {
+    const metamask = eth.providers.find((p) => (p as MetaMaskInpageProvider)?.isMetaMask);
+    if (metamask) return metamask as MetaMaskInpageProvider;
   }
 
+  // Fallback single provider
   const provider = (await detectEthereumProvider()) as MetaMaskInpageProvider | null;
-
-  if (provider?.isMetaMask) {
-    anyWindow.ethereum = provider; // enforce selection
-    return provider;
-  }
+  if (provider?.isMetaMask) return provider;
 
   return null;
 }
@@ -70,7 +59,7 @@ export function useMetamaskWallet(): WalletState {
     const provider = await getMetaMaskProvider();
     if (!provider) {
       setStatus('unavailable');
-      setError('MetaMask not found');
+      setError('MetaMask not found or not selected');
       return;
     }
 
@@ -81,10 +70,10 @@ export function useMetamaskWallet(): WalletState {
       const accounts = (await provider.request({ method: 'eth_requestAccounts' })) as string[];
       if (!accounts.length) throw new Error('No accounts returned');
 
-      const chainId = (await provider.request({ method: 'eth_chainId' })) as string;
+      const currentChainId = (await provider.request({ method: 'eth_chainId' })) as string;
 
       setAccount(accounts[0]);
-      setChainId(chainId);
+      setChainId(currentChainId);
       setStatus('connected');
     } catch (e) {
       setError(getErrorMessage(e));
@@ -95,7 +84,7 @@ export function useMetamaskWallet(): WalletState {
   const switchNetwork = useCallback(async () => {
     const provider = await getMetaMaskProvider();
     if (!provider) {
-      setError('MetaMask not available');
+      setError('MetaMask not available for network switch');
       return;
     }
 
