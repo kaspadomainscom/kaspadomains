@@ -1,4 +1,3 @@
-// src/components/Header.tsx
 'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
@@ -7,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import KaspaDomainsLogo from './KaspaDomainsLogo';
 import { findDomainByName } from '@/data/domainLookup';
 import { categoriesData } from '@/data/categoriesManifest';
-import { useWalletContext } from '@/context/WalletContext';  // updated import
+import { useWalletContext } from '@/context/WalletContext';
 
 const NAV_ITEMS = [
   { label: 'Home', href: '/' },
@@ -15,57 +14,49 @@ const NAV_ITEMS = [
   { label: 'Learn', href: '/learn' },
 ];
 
-// strip “.kas” suffix once, memoize for performance
-const trendingDomains = categoriesData.trending.domains
-  .map(d => d.name.replace(/\.kas$/i, ''));
+const trendingDomains = categoriesData.trending.domains.map(d =>
+  d.name.replace(/\.kas$/i, '')
+);
 
 function ConnectButton() {
-  // Use the wallet context instead of the useWallet hook
   const {
-    connect,
-    account,
-    walletType,
-    isCorrectNetwork,
-    switchNetwork,
-    disconnect,
-    status,
-    error,
+    kasware,
+    metamask,
+    activeAccount,
+    isFullyConnected,
+    disconnectAll,
+    activeError,
   } = useWalletContext();
 
-  const isConnecting = status === 'connecting';
-  const isConnected  = status === 'connected';
-  const shortAddress = useMemo(
-    () => account ? `${account.slice(0, 6)}…${account.slice(-4)}` : '',
-    [account]
-  );
+  const [connectError, setConnectError] = useState<string | null>(null);
 
-  const handleConnect = async (type: 'metamask' | 'kasware') => {
-    if (!account) {
-      await connect(type);
-    } else if (!isCorrectNetwork) {
-      await switchNetwork();
+  const shortAddress = useMemo(() => {
+    if (!activeAccount) return '';
+    return `${activeAccount.slice(0, 6)}…${activeAccount.slice(-4)}`;
+  }, [activeAccount]);
+
+  const handleConnect = async (type: 'kasware' | 'metamask') => {
+    try {
+      setConnectError(null); // clear previous errors
+      if (type === 'kasware' && !kasware.account) await kasware.connect();
+      if (type === 'metamask' && !metamask.account) await metamask.connect();
+    } catch (error) {
+      console.error(`Failed to connect ${type} wallet:`, error);
+      setConnectError(
+        `Failed to connect ${type} wallet: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   };
 
   return (
     <div className="flex flex-col items-end gap-1">
-      {isConnected ? (
+      {isFullyConnected ? (
         <div className="flex items-center space-x-2">
+          <span className="text-white text-sm font-mono">{shortAddress}</span>
           <button
-            onClick={() => handleConnect(walletType!)}
-            disabled={isConnecting}
-            className="bg-kaspaMint hover:bg-[#3DFDAD]/90 text-[#0F2F2E]
-                       font-semibold py-1.5 px-4 rounded-lg transition
-                       disabled:opacity-50"
-          >
-            {isConnecting
-              ? 'Connecting…'
-              : `${shortAddress} (${walletType})`}
-          </button>
-          <button
-            onClick={disconnect}
-            className="bg-red-600 hover:bg-red-700 text-white
-                       font-semibold py-1.5 px-3 rounded-lg transition"
+            onClick={disconnectAll}
+            className="bg-red-600 hover:bg-red-700 text-white font-semibold py-1.5 px-3 rounded-lg transition"
+            aria-label="Logout from wallet"
           >
             Logout
           </button>
@@ -74,25 +65,27 @@ function ConnectButton() {
         <div className="flex items-center space-x-2">
           <button
             onClick={() => handleConnect('metamask')}
-            disabled={isConnecting}
-            className="bg-kaspaMint hover:bg-[#3DFDAD]/90 text-[#0F2F2E]
-                       font-semibold py-1.5 px-4 rounded-lg transition
-                       disabled:opacity-50"
+            disabled={metamask.status === 'connecting'}
+            className="bg-kaspaMint hover:bg-[#3DFDAD]/90 text-[#0F2F2E] font-semibold py-1.5 px-4 rounded-lg transition disabled:opacity-50"
+            aria-label="Connect with MetaMask"
           >
-            {isConnecting ? 'Connecting…' : 'MetaMask'}
+            {metamask.status === 'connecting' ? 'Connecting…' : 'MetaMask'}
           </button>
           <button
             onClick={() => handleConnect('kasware')}
-            disabled={isConnecting}
-            className="bg-[#5183f5] hover:bg-[#4169c9] text-white
-                       font-semibold py-1.5 px-4 rounded-lg transition
-                       disabled:opacity-50"
+            disabled={kasware.status === 'connecting'}
+            className="bg-[#5183f5] hover:bg-[#4169c9] text-white font-semibold py-1.5 px-4 rounded-lg transition disabled:opacity-50"
+            aria-label="Connect with Kasware"
           >
-            {isConnecting ? 'Connecting…' : 'Kasware'}
+            {kasware.status === 'connecting' ? 'Connecting…' : 'Kasware'}
           </button>
         </div>
       )}
-      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+      {(connectError || activeError || kasware.error || metamask.error) && (
+        <p className="text-red-500 text-xs mt-1">
+          {connectError || activeError || kasware.error || metamask.error}
+        </p>
+      )}
     </div>
   );
 }
@@ -106,7 +99,7 @@ interface NavProps {
 
 function DesktopNav({ onSearch, searchTerm, setSearchTerm, isPathActive }: NavProps) {
   return (
-    <nav className="hidden md:flex items-center space-x-6">
+    <nav className="hidden md:flex items-center space-x-6" aria-label="Primary navigation">
       <div className="flex space-x-4">
         {NAV_ITEMS.map(({ label, href }) => (
           <Link
@@ -117,6 +110,7 @@ function DesktopNav({ onSearch, searchTerm, setSearchTerm, isPathActive }: NavPr
                 ? 'text-white after:block after:h-0.5 after:bg-white after:w-full'
                 : 'text-white/80 hover:text-white'
             }`}
+            aria-current={isPathActive(href) ? 'page' : undefined}
           >
             {label}
           </Link>
@@ -135,13 +129,16 @@ function DesktopNav({ onSearch, searchTerm, setSearchTerm, isPathActive }: NavPr
         <input
           type="search"
           placeholder="Search domains…"
-          className="w-52 px-3 py-2 rounded-md text-sm text-white
-                     bg-white/10 border border-white/20 placeholder-white/50
-                     focus:bg-white focus:text-gray-900 transition"
+          className="w-52 px-3 py-2 rounded-md text-sm text-white bg-white/10 border border-white/20 placeholder-white/50 focus:bg-white focus:text-gray-900 transition"
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
+          aria-label="Search domains input"
         />
-        <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2">
+        <button
+          type="submit"
+          className="absolute right-2 top-1/2 -translate-y-1/2"
+          aria-label="Submit domain search"
+        >
           <svg
             className="h-4 w-4 text-white/60"
             fill="none"
@@ -177,14 +174,17 @@ function MobileMenu({
   if (!open) return null;
 
   return (
-    <nav className="md:hidden bg-[#0F2F2E] px-4 py-4 space-y-3
-                    shadow-md border-t border-[#3DFDAD]/40">
+    <nav
+      className="md:hidden bg-[#0F2F2E] px-4 py-4 space-y-3 shadow-md border-t border-[#3DFDAD]/40"
+      aria-label="Mobile navigation"
+    >
       {NAV_ITEMS.map(({ label, href }) => (
         <Link
           key={href}
           href={href}
           onClick={onClose}
           className="block px-2 py-2 rounded-md text-white/90 hover:text-white"
+          aria-current={href === undefined ? undefined : undefined /* You can add active state here */}
         >
           {label}
         </Link>
@@ -200,11 +200,10 @@ function MobileMenu({
         <input
           type="search"
           placeholder="Search domains…"
-          className="w-full px-3 py-2 rounded-md text-sm text-white
-                     bg-white/10 border border-white/20 placeholder-white/50
-                     focus:bg-white focus:text-gray-900 transition mb-2"
+          className="w-full px-3 py-2 rounded-md text-sm text-white bg-white/10 border border-white/20 placeholder-white/50 focus:bg-white focus:text-gray-900 transition mb-2"
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
+          aria-label="Search domains input"
         />
       </form>
 
@@ -214,14 +213,13 @@ function MobileMenu({
 }
 
 export default function Header() {
-  const [menuOpen, setMenuOpen]     = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const pathname = usePathname();
-  const router   = useRouter();
+  const router = useRouter();
 
   const isPathActive = useCallback(
-    (href: string) =>
-      pathname === href || (href !== '/' && pathname.startsWith(href)),
+    (href: string) => pathname === href || (href !== '/' && pathname.startsWith(href)),
     [pathname]
   );
 
@@ -233,9 +231,7 @@ export default function Header() {
 
       const exists = findDomainByName(term);
       router.push(
-        exists
-          ? `/domain/${encodeURIComponent(term)}`
-          : `/search?q=${encodeURIComponent(term)}`
+        exists ? `/domain/${encodeURIComponent(term)}` : `/search?q=${encodeURIComponent(term)}`
       );
       setSearchTerm('');
       setMenuOpen(false);
@@ -245,8 +241,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 shadow-sm bg-[#0F2F2E]/90 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto flex items-center
-                      justify-between px-4 py-3 md:py-4">
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3 md:py-4">
         <KaspaDomainsLogo />
 
         <DesktopNav
@@ -258,25 +253,32 @@ export default function Header() {
 
         <button
           onClick={() => setMenuOpen(o => !o)}
-          className="md:hidden text-white p-2 rounded-md
-                     hover:bg-white/20 focus:outline-none
-                     focus:ring-2 focus:ring-offset-2 focus:ring-kaspaMint"
+          className="md:hidden text-white p-2 rounded-md hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-kaspaMint"
           aria-label={menuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={menuOpen}
+          aria-controls="mobile-menu"
         >
           {menuOpen ? (
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 className="h-6 w-6" fill="none"
-                 stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           ) : (
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 className="h-6 w-6" fill="none"
-                 stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round"
-                    d="M4 6h16M4 12h16M4 18h16" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           )}
         </button>
@@ -284,9 +286,7 @@ export default function Header() {
 
       <div className="bg-[#0F2F2E] border-t border-[#3DFDAD]/20 overflow-hidden">
         <div
-          className="animate-marquee flex gap-8 py-2 px-4 text-[#3DFDAD]
-                     text-sm md:text-base font-medium tracking-tight
-                     hover:[animation-play-state:paused]"
+          className="animate-marquee flex gap-8 py-2 px-4 text-[#3DFDAD] text-sm md:text-base font-medium tracking-tight hover:[animation-play-state:paused]"
           aria-label="Trending domains"
         >
           {trendingDomains.length ? (
@@ -297,7 +297,7 @@ export default function Header() {
                 className="flex-shrink-0 whitespace-nowrap hover:underline glow-green"
               >
                 🔥 <span className="font-semibold">{domain}</span> —{' '}
-                <span className="underline underline-offset-4">Buy Now</span>
+                <span className="underline underline-offset-4">Buy&nbsp;Now</span>
               </Link>
             ))
           ) : (

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import detectEthereumProvider from '@metamask/detect-provider';
+import { MetaMaskInpageProvider } from '@metamask/providers';
 import { KASPLEX_TESTNET } from '@/lib/kasplex';
 
 export type WalletStatus = 'idle' | 'connecting' | 'connected' | 'error' | 'unavailable';
@@ -16,23 +17,14 @@ export interface WalletState {
   error: string | null;
 }
 
-// Define MetaMask provider interface with needed properties and methods
-interface MetaMaskProvider {
-  isMetaMask?: boolean;
-  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-  on?: (event: string, handler: (payload: unknown) => void) => void;
-  removeListener?: (event: string, handler: (payload: unknown) => void) => void;
-}
-
-async function getMetaMaskProvider(): Promise<MetaMaskProvider | null> {
-  const provider = (await detectEthereumProvider()) as MetaMaskProvider | null;
-  if (provider?.isMetaMask) return provider;
-  return null;
+async function getMetaMaskProvider(): Promise<MetaMaskInpageProvider | null> {
+  const provider = (await detectEthereumProvider()) as MetaMaskInpageProvider | null;
+  return provider?.isMetaMask ? provider : null;
 }
 
 function getErrorMessage(e: unknown): string {
   if (typeof e === 'object' && e !== null && 'message' in e) {
-    return String((e as { message: unknown }).message);
+    return String((e as { message?: unknown }).message ?? e);
   }
   return String(e);
 }
@@ -96,43 +88,44 @@ export function useMetamaskWallet(): WalletState {
   }, []);
 
   useEffect(() => {
+    let provider: MetaMaskInpageProvider | null = null;
     let mounted = true;
-    getMetaMaskProvider().then((provider) => {
-      if (!mounted || !provider?.on) return;
 
-      const handleAccountsChanged = (accounts: unknown) => {
-        if (Array.isArray(accounts)) {
-          const acc = accounts[0] || null;
-          setAccount(acc);
-          setStatus(acc ? 'connected' : 'idle');
-        }
-      };
+    const handleAccountsChanged = (accounts: unknown) => {
+      if (Array.isArray(accounts)) {
+        const acc = accounts[0] || null;
+        setAccount(acc);
+        setStatus(acc ? 'connected' : 'idle');
+      }
+    };
 
-      const handleChainChanged = (cid: unknown) => {
-        if (typeof cid === 'string') {
-          setChainId(cid);
-        }
-      };
+    const handleChainChanged = (cid: unknown) => {
+      if (typeof cid === 'string') {
+        setChainId(cid);
+      }
+    };
 
-      provider.on('accountsChanged', handleAccountsChanged);
-      provider.on('chainChanged', handleChainChanged);
+    getMetaMaskProvider().then((prov) => {
+      if (!mounted || !prov) return;
+      provider = prov;
 
-      return () => {
-        provider.removeListener?.('accountsChanged', handleAccountsChanged);
-        provider.removeListener?.('chainChanged', handleChainChanged);
-      };
+      provider.on?.('accountsChanged', handleAccountsChanged);
+      provider.on?.('chainChanged', handleChainChanged);
     });
 
     return () => {
       mounted = false;
+      if (provider) {
+        provider.removeListener?.('accountsChanged', handleAccountsChanged);
+        provider.removeListener?.('chainChanged', handleChainChanged);
+      }
     };
   }, []);
 
   return {
     account,
     status,
-    isCorrectNetwork:
-      !!chainId && chainId.toLowerCase() === KASPLEX_TESTNET.chainId.toLowerCase(),
+    isCorrectNetwork: !!chainId && chainId.toLowerCase() === KASPLEX_TESTNET.chainId.toLowerCase(),
     connect,
     switchNetwork,
     disconnect,

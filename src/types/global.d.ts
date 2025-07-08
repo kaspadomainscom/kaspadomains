@@ -1,23 +1,25 @@
 // src/types/global.d.ts
-import type { MetaMaskInpageProvider } from '@metamask/providers';
+
+export {};
 
 declare global {
   interface Window {
-    /** EIP-1193 style provider (MetaMask, Kasware, etc.) */
-    ethereum?: MetaMaskInpageProvider & {
+    ethereum?: import('@metamask/providers').MetaMaskInpageProvider & {
       isMetaMask?: boolean;
       isKasware?: boolean;
-      /** if multiple wallets are injected, they'll live here */
-      providers?: (MetaMaskInpageProvider & {
+      providers?: (import('@metamask/providers').MetaMaskInpageProvider & {
         isMetaMask?: boolean;
         isKasware?: boolean;
       })[];
     };
-    /** Kasware sometimes injects its own global object */
-    kasware?: MetaMaskInpageProvider & {
+
+    kasware?: {
+      getAccounts(): Promise<string[]>;
+      requestAccounts(): Promise<string[]>;
+      disconnect(origin: string): Promise<void>;
+      on(event: 'accountsChanged' | 'chainChanged', handler: (payload: unknown) => void): void;
+      removeListener(event: 'accountsChanged' | 'chainChanged', handler: (payload: unknown) => void): void;
       isKasware?: boolean;
     };
   }
 }
-
-export {};
