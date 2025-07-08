@@ -22,20 +22,20 @@ interface EthereumWithProviders {
 }
 
 /**
- * Ensure MetaMask is selected from injected providers
+ * Get the MetaMask provider explicitly, even if multiple providers exist (Kasware, MetaMask, etc)
  */
 async function getMetaMaskProvider(): Promise<MetaMaskInpageProvider | null> {
   if (typeof window === 'undefined') return null;
 
   const eth = window.ethereum as EthereumWithProviders & MetaMaskInpageProvider;
 
-  // If multiple providers (e.g. MetaMask + Kasware), find MetaMask explicitly
+  // If multiple providers injected (MetaMask + others), find MetaMask explicitly
   if (Array.isArray(eth?.providers)) {
     const metamask = eth.providers.find((p) => (p as MetaMaskInpageProvider)?.isMetaMask);
     if (metamask) return metamask as MetaMaskInpageProvider;
   }
 
-  // Fallback single provider
+  // Otherwise fallback to detectEthereumProvider
   const provider = (await detectEthereumProvider()) as MetaMaskInpageProvider | null;
   if (provider?.isMetaMask) return provider;
 
