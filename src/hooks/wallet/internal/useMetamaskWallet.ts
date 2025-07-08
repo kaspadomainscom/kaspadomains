@@ -21,7 +21,6 @@ interface EthereumWithProviders {
   providers?: MetaMaskInpageProvider[];
 }
 
-// ✅ Fix: Remove `undefined` from `selectedAddress`
 interface ExtendedProvider extends MetaMaskInpageProvider {
   isKasware?: boolean;
   isFantom?: boolean;
@@ -57,7 +56,7 @@ async function getMetaMaskProvider(): Promise<MetaMaskInpageProvider | null> {
       selectedAddress: extProvider.selectedAddress,
     });
 
-    if (extProvider.isMetaMask) {
+    if (extProvider.isMetaMask && typeof provider.request === 'function') {
       return extProvider;
     } else {
       console.warn('Detected provider is NOT MetaMask:', extProvider);
@@ -181,6 +180,8 @@ export function useMetamaskWallet(): WalletState {
     getMetaMaskProvider().then((prov) => {
       if (!mounted || !prov) return;
       provider = prov;
+
+      console.log('[MetaMask] Selected address on mount:', (provider as ExtendedProvider)?.selectedAddress);
 
       provider.on?.('accountsChanged', handleAccountsChanged);
       provider.on?.('chainChanged', handleChainChanged);

@@ -7,45 +7,54 @@ import { parseEther, createWalletClient, custom } from 'viem';
 import { kasplexTestnet } from '@/lib/viemChains';
 import { useMetamaskWallet } from '@/hooks/wallet/internal/useMetamaskWallet';
 
-type EthereumProviderWithMetaMask = typeof window.ethereum & {
-  providers?: (typeof window.ethereum)[];
+type EthereumProvider = typeof window.ethereum;
+type EthereumProviderWithMetaMask = EthereumProvider & {
+  providers?: EthereumProvider[];
   isMetaMask?: boolean;
+  isKasware?: boolean;
+  isPhantom?: boolean;
 };
 
 /**
- * Robust MetaMask provider detection:
- * - Handle multiple providers (MetaMask + Kasware etc.)
- * - Return explicit MetaMask provider or null if not found
+ * Detect the "real" MetaMask provider explicitly, avoiding other injected wallets like Kasware or Phantom.
  */
 function getMetaMaskProvider(): EthereumProviderWithMetaMask | null {
   if (typeof window === 'undefined') return null;
 
-  const eth = window.ethereum as EthereumProviderWithMetaMask | undefined;
+  const eth = window.ethereum as EthereumProviderWithMetaMask;
   if (!eth) return null;
 
-  // Multiple injected providers
   if (Array.isArray(eth.providers)) {
-    const metamaskProvider = eth.providers.find((p) => p.isMetaMask);
-    if (metamaskProvider) return metamaskProvider;
+    console.log('[MetaMask] Multiple providers detected:', eth.providers);
+
+    // Prefer provider that is MetaMask and NOT Kasware or Phantom
+    const metamask = eth.providers.find(
+      (p) => p.isMetaMask && !p.isKasware && !p.isPhantom
+    );
+
+    if (metamask) {
+      console.log('[MetaMask] MetaMask provider found:', metamask);
+      return metamask;
+    }
+
+    console.warn('[MetaMask] No valid MetaMask provider found in providers array.');
+  } else if (eth.isMetaMask && !eth.isKasware && !eth.isPhantom) {
+    console.log('[MetaMask] Single MetaMask provider detected');
+    return eth;
   }
 
-  // Single provider fallback
-  if (eth.isMetaMask) return eth;
-
+  console.warn('[MetaMask] No MetaMask provider found.');
   return null;
 }
 
 /**
- * Create viem WalletClient from MetaMask provider and account
+ * Create a WalletClient instance from the detected MetaMask provider.
+ * Throws an error if MetaMask is not found.
  */
 function createMetaMaskClient(account: `0x${string}`) {
-  if (typeof window === 'undefined') {
-    throw new Error('Window is not defined.');
-  }
-
   const provider = getMetaMaskProvider();
   if (!provider) {
-    throw new Error('MetaMask provider not found. Please install MetaMask and refresh the page.');
+    throw new Error('MetaMask provider not found. Please install or enable MetaMask.');
   }
 
   return createWalletClient({
@@ -55,6 +64,9 @@ function createMetaMaskClient(account: `0x${string}`) {
   });
 }
 
+/**
+ * Hook to handle listing a domain on-chain via the KaspaDomainsRegistry contract.
+ */
 export function useListDomain() {
   const [txHash, setTxHash] = useState<`0x${string}` | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -68,15 +80,16 @@ export function useListDomain() {
     setIsLoading(true);
 
     try {
-      if (!account || !account.startsWith('0x') || account.length !== 42) {
-        console.warn('MetaMask not connected or invalid account, attempting to connect...');
+      if (!account || !/^0x[a-fA-F0-9]{40}$/.test(account)) {
+        console.warn('[MetaMask] Wallet not connected, attempting to connect...');
         await connect();
-        throw new Error('Please connect your MetaMask wallet to continue.');
+        throw new Error('Please connect MetaMask to list the domain.');
       }
 
-      // Create WalletClient with the detected MetaMask provider explicitly
+      console.log('[MetaMask] Creating wallet client...');
       const walletClient = createMetaMaskClient(account as `0x${string}`);
 
+      console.log('[MetaMask] Sending transaction to list domain:', domain);
       const hash = await walletClient.writeContract({
         address: contracts.KaspaDomainsRegistry.address,
         abi: contracts.KaspaDomainsRegistry.abi,
@@ -87,14 +100,14 @@ export function useListDomain() {
       });
 
       setTxHash(hash);
-      console.log('Transaction hash:', hash);
+      console.log('[MetaMask] Transaction hash:', hash);
 
       await kasplexClient.waitForTransactionReceipt({ hash });
-      console.log('Transaction confirmed:', hash);
+      console.log('[MetaMask] Transaction confirmed:', hash);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error occurred.';
-      console.error('List domain failed:', message);
-      setError(message);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[MetaMask] List domain failed:', msg);
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
