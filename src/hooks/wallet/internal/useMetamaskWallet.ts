@@ -115,6 +115,11 @@ export function useMetamaskWallet(): WalletState {
       setChainId(currentChainId);
       setStatus('connected');
       console.log('[MetaMask] Connected with account:', accounts[0]);
+      console.log('[MetaMask] account length:', accounts.length);
+      console.log('[MetaMask] account length:', accounts[1]);
+      console.log('[MetaMask] account length:', accounts[2]);
+      console.log('[MetaMask] account length:', accounts[3]);
+
     } catch (e) {
       const errMsg = getErrorMessage(e);
       setError(errMsg);
