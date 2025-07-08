@@ -21,23 +21,50 @@ interface EthereumWithProviders {
   providers?: MetaMaskInpageProvider[];
 }
 
-/**
- * Get the MetaMask provider explicitly, even if multiple providers exist (Kasware, MetaMask, etc)
- */
+// ✅ Fix: Remove `undefined` from `selectedAddress`
+interface ExtendedProvider extends MetaMaskInpageProvider {
+  isKasware?: boolean;
+  isFantom?: boolean;
+  isCoinbaseWallet?: boolean;
+  selectedAddress: string | null;
+}
+
 async function getMetaMaskProvider(): Promise<MetaMaskInpageProvider | null> {
   if (typeof window === 'undefined') return null;
 
   const eth = window.ethereum as EthereumWithProviders & MetaMaskInpageProvider;
 
-  // If multiple providers injected (MetaMask + others), find MetaMask explicitly
   if (Array.isArray(eth?.providers)) {
+    console.log('Multiple providers detected:', eth.providers);
     const metamask = eth.providers.find((p) => (p as MetaMaskInpageProvider)?.isMetaMask);
-    if (metamask) return metamask as MetaMaskInpageProvider;
+    if (metamask) {
+      console.log('MetaMask provider found in multiple providers:', metamask);
+      return metamask as MetaMaskInpageProvider;
+    }
   }
 
-  // Otherwise fallback to detectEthereumProvider
   const provider = (await detectEthereumProvider()) as MetaMaskInpageProvider | null;
-  if (provider?.isMetaMask) return provider;
+
+  if (provider) {
+    const extProvider = provider as ExtendedProvider;
+
+    console.log('Single provider detected:', provider);
+    console.log('Provider flags:', {
+      isMetaMask: extProvider.isMetaMask,
+      isKasware: extProvider.isKasware,
+      isFantom: extProvider.isFantom,
+      isCoinbaseWallet: extProvider.isCoinbaseWallet,
+      selectedAddress: extProvider.selectedAddress,
+    });
+
+    if (extProvider.isMetaMask) {
+      return extProvider;
+    } else {
+      console.warn('Detected provider is NOT MetaMask:', extProvider);
+    }
+  } else {
+    console.warn('No Ethereum provider detected by detectEthereumProvider()');
+  }
 
   return null;
 }
@@ -56,10 +83,20 @@ export function useMetamaskWallet(): WalletState {
   const [error, setError] = useState<string | null>(null);
 
   const connect = useCallback(async () => {
+    console.log('[MetaMask] Attempting to connect...');
     const provider = await getMetaMaskProvider();
+
     if (!provider) {
       setStatus('unavailable');
       setError('MetaMask not found or not selected');
+      console.error('[MetaMask] Provider not found or not MetaMask');
+      return;
+    }
+
+    if (!provider.isMetaMask) {
+      setStatus('error');
+      setError('Selected provider is not MetaMask');
+      console.error('[MetaMask] Connected provider is not MetaMask:', provider);
       return;
     }
 
@@ -68,23 +105,33 @@ export function useMetamaskWallet(): WalletState {
 
     try {
       const accounts = (await provider.request({ method: 'eth_requestAccounts' })) as string[];
+      console.log('[MetaMask] Accounts received:', accounts);
+
       if (!accounts.length) throw new Error('No accounts returned');
 
       const currentChainId = (await provider.request({ method: 'eth_chainId' })) as string;
+      console.log('[MetaMask] Current chainId:', currentChainId);
 
       setAccount(accounts[0]);
       setChainId(currentChainId);
       setStatus('connected');
+      console.log('[MetaMask] Connected with account:', accounts[0]);
     } catch (e) {
-      setError(getErrorMessage(e));
+      const errMsg = getErrorMessage(e);
+      setError(errMsg);
       setStatus('error');
+      console.error('[MetaMask] Connection error:', errMsg);
     }
   }, []);
 
   const switchNetwork = useCallback(async () => {
+    console.log('[MetaMask] Switching network...');
     const provider = await getMetaMaskProvider();
+
     if (!provider) {
-      setError('MetaMask not available for network switch');
+      const errMsg = 'MetaMask not available for network switch';
+      setError(errMsg);
+      console.error('[MetaMask] ' + errMsg);
       return;
     }
 
@@ -95,12 +142,16 @@ export function useMetamaskWallet(): WalletState {
       });
       setChainId(KASPLEX_TESTNET.chainId);
       setError(null);
+      console.log('[MetaMask] Network switched to:', KASPLEX_TESTNET.chainId);
     } catch (e) {
-      setError(getErrorMessage(e));
+      const errMsg = getErrorMessage(e);
+      setError(errMsg);
+      console.error('[MetaMask] Network switch error:', errMsg);
     }
   }, []);
 
   const disconnect = useCallback(() => {
+    console.log('[MetaMask] Disconnecting wallet');
     setAccount(null);
     setChainId(null);
     setStatus('idle');
@@ -112,6 +163,7 @@ export function useMetamaskWallet(): WalletState {
     let mounted = true;
 
     const handleAccountsChanged = (accounts: unknown) => {
+      console.log('[MetaMask] Accounts changed:', accounts);
       if (Array.isArray(accounts)) {
         const acc = accounts[0] || null;
         setAccount(acc);
@@ -120,6 +172,7 @@ export function useMetamaskWallet(): WalletState {
     };
 
     const handleChainChanged = (cid: unknown) => {
+      console.log('[MetaMask] Chain changed:', cid);
       if (typeof cid === 'string') {
         setChainId(cid);
       }
@@ -131,6 +184,8 @@ export function useMetamaskWallet(): WalletState {
 
       provider.on?.('accountsChanged', handleAccountsChanged);
       provider.on?.('chainChanged', handleChainChanged);
+
+      console.log('[MetaMask] Event listeners added');
     });
 
     return () => {
@@ -138,6 +193,7 @@ export function useMetamaskWallet(): WalletState {
       if (provider) {
         provider.removeListener?.('accountsChanged', handleAccountsChanged);
         provider.removeListener?.('chainChanged', handleChainChanged);
+        console.log('[MetaMask] Event listeners removed');
       }
     };
   }, []);
