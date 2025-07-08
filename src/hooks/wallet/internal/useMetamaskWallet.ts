@@ -17,36 +17,41 @@ export interface WalletState {
   error: string | null;
 }
 
-// async function getMetaMaskProvider(): Promise<MetaMaskInpageProvider | null> {
-//   const provider = (await detectEthereumProvider()) as MetaMaskInpageProvider | null;
-//   return provider?.isMetaMask ? provider : null;
-// }
-
-
 interface EthereumWithProviders {
   providers?: MetaMaskInpageProvider[];
 }
 
+/**
+ * Ensure MetaMask is selected from injected providers
+ */
 async function getMetaMaskProvider(): Promise<MetaMaskInpageProvider | null> {
   if (typeof window === 'undefined') return null;
 
-  const anyWindow = window as Window & { ethereum?: EthereumWithProviders };
+  const anyWindow = window as typeof window & {
+    ethereum?: EthereumWithProviders & MetaMaskInpageProvider;
+  };
 
   if (Array.isArray(anyWindow.ethereum?.providers)) {
-    const providers = anyWindow.ethereum!.providers as MetaMaskInpageProvider[];
-    const metamaskProvider = providers.find((p) => p.isMetaMask === true);
-    if (metamaskProvider) return metamaskProvider;
+    const metamaskProvider = anyWindow.ethereum.providers.find(
+      (p) => (p as MetaMaskInpageProvider)?.isMetaMask
+    ) as MetaMaskInpageProvider | undefined;
+
+    if (metamaskProvider) {
+      // Force MetaMask to be the selected provider
+      anyWindow.ethereum = metamaskProvider;
+      return metamaskProvider;
+    }
   }
 
   const provider = (await detectEthereumProvider()) as MetaMaskInpageProvider | null;
 
-  if (provider?.isMetaMask) return provider;
+  if (provider?.isMetaMask) {
+    anyWindow.ethereum = provider; // enforce selection
+    return provider;
+  }
 
   return null;
 }
-
-
-
 
 function getErrorMessage(e: unknown): string {
   if (typeof e === 'object' && e !== null && 'message' in e) {
@@ -151,7 +156,8 @@ export function useMetamaskWallet(): WalletState {
   return {
     account,
     status,
-    isCorrectNetwork: !!chainId && chainId.toLowerCase() === KASPLEX_TESTNET.chainId.toLowerCase(),
+    isCorrectNetwork:
+      !!chainId && chainId.toLowerCase() === KASPLEX_TESTNET.chainId.toLowerCase(),
     connect,
     switchNetwork,
     disconnect,
