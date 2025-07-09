@@ -9,7 +9,7 @@ import { Abi } from 'viem';
 
 export const contracts = {
   KaspaDomainsRegistry: {
-    address: '0x93d15A1d6F799CAE3c0fda37257ae4dD83f02f20',
+    address: '0x3380ce7Dc287e435c7BE5fc302c64fe7D612Cc43',
     abi: KaspaDomainsRegistryABI as Abi,
   },
   DomainLinksStorage: {
@@ -25,11 +25,11 @@ export const contracts = {
     abi: DomainCategoriesStorageABI as Abi,
   },
   DomainLikesManager: {
-    address: '0xaf0e6aF9ac8ED8367A565FB3b006c07a9e148D03',
+    address: '0xB77C602085A69b68BcECFD50e5c96E559EE48D4e',
     abi: DomainLikesManagerABI as Abi,
   },
   KDCToken: {
-    address: '0xAEc5f6B24e503e6D874Bf94Ce56E8e5bbF9c0741',
+    address: '0x42EA5AE7e54B884Db7B322e9c28Bb69ff225d98e',
     abi: KDCTokenABI as Abi,
   },
 } as const;
