@@ -140,7 +140,7 @@ export default function Sidebar() {
       {/* Sidebar Header */}
       <div
         className={clsx(
-          'flex items-center px-4 py-3 font-bold text-[#3DFDAD] border-b border-[#3DFDAD]/20 select-none',
+          'flex items-center px-5 py-3 font-bold text-[#3DFDAD] border-b border-[#3DFDAD]/20 select-none',
           collapsed ? 'justify-center' : 'justify-start'
         )}
       >
@@ -218,7 +218,11 @@ export default function Sidebar() {
               collapsed ? 'justify-center' : 'justify-start'
             )}
           >
-            <IconFolder width={16} height={16} className="mr-2 leading-none" />
+            <IconFolder
+              className={clsx('mr-2 leading-none', collapsed ? 'w-5 h-5' : 'w-6 h-6')}
+              width={collapsed ? 20 : 24}
+              height={collapsed ? 20 : 24}
+            />
             {!collapsed && <span>Categories</span>}
           </div>
 
