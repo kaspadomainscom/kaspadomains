@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -56,7 +56,9 @@ export default function Sidebar() {
 
   const debouncedSearch = useDebounce(search, 150);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const sidebarContentRef = useRef<HTMLDivElement>(null);
 
+  // Update isMobile on resize
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -74,6 +76,26 @@ export default function Sidebar() {
     }
   }, [isCollapsed, isMobile]);
 
+  // Clear search when sidebar collapses (desktop)
+  useEffect(() => {
+    if (isCollapsed && !isMobile) {
+      setSearch('');
+    }
+  }, [isCollapsed, isMobile]);
+
+  // Close mobile sidebar with Escape key
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && mobileOpen) {
+        setMobileOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileOpen, isMobile]);
+
   const collapsed = isMobile ? false : isCollapsed;
 
   const toggleSidebar = useCallback(() => {
@@ -84,10 +106,15 @@ export default function Sidebar() {
     }
   }, [isMobile]);
 
-  // Filter categories based on debounced search value
-  const filteredLinks = categoryLinks.filter(({ label }) =>
-    label.toLowerCase().includes(debouncedSearch.toLowerCase())
-  );
+  // Memoized filtered links for performance
+  const filteredLinks = useMemo(() => {
+    return categoryLinks.filter(({ label }) =>
+      label.toLowerCase().includes(debouncedSearch.toLowerCase())
+    );
+  }, [debouncedSearch]);
+
+  // For smooth mobile open/close height animation
+  const mobileSidebarMaxHeight = mobileOpen ? '1000px' : '56px'; // 14 * 4 (rem to px approx)
 
   return (
     <aside
@@ -97,14 +124,18 @@ export default function Sidebar() {
         'relative z-10 text-white shadow-lg border-r border-[#3DFDAD]/20 bg-[#0F2F2E]',
         'transition-width duration-300 ease-in-out min-h-screen',
         isMobile
-          ? mobileOpen
-            ? 'h-auto w-full border-t md:border-t-0'
-            : 'h-14 w-full border-t md:border-t-0'
+          ? 'w-full border-t md:border-t-0'
           : collapsed
           ? 'w-16'
           : 'w-64'
       )}
-      style={{ transitionProperty: 'width' }}
+      style={{
+        transitionProperty: 'width',
+        maxHeight: isMobile ? mobileSidebarMaxHeight : undefined,
+        transitionDuration: isMobile ? '300ms' : undefined,
+        transitionTimingFunction: isMobile ? 'ease-in-out' : undefined,
+        overflow: isMobile ? 'hidden' : undefined,
+      }}
     >
       {/* Sidebar Header */}
       <div
@@ -127,6 +158,7 @@ export default function Sidebar() {
         }}
         aria-label="Toggle Sidebar"
         aria-expanded={isMobile ? mobileOpen : !collapsed}
+        aria-controls="sidebar-content"
         title="Toggle Sidebar"
         className={clsx(
           'absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center rounded-full border border-[#3DFDAD]/40 bg-[#1C4745] text-[#3DFDAD]',
@@ -157,8 +189,14 @@ export default function Sidebar() {
         )}
       </button>
 
+      {/* Sidebar Content */}
       {(mobileOpen || !isMobile) && (
-        <div className="h-full overflow-y-auto pt-14 pb-6 space-y-3">
+        <div
+          id="sidebar-content"
+          ref={sidebarContentRef}
+          className="h-full overflow-y-auto pt-5 pb-6 space-y-3"
+          tabIndex={-1} // for focus management if needed
+        >
           <nav className="space-y-1 px-2" aria-label="My Tools">
             {toolLinks.map(({ icon, label, href }) => (
               <SidebarLink
@@ -283,7 +321,6 @@ function SidebarLink({
     <Link
       href={href}
       onClick={handleClick}
-      tabIndex={0}
       aria-label={label}
       className={clsx(
         'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200',
