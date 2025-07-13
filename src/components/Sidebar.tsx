@@ -182,19 +182,20 @@ export default function Sidebar() {
           ))}
         </nav>
 
-        <div
-          className={clsx(
-            'flex items-center px-4 py-2 mx-2 rounded-md bg-[#162f2d] text-[#3DFDAD] text-[11px] font-semibold tracking-wider uppercase select-none',
-            collapsed ? 'justify-center' : 'justify-start'
-          )}
-        >
-          <IconFolder
-            className={clsx('mr-2 leading-none', collapsed ? 'w-5 h-5' : 'w-6 h-6')}
-            width={collapsed ? 20 : 24}
-            height={collapsed ? 20 : 24}
-          />
-          {!collapsed && <span>Categories</span>}
-        </div>
+      <div
+        className={clsx(
+          'flex items-center px-4 py-2 mx-2 rounded-md bg-[#162f2d] text-[#3DFDAD] text-[11px] font-semibold tracking-wider uppercase select-none',
+          collapsed ? 'justify-center' : 'justify-start'
+        )}
+      >
+        <IconFolder
+          className="mr-2 shrink-0"
+          width={20}
+          height={20}
+        />
+        {!collapsed && <span>Categories</span>}
+      </div>
+
 
         {!collapsed && (
           <div className="px-3 transition-opacity duration-300 ease-in-out">
