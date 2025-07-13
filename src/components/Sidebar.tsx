@@ -27,7 +27,7 @@ import {
   IconUser,
   IconActivity,
   IconHeart,
-  IconSettings,
+  // IconSettings,
 } from '@/components/icons';
 
 function clsx(...classes: (string | boolean | undefined)[]) {
@@ -243,7 +243,7 @@ const toolLinks = [
   { icon: IconHeart, label: 'My Votes', href: '/domains/my-votes' },
   { icon: IconTrending, label: 'Top Voted', href: '/domains/top-voted' },
   { icon: IconActivity, label: 'New Listings', href: '/list-domain' },
-  { icon: IconSettings, label: 'Settings', href: '/settings' },
+  // { icon: IconSettings, label: 'Settings', href: '/settings' },
 ];
 
 const categoryLinks = [
@@ -263,7 +263,7 @@ const categoryLinks = [
   { icon: IconVault, label: 'Vaults', href: '/domains/categories/category/vaults' },
   { icon: IconActivity, label: 'Active Projects', href: '/domains/categories/category/active-projects' },
   { icon: IconHeart, label: 'Loved', href: '/domains/categories/category/loved' },
-  { icon: IconSettings, label: 'Utilities', href: '/domains/categories/category/utilities' },
+  // { icon: IconSettings, label: 'Utilities', href: '/domains/categories/category/utilities' },
   { icon: IconTool, label: 'Tools', href: '/domains/categories/category/tools' },
   { icon: IconTrending, label: 'Trending', href: '/domains/categories/category/trending' },
 ];

@@ -8,51 +8,52 @@ export default function Learn() {
           What is KaspaDomains?
         </h1>
         <p className="text-lg leading-relaxed">
-          <strong className="text-white">KaspaDomains.com</strong> is a decentralized on-chain experiment showcasing 
-          <strong> 10,000 unique <code className="text-kaspa-green">.kas</code> domains</strong> — not for sale, but open for 
-          <strong> community-powered voting</strong>. It’s a new way to explore the Kaspa identity layer, earn rewards, and participate in a transparent token economy.
+          <strong className="text-white">KaspaDomains.com</strong> is a decentralized on-chain experiment featuring a fixed collection of <strong>10,000 unique <code className="text-kaspa-green">.kas</code> domains</strong>. 
+          These domains are not for sale but open for <strong>community-powered voting</strong>. By participating, you help build a transparent reputation layer on Kaspa while earning rewards, shaping the future of decentralized digital identity.
         </p>
       </section>
 
       <section>
         <h2 className="text-3xl font-bold text-white mb-2">How It Works</h2>
         <p className="mb-4 leading-relaxed">
-          Anyone can vote for a domain by paying a small fee of <span className="font-semibold text-kaspa-green">5 KAS</span>. Each vote triggers a minting process:
+          Anyone can vote for a domain by paying a fixed fee of <span className="font-semibold text-kaspa-green">5 KAS</span>. Each vote triggers a minting process:
         </p>
         <ul className="list-disc list-inside space-y-2 text-gray-200">
-          <li>You receive <strong className="text-white">1 KDC</strong> (Kaspa Domains Coin), the reward token of the ecosystem.</li>
-          <li>You also receive <strong className="text-white">1 ERC-20 token</strong> representing the domain you voted for.</li>
-          <li>The domain owner receives <strong className="text-white">1 KDC</strong> and <strong>0.1 domain token</strong>.</li>
+          <li>You receive a variable amount of <strong className="text-white">KDC tokens</strong> as a reward, starting at 1 KDC per vote.</li>
+          <li>The domain owner simultaneously receives the same amount of KDC tokens for free as a reward.</li>
         </ul>
         <p className="mt-4 leading-relaxed">
-          Every domain gets its own ERC-20 contract dynamically deployed on first vote. These tokens are liquid, transparent, and may reflect a domain’s popularity or value.
+          The KDC token reward halves every <strong>525,000 votes</strong>, reducing by half each time (for example, from 1 KDC to 0.5 KDC). This halving continues until the maximum supply of 2.1 million KDC tokens is reached, encouraging early participation.
         </p>
       </section>
 
       <section>
         <h2 className="text-3xl font-bold text-white mb-2">What Are KDC Tokens?</h2>
         <p className="leading-relaxed">
-          <strong>KDC</strong> is the native ERC-20 reward token earned through voting. It reflects your participation in the KaspaDomains protocol. 
-          In the future, it may unlock governance rights, staking opportunities, or special community perks.
+          <strong>KDC</strong> is the native ERC-20 reward token earned through voting. It reflects your participation in KaspaDomains. 
+          There is a fixed maximum supply of 2.1 million tokens, minted exclusively through voting—there is no premine or developer allocation.
+          The protocol is intentionally minimal and focused on transparency and fairness.
         </p>
       </section>
 
       <section>
         <h2 className="text-3xl font-bold text-white mb-2">Decentralized, Fair, and Transparent</h2>
         <ul className="list-disc list-inside space-y-2 text-gray-200">
-          <li>Fixed supply of <strong>10,000 domains</strong></li>
-          <li><strong>No premine</strong>, no dev allocation, no centralized control</li>
-          <li>All token rewards are minted transparently by smart contracts</li>
-          <li>KDC and domain tokens are fully <strong>ERC-20 compliant</strong> and tradable</li>
+          <li>A fixed collection of <strong>10,000 domains</strong></li>
+          <li><strong>No premine</strong>, no developer allocation, and no centralized authority</li>
+          <li>Token rewards minted transparently by smart contracts, with halving every 525,000 votes</li>
+          <li>KDC tokens are fully <strong>ERC-20 compliant</strong> and tradable</li>
         </ul>
       </section>
 
       <section>
         <h2 className="text-3xl font-bold text-white mb-2">Why Vote?</h2>
         <ul className="list-disc list-inside space-y-2 text-gray-200">
-          <li>Support rare, brandable, or meaningful .kas domains</li>
-          <li>Earn token rewards and build your on-chain profile</li>
+          <li>Support rare, brandable, or meaningful <code className="text-kaspa-green">.kas</code> domains</li>
+          <li>Earn KDC tokens as rewards and build your on-chain profile</li>
           <li>Help elevate domains by signaling popularity through votes</li>
+          <li>Domain owners are rewarded with KDC tokens for each vote their domain receives</li>
+          <li>Your vote directly influences which domains gain visibility and reputation within the Kaspa ecosystem</li>
           <li>Contribute to a decentralized reputation and value layer</li>
         </ul>
       </section>
@@ -68,15 +69,14 @@ export default function Learn() {
       <section>
         <h2 className="text-3xl font-bold text-white mb-2">Vision for the Future</h2>
         <p className="leading-relaxed">
-          We aim to expand utility for both KDC and domain tokens: staking, rankings, DAO governance, airdrops, and more. 
-          Early voters and domain supporters may shape the future of the Kaspa identity layer.
+          KaspaDomains is designed to be a simple, fully decentralized protocol prioritizing transparency, fairness, and community participation. 
+          Any future evolution will be community-driven and unfold naturally as the ecosystem grows.
         </p>
       </section>
 
       <footer className="pt-6 border-t border-gray-700 text-sm text-gray-400">
         <p>
-          🌐 Explore, vote, and help build Kaspa’s decentralized naming ecosystem.
-          Follow us for updates on features, rewards, and governance.
+          🌐 Explore, vote, and help build Kaspa’s decentralized naming ecosystem. Follow us for updates on features, rewards, and governance.
         </p>
       </footer>
     </div>
