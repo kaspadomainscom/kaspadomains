@@ -105,24 +105,6 @@
 		"type": "event"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "domain",
-				"type": "string"
-			},
-			{
-				"internalType": "address",
-				"name": "to",
-				"type": "address"
-			}
-		],
-		"name": "listDomain",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -161,62 +143,25 @@
 		"type": "event"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "newKNS",
-				"type": "address"
-			}
-		],
-		"name": "setKNSContract",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_payments",
-				"type": "address"
-			}
-		],
-		"name": "setPaymentsContract",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "newOwner",
-				"type": "address"
-			}
-		],
-		"name": "transferOwnership",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"stateMutability": "payable",
 		"type": "fallback"
 	},
 	{
 		"inputs": [],
-		"name": "withdraw",
-		"outputs": [],
-		"stateMutability": "nonpayable",
+		"name": "DOMAIN_FEE",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"stateMutability": "payable",
-		"type": "receive"
-	},
-	{
 		"inputs": [],
-		"name": "DOMAIN_FEE",
+		"name": "MAX_DOMAINS",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -244,6 +189,25 @@
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "domain",
+				"type": "string"
+			}
+		],
+		"name": "domainHashPublic",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "pure",
 		"type": "function"
 	},
 	{
@@ -422,6 +386,44 @@
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "domain",
+				"type": "string"
+			}
+		],
+		"name": "isVerified",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "domain",
+				"type": "string"
+			}
+		],
+		"name": "isVerifiedDom",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "kns",
 		"outputs": [
@@ -437,25 +439,30 @@
 	{
 		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
+				"internalType": "string",
+				"name": "domain",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
 			}
 		],
-		"name": "listedDomainHashes",
-		"outputs": [
+		"name": "listDomain",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
 			{
 				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
 			}
 		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "MAX_DOMAINS",
+		"name": "listedDomainHashes",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -480,16 +487,16 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "payments",
-		"outputs": [
+		"inputs": [
 			{
-				"internalType": "contract DomainPayments",
-				"name": "",
+				"internalType": "address",
+				"name": "newKNS",
 				"type": "address"
 			}
 		],
-		"stateMutability": "view",
+		"name": "setKNSContract",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -517,5 +524,29 @@
 		],
 		"stateMutability": "view",
 		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "newOwner",
+				"type": "address"
+			}
+		],
+		"name": "transferOwnership",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "withdraw",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"stateMutability": "payable",
+		"type": "receive"
 	}
 ]
