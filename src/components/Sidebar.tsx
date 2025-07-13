@@ -30,20 +30,16 @@ import {
   IconSettings,
 } from '@/components/icons';
 
-// Simple clsx helper for conditional class names
 function clsx(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
 }
 
-// Debounce hook to delay search input updates
 function useDebounce<T>(value: T, delay = 200): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
-
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedValue(value), delay);
     return () => clearTimeout(handler);
   }, [value, delay]);
-
   return debouncedValue;
 }
 
@@ -56,37 +52,30 @@ export default function Sidebar() {
 
   const debouncedSearch = useDebounce(search, 150);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const sidebarContentRef = useRef<HTMLDivElement>(null);
 
-  // Update isMobile on resize
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
-
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Auto-focus search input when sidebar expands on desktop
   useEffect(() => {
     if (!isMobile && !isCollapsed && searchInputRef.current) {
       searchInputRef.current.focus();
     }
   }, [isCollapsed, isMobile]);
 
-  // Clear search when sidebar collapses (desktop)
   useEffect(() => {
     if (isCollapsed && !isMobile) {
       setSearch('');
     }
   }, [isCollapsed, isMobile]);
 
-  // Close mobile sidebar with Escape key
   useEffect(() => {
     if (!isMobile) return;
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && mobileOpen) {
         setMobileOpen(false);
@@ -106,36 +95,23 @@ export default function Sidebar() {
     }
   }, [isMobile]);
 
-  // Memoized filtered links for performance
   const filteredLinks = useMemo(() => {
     return categoryLinks.filter(({ label }) =>
       label.toLowerCase().includes(debouncedSearch.toLowerCase())
     );
   }, [debouncedSearch]);
 
-  // For smooth mobile open/close height animation
-  const mobileSidebarMaxHeight = mobileOpen ? '1000px' : '56px'; // 14 * 4 (rem to px approx)
+  const showSidebar = !isMobile || mobileOpen;
 
-  return (
+  return showSidebar ? (
     <aside
       role="navigation"
       aria-label="Sidebar"
       className={clsx(
         'relative z-10 text-white shadow-lg border-r border-[#3DFDAD]/20 bg-[#0F2F2E]',
-        'transition-width duration-300 ease-in-out min-h-screen',
-        isMobile
-          ? 'w-full border-t md:border-t-0'
-          : collapsed
-          ? 'w-16'
-          : 'w-64'
+        'transition-all duration-300 ease-in-out',
+        isMobile ? 'w-full' : collapsed ? 'w-16 min-h-screen' : 'w-64 min-h-screen'
       )}
-      style={{
-        transitionProperty: 'width',
-        maxHeight: isMobile ? mobileSidebarMaxHeight : undefined,
-        transitionDuration: isMobile ? '300ms' : undefined,
-        transitionTimingFunction: isMobile ? 'ease-in-out' : undefined,
-        overflow: isMobile ? 'hidden' : undefined,
-      }}
     >
       {/* Sidebar Header */}
       <div
@@ -157,7 +133,7 @@ export default function Sidebar() {
           }
         }}
         aria-label="Toggle Sidebar"
-        aria-expanded={isMobile ? mobileOpen : !collapsed}
+        aria-expanded={showSidebar}
         aria-controls="sidebar-content"
         title="Toggle Sidebar"
         className={clsx(
@@ -173,32 +149,67 @@ export default function Sidebar() {
           ) : (
             <IconChevronDown width={18} height={18} />
           )
+        ) : collapsed ? (
+          <IconChevronRight width={18} height={18} />
         ) : (
-          <span
-            className={clsx(
-              'inline-block transform transition-transform duration-300',
-              collapsed ? 'rotate-0' : 'rotate-180'
-            )}
-          >
-            {collapsed ? (
-              <IconChevronRight width={18} height={18} />
-            ) : (
-              <IconChevronLeft width={18} height={18} />
-            )}
-          </span>
+          <IconChevronLeft width={18} height={18} />
         )}
       </button>
 
       {/* Sidebar Content */}
-      {(mobileOpen || !isMobile) && (
+      <div
+        id="sidebar-content"
+        className="h-full overflow-y-auto pt-5 pb-6 space-y-3"
+        tabIndex={-1}
+      >
+        <nav className="space-y-1 px-2" aria-label="My Tools">
+          {toolLinks.map(({ icon, label, href }) => (
+            <SidebarLink
+              key={href}
+              icon={icon}
+              label={label}
+              href={href}
+              collapsed={collapsed}
+              active={pathname === href}
+              isMobile={isMobile}
+              onClick={() => setMobileOpen(false)}
+            />
+          ))}
+        </nav>
+
         <div
-          id="sidebar-content"
-          ref={sidebarContentRef}
-          className="h-full overflow-y-auto pt-5 pb-6 space-y-3"
-          tabIndex={-1} // for focus management if needed
+          className={clsx(
+            'flex items-center px-4 py-2 mx-2 rounded-md bg-[#162f2d] text-[#3DFDAD] text-[11px] font-semibold tracking-wider uppercase select-none',
+            collapsed ? 'justify-center' : 'justify-start'
+          )}
         >
-          <nav className="space-y-1 px-2" aria-label="My Tools">
-            {toolLinks.map(({ icon, label, href }) => (
+          <IconFolder
+            className={clsx('mr-2 leading-none', collapsed ? 'w-5 h-5' : 'w-6 h-6')}
+            width={collapsed ? 20 : 24}
+            height={collapsed ? 20 : 24}
+          />
+          {!collapsed && <span>Categories</span>}
+        </div>
+
+        {!collapsed && (
+          <div className="px-3 transition-opacity duration-300 ease-in-out">
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search categories..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-md border border-[#3DFDAD]/20 bg-[#1a403d] px-3 py-2 text-sm text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#3DFDAD]/50 transition"
+              aria-label="Search categories"
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </div>
+        )}
+
+        <nav className="space-y-1 px-2" aria-label="Category Links">
+          {filteredLinks.length > 0 ? (
+            filteredLinks.map(({ icon, label, href }) => (
               <SidebarLink
                 key={href}
                 icon={icon}
@@ -207,65 +218,18 @@ export default function Sidebar() {
                 collapsed={collapsed}
                 active={pathname === href}
                 isMobile={isMobile}
-                onClick={toggleSidebar}
+                onClick={() => setMobileOpen(false)}
               />
-            ))}
-          </nav>
-
-          <div
-            className={clsx(
-              'flex items-center px-4 py-2 mx-2 rounded-md bg-[#162f2d] text-[#3DFDAD] text-[11px] font-semibold tracking-wider uppercase select-none',
-              collapsed ? 'justify-center' : 'justify-start'
-            )}
-          >
-            <IconFolder
-              className={clsx('mr-2 leading-none', collapsed ? 'w-5 h-5' : 'w-6 h-6')}
-              width={collapsed ? 20 : 24}
-              height={collapsed ? 20 : 24}
-            />
-            {!collapsed && <span>Categories</span>}
-          </div>
-
-          {!collapsed && (
-            <div className="px-3 transition-opacity duration-300 ease-in-out">
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Search categories..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-md border border-[#3DFDAD]/20 bg-[#1a403d] px-3 py-2 text-sm text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#3DFDAD]/50 transition"
-                aria-label="Search categories"
-                autoComplete="off"
-                spellCheck={false}
-              />
-            </div>
+            ))
+          ) : (
+            !collapsed && (
+              <p className="px-3 pt-2 text-sm text-white/50">No categories found</p>
+            )
           )}
-
-          <nav className="space-y-1 px-2" aria-label="Category Links">
-            {filteredLinks.length > 0 ? (
-              filteredLinks.map(({ icon, label, href }) => (
-                <SidebarLink
-                  key={href}
-                  icon={icon}
-                  label={label}
-                  href={href}
-                  collapsed={collapsed}
-                  active={pathname === href}
-                  isMobile={isMobile}
-                  onClick={toggleSidebar}
-                />
-              ))
-            ) : (
-              !collapsed && (
-                <p className="px-3 pt-2 text-sm text-white/50">No categories found</p>
-              )
-            )}
-          </nav>
-        </div>
-      )}
+        </nav>
+      </div>
     </aside>
-  );
+  ) : null;
 }
 
 const toolLinks = [
@@ -315,16 +279,10 @@ function SidebarLink({
   isMobile?: boolean;
   onClick?: () => void;
 }) {
-  const handleClick = () => {
-    if (isMobile && onClick) {
-      setTimeout(() => onClick(), 400);
-    }
-  };
-
   return (
     <Link
       href={href}
-      onClick={handleClick}
+      onClick={() => isMobile && onClick?.()}
       aria-label={label}
       className={clsx(
         'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200',
