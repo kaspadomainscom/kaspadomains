@@ -11,7 +11,11 @@ import { NonceProvider } from "@/context/NonceProvider";
 import { QueryProvider } from "./providers/query-provider";
 import { WalletProvider } from "@/context/WalletContext";
 
+import { Toaster } from 'react-hot-toast';
+
+
 export const dynamic = 'force-dynamic'; // Needed to access request headers per request
+
 
 export const metadata: Metadata = {
   title: "Kaspadomains – Explore the Kaspa Name System",
@@ -81,6 +85,7 @@ export default async function RootLayout({
         {/* Provide CSP nonce via React context */}
         <NonceProvider nonce={nonce}>
           <WalletProvider>
+            <Toaster position="top-right" toastOptions={{ duration: 5000 }} />
             {/* Header is outside flex wrapper for consistent layout */}
             <Header />
 

@@ -6,6 +6,7 @@ import { kasplexClient } from '@/lib/viemClient';
 import { parseEther, createWalletClient, custom } from 'viem';
 import { kasplexTestnet } from '@/lib/viemChains';
 import { useMetamaskWallet } from '@/hooks/wallet/internal/useMetamaskWallet';
+import toast from 'react-hot-toast';
 
 type EthereumProvider = typeof window.ethereum;
 type EthereumProviderWithMetaMask = EthereumProvider & {
@@ -25,31 +26,17 @@ function getMetaMaskProvider(): EthereumProviderWithMetaMask | null {
   if (!eth) return null;
 
   if (Array.isArray(eth.providers)) {
-    console.log('[MetaMask] Multiple providers detected:', eth.providers);
-
-    // Prefer provider that is MetaMask and NOT Kasware or Phantom
     const metamask = eth.providers.find(
       (p) => p.isMetaMask && !p.isKasware && !p.isPhantom
     );
-
-    if (metamask) {
-      console.log('[MetaMask] MetaMask provider found:', metamask);
-      return metamask;
-    }
-
-    console.warn('[MetaMask] No valid MetaMask provider found in providers array.');
-  } else if (eth.isMetaMask && !eth.isKasware && !eth.isPhantom) {
-    console.log('[MetaMask] Single MetaMask provider detected');
-    return eth;
+    return metamask ?? null;
   }
 
-  console.warn('[MetaMask] No MetaMask provider found.');
-  return null;
+  return eth.isMetaMask && !eth.isKasware && !eth.isPhantom ? eth : null;
 }
 
 /**
  * Create a WalletClient instance from the detected MetaMask provider.
- * Throws an error if MetaMask is not found.
  */
 function createMetaMaskClient(account: `0x${string}`) {
   const provider = getMetaMaskProvider();
@@ -77,36 +64,44 @@ export function useListDomain() {
   const listDomain = async (domain: string) => {
     setError(null);
     setTxHash(null);
-    setIsLoading(true);
+
+    // Validate domain input
+    if (!domain || !domain.endsWith('.kas')) {
+      toast.error('Invalid domain name. Must end with .kas');
+      return;
+    }
 
     try {
+      setIsLoading(true);
+
       if (!account || !/^0x[a-fA-F0-9]{40}$/.test(account)) {
-        console.warn('[MetaMask] Wallet not connected, attempting to connect...');
         await connect();
         throw new Error('Please connect MetaMask to list the domain.');
       }
 
-      console.log('[MetaMask] Creating wallet client...');
       const walletClient = createMetaMaskClient(account as `0x${string}`);
 
-      console.log('[MetaMask] Sending transaction to list domain:', domain);
+      toast.loading('Listing domain...', { id: 'list-domain' });
+
       const hash = await walletClient.writeContract({
         address: contracts.KaspaDomainsRegistry.address,
         abi: contracts.KaspaDomainsRegistry.abi,
         functionName: 'listDomain',
-        args: [domain],
+        args: [domain, account],
         account: account as `0x${string}`,
-        value: parseEther('420'), // 420 KAS
+        value: parseEther('420'),
       });
 
       setTxHash(hash);
       console.log('[MetaMask] Transaction hash:', hash);
 
       await kasplexClient.waitForTransactionReceipt({ hash });
-      console.log('[MetaMask] Transaction confirmed:', hash);
+
+      toast.success(`Domain listed successfully!`, { id: 'list-domain' });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error('[MetaMask] List domain failed:', msg);
+      toast.error(msg, { id: 'list-domain' });
       setError(msg);
     } finally {
       setIsLoading(false);
