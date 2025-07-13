@@ -35,6 +35,18 @@ function clsx(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
 }
 
+// Debounce hook to delay search input updates
+function useDebounce<T>(value: T, delay = 200): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -42,6 +54,7 @@ export default function Sidebar() {
   const [search, setSearch] = useState('');
   const pathname = usePathname();
 
+  const debouncedSearch = useDebounce(search, 150);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -71,12 +84,15 @@ export default function Sidebar() {
     }
   }, [isMobile]);
 
+  // Filter categories based on debounced search value
   const filteredLinks = categoryLinks.filter(({ label }) =>
-    label.toLowerCase().includes(search.toLowerCase())
+    label.toLowerCase().includes(debouncedSearch.toLowerCase())
   );
 
   return (
     <aside
+      role="navigation"
+      aria-label="Sidebar"
       className={clsx(
         'relative z-10 text-white shadow-lg border-r border-[#3DFDAD]/20 bg-[#0F2F2E]',
         'transition-width duration-300 ease-in-out min-h-screen',
@@ -90,6 +106,17 @@ export default function Sidebar() {
       )}
       style={{ transitionProperty: 'width' }}
     >
+      {/* Sidebar Header */}
+      <div
+        className={clsx(
+          'flex items-center px-4 py-3 font-bold text-[#3DFDAD] border-b border-[#3DFDAD]/20 select-none',
+          collapsed ? 'justify-center' : 'justify-start'
+        )}
+      >
+        <IconVault width={24} height={24} className={collapsed ? 'mx-auto' : 'mr-2'} />
+        {!collapsed && <span className="text-lg">Kaspa Domains</span>}
+      </div>
+
       <button
         onClick={toggleSidebar}
         onKeyDown={(e) => {
@@ -149,7 +176,7 @@ export default function Sidebar() {
 
           <div
             className={clsx(
-              'flex items-center px-4 py-2 mx-2 rounded-md bg-[#162f2d] text-[#3DFDAD] text-[11px] font-semibold tracking-wider uppercase',
+              'flex items-center px-4 py-2 mx-2 rounded-md bg-[#162f2d] text-[#3DFDAD] text-[11px] font-semibold tracking-wider uppercase select-none',
               collapsed ? 'justify-center' : 'justify-start'
             )}
           >
@@ -158,7 +185,7 @@ export default function Sidebar() {
           </div>
 
           {!collapsed && (
-            <div className="px-3">
+            <div className="px-3 transition-opacity duration-300 ease-in-out">
               <input
                 ref={searchInputRef}
                 type="text"
@@ -168,6 +195,7 @@ export default function Sidebar() {
                 className="w-full rounded-md border border-[#3DFDAD]/20 bg-[#1a403d] px-3 py-2 text-sm text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#3DFDAD]/50 transition"
                 aria-label="Search categories"
                 autoComplete="off"
+                spellCheck={false}
               />
             </div>
           )}
@@ -255,6 +283,8 @@ function SidebarLink({
     <Link
       href={href}
       onClick={handleClick}
+      tabIndex={0}
+      aria-label={label}
       className={clsx(
         'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200',
         collapsed ? 'justify-center' : 'justify-start',
