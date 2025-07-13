@@ -218,7 +218,7 @@ export default function Sidebar() {
               collapsed ? 'justify-center' : 'justify-start'
             )}
           >
-            <IconFolder className="mr-2 w-5 h-5 leading-none" />
+            <IconFolder width={16} height={16} className="mr-2 leading-none" />
             {!collapsed && <span>Categories</span>}
           </div>
 
@@ -268,7 +268,7 @@ const toolLinks = [
   { icon: IconUser, label: 'My Domains', href: '/domains/my-domains' },
   { icon: IconHeart, label: 'My Votes', href: '/domains/my-votes' },
   { icon: IconTrending, label: 'Top Voted', href: '/domains/top-voted' },
-  { icon: IconActivity, label: 'New Listings', href: '/domains/new-listings' },
+  { icon: IconActivity, label: 'New Listings', href: '/list-domain' },
   { icon: IconSettings, label: 'Settings', href: '/settings' },
 ];
 
