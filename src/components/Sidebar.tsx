@@ -137,22 +137,22 @@ export default function Sidebar() {
         aria-controls="sidebar-content"
         title="Toggle Sidebar"
         className={clsx(
-          'absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center rounded-full border border-[#3DFDAD]/40 bg-[#1C4745] text-[#3DFDAD]',
+          'absolute top-2.5 right-2.5 z-20 w-6 h-6 flex items-center justify-center rounded-full border border-[#3DFDAD]/40 bg-[#1C4745] text-[#3DFDAD]',
           'hover:bg-[#1a403d] transition-colors duration-200',
-          'focus:outline-none focus:ring-2 focus:ring-[#3DFDAD]/50'
+          'focus:outline-none focus:ring-[1.5px] focus:ring-[#3DFDAD]/50'
         )}
         type="button"
       >
         {isMobile ? (
           mobileOpen ? (
-            <IconChevronUp width={18} height={18} />
+            <IconChevronUp width={10} height={10} />
           ) : (
-            <IconChevronDown width={18} height={18} />
+            <IconChevronDown width={10} height={10} />
           )
         ) : collapsed ? (
-          <IconChevronRight width={18} height={18} />
+          <IconChevronRight width={10} height={10} />
         ) : (
-          <IconChevronLeft width={18} height={18} />
+          <IconChevronLeft width={10} height={10} />
         )}
       </button>
 
