@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -30,12 +30,19 @@ import {
   IconSettings,
 } from '@/components/icons';
 
+// Simple clsx helper for conditional class names
+function clsx(...classes: (string | boolean | undefined)[]) {
+  return classes.filter(Boolean).join(' ');
+}
+
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [search, setSearch] = useState('');
   const pathname = usePathname();
+
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -47,15 +54,22 @@ export default function Sidebar() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Auto-focus search input when sidebar expands on desktop
+  useEffect(() => {
+    if (!isMobile && !isCollapsed && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isCollapsed, isMobile]);
+
   const collapsed = isMobile ? false : isCollapsed;
 
-  const toggleSidebar = () => {
+  const toggleSidebar = useCallback(() => {
     if (isMobile) {
       setMobileOpen((prev) => !prev);
     } else {
       setIsCollapsed((prev) => !prev);
     }
-  };
+  }, [isMobile]);
 
   const filteredLinks = categoryLinks.filter(({ label }) =>
     label.toLowerCase().includes(search.toLowerCase())
@@ -63,34 +77,61 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={[
-        'transition-all duration-300 ease-in-out z-10 relative text-white shadow-lg border-r border-[#3DFDAD]/20 bg-[#0F2F2E]',
+      className={clsx(
+        'relative z-10 text-white shadow-lg border-r border-[#3DFDAD]/20 bg-[#0F2F2E]',
+        'transition-width duration-300 ease-in-out min-h-screen',
         isMobile
           ? mobileOpen
             ? 'h-auto w-full border-t md:border-t-0'
             : 'h-14 w-full border-t md:border-t-0'
           : collapsed
-          ? 'w-16 min-h-screen'
-          : 'w-64 min-h-screen',
-      ].join(' ')}
+          ? 'w-16'
+          : 'w-64'
+      )}
+      style={{ transitionProperty: 'width' }}
     >
       <button
         onClick={toggleSidebar}
-        className="absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center bg-[#1C4745] text-[#3DFDAD] border border-[#3DFDAD]/40 rounded-full hover:bg-[#1a403d] transition-colors duration-200"
-        title="Toggle Sidebar"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleSidebar();
+          }
+        }}
         aria-label="Toggle Sidebar"
+        aria-expanded={isMobile ? mobileOpen : !collapsed}
+        title="Toggle Sidebar"
+        className={clsx(
+          'absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center rounded-full border border-[#3DFDAD]/40 bg-[#1C4745] text-[#3DFDAD]',
+          'hover:bg-[#1a403d] transition-colors duration-200',
+          'focus:outline-none focus:ring-2 focus:ring-[#3DFDAD]/50'
+        )}
+        type="button"
       >
         {isMobile ? (
-          mobileOpen ? <IconChevronUp width={18} height={18} /> : <IconChevronDown width={18} height={18} />
-        ) : collapsed ? (
-          <IconChevronRight width={18} height={18} />
+          mobileOpen ? (
+            <IconChevronUp width={18} height={18} />
+          ) : (
+            <IconChevronDown width={18} height={18} />
+          )
         ) : (
-          <IconChevronLeft width={18} height={18} />
+          <span
+            className={clsx(
+              'inline-block transform transition-transform duration-300',
+              collapsed ? 'rotate-0' : 'rotate-180'
+            )}
+          >
+            {collapsed ? (
+              <IconChevronRight width={18} height={18} />
+            ) : (
+              <IconChevronLeft width={18} height={18} />
+            )}
+          </span>
         )}
       </button>
 
       {(mobileOpen || !isMobile) && (
-        <div className="h-full overflow-y-auto pt-5 pb-6 space-y-3">
+        <div className="h-full overflow-y-auto pt-14 pb-6 space-y-3">
           <nav className="space-y-1 px-2" aria-label="My Tools">
             {toolLinks.map(({ icon, label, href }) => (
               <SidebarLink
@@ -107,24 +148,26 @@ export default function Sidebar() {
           </nav>
 
           <div
-            className={[
-              'flex items-center px-4 py-2 rounded-md mx-2 bg-[#162f2d] text-[#3DFDAD] text-[11px] font-semibold tracking-wider uppercase',
-              collapsed ? 'justify-center' : 'justify-start',
-            ].join(' ')}
+            className={clsx(
+              'flex items-center px-4 py-2 mx-2 rounded-md bg-[#162f2d] text-[#3DFDAD] text-[11px] font-semibold tracking-wider uppercase',
+              collapsed ? 'justify-center' : 'justify-start'
+            )}
           >
-            <IconFolder className="text-sm mr-2 leading-none" width={16} height={16} />
+            <IconFolder className="mr-2 text-sm leading-none" width={16} height={16} />
             {!collapsed && <span>Categories</span>}
           </div>
 
           {!collapsed && (
             <div className="px-3">
               <input
+                ref={searchInputRef}
                 type="text"
                 placeholder="Search categories..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full px-3 py-2 text-sm text-white placeholder-white/50 bg-[#1a403d] rounded-md border border-[#3DFDAD]/20 focus:outline-none focus:ring-2 focus:ring-[#3DFDAD]/50 transition"
+                className="w-full rounded-md border border-[#3DFDAD]/20 bg-[#1a403d] px-3 py-2 text-sm text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#3DFDAD]/50 transition"
                 aria-label="Search categories"
+                autoComplete="off"
               />
             </div>
           )}
@@ -144,7 +187,9 @@ export default function Sidebar() {
                 />
               ))
             ) : (
-              !collapsed && <p className="text-sm text-white/50 px-3 pt-2">No categories found</p>
+              !collapsed && (
+                <p className="px-3 pt-2 text-sm text-white/50">No categories found</p>
+              )
             )}
           </nav>
         </div>
@@ -210,13 +255,13 @@ function SidebarLink({
     <Link
       href={href}
       onClick={handleClick}
-      className={[
-        'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200',
+      className={clsx(
+        'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200',
         collapsed ? 'justify-center' : 'justify-start',
         active
-          ? 'bg-[#1c403d] text-[#3DFDAD] font-semibold'
-          : 'text-white/80 hover:bg-[#1a403d] hover:text-[#3DFDAD]',
-      ].join(' ')}
+          ? 'bg-[#1c403d] font-semibold text-[#3DFDAD]'
+          : 'text-white/80 hover:bg-[#1a403d] hover:text-[#3DFDAD]'
+      )}
       aria-current={active ? 'page' : undefined}
     >
       <Icon width={20} height={20} />
