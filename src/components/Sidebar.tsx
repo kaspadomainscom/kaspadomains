@@ -153,7 +153,7 @@ export default function Sidebar() {
               collapsed ? 'justify-center' : 'justify-start'
             )}
           >
-            <IconFolder className="mr-2 text-sm leading-none" width={16} height={16} />
+            <IconFolder className="mr-2 w-5 h-5 leading-none" />
             {!collapsed && <span>Categories</span>}
           </div>
 
