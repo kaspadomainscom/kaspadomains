@@ -137,10 +137,14 @@ export default function Sidebar() {
         aria-controls="sidebar-content"
         title="Toggle Sidebar"
         className={clsx(
-          'absolute top-2.5 right-2.5 z-20 w-6 h-6 flex items-center justify-center rounded-full border border-[#3DFDAD]/40 bg-[#1C4745] text-[#3DFDAD]',
+          'absolute top-2.5 z-20 w-6 h-6 flex items-center justify-center rounded-full border border-[#3DFDAD]/40 bg-[#1C4745] text-[#3DFDAD]',
           'hover:bg-[#1a403d] transition-colors duration-200',
           'focus:outline-none focus:ring-[1.5px] focus:ring-[#3DFDAD]/50',
-          isMobile ? 'right-2.5' : collapsed ? 'right-[5px]' : 'right-2.5'
+          isMobile
+            ? 'right-2.5'
+            : collapsed
+            ? '-right-3' // negative right pushes button outward (half out of 24px button)
+            : 'right-2.5'
         )}
         type="button"
       >
