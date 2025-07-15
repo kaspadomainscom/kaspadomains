@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Contract,
   JsonRpcSigner,
@@ -15,8 +15,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-// Contract setup
-const contractAddress = "0x428C2524445cefa875E5B8DCa25E58902dcF2eF8"; // Replace with your deployed address
+const contractAddress = "0x428C2524445cefa875E5B8DCa25E58902dcF2eF8"; 
 const contractABI = [
   "function totalReceived() view returns (uint256)",
   "function totalDistributed() view returns (uint256)",
@@ -53,14 +52,16 @@ type ReceivedEvent = {
 
 function formatTimestamp(ts: number | bigint) {
   const date = new Date(Number(ts) * 1000);
-  return date.toLocaleString();
+  return date.toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 }
 function formatDateYearMonth(ts: number | bigint) {
   const d = new Date(Number(ts) * 1000);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-// Simple CSV export helper
 function exportCSV(filename: string, rows: string[][]) {
   const csvContent =
     "data:text/csv;charset=utf-8," +
@@ -75,7 +76,6 @@ function exportCSV(filename: string, rows: string[][]) {
 }
 
 export default function EcosystemAdmin() {
-  // Removed unused provider state
   const [signer, setSigner] = useState<JsonRpcSigner | null>(null);
   const [contract, setContract] = useState<Contract | null>(null);
   const [owner, setOwner] = useState<string | null>(null);
@@ -92,20 +92,25 @@ export default function EcosystemAdmin() {
   const [currentPage, setCurrentPage] = useState(1);
   const eventsPerPage = 10;
 
-  // Wallet filter for logs (address substring, case insensitive)
   const [walletFilter, setWalletFilter] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [txPending, setTxPending] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const isOwner =
     connectedAddress && owner
       ? connectedAddress.toLowerCase() === owner.toLowerCase()
       : false;
 
-  // MetaMask login
   async function connectWallet() {
-    if (typeof window.ethereum === "undefined")
-      return alert("MetaMask required");
-
+    setErrorMessage(null);
+    if (typeof window.ethereum === "undefined") {
+      setErrorMessage("MetaMask not detected. Please install MetaMask.");
+      return;
+    }
     try {
+      setLoading(true);
       const _provider = new ethers.BrowserProvider(window.ethereum);
       const _signer = await _provider.getSigner();
       const _address = await _signer.getAddress();
@@ -117,81 +122,100 @@ export default function EcosystemAdmin() {
       setContract(_contract);
       setOwner(_owner);
     } catch (error) {
-      alert("Failed to connect wallet");
+      setErrorMessage("Failed to connect wallet.");
       console.error(error);
+    } finally {
+      setLoading(false);
     }
   }
 
-  // Load contract data
-  useEffect(() => {
+  const loadContractData = useCallback(async () => {
     if (!contract) return;
-
-    async function loadData() {
-      try {
-        if (!contract) return;
-        const [totalRec, totalDist, lastDist, recips] = await Promise.all([
-          contract.totalReceived(),
-          contract.totalDistributed(),
-          contract.lastDistributedAt(),
-          contract.getRecipients(),
-        ]);
-
-        setTotalReceived(ethers.formatEther(totalRec));
-        setTotalDistributed(ethers.formatEther(totalDist));
-        setLastDistributedAt(Number(lastDist));
-        setRecipients(recips);
-      } catch (error) {
-        console.error("Error loading contract data:", error);
-      }
-    }
-
-    loadData();
-  }, [contract]);
-
-  // Load events
-  useEffect(() => {
-    if (!contract) return;
-
-    async function loadEvents() {
-      try {
-        if (!contract) return;
-        const received = (await contract.queryFilter(
-            contract.filters.Received(),
-            -10000
-        )) as unknown as ReceivedEvent[];
-
-        const distributed = (await contract.queryFilter(
-          contract.filters.Distributed(),
-          -10000
-        )) as unknown as DistributedEvent[];
-
-        setReceivedEvents(received);
-        setDistributedEvents(distributed);
-      } catch (error) {
-        console.error("Error loading events:", error);
-      }
-    }
-
-    loadEvents();
-  }, [contract]);
-
-  // Trigger distribute()
-  async function handleDistribute() {
+    setErrorMessage(null);
     try {
-      if (!contract || !signer) return;
+      setLoading(true);
+      const [totalRec, totalDist, lastDist, recips] = await Promise.all([
+        contract.totalReceived(),
+        contract.totalDistributed(),
+        contract.lastDistributedAt(),
+        contract.getRecipients(),
+      ]);
+
+      setTotalReceived(ethers.formatEther(totalRec));
+      setTotalDistributed(ethers.formatEther(totalDist));
+      setLastDistributedAt(Number(lastDist));
+      setRecipients(recips);
+    } catch (error) {
+      setErrorMessage("Error loading contract data.");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }, [contract]);
+
+  const loadEvents = useCallback(async () => {
+    if (!contract) return;
+    setErrorMessage(null);
+    try {
+      setLoading(true);
+      const received = (await contract.queryFilter(
+        contract.filters.Received(),
+        -10000
+      )) as unknown as ReceivedEvent[];
+
+      const distributed = (await contract.queryFilter(
+        contract.filters.Distributed(),
+        -10000
+      )) as unknown as DistributedEvent[];
+
+      setReceivedEvents(received);
+      setDistributedEvents(distributed);
+    } catch (error) {
+      setErrorMessage("Error loading event logs.");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }, [contract]);
+
+  useEffect(() => {
+    if (!contract) return;
+    loadContractData();
+    loadEvents();
+
+    // Refresh every 30 seconds
+    const intervalId = setInterval(() => {
+      loadContractData();
+      loadEvents();
+    }, 30000);
+
+    return () => clearInterval(intervalId);
+  }, [contract, loadContractData, loadEvents]);
+
+  async function handleDistribute() {
+    if (!contract || !signer) return setErrorMessage("Wallet not connected");
+    setErrorMessage(null);
+
+    if (!confirm("Are you sure you want to trigger fund distribution?")) return;
+
+    try {
+      setTxPending(true);
       const tx = await contract.distribute();
       await tx.wait();
       alert("Distribution successful!");
+      loadContractData();
+      loadEvents();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Distribution failed: " + err.message);
+        setErrorMessage("Distribution failed: " + err.message);
       } else {
-        alert("Distribution failed");
+        setErrorMessage("Distribution failed");
       }
+    } finally {
+      setTxPending(false);
     }
   }
 
-  // Update recipient in state
   function updateRecipient(index: number, field: keyof Recipient, value: string | number) {
     setRecipients((prev) => {
       const newRecs = [...prev];
@@ -204,25 +228,40 @@ export default function EcosystemAdmin() {
     });
   }
 
-  // Save recipients to contract
+  function addRecipient() {
+    setRecipients((prev) => [
+      ...prev,
+      { addr: "", percent: 0, label: "" }
+    ]);
+  }
+
+  function removeRecipient(index: number) {
+    if (!confirm("Remove this recipient?")) return;
+    setRecipients((prev) => prev.filter((_, i) => i !== index));
+  }
+
   async function saveRecipients() {
-    if (!contract || !signer) return alert("Wallet not connected");
+    if (!contract || !signer) return setErrorMessage("Wallet not connected");
+    setErrorMessage(null);
 
     try {
-      // Validate recipients percent sum <= 100 and valid addresses
       const totalPercent = recipients.reduce((sum, r) => sum + r.percent, 0);
       if (totalPercent > 100) {
-        return alert("Total percent cannot exceed 100");
+        setErrorMessage("Total percent cannot exceed 100");
+        return;
       }
       for (const r of recipients) {
         if (!ethers.isAddress(r.addr)) {
-          return alert(`Invalid address: ${r.addr}`);
+          setErrorMessage(`Invalid address: ${r.addr}`);
+          return;
         }
         if (r.percent <= 0) {
-          return alert(`Percent must be positive for ${r.addr}`);
+          setErrorMessage(`Percent must be positive for ${r.addr}`);
+          return;
         }
       }
 
+      setTxPending(true);
       const tx = await contract.setRecipients(
         recipients.map((r) => ({
           addr: r.addr,
@@ -232,16 +271,19 @@ export default function EcosystemAdmin() {
       );
       await tx.wait();
       alert("Recipients updated successfully");
+      loadContractData();
+      loadEvents();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert("Failed to save recipients: " + err.message);
+        setErrorMessage("Failed to save recipients: " + err.message);
       } else {
-        alert("Failed to save recipients");
+        setErrorMessage("Failed to save recipients");
       }
+    } finally {
+      setTxPending(false);
     }
   }
 
-  // Filtered events by wallet filter
   const filteredReceivedEvents = walletFilter
     ? receivedEvents.filter((e) =>
         e.args.from.toLowerCase().includes(walletFilter.toLowerCase())
@@ -249,7 +291,7 @@ export default function EcosystemAdmin() {
     : receivedEvents;
 
   const filteredDistributedEvents = walletFilter
-    ? distributedEvents.filter(() => true) // no wallet in Distributed event, show all
+    ? distributedEvents // Distributed event has no wallet info, show all anyway
     : distributedEvents;
 
   const paginatedEvents = filteredDistributedEvents
@@ -262,16 +304,13 @@ export default function EcosystemAdmin() {
     kas: parseFloat(ethers.formatEther(e.args.total)),
   }));
 
-  // Prepare CSV data grouped by year-month
   function prepareCSVGroupedByMonth() {
-    // Group Received by year-month
     const receivedGroups: Record<string, bigint> = {};
     filteredReceivedEvents.forEach((e) => {
       const ym = formatDateYearMonth(e.args.timestamp ?? BigInt(0));
       receivedGroups[ym] = (receivedGroups[ym] || BigInt(0)) + e.args.amount;
     });
 
-    // Group Distributed by year-month
     const distributedGroups: Record<string, bigint> = {};
     filteredDistributedEvents.forEach((e) => {
       const ym = formatDateYearMonth(e.args.timestamp ?? BigInt(0));
@@ -282,7 +321,6 @@ export default function EcosystemAdmin() {
   }
 
   function exportLogsCSV() {
-    // Raw logs (Received)
     const header = ["Timestamp", "From", "Amount (KAS)"];
     const rows = filteredReceivedEvents.map((e) => [
       formatTimestamp(e.args.timestamp ?? BigInt(0)),
@@ -323,277 +361,641 @@ export default function EcosystemAdmin() {
   return (
     <div
       style={{
-        maxWidth: 900,
+        maxWidth: 960,
         margin: "auto",
-        padding: 20,
+        padding: 24,
         fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+        color: "#222",
+        backgroundColor: "#fefefe",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+        borderRadius: 12,
       }}
     >
       {!connectedAddress ? (
-        <div>
-          <h2>Connect Wallet</h2>
-          <button onClick={connectWallet} style={{ padding: "8px 16px" }}>
-            Connect with MetaMask
+        <div style={{ textAlign: "center" }}>
+          <h2 style={{ fontSize: 28, marginBottom: 16, color: "#333" }}>
+            Connect Your Wallet
+          </h2>
+          <p style={{ maxWidth: 480, margin: "auto 0 24px" }}>
+            To administer the KaspaDomains Ecosystem Fund, please connect your
+            Ethereum-compatible wallet. MetaMask is recommended for ease of use.
+          </p>
+          <button
+            onClick={connectWallet}
+            style={{
+              padding: "12px 28px",
+              fontSize: 16,
+              backgroundColor: "#2962ff",
+              color: "white",
+              border: "none",
+              borderRadius: 6,
+              cursor: "pointer",
+              boxShadow: "0 4px 8px rgba(41, 98, 255, 0.4)",
+              transition: "background-color 0.3s",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = "#0039cb")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = "#2962ff")
+            }
+            disabled={loading}
+            aria-busy={loading}
+          >
+            {loading ? "Connecting..." : "Connect with MetaMask"}
           </button>
+          {errorMessage && (
+            <p style={{ color: "red", marginTop: 16 }}>{errorMessage}</p>
+          )}
         </div>
       ) : (
         <>
-          <h1 style={{ marginBottom: 8 }}>KaspaDomains Ecosystem Fund Admin</h1>
-
-          <p>
-            Connected as:{" "}
-            <b style={{ fontFamily: "monospace" }}>{connectedAddress}</b>{" "}
-            {isOwner ? (
-              <span style={{ color: "green" }}>✅ Admin</span>
-            ) : (
-              <span style={{ color: "red" }}>⛔ Not Admin</span>
-            )}
-          </p>
-
-          <section
+          <header
             style={{
-              marginBottom: 24,
-              padding: 16,
-              border: "1px solid #ccc",
-              borderRadius: 8,
-              background: "#f9f9f9",
+              marginBottom: 28,
+              borderBottom: "2px solid #2962ff",
+              paddingBottom: 12,
             }}
           >
-            <h2>Summary</h2>
+            <h1 style={{ fontSize: 32, color: "#2962ff" }}>
+              KaspaDomains Ecosystem Fund Administration
+            </h1>
+            <p style={{ fontSize: 14, color: "#555" }}>
+              Manage fund recipients, view distribution history, and export data
+              related to KaspaDomains ecosystem payments and distributions.
+            </p>
+            <p style={{ marginTop: 8 }}>
+              Connected as:{" "}
+              <b style={{ fontFamily: "monospace" }}>{connectedAddress}</b>{" "}
+              {isOwner ? (
+                <span style={{ color: "green" }} aria-label="Admin user">✅ You are an Admin</span>
+              ) : (
+                <span style={{ color: "red" }} aria-label="Not an admin">⛔ Not an Admin</span>
+              )}
+            </p>
+            {errorMessage && (
+              <p style={{ color: "red", marginTop: 8 }}>{errorMessage}</p>
+            )}
+          </header>
+
+          <section
+            aria-label="Summary of Fund Status"
+            style={{
+              marginBottom: 32,
+              padding: 20,
+              borderRadius: 10,
+              backgroundColor: "#e3f2fd",
+              boxShadow: "inset 0 0 8px #bbdefb",
+              position: "relative",
+            }}
+          >
+            <h2 style={{ color: "#1565c0", marginBottom: 12 }}>
+              Fund Summary
+            </h2>
             <p>
-              <b>Total Received:</b> {totalReceived} KAS
+              <strong>Total Received:</strong> {totalReceived} KAS
             </p>
             <p>
-              <b>Total Distributed:</b> {totalDistributed} KAS
+              <strong>Total Distributed:</strong> {totalDistributed} KAS
             </p>
             <p>
-              <b>Balance:</b>{" "}
+              <strong>Current Balance:</strong>{" "}
               {(parseFloat(totalReceived) - parseFloat(totalDistributed)).toFixed(
                 4
               )}{" "}
               KAS
             </p>
             <p>
-              <b>Last Distribution:</b> {formatTimestamp(lastDistributedAt)}
+              <strong>Last Distribution:</strong> {formatTimestamp(lastDistributedAt)}
             </p>
+
             {isOwner && (
               <button
                 onClick={handleDistribute}
                 style={{
-                  marginTop: 12,
-                  padding: "10px 16px",
-                  backgroundColor: "#00c853",
+                  marginTop: 20,
+                  padding: "14px 24px",
+                  backgroundColor: txPending ? "#9e9e9e" : "#00c853",
                   color: "white",
                   border: "none",
-                  borderRadius: 4,
-                  cursor: "pointer",
+                  borderRadius: 8,
+                  cursor: txPending ? "not-allowed" : "pointer",
+                  fontWeight: "600",
+                  fontSize: 16,
+                  boxShadow: txPending ? "none" : "0 5px 12px rgba(0, 200, 83, 0.5)",
+                  transition: "background-color 0.3s",
                 }}
+                onMouseEnter={(e) =>
+                  !txPending && (e.currentTarget.style.backgroundColor = "#009624")
+                }
+                onMouseLeave={(e) =>
+                  !txPending && (e.currentTarget.style.backgroundColor = "#00c853")
+                }
+                title="Click to trigger distribution of the ecosystem fund"
+                disabled={txPending}
+                aria-busy={txPending}
               >
-                Trigger Distribute()
+                {txPending ? "Distributing..." : "Trigger Distribution"}
               </button>
             )}
+
+            <p style={{ marginTop: 12, fontSize: 13, color: "#555" }}>
+              * Only admins can trigger fund distribution. This will send KAS to
+              the configured recipients based on their set percentages.
+            </p>
           </section>
 
-          {/* Recipients editor */}
           <section
+            aria-label="Edit fund recipients"
             style={{
-              marginBottom: 24,
-              padding: 16,
-              border: "1px solid #ccc",
-              borderRadius: 8,
-              background: "#f4faff",
+              marginBottom: 32,
+              padding: 20,
+              borderRadius: 10,
+              backgroundColor: "#e8f5e9",
+              boxShadow: "inset 0 0 8px #c8e6c9",
             }}
           >
-            <h2>Recipients</h2>
+            <h2 style={{ color: "#2e7d32", marginBottom: 14 }}>
+              Manage Recipients
+            </h2>
+            <p style={{ marginBottom: 12, fontSize: 14, color: "#2e7d32" }}>
+              Define the addresses and allocation percentages of fund recipients.
+              The total percentage must not exceed 100%.
+            </p>
             <table
-              style={{ width: "100%", borderCollapse: "collapse" }}
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: 14,
+              }}
               border={1}
               cellPadding={6}
             >
-              <thead>
+              <thead style={{ backgroundColor: "#a5d6a7" }}>
                 <tr>
                   <th>#</th>
                   <th>Address</th>
-                  <th>Percent</th>
-                  <th>Label</th>
+                  <th>Percent (%)</th>
+                  <th>Label / Description</th>
+                  {isOwner && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
                 {recipients.map((r, i) => (
-                  <tr key={i}>
-                    <td>{i + 1}</td>
+                  <tr
+                    key={i}
+                    style={{
+                      backgroundColor: i % 2 === 0 ? "#dcedc8" : "#f1f8e9",
+                    }}
+                  >
+                    <td style={{ textAlign: "center" }}>{i + 1}</td>
                     <td>
                       <input
                         type="text"
                         value={r.addr}
-                        style={{ width: "100%", fontFamily: "monospace" }}
-                        onChange={(e) =>
-                          updateRecipient(i, "addr", e.target.value)
-                        }
-                        disabled={!isOwner}
+                        style={{
+                          width: "100%",
+                          fontFamily: "monospace",
+                          padding: "4px 6px",
+                          borderRadius: 4,
+                          border: "1px solid #ccc",
+                        }}
+                        onChange={(e) => updateRecipient(i, "addr", e.target.value)}
+                        disabled={!isOwner || txPending}
+                        spellCheck={false}
+                        autoComplete="off"
+                        aria-label={`Recipient address #${i + 1}`}
                       />
                     </td>
-                    <td>
+                    <td style={{ textAlign: "center" }}>
                       <input
                         type="number"
                         min={0}
                         max={100}
                         value={r.percent}
-                        style={{ width: "60px" }}
-                        onChange={(e) =>
-                          updateRecipient(i, "percent", e.target.value)
-                        }
-                        disabled={!isOwner}
+                        style={{
+                          width: "60px",
+                          padding: "4px 6px",
+                          borderRadius: 4,
+                          border: "1px solid #ccc",
+                          textAlign: "center",
+                        }}
+                        onChange={(e) => updateRecipient(i, "percent", e.target.value)}
+                        disabled={!isOwner || txPending}
+                        aria-label={`Recipient percent #${i + 1}`}
                       />
-                      %
                     </td>
                     <td>
                       <input
                         type="text"
                         value={r.label}
-                        style={{ width: "100%" }}
-                        onChange={(e) =>
-                          updateRecipient(i, "label", e.target.value)
-                        }
-                        disabled={!isOwner}
+                        style={{
+                          width: "100%",
+                          padding: "4px 6px",
+                          borderRadius: 4,
+                          border: "1px solid #ccc",
+                        }}
+                        onChange={(e) => updateRecipient(i, "label", e.target.value)}
+                        disabled={!isOwner || txPending}
+                        aria-label={`Recipient label #${i + 1}`}
                       />
                     </td>
+                    {isOwner && (
+                      <td style={{ textAlign: "center" }}>
+                        <button
+                          onClick={() => removeRecipient(i)}
+                          disabled={txPending}
+                          aria-label={`Remove recipient #${i + 1}`}
+                          style={{
+                            backgroundColor: "#e53935",
+                            color: "white",
+                            border: "none",
+                            padding: "6px 10px",
+                            borderRadius: 4,
+                            cursor: txPending ? "not-allowed" : "pointer",
+                            transition: "background-color 0.3s",
+                          }}
+                          onMouseEnter={(e) =>
+                            !txPending && (e.currentTarget.style.backgroundColor = "#ab000d")
+                          }
+                          onMouseLeave={(e) =>
+                            !txPending && (e.currentTarget.style.backgroundColor = "#e53935")
+                          }
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
             {isOwner && (
-              <button
-                onClick={saveRecipients}
-                style={{
-                  marginTop: 10,
-                  padding: "8px 16px",
-                  backgroundColor: "#1976d2",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 4,
-                  cursor: "pointer",
-                }}
-              >
-                Save Recipients
-              </button>
+              <div style={{ marginTop: 12 }}>
+                <button
+                  onClick={addRecipient}
+                  disabled={txPending}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#388e3c",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    cursor: txPending ? "not-allowed" : "pointer",
+                    fontWeight: "600",
+                    fontSize: 15,
+                    boxShadow: "0 4px 10px rgba(56, 142, 60, 0.5)",
+                    transition: "background-color 0.3s",
+                    marginRight: 12,
+                  }}
+                  onMouseEnter={(e) =>
+                    !txPending && (e.currentTarget.style.backgroundColor = "#2e7d32")
+                  }
+                  onMouseLeave={(e) =>
+                    !txPending && (e.currentTarget.style.backgroundColor = "#388e3c")
+                  }
+                  aria-label="Add new recipient"
+                >
+                  + Add Recipient
+                </button>
+                <button
+                  onClick={saveRecipients}
+                  disabled={txPending}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#2e7d32",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    cursor: txPending ? "not-allowed" : "pointer",
+                    fontWeight: "600",
+                    fontSize: 15,
+                    boxShadow: "0 4px 10px rgba(46, 125, 50, 0.5)",
+                    transition: "background-color 0.3s",
+                  }}
+                  onMouseEnter={(e) =>
+                    !txPending && (e.currentTarget.style.backgroundColor = "#1b5e20")
+                  }
+                  onMouseLeave={(e) =>
+                    !txPending && (e.currentTarget.style.backgroundColor = "#2e7d32")
+                  }
+                  aria-label="Save recipients to blockchain"
+                >
+                  Save Recipients
+                </button>
+              </div>
             )}
           </section>
 
           <section
+            aria-label="Event logs filter and export"
             style={{
               marginBottom: 24,
               padding: 16,
-              border: "1px solid #ccc",
-              borderRadius: 8,
-              background: "#fff",
+              borderRadius: 10,
+              backgroundColor: "#fffde7",
+              boxShadow: "inset 0 0 8px #fff59d",
             }}
           >
-            <h2>Filter Logs by Wallet Address</h2>
+            <label htmlFor="walletFilter" style={{ fontWeight: "600" }}>
+              Filter Received Events by Wallet Address:
+            </label>
             <input
+              id="walletFilter"
               type="text"
-              placeholder="Filter by wallet address..."
               value={walletFilter}
               onChange={(e) => setWalletFilter(e.target.value)}
+              placeholder="Enter wallet address substring"
               style={{
-                width: "100%",
-                padding: "8px",
+                marginLeft: 12,
+                padding: 6,
                 fontFamily: "monospace",
-                fontSize: "14px",
-                marginBottom: "12px",
-                borderRadius: 4,
+                width: 320,
+                borderRadius: 6,
                 border: "1px solid #ccc",
               }}
+              spellCheck={false}
+              autoComplete="off"
             />
-
-            <h3>Distributions Chart</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={chartData}>
-                <XAxis dataKey="time" hide />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="kas" stroke="#00c853" />
-              </LineChart>
-            </ResponsiveContainer>
-
-            <div
-              style={{
-                marginTop: 16,
-                display: "flex",
-                gap: 10,
-                flexWrap: "wrap",
-              }}
-            >
-              <button onClick={exportLogsCSV} style={{ flex: "1 1 150px" }}>
-                Export Received Logs CSV
-              </button>
-              <button
-                onClick={exportDistributionsCSV}
-                style={{ flex: "1 1 150px" }}
-              >
-                Export Distribution Logs CSV
-              </button>
-              <button onClick={exportGroupedCSV} style={{ flex: "1 1 200px" }}>
-                Export Year/Month Grouped CSV
-              </button>
-            </div>
           </section>
 
           <section
-            style={{
-              marginBottom: 24,
-              padding: 16,
-              border: "1px solid #ccc",
-              borderRadius: 8,
-              background: "#fff",
-              overflowX: "auto",
-            }}
+            aria-label="Received events log"
+            style={{ marginBottom: 36 }}
           >
-            <h2>Distribution History (Page {currentPage})</h2>
-            <table
-              border={1}
-              cellPadding={6}
-              style={{ width: "100%", minWidth: 500, borderCollapse: "collapse" }}
-            >
-              <thead>
-                <tr>
-                  <th>Timestamp</th>
-                  <th>Total KAS</th>
-                  <th>Recipients</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedEvents.map((e, i) => (
-                  <tr key={i}>
-                    <td>{formatTimestamp(e.args.timestamp)}</td>
-                    <td>{ethers.formatEther(e.args.total)}</td>
-                    <td>{e.args.count.toString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <h2 style={{ color: "#f57f17" }}>Received Events Log</h2>
+            <p style={{ fontSize: 14, color: "#f9a825" }}>
+              Showing {filteredReceivedEvents.length} events.
+            </p>
             <div
               style={{
-                marginTop: 8,
-                display: "flex",
-                justifyContent: "space-between",
+                maxHeight: 240,
+                overflowY: "auto",
+                border: "1px solid #fbc02d",
+                borderRadius: 6,
+                backgroundColor: "#fffde7",
+                fontSize: 14,
+                fontFamily: "monospace",
               }}
+              tabIndex={0}
+              aria-live="polite"
+            >
+              <table
+                style={{ width: "100%", borderCollapse: "collapse" }}
+                aria-label="Received events table"
+              >
+                <thead style={{ backgroundColor: "#fff176" }}>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>From</th>
+                    <th>Amount (KAS)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredReceivedEvents.map((e, i) => (
+                    <tr
+                      key={i}
+                      style={{
+                        backgroundColor: i % 2 === 0 ? "#fffde7" : "#fff9c4",
+                      }}
+                    >
+                      <td>{formatTimestamp(e.args.timestamp ?? BigInt(0))}</td>
+                      <td>{e.args.from}</td>
+                      <td>{ethers.formatEther(e.args.amount)}</td>
+                    </tr>
+                  ))}
+                  {filteredReceivedEvents.length === 0 && (
+                    <tr>
+                      <td colSpan={3} style={{ textAlign: "center", padding: 12 }}>
+                        No events found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <button
+              onClick={exportLogsCSV}
+              style={{
+                marginTop: 10,
+                padding: "8px 16px",
+                backgroundColor: "#f9a825",
+                borderRadius: 6,
+                border: "none",
+                cursor: "pointer",
+                color: "#3e2723",
+                fontWeight: "600",
+                fontSize: 14,
+                boxShadow: "0 3px 8px rgba(249, 168, 37, 0.6)",
+                transition: "background-color 0.3s",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = "#fbc02d")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = "#f9a825")
+              }
+              aria-label="Export Received events CSV"
+            >
+              Export Received CSV
+            </button>
+          </section>
+
+          <section
+            aria-label="Distribution events log"
+            style={{ marginBottom: 36 }}
+          >
+            <h2 style={{ color: "#4a148c" }}>Distribution Events Log</h2>
+            <p style={{ fontSize: 14, color: "#7e57c2" }}>
+              Showing {distributedEvents.length} events.
+            </p>
+
+            <div
+              style={{
+                maxHeight: 240,
+                overflowY: "auto",
+                border: "1px solid #7e57c2",
+                borderRadius: 6,
+                backgroundColor: "#ede7f6",
+                fontSize: 14,
+                fontFamily: "monospace",
+              }}
+              tabIndex={0}
+              aria-live="polite"
+            >
+              <table
+                style={{ width: "100%", borderCollapse: "collapse" }}
+                aria-label="Distribution events table"
+              >
+                <thead style={{ backgroundColor: "#9575cd" }}>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Total Distributed (KAS)</th>
+                    <th>Recipients Count</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedEvents.length > 0 ? (
+                    paginatedEvents.map((e, i) => (
+                      <tr
+                        key={i}
+                        style={{
+                          backgroundColor: i % 2 === 0 ? "#ede7f6" : "#d1c4e9",
+                        }}
+                      >
+                        <td>{formatTimestamp(e.args.timestamp)}</td>
+                        <td>{ethers.formatEther(e.args.total)}</td>
+                        <td>{e.args.count.toString()}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={3} style={{ textAlign: "center", padding: 12 }}>
+                        No events found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div
+              style={{
+                marginTop: 12,
+                display: "flex",
+                justifyContent: "center",
+                gap: 12,
+                alignItems: "center",
+              }}
+              aria-label="Distribution events pagination"
             >
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
+                aria-label="Previous page"
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: 4,
+                  border: "1px solid #7e57c2",
+                  backgroundColor: currentPage === 1 ? "#ccc" : "#9575cd",
+                  color: currentPage === 1 ? "#666" : "white",
+                  cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                }}
               >
                 Prev
               </button>
+              <span aria-live="polite" aria-atomic="true">
+                Page {currentPage}
+              </span>
               <button
-                onClick={() => setCurrentPage((p) => p + 1)}
-                disabled={
-                  currentPage * eventsPerPage >= filteredDistributedEvents.length
+                onClick={() =>
+                  setCurrentPage((p) =>
+                    p * eventsPerPage >= filteredDistributedEvents.length ? p : p + 1
+                  )
                 }
+                disabled={currentPage * eventsPerPage >= filteredDistributedEvents.length}
+                aria-label="Next page"
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: 4,
+                  border: "1px solid #7e57c2",
+                  backgroundColor:
+                    currentPage * eventsPerPage >= filteredDistributedEvents.length
+                      ? "#ccc"
+                      : "#9575cd",
+                  color:
+                    currentPage * eventsPerPage >= filteredDistributedEvents.length
+                      ? "#666"
+                      : "white",
+                  cursor:
+                    currentPage * eventsPerPage >= filteredDistributedEvents.length
+                      ? "not-allowed"
+                      : "pointer",
+                }}
               >
                 Next
               </button>
             </div>
+
+            <div style={{ marginTop: 14 }}>
+              <button
+                onClick={exportDistributionsCSV}
+                aria-label="Export Distributions CSV"
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#9575cd",
+                  color: "white",
+                  borderRadius: 6,
+                  border: "none",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                  fontSize: 14,
+                  boxShadow: "0 3px 8px rgba(149, 117, 205, 0.6)",
+                  transition: "background-color 0.3s",
+                  marginRight: 12,
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#7e57c2")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#9575cd")
+                }
+              >
+                Export Distribution CSV
+              </button>
+              <button
+                onClick={exportGroupedCSV}
+                aria-label="Export Grouped Transfers CSV"
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#7b1fa2",
+                  color: "white",
+                  borderRadius: 6,
+                  border: "none",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                  fontSize: 14,
+                  boxShadow: "0 3px 8px rgba(123, 31, 162, 0.7)",
+                  transition: "background-color 0.3s",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#4a148c")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#7b1fa2")
+                }
+              >
+                Export Grouped CSV (Monthly)
+              </button>
+            </div>
+          </section>
+
+          <section aria-label="Distribution graph" style={{ height: 320 }}>
+            <h2 style={{ color: "#00796b", marginBottom: 12 }}>
+              Distribution Over Time (KAS)
+            </h2>
+            {chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <XAxis dataKey="time" />
+                  <YAxis
+                    label={{ value: "KAS", angle: -90, position: "insideLeft" }}
+                    domain={[0, "auto"]}
+                  />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="kas"
+                    stroke="#00796b"
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <p>No distribution data available.</p>
+            )}
           </section>
         </>
       )}
