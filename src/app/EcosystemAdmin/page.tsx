@@ -327,7 +327,14 @@ export default function EcosystemAdmin() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-6 sm:px-10 py-6 bg-white rounded-xl shadow-md text-gray-900 font-sans">
+    <div className="max-w-3xl mx-auto px-6 mt-4 mb-4 sm:px-10 py-6 bg-white rounded-xl shadow-md text-gray-900 font-sans relative">
+      {/* Loading overlay */}
+      {loading && (
+        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 rounded-xl">
+          <div className="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-16 w-16"></div>
+        </div>
+      )}
+
       {!account ? (
         <div className="text-center">
           <h2 className="text-2xl sm:text-3xl font-semibold mb-4 text-gray-800">
@@ -340,9 +347,18 @@ export default function EcosystemAdmin() {
           <button
             onClick={metamask.connect}
             aria-busy={loading}
-            className="px-7 py-3 text-lg font-medium bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
+            disabled={loading}
+            className={`px-7 py-3 text-lg font-medium rounded-md shadow transition-colors ${
+              loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 text-white hover:bg-blue-700"
+            }`}
           >
-            Connect with MetaMask
+            {loading ? (
+              <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-5 w-5 mx-auto"></div>
+            ) : (
+              "Connect with MetaMask"
+            )}
           </button>
           {errorMessage && (
             <p className="mt-4 text-red-600 font-semibold">{errorMessage}</p>
@@ -393,6 +409,7 @@ export default function EcosystemAdmin() {
               lastDistributedAt={lastDistributedAt}
               isOwner={isOwner}
               txPending={txPending}
+              loading={loading} /* New prop for disabling distribute button */
               onDistribute={handleDistribute}
             />
 

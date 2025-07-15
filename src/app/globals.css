@@ -44,6 +44,19 @@
   }
 }
 
+/* Add this to your global CSS or inside a <style> tag in your _app.tsx or similar */
+
+.loader {
+  border-top-color: #3498db; /* Blue */
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
 /* Your custom utility classes for Kaspa colors */
 .text-kaspaGreen {
   color: var(--kaspaGreen);

@@ -9,6 +9,7 @@ type FundSummaryProps = {
   lastDistributedAt: number;
   isOwner: boolean;
   txPending: boolean;
+  loading?: boolean; // new optional prop
   onDistribute: () => void;
 };
 
@@ -26,11 +27,14 @@ export default function FundSummary({
   lastDistributedAt,
   isOwner,
   txPending,
+  loading = false,
   onDistribute,
 }: FundSummaryProps) {
   const currentBalance = (
     parseFloat(totalReceived) - parseFloat(totalDistributed)
   ).toFixed(4);
+
+  const isDisabled = txPending || loading;
 
   return (
     <section
@@ -65,29 +69,46 @@ export default function FundSummary({
             style={{
               marginTop: 20,
               padding: '14px 24px',
-              backgroundColor: txPending ? '#9e9e9e' : '#00c853',
+              backgroundColor: isDisabled ? '#9e9e9e' : '#00c853',
               color: 'white',
               border: 'none',
               borderRadius: 8,
-              cursor: txPending ? 'not-allowed' : 'pointer',
+              cursor: isDisabled ? 'not-allowed' : 'pointer',
               fontWeight: '600',
               fontSize: 16,
-              boxShadow: txPending
+              boxShadow: isDisabled
                 ? 'none'
                 : '0 5px 12px rgba(0, 200, 83, 0.5)',
               transition: 'background-color 0.3s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
             }}
             onMouseEnter={(e) =>
-              !txPending && (e.currentTarget.style.backgroundColor = '#009624')
+              !isDisabled && (e.currentTarget.style.backgroundColor = '#009624')
             }
             onMouseLeave={(e) =>
-              !txPending && (e.currentTarget.style.backgroundColor = '#00c853')
+              !isDisabled && (e.currentTarget.style.backgroundColor = '#00c853')
             }
             title="Click to trigger distribution of the ecosystem fund"
-            disabled={txPending}
-            aria-busy={txPending}
+            disabled={isDisabled}
+            aria-busy={isDisabled}
           >
-            {txPending ? 'Distributing...' : 'Trigger Distribution'}
+            {(txPending || loading) && (
+              <span
+                style={{
+                  borderTopColor: 'white',
+                  animation: 'spin 1s linear infinite',
+                  borderRadius: '50%',
+                  border: '3px solid rgba(255,255,255,0.5)',
+                  borderTop: '3px solid white',
+                  width: 18,
+                  height: 18,
+                }}
+              />
+            )}
+            {txPending ? 'Distributing...' : loading ? 'Loading...' : 'Trigger Distribution'}
           </button>
 
           <p style={{ marginTop: 12, fontSize: 13, color: '#555' }}>
@@ -96,6 +117,13 @@ export default function FundSummary({
           </p>
         </>
       )}
+
+      {/* Spinner keyframes for inline style */}
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </section>
   );
 }
