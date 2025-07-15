@@ -1,3 +1,4 @@
+// src/hooks/wallet/internal/useMetamaskWallet.ts
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';

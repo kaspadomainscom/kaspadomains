@@ -19,8 +19,8 @@ import {
   WalletState as KaswareWalletState,
 } from '@/hooks/wallet/internal/useKaswareWallet';
 
-type WalletType = 'metamask' | 'kasware' | null;
-type WalletStatus = 'idle' | 'connecting' | 'connected' | 'error' | 'unavailable' | null;
+export type WalletType = 'metamask' | 'kasware' | null;
+export type WalletStatus = 'idle' | 'connecting' | 'connected' | 'error' | 'unavailable' | null;
 
 export interface CombinedWalletState {
   kasware: KaswareWalletState;

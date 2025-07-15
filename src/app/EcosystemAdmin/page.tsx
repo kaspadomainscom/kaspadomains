@@ -1,11 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+// import { useWalletContext } from '@/context/WalletContext';
+
 import {
   Contract,
   JsonRpcSigner,
   ethers,
 } from "ethers";
+
 import {
   LineChart,
   Line,
@@ -76,6 +79,17 @@ function exportCSV(filename: string, rows: string[][]) {
 }
 
 export default function EcosystemAdmin() {
+
+//   const {
+//     account,
+//     status,
+//     activeWalletType,
+//     activeError,
+//     disconnectAll,
+//     metamask,
+//     kasware,
+//   } = useWalletContext();
+
   const [signer, setSigner] = useState<JsonRpcSigner | null>(null);
   const [contract, setContract] = useState<Contract | null>(null);
   const [owner, setOwner] = useState<string | null>(null);
@@ -228,62 +242,6 @@ export default function EcosystemAdmin() {
     });
   }
 
-  function addRecipient() {
-    setRecipients((prev) => [
-      ...prev,
-      { addr: "", percent: 0, label: "" }
-    ]);
-  }
-
-  function removeRecipient(index: number) {
-    if (!confirm("Remove this recipient?")) return;
-    setRecipients((prev) => prev.filter((_, i) => i !== index));
-  }
-
-  async function saveRecipients() {
-    if (!contract || !signer) return setErrorMessage("Wallet not connected");
-    setErrorMessage(null);
-
-    try {
-      const totalPercent = recipients.reduce((sum, r) => sum + r.percent, 0);
-      if (totalPercent > 100) {
-        setErrorMessage("Total percent cannot exceed 100");
-        return;
-      }
-      for (const r of recipients) {
-        if (!ethers.isAddress(r.addr)) {
-          setErrorMessage(`Invalid address: ${r.addr}`);
-          return;
-        }
-        if (r.percent <= 0) {
-          setErrorMessage(`Percent must be positive for ${r.addr}`);
-          return;
-        }
-      }
-
-      setTxPending(true);
-      const tx = await contract.setRecipients(
-        recipients.map((r) => ({
-          addr: r.addr,
-          percent: r.percent,
-          label: r.label,
-        }))
-      );
-      await tx.wait();
-      alert("Recipients updated successfully");
-      loadContractData();
-      loadEvents();
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setErrorMessage("Failed to save recipients: " + err.message);
-      } else {
-        setErrorMessage("Failed to save recipients");
-      }
-    } finally {
-      setTxPending(false);
-    }
-  }
-
   const filteredReceivedEvents = walletFilter
     ? receivedEvents.filter((e) =>
         e.args.from.toLowerCase().includes(walletFilter.toLowerCase())
@@ -364,6 +322,8 @@ export default function EcosystemAdmin() {
         maxWidth: 960,
         margin: "auto",
         padding: 24,
+        marginLeft: "16px",
+        marginRight: "16px",
         fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
         color: "#222",
         backgroundColor: "#fefefe",
@@ -537,7 +497,6 @@ export default function EcosystemAdmin() {
                   <th>Address</th>
                   <th>Percent (%)</th>
                   <th>Label / Description</th>
-                  {isOwner && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -600,91 +559,10 @@ export default function EcosystemAdmin() {
                         aria-label={`Recipient label #${i + 1}`}
                       />
                     </td>
-                    {isOwner && (
-                      <td style={{ textAlign: "center" }}>
-                        <button
-                          onClick={() => removeRecipient(i)}
-                          disabled={txPending}
-                          aria-label={`Remove recipient #${i + 1}`}
-                          style={{
-                            backgroundColor: "#e53935",
-                            color: "white",
-                            border: "none",
-                            padding: "6px 10px",
-                            borderRadius: 4,
-                            cursor: txPending ? "not-allowed" : "pointer",
-                            transition: "background-color 0.3s",
-                          }}
-                          onMouseEnter={(e) =>
-                            !txPending && (e.currentTarget.style.backgroundColor = "#ab000d")
-                          }
-                          onMouseLeave={(e) =>
-                            !txPending && (e.currentTarget.style.backgroundColor = "#e53935")
-                          }
-                        >
-                          ✕
-                        </button>
-                      </td>
-                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
-            {isOwner && (
-              <div style={{ marginTop: 12 }}>
-                <button
-                  onClick={addRecipient}
-                  disabled={txPending}
-                  style={{
-                    padding: "10px 20px",
-                    backgroundColor: "#388e3c",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 6,
-                    cursor: txPending ? "not-allowed" : "pointer",
-                    fontWeight: "600",
-                    fontSize: 15,
-                    boxShadow: "0 4px 10px rgba(56, 142, 60, 0.5)",
-                    transition: "background-color 0.3s",
-                    marginRight: 12,
-                  }}
-                  onMouseEnter={(e) =>
-                    !txPending && (e.currentTarget.style.backgroundColor = "#2e7d32")
-                  }
-                  onMouseLeave={(e) =>
-                    !txPending && (e.currentTarget.style.backgroundColor = "#388e3c")
-                  }
-                  aria-label="Add new recipient"
-                >
-                  + Add Recipient
-                </button>
-                <button
-                  onClick={saveRecipients}
-                  disabled={txPending}
-                  style={{
-                    padding: "10px 20px",
-                    backgroundColor: "#2e7d32",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 6,
-                    cursor: txPending ? "not-allowed" : "pointer",
-                    fontWeight: "600",
-                    fontSize: 15,
-                    boxShadow: "0 4px 10px rgba(46, 125, 50, 0.5)",
-                    transition: "background-color 0.3s",
-                  }}
-                  onMouseEnter={(e) =>
-                    !txPending && (e.currentTarget.style.backgroundColor = "#1b5e20")
-                  }
-                  onMouseLeave={(e) =>
-                    !txPending && (e.currentTarget.style.backgroundColor = "#2e7d32")
-                  }
-                  aria-label="Save recipients to blockchain"
-                >
-                  Save Recipients
-                </button>
-              </div>
-            )}
           </section>
 
           <section
