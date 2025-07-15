@@ -1,4 +1,3 @@
-// src/hooks/wallet/internal/useMetamaskWallet.ts
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -16,18 +15,19 @@ export interface WalletState {
   switchNetwork: () => Promise<void>;
   disconnect: () => void;
   error: string | null;
+  provider: MetaMaskInpageProvider | null;  // Added provider here
 }
 
 interface EthereumWithProviders {
   providers?: MetaMaskInpageProvider[];
 }
 
-interface ExtendedProvider extends MetaMaskInpageProvider {
-  isKasware?: boolean;
-  isPhantom?: boolean;
-  isCoinbaseWallet?: boolean;
-  selectedAddress: string | null;
-}
+// interface ExtendedProvider extends MetaMaskInpageProvider {
+//   isKasware?: boolean;
+//   isPhantom?: boolean;
+//   isCoinbaseWallet?: boolean;
+//   selectedAddress: string | null;
+// }
 
 async function isGenuineMetaMask(provider: unknown): Promise<boolean> {
   try {
@@ -50,17 +50,14 @@ async function isGenuineMetaMask(provider: unknown): Promise<boolean> {
   }
 }
 
-
 async function getMetaMaskProvider(): Promise<MetaMaskInpageProvider | null> {
   if (typeof window === 'undefined') return null;
 
   const eth = window.ethereum as EthereumWithProviders & MetaMaskInpageProvider;
 
   if (Array.isArray(eth?.providers)) {
-    console.log('[MetaMask] Multiple providers detected');
     for (const p of eth.providers) {
       if (await isGenuineMetaMask(p)) {
-        console.log('[MetaMask] Valid MetaMask provider selected:', p);
         return p as MetaMaskInpageProvider;
       }
     }
@@ -68,11 +65,9 @@ async function getMetaMaskProvider(): Promise<MetaMaskInpageProvider | null> {
 
   const fallback = (await detectEthereumProvider()) as MetaMaskInpageProvider | null;
   if (fallback && (await isGenuineMetaMask(fallback))) {
-    console.log('[MetaMask] Single valid MetaMask detected');
     return fallback;
   }
 
-  console.warn('[MetaMask] No valid MetaMask provider found (Kasware blocked)');
   return null;
 }
 
@@ -88,12 +83,13 @@ export function useMetamaskWallet(): WalletState {
   const [status, setStatus] = useState<WalletStatus>('idle');
   const [chainId, setChainId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [provider, setProvider] = useState<MetaMaskInpageProvider | null>(null); // state for provider
 
   const connect = useCallback(async () => {
-    console.log('[MetaMask] Connecting...');
-    const provider = await getMetaMaskProvider();
+    const prov = await getMetaMaskProvider();
+    setProvider(prov);
 
-    if (!provider) {
+    if (!prov) {
       setStatus('unavailable');
       setError('MetaMask not found or not supported');
       return;
@@ -101,45 +97,39 @@ export function useMetamaskWallet(): WalletState {
 
     try {
       setStatus('connecting');
-      const accounts = (await provider.request({ method: 'eth_requestAccounts' })) as string[];
+      const accounts = (await prov.request({ method: 'eth_requestAccounts' })) as string[];
       if (!accounts.length) throw new Error('No accounts returned');
 
-      const currentChainId = (await provider.request({ method: 'eth_chainId' })) as string;
+      const currentChainId = (await prov.request({ method: 'eth_chainId' })) as string;
 
       setAccount(accounts[0]);
       setChainId(currentChainId);
       setStatus('connected');
       setError(null);
-
-      console.log('[MetaMask] Connected to:', accounts[0]);
     } catch (err) {
       const msg = getErrorMessage(err);
       setError(msg);
       setStatus('error');
-      console.error('[MetaMask] Connection failed:', msg);
     }
   }, []);
 
   const switchNetwork = useCallback(async () => {
-    const provider = await getMetaMaskProvider();
-    if (!provider) {
-      const err = 'MetaMask not available';
-      setError(err);
+    const prov = await getMetaMaskProvider();
+    if (!prov) {
+      setError('MetaMask not available');
       return;
     }
 
     try {
-      await provider.request({
+      await prov.request({
         method: 'wallet_addEthereumChain',
         params: [KASPLEX_TESTNET],
       });
       setChainId(KASPLEX_TESTNET.chainId);
       setError(null);
-      console.log('[MetaMask] Switched to Kasplex testnet');
     } catch (err) {
       const msg = getErrorMessage(err);
       setError(msg);
-      console.error('[MetaMask] Failed to switch network:', msg);
     }
   }, []);
 
@@ -148,12 +138,12 @@ export function useMetamaskWallet(): WalletState {
     setChainId(null);
     setStatus('idle');
     setError(null);
-    console.log('[MetaMask] Disconnected');
+    setProvider(null);
   }, []);
 
   useEffect(() => {
     let mounted = true;
-    let provider: MetaMaskInpageProvider | null = null;
+    let prov: MetaMaskInpageProvider | null = null;
 
     const handleAccountsChanged = (accounts: unknown) => {
       if (!Array.isArray(accounts)) return;
@@ -168,20 +158,20 @@ export function useMetamaskWallet(): WalletState {
       }
     };
 
-    getMetaMaskProvider().then((prov) => {
-      if (!mounted || !prov) return;
-      provider = prov;
+    getMetaMaskProvider().then((p) => {
+      if (!mounted || !p) return;
+      prov = p;
+      setProvider(prov);
 
-      console.log('[MetaMask] Provider mounted, selectedAddress:', (provider as ExtendedProvider).selectedAddress);
-      provider.on?.('accountsChanged', handleAccountsChanged);
-      provider.on?.('chainChanged', handleChainChanged);
+      prov.on?.('accountsChanged', handleAccountsChanged);
+      prov.on?.('chainChanged', handleChainChanged);
     });
 
     return () => {
       mounted = false;
-      if (provider) {
-        provider.removeListener?.('accountsChanged', handleAccountsChanged);
-        provider.removeListener?.('chainChanged', handleChainChanged);
+      if (prov) {
+        prov.removeListener?.('accountsChanged', handleAccountsChanged);
+        prov.removeListener?.('chainChanged', handleChainChanged);
       }
     };
   }, []);
@@ -194,5 +184,6 @@ export function useMetamaskWallet(): WalletState {
     switchNetwork,
     disconnect,
     error,
+    provider,  // expose provider here
   };
 }

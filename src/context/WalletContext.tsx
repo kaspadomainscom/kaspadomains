@@ -7,7 +7,10 @@ import React, {
   useMemo,
   useCallback,
   useEffect,
+  useState,
 } from 'react';
+
+import { ethers, Eip1193Provider } from 'ethers';
 
 import {
   useMetamaskWallet,
@@ -27,17 +30,26 @@ export interface CombinedWalletState {
   metamask: MetamaskWalletState;
 
   activeWalletType: WalletType;
+  setActiveWalletType: (walletType: WalletType) => void;
+
   activeAccount: string | null;
   activeStatus: WalletStatus;
   activeError: string | null;
 
   isFullyConnected: boolean;
+
+  connect: () => Promise<void>;
+  disconnect: () => void;
   disconnectAll: () => void;
 
   // Aliases for convenience:
   account: string | null;
   status: WalletStatus;
+  provider: Eip1193Provider | null;
+  signer: ethers.Signer | null;
 }
+
+// Removed your custom EthereumProvider interface and replaced with ethers' Eip1193Provider
 
 const WalletContext = createContext<CombinedWalletState | undefined>(undefined);
 
@@ -45,66 +57,135 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const metamask = useMetamaskWallet();
   const kasware = useKaswareWallet();
 
-  const { account: metaAccount, connect: connectMeta, disconnect: disconnectMeta, status: metaStatus, error: metaError } = metamask;
-  const { account: kasAccount, connect: connectKas, disconnect: disconnectKas, status: kasStatus, error: kasError } = kasware;
+  const {
+    account: metaAccount,
+    connect: connectMeta,
+    disconnect: disconnectMeta,
+    status: metaStatus,
+    error: metaError,
+    provider: metaProvider,
+  } = metamask;
 
-  // Auto reconnect logic
+  const {
+    account: kasAccount,
+    connect: connectKas,
+    disconnect: disconnectKas,
+    status: kasStatus,
+    error: kasError,
+  } = kasware;
+
+  const [activeWalletType, setActiveWalletType] = useState<WalletType>(() => {
+    if (typeof window === 'undefined') return null;
+    if (localStorage.getItem('wallet-metamask') === 'true') return 'metamask';
+    if (localStorage.getItem('wallet-kasware') === 'true') return 'kasware';
+    return null;
+  });
+
   useEffect(() => {
-    if (localStorage.getItem('wallet-metamask') === 'true' && !metaAccount) {
+    if (typeof window === 'undefined') return;
+
+    if (activeWalletType === 'metamask' && !metaAccount) {
       connectMeta().catch(() => {});
-    }
-    if (localStorage.getItem('wallet-kasware') === 'true' && !kasAccount) {
+    } else if (activeWalletType === 'kasware' && !kasAccount) {
       connectKas().catch(() => {});
     }
-  }, [connectMeta, connectKas, metaAccount, kasAccount]);
+  }, [activeWalletType, connectMeta, connectKas, metaAccount, kasAccount]);
 
-  // Update localStorage on connect/disconnect
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     localStorage.setItem('wallet-metamask', metaAccount ? 'true' : 'false');
   }, [metaAccount]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     localStorage.setItem('wallet-kasware', kasAccount ? 'true' : 'false');
   }, [kasAccount]);
 
-  const activeWalletType = useMemo<WalletType>(() => {
-    if (metaAccount) return 'metamask';
-    if (kasAccount) return 'kasware';
+  const activeAccount = useMemo(() => {
+    if (activeWalletType === 'metamask') return metaAccount;
+    if (activeWalletType === 'kasware') return kasAccount;
     return null;
-  }, [metaAccount, kasAccount]);
+  }, [activeWalletType, metaAccount, kasAccount]);
 
-  const activeAccount = useMemo(() => metaAccount ?? kasAccount ?? null, [metaAccount, kasAccount]);
-
-  const activeStatus = useMemo<WalletStatus>(() => {
-    if (metaAccount) return metaStatus;
-    if (kasAccount) return kasStatus;
+  const activeStatus = useMemo(() => {
+    if (activeWalletType === 'metamask') return metaStatus;
+    if (activeWalletType === 'kasware') return kasStatus;
     return null;
-  }, [metaAccount, metaStatus, kasAccount, kasStatus]);
+  }, [activeWalletType, metaStatus, kasStatus]);
 
-  const activeError = useMemo(() => metaError ?? kasError ?? null, [metaError, kasError]);
+  const activeError = useMemo(() => {
+    if (activeWalletType === 'metamask') return metaError;
+    if (activeWalletType === 'kasware') return kasError;
+    return null;
+  }, [activeWalletType, metaError, kasError]);
 
   const isFullyConnected = useMemo(() => !!(metaAccount && kasAccount), [metaAccount, kasAccount]);
+
+  const provider: Eip1193Provider | null = useMemo(() => {
+    return metaProvider ?? null;
+  }, [metaProvider]);
+
+  const [signer, setSigner] = useState<ethers.Signer | null>(null);
+
+  useEffect(() => {
+    if (!provider) {
+      setSigner(null);
+      return;
+    }
+
+    // No 'any' cast needed now
+    const ethersProvider = new ethers.BrowserProvider(provider);
+    ethersProvider.getSigner().then(setSigner).catch(() => setSigner(null));
+  }, [provider]);
+
+  const connect = useCallback(async () => {
+    if (activeWalletType === 'metamask') {
+      await connectMeta();
+    } else if (activeWalletType === 'kasware') {
+      await connectKas();
+    }
+  }, [activeWalletType, connectMeta, connectKas]);
+
+  const disconnect = useCallback(() => {
+    if (activeWalletType === 'metamask') {
+      disconnectMeta();
+      if (typeof window !== 'undefined') localStorage.setItem('wallet-metamask', 'false');
+    } else if (activeWalletType === 'kasware') {
+      disconnectKas();
+      if (typeof window !== 'undefined') localStorage.setItem('wallet-kasware', 'false');
+    }
+  }, [activeWalletType, disconnectMeta, disconnectKas]);
 
   const disconnectAll = useCallback(() => {
     disconnectMeta();
     disconnectKas();
-    localStorage.setItem('wallet-metamask', 'false');
-    localStorage.setItem('wallet-kasware', 'false');
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('wallet-metamask', 'false');
+      localStorage.setItem('wallet-kasware', 'false');
+    }
   }, [disconnectMeta, disconnectKas]);
 
   const value: CombinedWalletState = {
     kasware,
     metamask,
+
     activeWalletType,
+    setActiveWalletType,
+
     activeAccount,
     activeStatus,
     activeError,
+
     isFullyConnected,
+
+    connect,
+    disconnect,
     disconnectAll,
 
-    // Add aliases here
     account: activeAccount,
     status: activeStatus,
+    provider,
+    signer,
   };
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
