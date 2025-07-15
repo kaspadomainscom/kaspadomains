@@ -21,6 +21,7 @@ import {
   useKaswareWallet,
   WalletState as KaswareWalletState,
 } from '@/hooks/wallet/internal/useKaswareWallet';
+import { kasplexTestnet } from '@/lib/viemChains';
 
 export type WalletType = 'metamask' | 'kasware' | null;
 export type WalletStatus = 'idle' | 'connecting' | 'connected' | 'error' | 'unavailable' | null;
@@ -42,14 +43,11 @@ export interface CombinedWalletState {
   disconnect: () => void;
   disconnectAll: () => void;
 
-  // Aliases for convenience:
   account: string | null;
   status: WalletStatus;
   provider: Eip1193Provider | null;
   signer: ethers.Signer | null;
 }
-
-// Removed your custom EthereumProvider interface and replaced with ethers' Eip1193Provider
 
 const WalletContext = createContext<CombinedWalletState | undefined>(undefined);
 
@@ -128,14 +126,37 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [signer, setSigner] = useState<ethers.Signer | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+
     if (!provider) {
       setSigner(null);
       return;
     }
 
-    // No 'any' cast needed now
     const ethersProvider = new ethers.BrowserProvider(provider);
-    ethersProvider.getSigner().then(setSigner).catch(() => setSigner(null));
+    ethersProvider.getSigner()
+      .then(async (sig) => {
+        if (!mounted) return;
+
+        // Optional: Check if on correct network (Kasplex Testnet = 167012)
+        try {
+          const network = await sig.provider.getNetwork();
+        if (Number(network.chainId) !== kasplexTestnet.id) {
+            console.warn(`⚠️ Signer is connected to wrong network (chainId: ${network.chainId})`);
+          }
+        } catch (err) {
+          console.warn('⚠️ Could not verify signer network:', err);
+        }
+
+        setSigner(sig);
+      })
+      .catch(() => {
+        if (mounted) setSigner(null);
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, [provider]);
 
   const connect = useCallback(async () => {

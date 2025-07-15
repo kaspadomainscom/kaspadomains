@@ -23,3 +23,4 @@ export const kasplexTestnet = defineChain({
 });
 
 
+
