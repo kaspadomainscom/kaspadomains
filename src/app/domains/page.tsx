@@ -11,17 +11,26 @@ export default function DomainPage() {
   const [categoryMap, setCategoryMap] = useState<Record<string, { title: string; domains: Domain[] }>>({});
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  // Load category data on mount and on category or page change
+  // Load category data on category or page change
   useEffect(() => {
     async function fetchCategories() {
       setLoading(true);
       try {
         const manifest = await loadDynamicCategoryPage(selectedCategory, currentPage);
         setCategoryMap(manifest);
+
+        // Calculate total pages based on loaded data (only current page domains, so adjust here)
+        const domainsCount = selectedCategory === 'all'
+          ? Object.values(manifest).reduce((acc, val) => acc + val.domains.length, 0)
+          : manifest[selectedCategory]?.domains.length ?? 0;
+
+        setTotalPages(Math.max(1, Math.ceil(domainsCount / ITEMS_PER_PAGE)));
       } catch (err) {
         console.error('Failed to load dynamic categories:', err);
         setCategoryMap({});
+        setTotalPages(1);
       } finally {
         setLoading(false);
       }
@@ -43,15 +52,14 @@ export default function DomainPage() {
       }))
   );
 
-  // Filtered domains for current category
+  // Filter domains based on selected category
   const filteredDomains =
     selectedCategory === 'all'
       ? allDomains
       : categoryMap[selectedCategory]?.domains.map((d) => ({ ...d, category: selectedCategory })) ?? [];
 
+  // For now, manifest returns paged domains already, so just use filteredDomains as paginatedDomains
   const paginatedDomains = filteredDomains;
-
-  const totalPages = Math.ceil(filteredDomains.length / ITEMS_PER_PAGE);
 
   const categories = Object.entries(categoryMap).map(([key, { title }]) => ({
     key,
