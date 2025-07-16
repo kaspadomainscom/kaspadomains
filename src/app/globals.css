@@ -56,6 +56,16 @@
   }
 }
 
+module.exports = {
+  theme: {
+    extend: {
+      backgroundImage: {
+        'split-kas-split': 'conic-gradient(#21bf73 0deg 180deg, #116530 180deg 360deg)',
+        'token-distribution': 'conic-gradient(#21bf73 0deg 72deg, #3d9970 72deg 208deg, #116530 208deg 360deg)',
+      }
+    }
+  }
+}
 
 /* Your custom utility classes for Kaspa colors */
 .text-kaspaGreen {

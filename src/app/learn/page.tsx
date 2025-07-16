@@ -20,7 +20,7 @@ const fadeInUp = {
 
 const sectionVariants = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.12 } },
+  show:  { transition: { staggerChildren: 0.12 } },
 };
 
 function formatNumber(n: number) {
@@ -55,16 +55,14 @@ export default function Learn() {
         initial="hidden"
         animate="show"
       >
-        {/* What is KaspaDomains */}
+        {/* What is KaspaDomains? */}
         <motion.section
           className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]"
           variants={fadeInUp}
         >
           <h2 className="text-4xl font-bold text-white mb-4">What is KaspaDomains?</h2>
           <p className="text-gray-300 leading-relaxed">
-            <span className="text-white font-semibold">KaspaDomains.com</span> is a decentralized on-chain experiment
-            with 10,000 fixed <code className="text-kaspa-green">.kas</code> domains. They’re not sold or auctioned,
-            only voted on—help build a transparent reputation layer and earn KDC rewards.
+            <span className="text-white font-semibold">KaspaDomains.com</span> is a community‑powered registry for KNS <code className="text-kaspa-green">.kas</code> domains. Any KNS domain holder can register their name, then open it for public voting. Votes highlight the most valued domains and mint KDC tokens to both voters and domain owners, creating a transparent reputation layer—no auctions, only votes and rewards.
           </p>
         </motion.section>
 
@@ -104,15 +102,9 @@ export default function Learn() {
             ))}
           </div>
 
-          {/* KAS Split (CSS conic-gradient) */}
-          <div className="mx-auto w-48 h-48 relative rounded-full overflow-hidden mb-6">
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  'conic-gradient(#21bf73 0deg 180deg, #116530 180deg 360deg)',
-              }}
-            />
+          {/* KAS Split */}
+          <div className="relative w-48 h-48 mx-auto rounded-full overflow-hidden mb-6">
+            <div className="absolute inset-0 bg-[conic-gradient(#21bf73_0deg_180deg,_#116530_180deg_360deg)]" />
             <div className="absolute inset-4 bg-[#0b1e1d] rounded-full flex items-center justify-center">
               <div className="text-center text-gray-400 text-sm">
                 3 KAS<br />Owner<br />3 KAS Fund
@@ -126,9 +118,9 @@ export default function Learn() {
 
           {/* Halving Table */}
           <div className="space-y-2">
-            {halving.map((h, i) => (
+            {halving.map((h, idx) => (
               <div
-                key={i}
+                key={idx}
                 className="flex justify-between bg-[#1d3b39] rounded px-4 py-2 text-gray-300 text-sm"
               >
                 <span>{h.stage}</span>
@@ -138,7 +130,7 @@ export default function Learn() {
           </div>
         </motion.section>
 
-        {/* What Are KDC Tokens */}
+        {/* What Are KDC Tokens? */}
         <motion.section
           className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]"
           variants={fadeInUp}
@@ -146,15 +138,17 @@ export default function Learn() {
           <h2 className="text-4xl font-bold text-white mb-4">What Are KDC Tokens?</h2>
           <p className="text-gray-300 leading-relaxed">
             <strong>KDC</strong> is the native ERC‑20 reward token (2.1 M total):
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li><strong>20%</strong> (420 k) pre‑minted & LP‑burned for liquidity</li>
-              <li><strong>80%</strong> (1.68 M) community‑minted via voting:
-                <ul className="list-disc list-inside ml-4 mt-1">
-                  <li><strong>80%</strong> → voters</li>
-                  <li><strong>20%</strong> → domain owners</li>
-                </ul>
-              </li>
-            </ul>
+          </p>
+          <ul className="list-disc list-inside mt-2 space-y-1 text-gray-300">
+            <li><strong>20%</strong> (420 k) pre‑minted & LP‑burned for liquidity</li>
+            <li><strong>80%</strong> (1.68 M) community‑minted via voting:
+              <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                <li><strong>80%</strong> → voters</li>
+                <li><strong>20%</strong> → domain owners</li>
+              </ul>
+            </li>
+          </ul>
+          <p className="mt-4 text-gray-300 leading-relaxed">
             No private sales, no team allocations—everything is earned on‑chain.
           </p>
         </motion.section>
@@ -171,14 +165,8 @@ export default function Learn() {
           </p>
 
           {/* Token Distribution Pie */}
-          <div className="mx-auto w-48 h-48 relative rounded-full overflow-hidden">
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  'conic-gradient(#21bf73 0deg 72deg, #3d9970 72deg 208deg, #116530 208deg 360deg)',
-              }}
-            />
+          <div className="relative w-48 h-48 mx-auto rounded-full overflow-hidden">
+            <div className="absolute inset-0 bg-[conic-gradient(#21bf73_0deg_72deg,_#3d9970_72deg_208deg,_#116530_208deg_360deg)]" />
             <div className="absolute inset-4 bg-[#0b1e1d] rounded-full flex items-center justify-center">
               <div className="text-center text-gray-400 text-sm">
                 20% LP<br />64% Voters<br />16% Owners
