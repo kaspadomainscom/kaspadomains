@@ -1,3 +1,4 @@
+// src/app/domains/page.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -21,7 +22,6 @@ export default function DomainPage() {
         const manifest = await loadDynamicCategoryPage(selectedCategory, currentPage);
         setCategoryMap(manifest);
 
-        // Calculate total pages based on loaded data (only current page domains, so adjust here)
         const domainsCount = selectedCategory === 'all'
           ? Object.values(manifest).reduce((acc, val) => acc + val.domains.length, 0)
           : manifest[selectedCategory]?.domains.length ?? 0;
@@ -66,16 +66,14 @@ export default function DomainPage() {
     title,
   }));
 
-  const totalKasSold = filteredDomains
-    .filter((d) => !d.listed)
-    .reduce((sum, d) => sum + (d.price ?? 0), 0);
-
-  const totalKasTarget = filteredDomains.reduce((sum, d) => sum + (d.price ?? 0), 0);
+  const totalDomainsListed = filteredDomains.length;
 
   return (
     <section className="max-w-7xl mx-auto px-6 py-12 space-y-16">
       <header className="space-y-6 max-w-3xl mx-auto text-center">
-        <h1 className="text-5xl font-extrabold text-kaspaDark tracking-tight">kaspadomains Market</h1>
+        <h1 className="text-5xl font-extrabold text-kaspaDark tracking-tight">
+          kaspadomains Market
+        </h1>
         <p className="text-lg text-gray-700 leading-relaxed">
           Welcome to the <strong>kaspadomains premium domain marketplace</strong> – a curated
           platform showcasing only the most unique and valuable domains in the Kaspa ecosystem.
@@ -84,6 +82,10 @@ export default function DomainPage() {
           Each domain listed is carefully categorized — from <strong>Clubs</strong> to{' '}
           <strong>Characters</strong> to <strong>Trending Memes</strong>. A{' '}
           <strong>287 KAS listing fee</strong> ensures only high-quality domains appear here.
+        </p>
+        <p className="text-lg font-semibold text-kaspaDark">
+          {totalDomainsListed.toLocaleString()} domains listed in{' '}
+          {selectedCategory === 'all' ? 'all categories' : categories.find(c => c.key === selectedCategory)?.title}
         </p>
       </header>
 
@@ -117,15 +119,9 @@ export default function DomainPage() {
       </div>
 
       <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full md:w-3/5">
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <p className="text-lg text-gray-600 mb-1">Total KAS Sold</p>
-            <p className="text-4xl font-extrabold text-kaspaDark">{totalKasSold.toLocaleString()} KAS</p>
-          </div>
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <p className="text-lg text-gray-600 mb-1">Total KAS Target</p>
-            <p className="text-4xl font-extrabold text-kaspaDark">{totalKasTarget.toLocaleString()} KAS</p>
-          </div>
+        <div className="bg-white rounded-xl shadow-md p-6 w-full md:w-3/5">
+          <p className="text-lg text-gray-600 mb-1">Total Domains Listed</p>
+          <p className="text-4xl font-extrabold text-kaspaDark">{totalDomainsListed.toLocaleString()}</p>
         </div>
         <div className="w-full md:w-2/5">
           <label htmlFor="categoryFilter" className="block mb-2 text-gray-700 font-semibold text-lg">
