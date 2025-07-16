@@ -62,7 +62,10 @@ export default function Learn() {
         >
           <h2 className="text-4xl font-bold text-white mb-4">What is KaspaDomains?</h2>
           <p className="text-gray-300 leading-relaxed">
-            <span className="text-white font-semibold">KaspaDomains.com</span> is a community‑powered registry for KNS <code className="text-kaspa-green">.kas</code> domains. Any KNS domain holder can register their name, then open it for public voting. Votes highlight the most valued domains and mint KDC tokens to both voters and domain owners, creating a transparent reputation layer—no auctions, only votes and rewards.
+            <span className="text-white font-semibold">KaspaDomains.com</span> is a community‑powered
+            registry for KNS <code className="text-kaspa-green">.kas</code> domains. Any KNS domain holder
+            can register their name, then open it for public voting. Votes highlight the most valued domains
+            and mint KDC tokens to voters and domain owners—no auctions, only votes and rewards.
           </p>
         </motion.section>
 
@@ -78,7 +81,7 @@ export default function Learn() {
           <ul className="list-disc list-inside text-gray-300 space-y-1 mb-6">
             <li>Voter receives <strong>1 KDC</strong></li>
             <li>Domain owner receives <strong>0.25 KDC</strong></li>
-            <li><strong>3 KAS</strong> → owner, <strong>3 KAS</strong> → ecosystem fund</li>
+            <li><strong>6 KAS</strong> → ecosystem fund</li>
           </ul>
 
           {/* Metrics */}
@@ -104,10 +107,10 @@ export default function Learn() {
 
           {/* KAS Split */}
           <div className="relative w-48 h-48 mx-auto rounded-full overflow-hidden mb-6">
-            <div className="absolute inset-0 bg-[conic-gradient(#21bf73_0deg_180deg,_#116530_180deg_360deg)]" />
+            <div className="absolute inset-0 bg-kas-fund-split" />
             <div className="absolute inset-4 bg-[#0b1e1d] rounded-full flex items-center justify-center">
               <div className="text-center text-gray-400 text-sm">
-                3 KAS<br />Owner<br />3 KAS Fund
+                6 KAS Fund
               </div>
             </div>
           </div>
@@ -161,12 +164,13 @@ export default function Learn() {
           <h2 className="text-4xl font-bold text-white mb-4">Ecosystem Fund & Distribution</h2>
           <p className="text-gray-300 leading-relaxed mb-6">
             Voting fees (6 KAS each) feed the <strong>EcosystemFund</strong>. On launch, 420 k KDC + 2.52 M KAS were locked as LP.
-            Future small pools (e.g. KDC/USDT) may be added, but only the burned LP is permanent.
+            Future USDT/KDC pools will be owned by KaspaDomains.com to collect trading fees (0.3% per swap), but only the burned LP
+            remains permanent and trustless.
           </p>
 
           {/* Token Distribution Pie */}
           <div className="relative w-48 h-48 mx-auto rounded-full overflow-hidden">
-            <div className="absolute inset-0 bg-[conic-gradient(#21bf73_0deg_72deg,_#3d9970_72deg_208deg,_#116530_208deg_360deg)]" />
+            <div className="absolute inset-0 bg-token-distribution" />
             <div className="absolute inset-4 bg-[#0b1e1d] rounded-full flex items-center justify-center">
               <div className="text-center text-gray-400 text-sm">
                 20% LP<br />64% Voters<br />16% Owners
