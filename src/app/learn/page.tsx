@@ -2,18 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-} from 'recharts';
 
 async function fetchContractData() {
   return {
@@ -27,22 +15,20 @@ async function fetchContractData() {
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6 } },
+  show:   { opacity: 1, y: 0, transition: { duration: 0.6 } },
 };
 
 const sectionVariants = {
   hidden: {},
-  show: {
-    transition: { staggerChildren: 0.12 },
-  },
+  show: { transition: { staggerChildren: 0.12 } },
 };
 
-function formatNumber(num: number) {
-  return num.toLocaleString();
+function formatNumber(n: number) {
+  return n.toLocaleString();
 }
 
 export default function Learn() {
-  const [contractData, setContractData] = useState({
+  const [data, setData] = useState({
     totalVotes: 0,
     totalKDCMinted: 0,
     currentReward: 1,
@@ -51,22 +37,14 @@ export default function Learn() {
   });
 
   useEffect(() => {
-    fetchContractData().then(setContractData);
+    fetchContractData().then(setData);
   }, []);
 
-  const supplyDistributionData = [
-    { name: 'Premine (Liquidity)', value: 420000 },
-    { name: 'Voter Allocation', value: 1344000 },
-    { name: 'Domain Owner Allocation', value: 336000 },
-  ];
-
-  const COLORS = ['#21bf73', '#3d9970', '#116530'];
-
-  const halvingData = [
-    { stage: '0-525k votes', reward: 2 },
-    { stage: '525k-1.05m votes', reward: 1 },
-    { stage: '1.05m-1.575m votes', reward: 0.5 },
-    { stage: '1.575m-2.1m votes', reward: 0.25 },
+  const halving = [
+    { stage: '0–525k votes', reward: 2 },
+    { stage: '525k–1.05m votes', reward: 1 },
+    { stage: '1.05m–1.575m votes', reward: 0.5 },
+    { stage: '1.575m–2.1m votes', reward: 0.25 },
   ];
 
   return (
@@ -77,119 +55,135 @@ export default function Learn() {
         initial="hidden"
         animate="show"
       >
-        {/* What is KaspaDomains? */}
-        <motion.section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]" variants={fadeInUp}>
-          <h2 className="text-4xl font-bold text-white mb-6">What is KaspaDomains?</h2>
-          <p className="text-lg leading-relaxed text-gray-300">
-            <strong className="text-white">KaspaDomains.com</strong> is a decentralized on-chain experiment featuring a fixed collection of <strong>10,000 unique <code className="text-kaspa-green">.kas</code> domains</strong>. These domains are not for sale but open for <strong>community-powered voting</strong>. Participate to help build a transparent reputation layer on Kaspa and earn rewards in KDC tokens.
+        {/* What is KaspaDomains */}
+        <motion.section
+          className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]"
+          variants={fadeInUp}
+        >
+          <h2 className="text-4xl font-bold text-white mb-4">What is KaspaDomains?</h2>
+          <p className="text-gray-300 leading-relaxed">
+            <span className="text-white font-semibold">KaspaDomains.com</span> is a decentralized on-chain experiment
+            with 10,000 fixed <code className="text-kaspa-green">.kas</code> domains. They’re not sold or auctioned,
+            only voted on—help build a transparent reputation layer and earn KDC rewards.
           </p>
         </motion.section>
 
         {/* How It Works */}
-        <motion.section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]" variants={fadeInUp}>
-          <h2 className="text-4xl font-bold text-white mb-6">How It Works</h2>
-          <p className="mb-4 leading-relaxed text-gray-300">
-            Anyone can vote for a domain by paying a fixed fee of <span className="font-semibold text-kaspa-green">6 KAS</span>. Each vote:
+        <motion.section
+          className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]"
+          variants={fadeInUp}
+        >
+          <h2 className="text-4xl font-bold text-white mb-4">How It Works</h2>
+          <p className="text-gray-300 leading-relaxed mb-4">
+            Pay <span className="text-kaspa-green font-semibold">6 KAS</span> to vote on a domain:
           </p>
-          <ul className="list-disc list-inside space-y-2 text-gray-300 mb-6">
-            <li>Rewards the voter with 1 KDC token</li>
-            <li>Rewards the domain owner with 0.25 KDC token</li>
-            <li>Splits the 6 KAS payment: 3 KAS to the domain owner, 3 KAS to the ecosystem fund</li>
+          <ul className="list-disc list-inside text-gray-300 space-y-1 mb-6">
+            <li>Voter receives <strong>1 KDC</strong></li>
+            <li>Domain owner receives <strong>0.25 KDC</strong></li>
+            <li><strong>3 KAS</strong> → owner, <strong>3 KAS</strong> → ecosystem fund</li>
           </ul>
 
           {/* Metrics */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
-            <motion.div className="bg-[#1d3b39] rounded-lg p-4 text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-              <div className="text-sm uppercase text-gray-400">Total Votes</div>
-              <div className="text-2xl font-bold text-kaspa-green">{formatNumber(contractData.totalVotes)}</div>
-            </motion.div>
-            <motion.div className="bg-[#1d3b39] rounded-lg p-4 text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-              <div className="text-sm uppercase text-gray-400">Minted KDC</div>
-              <div className="text-2xl font-bold text-kaspa-green">{formatNumber(contractData.totalKDCMinted)}</div>
-            </motion.div>
-            <motion.div className="bg-[#1d3b39] rounded-lg p-4 text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-              <div className="text-sm uppercase text-gray-400">Current Reward</div>
-              <div className="text-2xl font-bold text-kaspa-green">{contractData.currentReward} KDC/vote</div>
-            </motion.div>
-            <motion.div className="bg-[#1d3b39] rounded-lg p-4 text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-              <div className="text-sm uppercase text-gray-400">Liquidity (KAS/KDC)</div>
-              <div className="text-2xl font-bold text-kaspa-green">
-                {formatNumber(contractData.totalLiquidityKAS)} KAS / {formatNumber(contractData.totalLiquidityKDC)} KDC
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+            {[
+              ['Total Votes', formatNumber(data.totalVotes)],
+              ['Minted KDC', formatNumber(data.totalKDCMinted)],
+              ['Reward/vote', `${data.currentReward} KDC`],
+              ['Liquidity KAS/KDC', `${formatNumber(data.totalLiquidityKAS)} / ${formatNumber(data.totalLiquidityKDC)}`],
+            ].map(([label, value], i) => (
+              <motion.div
+                key={i}
+                className="bg-[#1d3b39] rounded-lg p-4 text-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 * (i + 1) }}
+              >
+                <div className="text-xs uppercase text-gray-400">{label}</div>
+                <div className="text-2xl font-bold text-kaspa-green">{value}</div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* KAS Split (CSS conic-gradient) */}
+          <div className="mx-auto w-48 h-48 relative rounded-full overflow-hidden mb-6">
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'conic-gradient(#21bf73 0deg 180deg, #116530 180deg 360deg)',
+              }}
+            />
+            <div className="absolute inset-4 bg-[#0b1e1d] rounded-full flex items-center justify-center">
+              <div className="text-center text-gray-400 text-sm">
+                3 KAS<br />Owner<br />3 KAS Fund
               </div>
-            </motion.div>
+            </div>
           </div>
 
-          {/* KAS Split Pie Chart */}
-          <div className="w-full h-48 max-w-md mx-auto">
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie data={[{ name: 'Domain Owner', value: 3 }, { name: 'Ecosystem Fund', value: 3 }]} dataKey="value" cx="50%" cy="50%" outerRadius={80} label>
-                  <Cell fill="#21bf73" />
-                  <Cell fill="#116530" />
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          <p className="mt-6 leading-relaxed text-gray-300">
-            KDC rewards halve every <strong>525,000 votes</strong>, continuing until the fixed max supply of <strong>2.1 million</strong> tokens is fully minted.
+          <p className="text-gray-300 leading-relaxed mb-6">
+            Rewards halve every <strong>525,000 votes</strong> until the max supply of <strong>2.1 M</strong> KDC is minted.
           </p>
 
-          {/* Halving Chart */}
-          <div className="mt-8 w-full h-48 max-w-3xl mx-auto">
-            <ResponsiveContainer>
-              <BarChart data={halvingData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="stage" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="reward" fill="#21bf73" />
-              </BarChart>
-            </ResponsiveContainer>
+          {/* Halving Table */}
+          <div className="space-y-2">
+            {halving.map((h, i) => (
+              <div
+                key={i}
+                className="flex justify-between bg-[#1d3b39] rounded px-4 py-2 text-gray-300 text-sm"
+              >
+                <span>{h.stage}</span>
+                <span>{h.reward} KDC</span>
+              </div>
+            ))}
           </div>
         </motion.section>
 
-        {/* What Are KDC Tokens? */}
-        <motion.section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]" variants={fadeInUp}>
-          <h2 className="text-4xl font-bold text-white mb-6">What Are KDC Tokens?</h2>
-          <p className="leading-relaxed text-gray-300">
-            <strong>KDC</strong> is the native ERC-20 reward token of KaspaDomains. It has a fixed supply of <strong>2.1 million</strong> tokens. <br />
-            • <strong>20%</strong> (420,000 KDC) is pre-minted for liquidity and permanently locked via LP burn.<br />
-            • <strong>80%</strong> (1.68 million KDC) is minted by the community through voting. Voters receive <strong>80%</strong> of this amount, and domain owners receive <strong>20%</strong>.<br />
-            <br />There is no team allocation, no private sale, and no VC funding. The only way to earn KDC is through community participation.
+        {/* What Are KDC Tokens */}
+        <motion.section
+          className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]"
+          variants={fadeInUp}
+        >
+          <h2 className="text-4xl font-bold text-white mb-4">What Are KDC Tokens?</h2>
+          <p className="text-gray-300 leading-relaxed">
+            <strong>KDC</strong> is the native ERC‑20 reward token (2.1 M total):
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              <li><strong>20%</strong> (420 k) pre‑minted & LP‑burned for liquidity</li>
+              <li><strong>80%</strong> (1.68 M) community‑minted via voting:
+                <ul className="list-disc list-inside ml-4 mt-1">
+                  <li><strong>80%</strong> → voters</li>
+                  <li><strong>20%</strong> → domain owners</li>
+                </ul>
+              </li>
+            </ul>
+            No private sales, no team allocations—everything is earned on‑chain.
           </p>
         </motion.section>
 
-        {/* Ecosystem Fund and Liquidity */}
-        <motion.section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]" variants={fadeInUp}>
-          <h2 className="text-4xl font-bold text-white mb-6">Ecosystem Fund and Liquidity</h2>
-          <p className="leading-relaxed text-gray-300 mb-8">
-            All KAS collected from voting fees goes to the <strong>EcosystemFund</strong> smart contract. This fund is used to support listings,
-            liquidity, marketing, and future governance. On launch, <strong>420,000 KDC</strong> tokens were paired with <strong>2,520,000 KAS</strong>
-            and permanently locked via LP burn. This gives the token strong fundamentals and price reliability. Additional smaller pools
-            (like KDC/USDT) may be created by the Ecosystem Fund for broader access, but only the burned LP pool is permanent and trustless.
+        {/* Ecosystem Fund & Distribution */}
+        <motion.section
+          className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]"
+          variants={fadeInUp}
+        >
+          <h2 className="text-4xl font-bold text-white mb-4">Ecosystem Fund & Distribution</h2>
+          <p className="text-gray-300 leading-relaxed mb-6">
+            Voting fees (6 KAS each) feed the <strong>EcosystemFund</strong>. On launch, 420 k KDC + 2.52 M KAS were locked as LP.
+            Future small pools (e.g. KDC/USDT) may be added, but only the burned LP is permanent.
           </p>
 
-          {/* Token Distribution Pie Chart */}
-          <div className="w-full h-48 max-w-md mx-auto">
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie
-                  data={supplyDistributionData}
-                  dataKey="value"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
-                >
-                  {supplyDistributionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+          {/* Token Distribution Pie */}
+          <div className="mx-auto w-48 h-48 relative rounded-full overflow-hidden">
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'conic-gradient(#21bf73 0deg 72deg, #3d9970 72deg 208deg, #116530 208deg 360deg)',
+              }}
+            />
+            <div className="absolute inset-4 bg-[#0b1e1d] rounded-full flex items-center justify-center">
+              <div className="text-center text-gray-400 text-sm">
+                20% LP<br />64% Voters<br />16% Owners
+              </div>
+            </div>
           </div>
         </motion.section>
       </motion.div>
