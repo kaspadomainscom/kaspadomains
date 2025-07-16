@@ -30,35 +30,27 @@ const DistributionEventsTable: FC<Props> = ({
   exportDistributionsCSV,
   exportGroupedCSV,
 }) => {
+  const isPrevDisabled = currentPage === 1;
+  const isNextDisabled = currentPage * eventsPerPage >= distributedEvents.length;
+
   return (
-    <section aria-label="Distribution events log" style={{ marginBottom: 36 }}>
-      <h2 style={{ color: "#4a148c" }}>Distribution Events Log</h2>
-      <p style={{ fontSize: 14, color: "#7e57c2" }}>
+    <section aria-label="Distribution events log" className="mb-9">
+      <h2 className="text-purple-900 text-xl font-semibold">Distribution Events Log</h2>
+      <p className="text-purple-400 text-sm mb-3">
         Showing {distributedEvents.length} events.
       </p>
 
       <div
-        style={{
-          maxHeight: 240,
-          overflowY: "auto",
-          border: "1px solid #7e57c2",
-          borderRadius: 6,
-          backgroundColor: "#ede7f6",
-          fontSize: 14,
-          fontFamily: "monospace",
-        }}
         tabIndex={0}
         aria-live="polite"
+        className="max-h-60 overflow-y-auto border border-purple-400 rounded-md bg-purple-100 text-sm font-mono"
       >
-        <table
-          style={{ width: "100%", borderCollapse: "collapse" }}
-          aria-label="Distribution events table"
-        >
-          <thead style={{ backgroundColor: "#9575cd" }}>
+        <table className="w-full border-collapse" aria-label="Distribution events table">
+          <thead className="bg-purple-400 text-white">
             <tr>
-              <th>Timestamp</th>
-              <th>Total Distributed (KAS)</th>
-              <th>Recipients Count</th>
+              <th className="px-3 py-2 text-left">Timestamp</th>
+              <th className="px-3 py-2 text-left">Total Distributed (KAS)</th>
+              <th className="px-3 py-2 text-left">Recipients Count</th>
             </tr>
           </thead>
           <tbody>
@@ -66,18 +58,16 @@ const DistributionEventsTable: FC<Props> = ({
               paginatedEvents.map((e, i) => (
                 <tr
                   key={i}
-                  style={{
-                    backgroundColor: i % 2 === 0 ? "#ede7f6" : "#d1c4e9",
-                  }}
+                  className={i % 2 === 0 ? "bg-purple-100" : "bg-purple-200"}
                 >
-                  <td>{formatTimestamp(e.args.timestamp)}</td>
-                  <td>{ethers.formatEther(e.args.total)}</td>
-                  <td>{e.args.count.toString()}</td>
+                  <td className="px-3 py-2">{formatTimestamp(e.args.timestamp)}</td>
+                  <td className="px-3 py-2">{ethers.formatEther(e.args.total)}</td>
+                  <td className="px-3 py-2">{e.args.count.toString()}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={3} style={{ textAlign: "center", padding: 12 }}>
+                <td colSpan={3} className="text-center py-3 text-gray-500 italic">
                   No events found.
                 </td>
               </tr>
@@ -87,104 +77,54 @@ const DistributionEventsTable: FC<Props> = ({
       </div>
 
       <div
-        style={{
-          marginTop: 12,
-          display: "flex",
-          justifyContent: "center",
-          gap: 12,
-          alignItems: "center",
-        }}
         aria-label="Distribution events pagination"
+        className="mt-3 flex justify-center items-center gap-3"
       >
         <button
           onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-          disabled={currentPage === 1}
+          disabled={isPrevDisabled}
           aria-label="Previous page"
-          style={{
-            padding: "6px 12px",
-            borderRadius: 4,
-            border: "1px solid #7e57c2",
-            backgroundColor: currentPage === 1 ? "#ccc" : "#9575cd",
-            color: currentPage === 1 ? "#666" : "white",
-            cursor: currentPage === 1 ? "not-allowed" : "pointer",
-          }}
+          className={`px-3 py-1 rounded border border-purple-400 font-semibold transition-colors ${
+            isPrevDisabled
+              ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+              : "bg-purple-400 text-white hover:bg-purple-500 cursor-pointer"
+          }`}
         >
           Prev
         </button>
-        <span aria-live="polite" aria-atomic="true">
+        <span aria-live="polite" aria-atomic="true" className="font-medium">
           Page {currentPage}
         </span>
         <button
           onClick={() =>
             setCurrentPage(
-              currentPage * eventsPerPage >= distributedEvents.length
-                ? currentPage
-                : currentPage + 1
+              isNextDisabled ? currentPage : currentPage + 1
             )
           }
-          disabled={currentPage * eventsPerPage >= distributedEvents.length}
+          disabled={isNextDisabled}
           aria-label="Next page"
-          style={{
-            padding: "6px 12px",
-            borderRadius: 4,
-            border: "1px solid #7e57c2",
-            backgroundColor:
-              currentPage * eventsPerPage >= distributedEvents.length
-                ? "#ccc"
-                : "#9575cd",
-            color:
-              currentPage * eventsPerPage >= distributedEvents.length
-                ? "#666"
-                : "white",
-            cursor:
-              currentPage * eventsPerPage >= distributedEvents.length
-                ? "not-allowed"
-                : "pointer",
-          }}
+          className={`px-3 py-1 rounded border border-purple-400 font-semibold transition-colors ${
+            isNextDisabled
+              ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+              : "bg-purple-400 text-white hover:bg-purple-500 cursor-pointer"
+          }`}
         >
           Next
         </button>
       </div>
 
-      <div style={{ marginTop: 14 }}>
+      <div className="mt-4 flex flex-wrap gap-3">
         <button
           onClick={exportDistributionsCSV}
           aria-label="Export Distributions CSV"
-          style={{
-            padding: "8px 16px",
-            backgroundColor: "#9575cd",
-            color: "white",
-            borderRadius: 6,
-            border: "none",
-            cursor: "pointer",
-            fontWeight: "600",
-            fontSize: 14,
-            boxShadow: "0 3px 8px rgba(149, 117, 205, 0.6)",
-            transition: "background-color 0.3s",
-            marginRight: 12,
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#7e57c2")}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#9575cd")}
+          className="px-4 py-2 bg-purple-400 hover:bg-purple-500 text-white rounded-lg font-semibold shadow-md transition-colors"
         >
           Export Distribution CSV
         </button>
         <button
           onClick={exportGroupedCSV}
           aria-label="Export Grouped Transfers CSV"
-          style={{
-            padding: "8px 16px",
-            backgroundColor: "#7b1fa2",
-            color: "white",
-            borderRadius: 6,
-            border: "none",
-            cursor: "pointer",
-            fontWeight: "600",
-            fontSize: 14,
-            boxShadow: "0 3px 8px rgba(123, 31, 162, 0.7)",
-            transition: "background-color 0.3s",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#4a148c")}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#7b1fa2")}
+          className="px-4 py-2 bg-purple-700 hover:bg-purple-900 text-white rounded-lg font-semibold shadow-md transition-colors"
         >
           Export Grouped CSV (Monthly)
         </button>

@@ -1,4 +1,3 @@
-// components/EcosystemAdmin/FundSummary.tsx
 'use client';
 
 import React from 'react';
@@ -9,7 +8,7 @@ type FundSummaryProps = {
   lastDistributedAt: number;
   isOwner: boolean;
   txPending: boolean;
-  loading?: boolean; // new optional prop
+  loading?: boolean;
   onDistribute: () => void;
 };
 
@@ -39,16 +38,13 @@ export default function FundSummary({
   return (
     <section
       aria-label="Summary of Fund Status"
-      style={{
-        marginBottom: 32,
-        padding: 20,
-        borderRadius: 10,
-        backgroundColor: '#e3f2fd',
-        boxShadow: 'inset 0 0 8px #bbdefb',
-        position: 'relative',
-      }}
+      className="
+        mb-8 p-5 rounded-lg bg-blue-100 relative
+        shadow-inner
+        before:absolute before:inset-0 before:rounded-lg before:pointer-events-none before:content-[''] before:shadow-[inset_0_0_8px_rgba(187,222,251,1)]
+      "
     >
-      <h2 style={{ color: '#1565c0', marginBottom: 12 }}>Fund Summary</h2>
+      <h2 className="text-blue-800 mb-3 text-xl font-semibold">Fund Summary</h2>
       <p>
         <strong>Total Received:</strong> {totalReceived} KAS
       </p>
@@ -66,64 +62,37 @@ export default function FundSummary({
         <>
           <button
             onClick={onDistribute}
-            style={{
-              marginTop: 20,
-              padding: '14px 24px',
-              backgroundColor: isDisabled ? '#9e9e9e' : '#00c853',
-              color: 'white',
-              border: 'none',
-              borderRadius: 8,
-              cursor: isDisabled ? 'not-allowed' : 'pointer',
-              fontWeight: '600',
-              fontSize: 16,
-              boxShadow: isDisabled
-                ? 'none'
-                : '0 5px 12px rgba(0, 200, 83, 0.5)',
-              transition: 'background-color 0.3s',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-            }}
-            onMouseEnter={(e) =>
-              !isDisabled && (e.currentTarget.style.backgroundColor = '#009624')
-            }
-            onMouseLeave={(e) =>
-              !isDisabled && (e.currentTarget.style.backgroundColor = '#00c853')
-            }
-            title="Click to trigger distribution of the ecosystem fund"
             disabled={isDisabled}
             aria-busy={isDisabled}
+            title="Click to trigger distribution of the ecosystem fund"
+            className={`
+              mt-5 px-6 py-3 rounded-lg font-semibold text-white
+              flex items-center justify-center gap-2
+              transition-colors duration-300
+              ${isDisabled
+                ? 'bg-gray-400 cursor-not-allowed shadow-none'
+                : 'bg-green-600 hover:bg-green-700 shadow-lg'}
+            `}
           >
             {(txPending || loading) && (
               <span
-                style={{
-                  borderTopColor: 'white',
-                  animation: 'spin 1s linear infinite',
-                  borderRadius: '50%',
-                  border: '3px solid rgba(255,255,255,0.5)',
-                  borderTop: '3px solid white',
-                  width: 18,
-                  height: 18,
-                }}
+                className="w-4 h-4 border-4 border-white border-t-transparent rounded-full animate-spin"
+                aria-hidden="true"
               />
             )}
-            {txPending ? 'Distributing...' : loading ? 'Loading...' : 'Trigger Distribution'}
+            {txPending
+              ? 'Distributing...'
+              : loading
+              ? 'Loading...'
+              : 'Trigger Distribution'}
           </button>
 
-          <p style={{ marginTop: 12, fontSize: 13, color: '#555' }}>
+          <p className="mt-3 text-xs text-gray-600">
             * Only admins can trigger fund distribution. This will send KAS to
             the configured recipients based on their set percentages.
           </p>
         </>
       )}
-
-      {/* Spinner keyframes for inline style */}
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </section>
   );
 }

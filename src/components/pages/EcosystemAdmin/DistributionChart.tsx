@@ -14,16 +14,21 @@ interface ChartProps {
 
 export default function DistributionChart({ chartData }: ChartProps) {
   return (
-    <section aria-label="Distribution graph" style={{ height: 320 }}>
-      <h2 style={{ color: "#00796b", marginBottom: 12 }}>
-        Distribution Over Time (KAS)
-      </h2>
+    <section
+      aria-label="Distribution graph"
+      className="h-[320px] w-full space-y-4"
+    >
+      <h2 className="text-2xl font-semibold text-kaspaDark">Distribution Over Time (KAS)</h2>
       {chartData.length > 0 ? (
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
             <XAxis dataKey="time" />
             <YAxis
-              label={{ value: "KAS", angle: -90, position: "insideLeft" }}
+              label={{
+                value: "KAS",
+                angle: -90,
+                position: "insideLeft",
+              }}
               domain={[0, "auto"]}
             />
             <Tooltip />
@@ -37,7 +42,7 @@ export default function DistributionChart({ chartData }: ChartProps) {
           </LineChart>
         </ResponsiveContainer>
       ) : (
-        <p>No distribution data available.</p>
+        <p className="text-gray-500 italic">No distribution data available.</p>
       )}
     </section>
   );

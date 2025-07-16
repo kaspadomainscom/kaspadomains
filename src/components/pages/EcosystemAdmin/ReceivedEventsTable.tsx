@@ -23,80 +23,66 @@ export default function ReceivedEventsTable({
   exportLogsCSV,
 }: Props) {
   return (
-    <section aria-label="Received events log" style={{ marginBottom: 36 }}>
-      <h2 style={{ color: "#f57f17" }}>Received Events Log</h2>
-      <p style={{ fontSize: 14, color: "#f9a825" }}>
+    <section
+      aria-label="Received events log"
+      className="mb-9" // 36px margin-bottom ≈ 9 * 4px
+    >
+      <h2 className="text-yellow-700">Received Events Log</h2>
+      <p className="text-yellow-600 text-sm mb-2">
         Showing {events.length} events.
       </p>
+
       <div
-        style={{
-          maxHeight: 240,
-          overflowY: "auto",
-          border: "1px solid #fbc02d",
-          borderRadius: 6,
-          backgroundColor: "#fffde7",
-          fontSize: 14,
-          fontFamily: "monospace",
-        }}
         tabIndex={0}
         aria-live="polite"
+        className="max-h-60 overflow-y-auto border border-yellow-400 rounded-md bg-yellow-50 font-mono text-sm"
       >
         <table
-          style={{ width: "100%", borderCollapse: "collapse" }}
+          className="w-full border-collapse"
           aria-label="Received events table"
         >
-          <thead style={{ backgroundColor: "#fff176" }}>
+          <thead className="bg-yellow-200 sticky top-0 z-10">
             <tr>
-              <th>Timestamp</th>
-              <th>From</th>
-              <th>Amount (KAS)</th>
+              <th className="text-left px-4 py-2">Timestamp</th>
+              <th className="text-left px-4 py-2">From</th>
+              <th className="text-left px-4 py-2">Amount (KAS)</th>
             </tr>
           </thead>
           <tbody>
-            {events.map((e, i) => (
-              <tr
-                key={i}
-                style={{
-                  backgroundColor: i % 2 === 0 ? "#fffde7" : "#fff9c4",
-                }}
-              >
-                <td>{formatTimestamp(e.args.timestamp ?? BigInt(0))}</td>
-                <td>{e.args.from}</td>
-                <td>{ethers.formatEther(e.args.amount)}</td>
-              </tr>
-            ))}
             {events.length === 0 && (
               <tr>
-                <td colSpan={3} style={{ textAlign: "center", padding: 12 }}>
+                <td
+                  colSpan={3}
+                  className="text-center py-3 text-gray-500 italic"
+                >
                   No events found.
                 </td>
               </tr>
             )}
+
+            {events.map((e, i) => (
+              <tr
+                key={i}
+                className={i % 2 === 0 ? "bg-yellow-50" : "bg-yellow-100"}
+              >
+                <td className="px-4 py-2">{formatTimestamp(e.args.timestamp ?? BigInt(0))}</td>
+                <td className="px-4 py-2 break-all">{e.args.from}</td>
+                <td className="px-4 py-2 font-semibold">
+                  {ethers.formatEther(e.args.amount)}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
+
       <button
         onClick={exportLogsCSV}
-        style={{
-          marginTop: 10,
-          padding: "8px 16px",
-          backgroundColor: "#f9a825",
-          borderRadius: 6,
-          border: "none",
-          cursor: "pointer",
-          color: "#3e2723",
-          fontWeight: "600",
-          fontSize: 14,
-          boxShadow: "0 3px 8px rgba(249, 168, 37, 0.6)",
-          transition: "background-color 0.3s",
-        }}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.backgroundColor = "#fbc02d")
-        }
-        onMouseLeave={(e) =>
-          (e.currentTarget.style.backgroundColor = "#f9a825")
-        }
         aria-label="Export Received events CSV"
+        className="mt-2 px-4 py-2 bg-yellow-400 rounded-md text-yellow-900 font-semibold shadow-md
+                   transition-colors duration-300
+                   hover:bg-yellow-300"
+        type="button"
       >
         Export Received CSV
       </button>

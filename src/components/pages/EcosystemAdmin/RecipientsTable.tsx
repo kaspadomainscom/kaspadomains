@@ -28,59 +28,41 @@ export default function RecipientsTable({
   return (
     <section
       aria-label="Edit fund recipients"
-      style={{
-        marginBottom: 32,
-        padding: 20,
-        borderRadius: 10,
-        backgroundColor: "#e8f5e9",
-        boxShadow: "inset 0 0 8px #c8e6c9",
-      }}
+      className="mb-8 p-5 rounded-lg bg-green-50 shadow-inner shadow-green-200"
     >
-      <h2 style={{ color: "#2e7d32", marginBottom: 14 }}>
+      <h2 className="text-green-800 mb-3.5 font-semibold text-xl">
         Manage Recipients
       </h2>
-      <p style={{ marginBottom: 12, fontSize: 14, color: "#2e7d32" }}>
-        Define the addresses and allocation percentages of fund recipients.
-        The total percentage must not exceed 100%.
+      <p className="mb-3 text-sm text-green-800">
+        Define the addresses and allocation percentages of fund recipients. The
+        total percentage must not exceed 100%.
       </p>
 
       <table
-        style={{
-          width: "100%",
-          borderCollapse: "collapse",
-          fontSize: 14,
-        }}
-        border={1}
+        className="w-full border border-green-300 border-collapse text-sm"
         cellPadding={6}
+        border={1}
       >
-        <thead style={{ backgroundColor: "#a5d6a7" }}>
+        <thead className="bg-green-300">
           <tr>
-            <th>#</th>
-            <th>Address</th>
-            <th>Percent (%)</th>
-            <th>Label / Description</th>
+            <th className="text-center px-2 py-1">#</th>
+            <th className="text-left px-2 py-1">Address</th>
+            <th className="text-center px-2 py-1">Percent (%)</th>
+            <th className="text-left px-2 py-1">Label / Description</th>
           </tr>
         </thead>
         <tbody>
           {recipients.map((r, i) => (
             <tr
               key={i}
-              style={{
-                backgroundColor: i % 2 === 0 ? "#dcedc8" : "#f1f8e9",
-              }}
+              className={i % 2 === 0 ? "bg-green-100" : "bg-green-50"}
             >
-              <td style={{ textAlign: "center" }}>{i + 1}</td>
-              <td>
+              <td className="text-center px-2 py-1 align-middle">{i + 1}</td>
+              <td className="px-2 py-1">
                 <input
                   type="text"
                   value={r.addr}
-                  style={{
-                    width: "100%",
-                    fontFamily: "monospace",
-                    padding: "4px 6px",
-                    borderRadius: 4,
-                    border: "1px solid #ccc",
-                  }}
+                  className="w-full font-mono px-1.5 py-1 rounded border border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   onChange={(e) => updateRecipient(i, "addr", e.target.value)}
                   disabled={!isOwner || txPending}
                   spellCheck={false}
@@ -88,19 +70,13 @@ export default function RecipientsTable({
                   aria-label={`Recipient address #${i + 1}`}
                 />
               </td>
-              <td style={{ textAlign: "center" }}>
+              <td className="text-center px-2 py-1 align-middle">
                 <input
                   type="number"
                   min={0}
                   max={100}
                   value={r.percent}
-                  style={{
-                    width: "60px",
-                    padding: "4px 6px",
-                    borderRadius: 4,
-                    border: "1px solid #ccc",
-                    textAlign: "center",
-                  }}
+                  className="w-[60px] text-center px-1.5 py-1 rounded border border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   onChange={(e) =>
                     updateRecipient(i, "percent", e.target.value)
                   }
@@ -108,16 +84,11 @@ export default function RecipientsTable({
                   aria-label={`Recipient percent #${i + 1}`}
                 />
               </td>
-              <td>
+              <td className="px-2 py-1">
                 <input
                   type="text"
                   value={r.label}
-                  style={{
-                    width: "100%",
-                    padding: "4px 6px",
-                    borderRadius: 4,
-                    border: "1px solid #ccc",
-                  }}
+                  className="w-full px-1.5 py-1 rounded border border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   onChange={(e) => updateRecipient(i, "label", e.target.value)}
                   disabled={!isOwner || txPending}
                   aria-label={`Recipient label #${i + 1}`}

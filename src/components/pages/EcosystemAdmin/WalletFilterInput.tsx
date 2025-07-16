@@ -14,15 +14,9 @@ export default function WalletFilterInput({
   return (
     <section
       aria-label="Event logs filter and export"
-      style={{
-        marginBottom: 24,
-        padding: 16,
-        borderRadius: 10,
-        backgroundColor: "#fffde7",
-        boxShadow: "inset 0 0 8px #fff59d",
-      }}
+      className="mb-6 p-4 rounded-lg bg-yellow-50 shadow-inner shadow-yellow-200"
     >
-      <label htmlFor="walletFilter" style={{ fontWeight: "600" }}>
+      <label htmlFor="walletFilter" className="font-semibold">
         Filter Received Events by Wallet Address:
       </label>
       <input
@@ -31,14 +25,7 @@ export default function WalletFilterInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Enter wallet address substring"
-        style={{
-          marginLeft: 12,
-          padding: 6,
-          fontFamily: "monospace",
-          width: 320,
-          borderRadius: 6,
-          border: "1px solid #ccc",
-        }}
+        className="ml-3 p-1.5 font-mono w-80 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
         spellCheck={false}
         autoComplete="off"
       />
