@@ -15,12 +15,11 @@ import {
   CartesianGrid,
 } from 'recharts';
 
-// Dummy contract data fetcher, replace with your contract calls
 async function fetchContractData() {
   return {
     totalVotes: 750000,
     totalKDCMinted: 900000,
-    currentReward: 1, // KDC per vote
+    currentReward: 1,
     totalLiquidityKAS: 2520000,
     totalLiquidityKDC: 420000,
   };
@@ -38,7 +37,6 @@ const sectionVariants = {
   },
 };
 
-// Format large numbers with commas
 function formatNumber(num: number) {
   return num.toLocaleString();
 }
@@ -57,11 +55,12 @@ export default function Learn() {
   }, []);
 
   const supplyDistributionData = [
-    { name: 'Minted KDC', value: contractData.totalKDCMinted },
-    { name: 'Remaining KDC', value: Math.max(0, 2100000 - contractData.totalKDCMinted) },
+    { name: 'Premine (Liquidity)', value: 420000 },
+    { name: 'Voter Allocation', value: 1344000 },
+    { name: 'Domain Owner Allocation', value: 336000 },
   ];
 
-  const COLORS = ['#21bf73', '#116530'];
+  const COLORS = ['#21bf73', '#3d9970', '#116530'];
 
   const halvingData = [
     { stage: '0-525k votes', reward: 2 },
@@ -79,70 +78,40 @@ export default function Learn() {
         animate="show"
       >
         {/* What is KaspaDomains? */}
-        <motion.section
-          className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]"
-          variants={fadeInUp}
-        >
+        <motion.section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]" variants={fadeInUp}>
           <h2 className="text-4xl font-bold text-white mb-6">What is KaspaDomains?</h2>
           <p className="text-lg leading-relaxed text-gray-300">
-            <strong className="text-white">KaspaDomains.com</strong> is a decentralized on-chain experiment featuring a fixed
-            collection of <strong>10,000 unique <code className="text-kaspa-green">.kas</code> domains</strong>. These domains are
-            not for sale but open for <strong>community-powered voting</strong>. Participate to help build a transparent reputation
-            layer on Kaspa and earn rewards in KDC tokens.
+            <strong className="text-white">KaspaDomains.com</strong> is a decentralized on-chain experiment featuring a fixed collection of <strong>10,000 unique <code className="text-kaspa-green">.kas</code> domains</strong>. These domains are not for sale but open for <strong>community-powered voting</strong>. Participate to help build a transparent reputation layer on Kaspa and earn rewards in KDC tokens.
           </p>
         </motion.section>
 
         {/* How It Works */}
-        <motion.section
-          className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]"
-          variants={fadeInUp}
-        >
+        <motion.section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]" variants={fadeInUp}>
           <h2 className="text-4xl font-bold text-white mb-6">How It Works</h2>
           <p className="mb-4 leading-relaxed text-gray-300">
-            Anyone can vote for a domain by paying a fixed fee of{' '}
-            <span className="font-semibold text-kaspa-green">6 KAS</span>. Each vote:
+            Anyone can vote for a domain by paying a fixed fee of <span className="font-semibold text-kaspa-green">6 KAS</span>. Each vote:
           </p>
           <ul className="list-disc list-inside space-y-2 text-gray-300 mb-6">
             <li>Rewards the voter with 1 KDC token</li>
-            <li>Rewards the domain owner with 1 KDC token</li>
+            <li>Rewards the domain owner with 0.25 KDC token</li>
             <li>Splits the 6 KAS payment: 3 KAS to the domain owner, 3 KAS to the ecosystem fund</li>
           </ul>
 
           {/* Metrics */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
-            <motion.div
-              className="bg-[#1d3b39] rounded-lg p-4 text-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
+            <motion.div className="bg-[#1d3b39] rounded-lg p-4 text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               <div className="text-sm uppercase text-gray-400">Total Votes</div>
               <div className="text-2xl font-bold text-kaspa-green">{formatNumber(contractData.totalVotes)}</div>
             </motion.div>
-            <motion.div
-              className="bg-[#1d3b39] rounded-lg p-4 text-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
+            <motion.div className="bg-[#1d3b39] rounded-lg p-4 text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <div className="text-sm uppercase text-gray-400">Minted KDC</div>
               <div className="text-2xl font-bold text-kaspa-green">{formatNumber(contractData.totalKDCMinted)}</div>
             </motion.div>
-            <motion.div
-              className="bg-[#1d3b39] rounded-lg p-4 text-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
+            <motion.div className="bg-[#1d3b39] rounded-lg p-4 text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
               <div className="text-sm uppercase text-gray-400">Current Reward</div>
               <div className="text-2xl font-bold text-kaspa-green">{contractData.currentReward} KDC/vote</div>
             </motion.div>
-            <motion.div
-              className="bg-[#1d3b39] rounded-lg p-4 text-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
+            <motion.div className="bg-[#1d3b39] rounded-lg p-4 text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
               <div className="text-sm uppercase text-gray-400">Liquidity (KAS/KDC)</div>
               <div className="text-2xl font-bold text-kaspa-green">
                 {formatNumber(contractData.totalLiquidityKAS)} KAS / {formatNumber(contractData.totalLiquidityKDC)} KDC
@@ -150,22 +119,11 @@ export default function Learn() {
             </motion.div>
           </div>
 
-          {/* Voting KAS split diagram */}
+          {/* KAS Split Pie Chart */}
           <div className="w-full h-48 max-w-md mx-auto">
             <ResponsiveContainer>
               <PieChart>
-                <Pie
-                  data={[
-                    { name: 'Domain Owner', value: 3 },
-                    { name: 'Ecosystem Fund', value: 3 },
-                  ]}
-                  dataKey="value"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  fill="#8884d8"
-                  label
-                >
+                <Pie data={[{ name: 'Domain Owner', value: 3 }, { name: 'Ecosystem Fund', value: 3 }]} dataKey="value" cx="50%" cy="50%" outerRadius={80} label>
                   <Cell fill="#21bf73" />
                   <Cell fill="#116530" />
                 </Pie>
@@ -175,11 +133,10 @@ export default function Learn() {
           </div>
 
           <p className="mt-6 leading-relaxed text-gray-300">
-            KDC rewards halve every <strong>525,000 votes</strong>, continuing until the fixed max supply of{' '}
-            <strong>2.1 million</strong> tokens is fully minted.
+            KDC rewards halve every <strong>525,000 votes</strong>, continuing until the fixed max supply of <strong>2.1 million</strong> tokens is fully minted.
           </p>
 
-          {/* Halving chart */}
+          {/* Halving Chart */}
           <div className="mt-8 w-full h-48 max-w-3xl mx-auto">
             <ResponsiveContainer>
               <BarChart data={halvingData}>
@@ -194,31 +151,27 @@ export default function Learn() {
         </motion.section>
 
         {/* What Are KDC Tokens? */}
-        <motion.section
-          className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]"
-          variants={fadeInUp}
-        >
+        <motion.section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]" variants={fadeInUp}>
           <h2 className="text-4xl font-bold text-white mb-6">What Are KDC Tokens?</h2>
           <p className="leading-relaxed text-gray-300">
-            <strong>KDC</strong> is the native ERC-20 reward token of KaspaDomains. 100% of its supply is minted by the community. There is no premine,
-            no dev allocation, and no private sales. Its value is backed by real participation.
+            <strong>KDC</strong> is the native ERC-20 reward token of KaspaDomains. It has a fixed supply of <strong>2.1 million</strong> tokens. <br />
+            • <strong>20%</strong> (420,000 KDC) is pre-minted for liquidity and permanently locked via LP burn.<br />
+            • <strong>80%</strong> (1.68 million KDC) is minted by the community through voting. Voters receive <strong>80%</strong> of this amount, and domain owners receive <strong>20%</strong>.<br />
+            <br />There is no team allocation, no private sale, and no VC funding. The only way to earn KDC is through community participation.
           </p>
         </motion.section>
 
         {/* Ecosystem Fund and Liquidity */}
-        <motion.section
-          className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]"
-          variants={fadeInUp}
-        >
+        <motion.section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]" variants={fadeInUp}>
           <h2 className="text-4xl font-bold text-white mb-6">Ecosystem Fund and Liquidity</h2>
           <p className="leading-relaxed text-gray-300 mb-8">
             All KAS collected from voting fees goes to the <strong>EcosystemFund</strong> smart contract. This fund is used to support listings,
-            liquidity, marketing, and future governance. On launch, <strong>420,000 KDC</strong> tokens will be paired with{' '}
-            <strong>2,520,000 KAS</strong> in liquidity and permanently locked via LP burn. This gives the token strong fundamentals and price reliability.
-            Additional smaller pools (like KDC/USDT) may be created by the Ecosystem Fund for broader access, but only the burned LP pool is permanent and trustless.
+            liquidity, marketing, and future governance. On launch, <strong>420,000 KDC</strong> tokens were paired with <strong>2,520,000 KAS</strong>
+            and permanently locked via LP burn. This gives the token strong fundamentals and price reliability. Additional smaller pools
+            (like KDC/USDT) may be created by the Ecosystem Fund for broader access, but only the burned LP pool is permanent and trustless.
           </p>
 
-          {/* Supply distribution pie chart */}
+          {/* Token Distribution Pie Chart */}
           <div className="w-full h-48 max-w-md mx-auto">
             <ResponsiveContainer>
               <PieChart>
@@ -228,10 +181,7 @@ export default function Learn() {
                   cx="50%"
                   cy="50%"
                   outerRadius={80}
-                  fill="#8884d8"
-                  label={({ name, percent }) =>
-                    `${name}: ${percent !== undefined ? (percent * 100).toFixed(0) : '0'}%`
-                  }
+                  label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
                 >
                   {supplyDistributionData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
