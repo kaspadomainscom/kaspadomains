@@ -10,8 +10,7 @@ import { headers } from 'next/headers';
 import { NonceProvider } from "@/context/NonceProvider";
 import { QueryProvider } from "./providers/query-provider";
 import { WalletProvider } from "@/context/WalletContext";
-
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from "sonner";
 
 
 export const dynamic = 'force-dynamic'; // Needed to access request headers per request
@@ -85,7 +84,7 @@ export default async function RootLayout({
         {/* Provide CSP nonce via React context */}
         <NonceProvider nonce={nonce}>
           <WalletProvider>
-            <Toaster position="top-right" toastOptions={{ duration: 5000 }} />
+            <Toaster richColors position="top-right" />
             {/* Header is outside flex wrapper for consistent layout */}
             <Header />
 

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 
 async function fetchContractData() {
   return {
@@ -13,19 +12,11 @@ async function fetchContractData() {
   };
 }
 
-const fadeInUp = {
-  hidden: { opacity: 0, y: 30 },
-  show:   { opacity: 1, y: 0, transition: { duration: 0.6 } },
-};
-
-const sectionVariants = {
-  hidden: {},
-  show:  { transition: { staggerChildren: 0.12 } },
-};
-
 function formatNumber(n: number) {
   return n.toLocaleString();
 }
+
+const fadeInClass = "opacity-0 translate-y-6 animate-fade-in-up";
 
 export default function Learn() {
   const [data, setData] = useState({
@@ -49,17 +40,10 @@ export default function Learn() {
 
   return (
     <div className="min-h-screen bg-[#0b1e1d] text-gray-100 px-6 py-12">
-      <motion.div
-        className="max-w-5xl mx-auto space-y-12"
-        variants={sectionVariants}
-        initial="hidden"
-        animate="show"
-      >
+      <div className="max-w-5xl mx-auto space-y-12">
+
         {/* What is KaspaDomains? */}
-        <motion.section
-          className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]"
-          variants={fadeInUp}
-        >
+        <section className={`${fadeInClass} bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]`}>
           <h2 className="text-4xl font-bold text-white mb-4">What is KaspaDomains?</h2>
           <p className="text-gray-300 leading-relaxed">
             <span className="text-white font-semibold">KaspaDomains.com</span> is a community‑powered
@@ -67,13 +51,10 @@ export default function Learn() {
             can register their name, then open it for public voting. Votes highlight the most valued domains
             and mint KDC tokens to voters and domain owners—no auctions, only votes and rewards.
           </p>
-        </motion.section>
+        </section>
 
         {/* How It Works */}
-        <motion.section
-          className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]"
-          variants={fadeInUp}
-        >
+        <section className={`${fadeInClass} bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]`}>
           <h2 className="text-4xl font-bold text-white mb-4">How It Works</h2>
           <p className="text-gray-300 leading-relaxed mb-4">
             Pay <span className="text-kaspa-green font-semibold">6 KAS</span> to vote on a domain:
@@ -92,20 +73,18 @@ export default function Learn() {
               ['Reward/vote', `${data.currentReward} KDC`],
               ['Liquidity KAS/KDC', `${formatNumber(data.totalLiquidityKAS)} / ${formatNumber(data.totalLiquidityKDC)}`],
             ].map(([label, value], i) => (
-              <motion.div
+              <div
                 key={i}
-                className="bg-[#1d3b39] rounded-lg p-4 text-center"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * (i + 1) }}
+                className="bg-[#1d3b39] rounded-lg p-4 text-center opacity-0 translate-y-6 animate-fade-in-up"
+                style={{ animationDelay: `${(i + 1) * 100}ms`, animationFillMode: 'forwards' }}
               >
                 <div className="text-xs uppercase text-gray-400">{label}</div>
                 <div className="text-2xl font-bold text-kaspa-green">{value}</div>
-              </motion.div>
+              </div>
             ))}
           </div>
 
-          {/* KAS Split */}
+          {/* KAS Split Pie */}
           <div className="relative w-48 h-48 mx-auto rounded-full overflow-hidden mb-6">
             <div className="absolute inset-0 bg-kas-fund-split" />
             <div className="absolute inset-4 bg-[#0b1e1d] rounded-full flex items-center justify-center">
@@ -131,13 +110,10 @@ export default function Learn() {
               </div>
             ))}
           </div>
-        </motion.section>
+        </section>
 
         {/* What Are KDC Tokens? */}
-        <motion.section
-          className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]"
-          variants={fadeInUp}
-        >
+        <section className={`${fadeInClass} bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]`}>
           <h2 className="text-4xl font-bold text-white mb-4">What Are KDC Tokens?</h2>
           <p className="text-gray-300 leading-relaxed">
             <strong>KDC</strong> is the native ERC‑20 reward token (2.1 M total):
@@ -154,13 +130,10 @@ export default function Learn() {
           <p className="mt-4 text-gray-300 leading-relaxed">
             No private sales, no team allocations—everything is earned on‑chain.
           </p>
-        </motion.section>
+        </section>
 
         {/* Ecosystem Fund & Distribution */}
-        <motion.section
-          className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]"
-          variants={fadeInUp}
-        >
+        <section className={`${fadeInClass} bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]`}>
           <h2 className="text-4xl font-bold text-white mb-4">Ecosystem Fund & Distribution</h2>
           <p className="text-gray-300 leading-relaxed mb-6">
             Voting fees (6 KAS each) feed the <strong>EcosystemFund</strong>. On launch, 420 k KDC + 2.52 M KAS were locked as LP.
@@ -168,7 +141,6 @@ export default function Learn() {
             remains permanent and trustless.
           </p>
 
-          {/* Token Distribution Pie */}
           <div className="relative w-48 h-48 mx-auto rounded-full overflow-hidden">
             <div className="absolute inset-0 bg-token-distribution" />
             <div className="absolute inset-4 bg-[#0b1e1d] rounded-full flex items-center justify-center">
@@ -177,8 +149,9 @@ export default function Learn() {
               </div>
             </div>
           </div>
-        </motion.section>
-      </motion.div>
+        </section>
+
+      </div>
     </div>
   );
 }
