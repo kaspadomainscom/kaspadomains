@@ -60,6 +60,13 @@ export function middleware(request: NextRequest) {
     "max-age=31536000; includeSubDomains; preload"
   );
 
+  response.headers.set("Report-To", JSON.stringify({
+    group: "csp-endpoint",
+    max_age: 10886400,
+    endpoints: [{ url: "/api/csp-report" }],
+    include_subdomains: true,
+  }));
+
   if (process.env.NODE_ENV !== "production") {
     console.log(`[middleware] Injected nonce: ${nonce} for ${pathname}`);
   }
