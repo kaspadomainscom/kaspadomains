@@ -37,7 +37,7 @@ export function middleware(request: NextRequest) {
     `style-src 'self' 'nonce-${nonce}'`,
     `style-src-attr 'nonce-${nonce}'`,
     `img-src 'self' data: https://kaspadomains.com`,
-    `connect-src 'self' https://kaspadomains.com https://supabase.com https://knsdomains.org https://api.knsdomains.org`,
+    `connect-src 'self' https://kaspadomains.com https://*.metamask.io https://supabase.com https://knsdomains.org https://api.knsdomains.org`,
     `font-src 'self'`,
     `object-src 'none'`,
     `base-uri 'self'`,
