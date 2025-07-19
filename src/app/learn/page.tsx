@@ -16,6 +16,13 @@ function formatNumber(n: number) {
   return n.toLocaleString();
 }
 
+// Maps delay index to Tailwind delay classes
+function getDelayClass(index: number) {
+  const delay = [100, 200, 300, 400, 500, 600, 700, 800];
+  const delayMs = delay[index] || 800;
+  return `delay-[${delayMs}ms]`;
+}
+
 const fadeInClass = "opacity-0 translate-y-6 animate-fade-in-up";
 
 export default function Learn() {
@@ -46,9 +53,8 @@ export default function Learn() {
         <section className={`${fadeInClass} bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]`}>
           <h2 className="text-4xl font-bold text-white mb-4">What is KaspaDomains?</h2>
           <p className="text-gray-300 leading-relaxed">
-            <span className="text-white font-semibold">KaspaDomains.com</span> is a community‑powered
-            registry for KNS <code className="text-kaspa-green">.kas</code> domains. Any KNS domain holder
-            can register their name, then open it for public voting. Votes highlight the most valued domains
+            <span className="text-white font-semibold">KaspaDomains.com</span> is a community‑powered registry for KNS <code className="text-kaspa-green">.kas</code> domains.
+            Any KNS domain holder can register their name, then open it for public voting. Votes highlight the most valued domains
             and mint KDC tokens to voters and domain owners—no auctions, only votes and rewards.
           </p>
         </section>
@@ -75,11 +81,9 @@ export default function Learn() {
             ].map(([label, value], i) => (
               <div
                 key={i}
-                className={`
-                  bg-[#1d3b39] rounded-lg p-4 text-center 
+                className={`bg-[#1d3b39] rounded-lg p-4 text-center 
                   opacity-0 translate-y-6 animate-fade-in-up 
-                  fill-mode-forwards delay-[${(i + 1) * 100}ms] 
-                `}
+                  ${getDelayClass(i)}`}
               >
                 <div className="text-xs uppercase text-gray-400">{label}</div>
                 <div className="text-2xl font-bold text-kaspa-green">{value}</div>
@@ -87,14 +91,11 @@ export default function Learn() {
             ))}
           </div>
 
-
           {/* KAS Split Pie */}
           <div className="relative w-48 h-48 mx-auto rounded-full overflow-hidden mb-6">
             <div className="absolute inset-0 bg-kas-fund-split" />
             <div className="absolute inset-4 bg-[#0b1e1d] rounded-full flex items-center justify-center">
-              <div className="text-center text-gray-400 text-sm">
-                6 KAS Fund
-              </div>
+              <div className="text-center text-gray-400 text-sm">6 KAS Fund</div>
             </div>
           </div>
 
