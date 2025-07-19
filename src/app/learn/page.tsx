@@ -2,6 +2,7 @@
 
 import EcosystemDistribution from '@/components/pages/learn/EcosystemDistribution';
 import { useEffect, useState } from 'react';
+import { useCspNonce } from '@/context/NonceProvider';
 
 async function fetchContractData() {
   return {
@@ -18,6 +19,7 @@ function formatNumber(n: number) {
 }
 
 export default function Learn() {
+  const nonce = useCspNonce();
   const [data, setData] = useState({
     totalVotes: 0,
     totalKDCMinted: 0,
@@ -38,6 +40,7 @@ export default function Learn() {
   ];
 
   const voteProgress = Math.min(data.totalVotes / 2100000, 1);
+  const progressStyle = `width: ${(voteProgress * 100).toFixed(2)}%`;
 
   return (
     <div className="min-h-screen bg-[#0b1e1d] text-gray-100 px-6 py-12">
@@ -85,11 +88,17 @@ export default function Learn() {
             <div className="text-sm text-gray-400 mb-1">
               Progress to max supply ({formatNumber(data.totalVotes)} / 2,100,000 votes)
             </div>
-            <div className="w-full h-4 bg-[#1a3533] rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-[#3bf5b2] to-[#1e3d38]"
-                style={{ width: `${(voteProgress * 100).toFixed(2)}%` }}
-              />
+            <div className="w-full h-4 bg-[#1a3533] rounded-full overflow-hidden relative">
+              <style nonce={nonce}>{`
+                .vote-progress::before {
+                  content: '';
+                  display: block;
+                  height: 100%;
+                  width: ${progressStyle};
+                  background: linear-gradient(to right, #3bf5b2, #1e3d38);
+                }
+              `}</style>
+              <div className="vote-progress absolute top-0 left-0 h-full" />
             </div>
           </div>
 
@@ -133,17 +142,18 @@ export default function Learn() {
 
         {/* Ecosystem Fund */}
         <EcosystemDistribution />
+      </div>
+    </div>
+  );
+}
 
-          {/* Token Pie Chart */}
-          {/* <div className="relative w-48 h-48 mx-auto rounded-full overflow-hidden mb-6">
+
+{/* Token Pie Chart */ }
+// <section> 
+{/* <div className="relative w-48 h-48 mx-auto rounded-full overflow-hidden mb-6">
             <div className="absolute inset-0 bg-gradient-to-tr from-[#3bf5b2] via-[#5fcf8f] to-[#1e3d38]" />
             <div className="absolute inset-4 bg-[#0b1e1d] rounded-full flex items-center justify-center text-center text-gray-400 text-sm">
               20% LP<br />64% Voters<br />16% Owners
             </div>
           </div>
-        </section> */}
-
-      </div>
-    </div>
-  );
-}
+         </section> */}

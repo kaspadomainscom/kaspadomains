@@ -1,3 +1,4 @@
+// src/middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -37,9 +38,11 @@ export function middleware(request: NextRequest) {
     `style-src-attr 'nonce-${nonce}'`,
     `img-src 'self' data: https://kaspadomains.com`,
     `connect-src 'self' https://kaspadomains.com https://supabase.com https://knsdomains.org https://api.knsdomains.org`,
+    `font-src 'self'`,
     `object-src 'none'`,
     `base-uri 'self'`,
     `frame-ancestors 'none'`,
+    `frame-src 'none'`,
     `upgrade-insecure-requests`,
   ].join("; ");
 
@@ -50,7 +53,7 @@ export function middleware(request: NextRequest) {
   response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
   response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
 
-    // Strong HSTS header with preload + subdomains + 1 year max-age
+  // Strong HSTS header with preload + subdomains + 1 year max-age
   response.headers.set(
     "Strict-Transport-Security",
     "max-age=31536000; includeSubDomains; preload"
