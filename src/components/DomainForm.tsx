@@ -73,8 +73,8 @@ const DomainForm = () => {
           {isAvailable === null
             ? 'Unknown'
             : isAvailable
-            ? '✅ Available'
-            : '❌ Taken'}
+              ? '✅ Available'
+              : '❌ Taken'}
         </p>
         {imagePreview && (
           <div className="mt-4 w-48">
@@ -91,6 +91,7 @@ const DomainForm = () => {
         <button
           onClick={() => setPreviewMode(false)}
           className="mt-6 btn btn-secondary"
+          type="button"
         >
           Back to Edit
         </button>
@@ -107,33 +108,44 @@ const DomainForm = () => {
 
       {/* Domain Input */}
       <div>
-        <label className="block mb-1 font-medium">Domain</label>
+        <label htmlFor="domain-input" className="block mb-1 font-medium">Domain</label>
         <input
+          id="domain-input"
+          name="domain"
           type="text"
           value={domain}
           onChange={(e) => setDomain(e.target.value)}
           placeholder="e.g. yourname"
           className="w-full p-2 border rounded"
+          autoComplete="off"
+          aria-describedby="domain-status"
         />
         {domain && (
-          <p className="text-sm mt-1">
+          <p id="domain-status" className="text-sm mt-1">
             {isPending
               ? 'Checking availability...'
               : isAvailable === null
-              ? ''
-              : isAvailable
-              ? '✅ Domain is available'
-              : '❌ Domain is taken'}
+                ? ''
+                : isAvailable
+                  ? '✅ Domain is available'
+                  : '❌ Domain is taken'}
           </p>
         )}
       </div>
 
       {/* Image Upload */}
       <div>
-        <label className="block mb-1 font-medium">Upload Image</label>
-        <input type="file" accept="image/*" onChange={handleImageUpload} />
+        <label htmlFor="image-upload" className="block mb-1 font-medium">Upload Image</label>
+        <input
+          id="image-upload"
+          name="image-upload"
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          aria-describedby={imagePreview ? 'image-preview' : undefined}
+        />
         {imagePreview && (
-          <div className="mt-2 w-48">
+          <div id="image-preview" className="mt-2 w-48">
             <Image
               src={imagePreview}
               alt="Preview"

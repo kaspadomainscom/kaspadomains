@@ -110,6 +110,7 @@ export default function NewDomainPage() {
   }
 
   function InputField({
+    id,
     label,
     value,
     setValue,
@@ -118,6 +119,7 @@ export default function NewDomainPage() {
     textarea = false,
     type = 'text',
   }: {
+    id: string;
     label: string;
     value: string;
     setValue: (val: string) => void;
@@ -128,24 +130,34 @@ export default function NewDomainPage() {
   }) {
     return (
       <div>
-        <label className="block font-semibold text-kaspaMint mb-1">{label}</label>
+        <label htmlFor={id} className="block font-semibold text-kaspaMint mb-1">
+          {label}
+        </label>
         {textarea ? (
           <textarea
+            id={id}
+            name={id}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder={placeholder}
             required={required}
             rows={4}
             className="w-full bg-[#112524] border border-kaspaMint text-white rounded px-3 py-2 placeholder:text-gray-400"
+            spellCheck="false"
+            autoComplete="off"
           />
         ) : (
           <input
+            id={id}
+            name={id}
             type={type}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder={placeholder}
             required={required}
             className="w-full bg-[#112524] border border-kaspaMint text-white rounded px-3 py-2 placeholder:text-gray-400"
+            spellCheck="false"
+            autoComplete={type === 'url' ? 'url' : 'off'}
           />
         )}
       </div>
@@ -179,6 +191,9 @@ export default function NewDomainPage() {
             onChange={(e) => setNewItem(e.target.value)}
             placeholder={placeholder}
             className="flex-1 bg-[#112524] border border-kaspaMint text-white rounded px-3 py-2 placeholder:text-gray-400"
+            aria-label={`New ${label} input`}
+            spellCheck="false"
+            autoComplete="off"
           />
           <button
             type="button"
@@ -190,7 +205,10 @@ export default function NewDomainPage() {
           </button>
         </div>
         {items.length > 0 && (
-          <ul className="mt-2 text-sm text-kaspaMint list-disc pl-5 space-y-1">
+          <ul
+            className="mt-2 text-sm text-kaspaMint list-disc pl-5 space-y-1"
+            aria-live="polite"
+          >
             {items.map((item, i) => (
               <li key={i}>{item}</li>
             ))}
@@ -206,17 +224,18 @@ export default function NewDomainPage() {
         List a New <span className="text-kaspaMint">.kas</span> Domain
       </h1>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6" aria-describedby="form-message">
         <InputField
+          id="domainName"
           label="Domain Name"
           value={domainName}
           setValue={setDomainName}
           placeholder="e.g. myproject.kas"
           required
         />
-        <InputField label="Title" value={title} setValue={setTitle} />
-        <InputField label="Description" value={description} setValue={setDescription} textarea />
-        <InputField label="Website URL" type="url" value={website} setValue={setWebsite} />
+        <InputField id="title" label="Title" value={title} setValue={setTitle} />
+        <InputField id="description" label="Description" value={description} setValue={setDescription} textarea />
+        <InputField id="website" label="Website URL" type="url" value={website} setValue={setWebsite} />
 
         <DynamicListInput
           label="Categories"
@@ -231,6 +250,7 @@ export default function NewDomainPage() {
           type="submit"
           disabled={loading}
           className="w-full bg-kaspaGreen hover:bg-kaspaMint text-[#0F2F2E] py-3 px-6 rounded font-semibold transition"
+          aria-busy={loading}
         >
           {loading ? 'Submitting...' : 'Submit Domain'}
         </button>
@@ -238,6 +258,9 @@ export default function NewDomainPage() {
 
       {message && (
         <p
+          id="form-message"
+          role={message.startsWith('❌') ? 'alert' : undefined}
+          aria-live={message.startsWith('❌') ? 'assertive' : 'polite'}
           className={`mt-6 text-center text-sm px-4 py-3 rounded ${
             message.startsWith('✅')
               ? 'bg-green-100 text-green-800'

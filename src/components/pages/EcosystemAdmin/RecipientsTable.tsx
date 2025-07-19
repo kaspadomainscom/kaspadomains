@@ -60,6 +60,8 @@ export default function RecipientsTable({
               <td className="text-center px-2 py-1 align-middle">{i + 1}</td>
               <td className="px-2 py-1">
                 <input
+                  id={`recipient-addr-${i}`}
+                  name={`recipients[${i}][addr]`}
                   type="text"
                   value={r.addr}
                   className="w-full font-mono px-1.5 py-1 rounded border border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -72,13 +74,15 @@ export default function RecipientsTable({
               </td>
               <td className="text-center px-2 py-1 align-middle">
                 <input
+                  id={`recipient-percent-${i}`}
+                  name={`recipients[${i}][percent]`}
                   type="number"
                   min={0}
                   max={100}
                   value={r.percent}
                   className="w-[60px] text-center px-1.5 py-1 rounded border border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   onChange={(e) =>
-                    updateRecipient(i, "percent", e.target.value)
+                    updateRecipient(i, "percent", Number(e.target.value))
                   }
                   disabled={!isOwner || txPending}
                   aria-label={`Recipient percent #${i + 1}`}
@@ -86,6 +90,8 @@ export default function RecipientsTable({
               </td>
               <td className="px-2 py-1">
                 <input
+                  id={`recipient-label-${i}`}
+                  name={`recipients[${i}][label]`}
                   type="text"
                   value={r.label}
                   className="w-full px-1.5 py-1 rounded border border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"

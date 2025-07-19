@@ -146,6 +146,7 @@ export default function UpdateDomainPage() {
           <label htmlFor="twitter" className="block text-sm font-medium mb-1">Twitter / X Handle</label>
           <input
             id="twitter"
+            name='twitter'
             type="text"
             value={twitter}
             onChange={(e) => setTwitter(e.target.value)}

@@ -21,6 +21,7 @@ export default function WalletFilterInput({
       </label>
       <input
         id="walletFilter"
+        name="walletFilter"
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -28,7 +29,11 @@ export default function WalletFilterInput({
         className="ml-3 p-1.5 font-mono w-80 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
         spellCheck={false}
         autoComplete="off"
+        aria-describedby="walletFilterHelp"
       />
+      <small id="walletFilterHelp" className="sr-only">
+        Enter part or full wallet address to filter events
+      </small>
     </section>
   );
 }
