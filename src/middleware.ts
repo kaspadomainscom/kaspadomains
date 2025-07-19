@@ -44,6 +44,7 @@ export function middleware(request: NextRequest) {
     `frame-ancestors 'none'`,
     `frame-src 'none'`,
     `upgrade-insecure-requests`,
+    `report-uri /csp-violation-report-endpoint`,
   ].join("; ");
 
   const response = NextResponse.next();
