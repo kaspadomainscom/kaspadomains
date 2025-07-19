@@ -1,4 +1,4 @@
-// src/app/api/csp-report/route.ts
+// src/app/api/csp-violation-report/route.ts
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
