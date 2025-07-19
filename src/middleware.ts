@@ -44,7 +44,7 @@ export function middleware(request: NextRequest) {
     `frame-ancestors 'none'`,
     `frame-src 'none'`,
     `upgrade-insecure-requests`,
-    `report-uri /csp-violation-report-endpoint`,
+    `report-uri /csp-violation-report`,
   ].join("; ");
 
   const response = NextResponse.next();
@@ -63,7 +63,7 @@ export function middleware(request: NextRequest) {
   response.headers.set("Report-To", JSON.stringify({
     group: "csp-endpoint",
     max_age: 10886400,
-    endpoints: [{ url: "/api/csp-report" }],
+    endpoints: [{ url: "/api/csp-violation-report" }],
     include_subdomains: true,
   }));
 
