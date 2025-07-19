@@ -16,15 +16,6 @@ function formatNumber(n: number) {
   return n.toLocaleString();
 }
 
-// Maps delay index to Tailwind delay classes
-function getDelayClass(index: number) {
-  const delay = [100, 200, 300, 400, 500, 600, 700, 800];
-  const delayMs = delay[index] || 800;
-  return `delay-[${delayMs}ms]`;
-}
-
-const fadeInClass = "opacity-0 translate-y-6 animate-fade-in-up";
-
 export default function Learn() {
   const [data, setData] = useState({
     totalVotes: 0,
@@ -50,7 +41,7 @@ export default function Learn() {
       <div className="max-w-5xl mx-auto space-y-12">
 
         {/* What is KaspaDomains? */}
-        <section className={`${fadeInClass} bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]`}>
+        <section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]">
           <h2 className="text-4xl font-bold text-white mb-4">What is KaspaDomains?</h2>
           <p className="text-gray-300 leading-relaxed">
             <span className="text-white font-semibold">KaspaDomains.com</span> is a community‑powered registry for KNS <code className="text-kaspa-green">.kas</code> domains.
@@ -60,7 +51,7 @@ export default function Learn() {
         </section>
 
         {/* How It Works */}
-        <section className={`${fadeInClass} bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]`}>
+        <section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]">
           <h2 className="text-4xl font-bold text-white mb-4">How It Works</h2>
           <p className="text-gray-300 leading-relaxed mb-4">
             Pay <span className="text-kaspa-green font-semibold">6 KAS</span> to vote on a domain:
@@ -81,9 +72,7 @@ export default function Learn() {
             ].map(([label, value], i) => (
               <div
                 key={i}
-                className={`bg-[#1d3b39] rounded-lg p-4 text-center 
-                  opacity-0 translate-y-6 animate-fade-in-up 
-                  ${getDelayClass(i)}`}
+                className="bg-[#1d3b39] rounded-lg p-4 text-center"
               >
                 <div className="text-xs uppercase text-gray-400">{label}</div>
                 <div className="text-2xl font-bold text-kaspa-green">{value}</div>
@@ -118,7 +107,7 @@ export default function Learn() {
         </section>
 
         {/* What Are KDC Tokens? */}
-        <section className={`${fadeInClass} bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]`}>
+        <section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]">
           <h2 className="text-4xl font-bold text-white mb-4">What Are KDC Tokens?</h2>
           <p className="text-gray-300 leading-relaxed">
             <strong>KDC</strong> is the native ERC‑20 reward token (2.1 M total):
@@ -138,7 +127,7 @@ export default function Learn() {
         </section>
 
         {/* Ecosystem Fund & Distribution */}
-        <section className={`${fadeInClass} bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]`}>
+        <section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]">
           <h2 className="text-4xl font-bold text-white mb-4">Ecosystem Fund & Distribution</h2>
           <p className="text-gray-300 leading-relaxed mb-6">
             Voting fees (6 KAS each) feed the <strong>EcosystemFund</strong>. On launch, 420 k KDC + 2.52 M KAS were locked as LP.
