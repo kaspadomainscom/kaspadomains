@@ -3,10 +3,11 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import KaspaDomainsLogo from './KaspaDomainsLogo';
+import KaspaDomainsLogo from '../KaspaDomainsLogo';
 import { findDomainByName } from '@/data/domainLookup';
 import { categoriesData } from '@/data/categoriesManifest';
 import { useWalletContext } from '@/context/WalletContext';
+import TrendingDomainsComponent from './trendingDomains';
 
 const NAV_ITEMS = [
   { label: 'Home', href: '/' },
@@ -283,6 +284,9 @@ export default function Header() {
           )}
         </button>
       </div>
+
+      <TrendingDomainsComponent trendingDomains={trendingDomains} />
+
 
       <div className="bg-[#0F2F2E] border-t border-[#3DFDAD]/20 overflow-hidden">
         <div
