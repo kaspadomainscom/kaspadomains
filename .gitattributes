@@ -1,0 +1,9 @@
+# Set all text files to normalize line endings to LF in the repo
+* text=auto
+
+# Force specific files (like scripts) to always use LF
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.css text eol=lf

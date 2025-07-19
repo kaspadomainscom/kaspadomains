@@ -75,14 +75,18 @@ export default function Learn() {
             ].map(([label, value], i) => (
               <div
                 key={i}
-                className="bg-[#1d3b39] rounded-lg p-4 text-center opacity-0 translate-y-6 animate-fade-in-up"
-                style={{ animationDelay: `${(i + 1) * 100}ms`, animationFillMode: 'forwards' }}
+                className={`
+                  bg-[#1d3b39] rounded-lg p-4 text-center 
+                  opacity-0 translate-y-6 animate-fade-in-up 
+                  fill-mode-forwards delay-[${(i + 1) * 100}ms] 
+                `}
               >
                 <div className="text-xs uppercase text-gray-400">{label}</div>
                 <div className="text-2xl font-bold text-kaspa-green">{value}</div>
               </div>
             ))}
           </div>
+
 
           {/* KAS Split Pie */}
           <div className="relative w-48 h-48 mx-auto rounded-full overflow-hidden mb-6">

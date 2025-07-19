@@ -143,8 +143,8 @@ export default function Sidebar() {
           isMobile
             ? 'right-2.5'
             : collapsed
-            ? '-right-3' // negative right pushes button outward (half out of 24px button)
-            : 'right-2.5'
+              ? '-right-3' // negative right pushes button outward (half out of 24px button)
+              : 'right-2.5'
         )}
         type="button"
       >
@@ -182,24 +182,26 @@ export default function Sidebar() {
           ))}
         </nav>
 
-      <div
-        className={clsx(
-          'flex items-center px-4 py-2 mx-2 rounded-md bg-[#162f2d] text-[#3DFDAD] text-[11px] font-semibold tracking-wider uppercase select-none',
-          collapsed ? 'justify-center' : 'justify-start'
-        )}
-      >
-        <IconFolder
-          className="mr-2 shrink-0"
-          width={20}
-          height={20}
-        />
-        {!collapsed && <span>Categories</span>}
-      </div>
+        <div
+          className={clsx(
+            'flex items-center px-4 py-2 mx-2 rounded-md bg-[#162f2d] text-[#3DFDAD] text-[11px] font-semibold tracking-wider uppercase select-none',
+            collapsed ? 'justify-center' : 'justify-start'
+          )}
+        >
+          <IconFolder
+            className="mr-2 shrink-0"
+            width={20}
+            height={20}
+          />
+          {!collapsed && <span>Categories</span>}
+        </div>
 
 
         {!collapsed && (
           <div className="px-3 transition-opacity duration-300 ease-in-out">
             <input
+              id="sidebar-search"
+              name="categorySearch"
               ref={searchInputRef}
               type="text"
               placeholder="Search categories..."

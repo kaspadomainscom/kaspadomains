@@ -57,6 +57,10 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+.fill-mode-forwards {
+  animation-fill-mode: forwards;
+}
+
 /* Dark mode preferences */
 
 /* Base styles using Tailwind utilities with CSS variables */
