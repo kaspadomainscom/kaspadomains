@@ -9,8 +9,8 @@ import Sidebar from '@/components/Sidebar';
 import { headers } from 'next/headers';
 import { NonceProvider } from "@/context/NonceProvider";
 import { QueryProvider } from "./providers/query-provider";
-// import { WalletProvider } from "@/context/WalletContext";
-// import { Toaster } from "sonner";
+import { WalletProvider } from "@/context/WalletContext";
+import { Toaster } from "sonner";
 
 
 export const dynamic = 'force-dynamic'; // Needed to access request headers per request
@@ -83,8 +83,14 @@ export default async function RootLayout({
       >
         {/* Provide CSP nonce via React context */}
         <NonceProvider nonce={nonce}>
-          {/* <WalletProvider> */}
-            {/* <Toaster richColors position="top-right" /> */}
+          <WalletProvider>
+            <Toaster
+              position="top-right"
+              richColors={false} // ❌ disable rich colors (prevents runtime <style>)
+              closeButton
+              theme="dark" // or "system", depending on your UI
+            />
+
             {/* Header is outside flex wrapper for consistent layout */}
             {/* <Header /> */}
 
@@ -100,7 +106,7 @@ export default async function RootLayout({
 
             {/* Footer for site info and links */}
             <Footer />
-          {/* </WalletProvider> */}
+          </WalletProvider>
         </NonceProvider>
       </body>
     </html>
