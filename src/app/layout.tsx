@@ -4,11 +4,11 @@ import type { Metadata } from "next";
 import './globals.css'; // Tailwind CSS output file
 
 // import Header from '@/components/header/Header';
-import Footer from '@/components/Footer';
+// import Footer from '@/components/Footer';
 // import Sidebar from '@/components/Sidebar';
 import { headers } from 'next/headers';
 import { NonceProvider } from "@/context/NonceProvider";
-import { QueryProvider } from "./providers/query-provider";
+// import { QueryProvider } from "./providers/query-provider";
 import { WalletProvider } from "@/context/WalletContext";
 // import { Toaster } from "sonner";
 
@@ -94,12 +94,13 @@ export default async function RootLayout({
 
               {/* Main content area with React Query provider */}
               <main className="flex-1 min-w-0">
-                  <QueryProvider>{children}</QueryProvider>
+                  {/* <QueryProvider>{children}</QueryProvider> */}
+                  {children}
               </main>
             </div>
 
             {/* Footer for site info and links */}
-            <Footer />
+            {/* <Footer /> */}
           </WalletProvider>
         </NonceProvider>
       </body>
