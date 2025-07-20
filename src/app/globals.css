@@ -9,7 +9,7 @@
 /* Light and Dark Theme Variables */
 :root {
 
-  --kaspa-green: '#36f2b0';
+  --kaspa-green: #36f2b0;
   --kaspaGreen: #70C7BA;
   --kaspaGreenLight: #49EACB;
   --kaspaDark: #231F20;
@@ -340,11 +340,3 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-/* @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-} */
