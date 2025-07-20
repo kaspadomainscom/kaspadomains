@@ -1,6 +1,9 @@
 // tailwind.config.ts
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  experimental: {
+    optimizeUniversalDefaults: true,
+  },
   content: [
     "./src/**/*.{js,ts,jsx,tsx}", // adjust according to your project structure
     "./app/**/*.{js,ts,jsx,tsx}"

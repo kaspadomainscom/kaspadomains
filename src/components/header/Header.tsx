@@ -38,7 +38,7 @@ function ConnectButton() {
 
   const handleConnect = async (type: 'kasware' | 'metamask') => {
     try {
-      setConnectError(null); // clear previous errors
+      setConnectError(null);
       if (type === 'kasware' && !kasware.account) await kasware.connect();
       if (type === 'metamask' && !metamask.account) await metamask.connect();
     } catch (error) {
@@ -187,7 +187,6 @@ function MobileMenu({
           href={href}
           onClick={onClose}
           className="block px-2 py-2 rounded-md text-white/90 hover:text-white"
-          aria-current={href === undefined ? undefined : undefined /* You can add active state here */}
         >
           {label}
         </Link>
