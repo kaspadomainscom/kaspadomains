@@ -3,14 +3,14 @@
 import type { Metadata } from "next";
 import './globals.css'; // Tailwind CSS output file
 
-import Header from '@/components/header/Header';
+// import Header from '@/components/header/Header';
 import Footer from '@/components/Footer';
 // import Sidebar from '@/components/Sidebar';
 import { headers } from 'next/headers';
 import { NonceProvider } from "@/context/NonceProvider";
 import { QueryProvider } from "./providers/query-provider";
 import { WalletProvider } from "@/context/WalletContext";
-import { Toaster } from "sonner";
+// import { Toaster } from "sonner";
 
 
 export const dynamic = 'force-dynamic'; // Needed to access request headers per request
@@ -84,9 +84,9 @@ export default async function RootLayout({
         {/* Provide CSP nonce via React context */}
         <NonceProvider nonce={nonce}>
           <WalletProvider>
-            <Toaster richColors position="top-right" />
+            {/* <Toaster richColors position="top-right" /> */}
             {/* Header is outside flex wrapper for consistent layout */}
-            <Header />
+            {/* <Header /> */}
 
             <div className="flex flex-col md:flex-row min-h-screen">
               {/* Sidebar for navigation or filters */}
