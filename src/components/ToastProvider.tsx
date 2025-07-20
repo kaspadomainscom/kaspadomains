@@ -1,19 +1,20 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 
 type ToastType = 'success' | 'error' | 'info';
 
 interface Toast {
-  id: number;
+  id: string;
   message: string;
   type: ToastType;
+  duration: number; // in ms
 }
 
 interface ToastContextValue {
   toasts: Toast[];
-  addToast: (message: string, type?: ToastType) => void;
-  removeToast: (id: number) => void;
+  addToast: (message: string, type?: ToastType, duration?: number) => void;
+  removeToast: (id: string) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
@@ -21,31 +22,58 @@ const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const removeToast = useCallback((id: number) => {
+  const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
-  const addToast = useCallback((message: string, type: ToastType = 'info') => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => removeToast(id), 3000);
-  }, [removeToast]);
+  const addToast = useCallback(
+    (message: string, type: ToastType = 'info', duration = 3000) => {
+      const id = crypto.randomUUID();
+      setToasts((prev) => {
+        const newToasts = [...prev, { id, message, type, duration }];
+        // Limit max toasts to 5
+        return newToasts.length > 5 ? newToasts.slice(1) : newToasts;
+      });
+    },
+    []
+  );
+
+  // Handle auto-remove for each toast with cleanup
+  useEffect(() => {
+    if (toasts.length === 0) return;
+
+    const timers = toasts.map(({ id, duration }) =>
+      setTimeout(() => removeToast(id), duration)
+    );
+
+    return () => {
+      timers.forEach(clearTimeout);
+    };
+  }, [toasts, removeToast]);
+
+  const value = useMemo(() => ({ toasts, addToast, removeToast }), [toasts, addToast, removeToast]);
 
   return (
-    <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
+    <ToastContext.Provider value={value}>
       {children}
-      {/* Toast container */}
       <div className="fixed top-5 right-5 flex flex-col gap-2 z-[9999]">
         {toasts.map(({ id, message, type }) => (
           <div
             key={id}
-            className={`rounded-md px-4 py-2 shadow-md text-white ${
-              type === 'success' ? 'bg-green-500' :
-              type === 'error' ? 'bg-red-600' :
-              'bg-blue-600'
+            role="alert"
+            aria-live="assertive"
+            className={`rounded-md px-4 py-2 shadow-md text-white flex items-center justify-between gap-4 ${
+              type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-600' : 'bg-blue-600'
             }`}
           >
-            {message}
+            <span>{message}</span>
+            <button
+              aria-label="Dismiss notification"
+              onClick={() => removeToast(id)}
+              className="text-white font-bold focus:outline-none focus:ring-2 focus:ring-white rounded"
+            >
+              ×
+            </button>
           </div>
         ))}
       </div>
@@ -55,12 +83,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
 export function useToast() {
   const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-  return {
-    addToast: context.addToast,
-    removeToast: context.removeToast,
-    toasts: context.toasts,
-  };
+  if (!context) throw new Error('useToast must be used within a ToastProvider');
+  return context;
 }
