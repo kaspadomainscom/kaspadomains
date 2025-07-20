@@ -3,9 +3,9 @@
 import type { Metadata } from "next";
 import './globals.css'; // Tailwind CSS output file
 
-// import Header from '@/components/header/Header';
+import Header from '@/components/header/Header';
 import Footer from '@/components/Footer';
-import Sidebar from '@/components/Sidebar';
+// import Sidebar from '@/components/Sidebar';
 import { headers } from 'next/headers';
 import { NonceProvider } from "@/context/NonceProvider";
 import { QueryProvider } from "./providers/query-provider";
@@ -86,11 +86,11 @@ export default async function RootLayout({
           <WalletProvider>
             <Toaster richColors position="top-right" />
             {/* Header is outside flex wrapper for consistent layout */}
-            {/* <Header /> */}
+            <Header />
 
             <div className="flex flex-col md:flex-row min-h-screen">
               {/* Sidebar for navigation or filters */}
-              <Sidebar />
+              {/* <Sidebar /> */}
 
               {/* Main content area with React Query provider */}
               <main className="flex-1 min-w-0">
