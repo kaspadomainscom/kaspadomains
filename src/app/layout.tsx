@@ -2,7 +2,6 @@
 
 import type { Metadata } from "next";
 import './globals.css'; // Tailwind CSS output file
-import 'react-hot-toast'; // Automatically registers styles for react-hot-toast
 
 // import Header from '@/components/header/Header';
 import Footer from '@/components/Footer';
@@ -11,21 +10,30 @@ import { headers } from 'next/headers';
 import { NonceProvider } from "@/context/NonceProvider";
 import { QueryProvider } from "./providers/query-provider";
 import { WalletProvider } from "@/context/WalletContext";
-import { Toaster } from 'react-hot-toast';
-import { GooberNonceProvider } from "@/lib/gooberSetup";
+import { ToastProvider } from '@/components/ToastProvider'; // <-- import your ToastProvider
+
+
+
 
 export const dynamic = 'force-dynamic'; // Needed to access request headers per request
 
+
 export const metadata: Metadata = {
   title: "Kaspadomains – Explore the Kaspa Name System",
-  description: "Explore and learn about KNS domains on the Kaspa blockchain. Search domain names, check availability, and understand ownership via kaspadomains.com.",
+
+  description:
+    "Explore and learn about KNS domains on the Kaspa blockchain. Search domain names, check availability, and understand ownership via kaspadomains.com.",
+
   icons: {
     icon: "/favicon.ico",
   },
+
   metadataBase: new URL("https://kaspadomains.com"),
+
   alternates: {
     canonical: "https://kaspadomains.com",
   },
+
   openGraph: {
     title: "Kaspadomains – Explore the Kaspa Name System",
     description: "Discover available KNS domains and learn how Kaspa Name Service works.",
@@ -41,6 +49,7 @@ export const metadata: Metadata = {
       },
     ],
   },
+
   twitter: {
     card: "summary_large_image",
     title: "Kaspadomains",
@@ -48,6 +57,7 @@ export const metadata: Metadata = {
     images: ["https://kaspadomains.com/twitter-image.png"],
     creator: "@yourTwitterHandle", // replace if available
   },
+
   robots: {
     index: true,
     follow: true,
@@ -73,11 +83,12 @@ export default async function RootLayout({
       <body
         className="antialiased bg-kaspaGreenLight text-gray-900 selection:bg-kaspaMint selection:text-black"
       >
-        {/* Provide CSP nonce to Goober and your app */}
-        <GooberNonceProvider nonce={nonce}>
-          <NonceProvider nonce={nonce}>
-            <WalletProvider>
-              <Toaster position="top-right" />
+        {/* Provide CSP nonce via React context */}
+        <NonceProvider nonce={nonce}>
+          <WalletProvider>
+            <ToastProvider>
+              {/* ... your app content ... */}
+              {/* <Toaster position="top-right" /> */}
 
               {/* Header is outside flex wrapper for consistent layout */}
               {/* <Header /> */}
@@ -94,9 +105,11 @@ export default async function RootLayout({
 
               {/* Footer for site info and links */}
               <Footer />
-            </WalletProvider>
-          </NonceProvider>
-        </GooberNonceProvider>
+            </ToastProvider>
+
+          </WalletProvider>
+        </NonceProvider>
+
       </body>
     </html>
   );

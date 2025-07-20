@@ -6,7 +6,7 @@ import { kasplexClient } from '@/lib/viemClient';
 import { parseEther, createWalletClient, custom } from 'viem';
 import { kasplexTestnet } from '@/lib/viemChains';
 import { useMetamaskWallet } from '@/hooks/wallet/internal/useMetamaskWallet';
-import { toast } from 'react-hot-toast';
+import { useToast } from '@/components/ToastProvider';
 
 type EthereumProvider = typeof window.ethereum;
 type EthereumProviderWithMetaMask = EthereumProvider & {
@@ -58,10 +58,11 @@ export function useListDomain() {
   const isSubmitting = useRef(false);
 
   const { account, connect } = useMetamaskWallet();
+  const { addToast } = useToast();
 
   const listDomain = async (domain: string) => {
     if (isSubmitting.current) {
-      toast('Transaction already in progress, please wait.', { icon: '⏳' });
+      addToast('Transaction already in progress. Please wait.');
       return;
     }
 
@@ -69,7 +70,7 @@ export function useListDomain() {
     setTxHash(null);
 
     if (!domain || !domain.endsWith('.kas') || domain.length < 5) {
-      toast.error('Invalid domain. Must end with ".kas" and be at least 5 characters.');
+      addToast('Invalid domain. Must end with ".kas" and be at least 5 characters.', 'error');
       return;
     }
 
@@ -84,13 +85,13 @@ export function useListDomain() {
 
       const walletClient = createMetaMaskClient(account as `0x${string}`);
 
-      toast.loading(`Preparing to list "${domain}"...`, { id: 'listDomain' });
+      addToast(`Preparing to list "${domain}"...`);
 
       let lastError: unknown = null;
 
       for (let attempt = 1; attempt <= RETRY_LIMIT; attempt++) {
         try {
-          toast.loading(`Listing "${domain}"... (attempt ${attempt})`, { id: 'listDomain' });
+          addToast(`Listing "${domain}"... (Attempt ${attempt})`);
 
           const hash = await walletClient.writeContract({
             address: contracts.KaspaDomainsRegistry.address,
@@ -104,10 +105,10 @@ export function useListDomain() {
           setTxHash(hash);
           console.log(`[MetaMask] Transaction hash (attempt ${attempt}):`, hash);
 
-          toast.loading(`Waiting for confirmation...`, { id: 'listDomain' });
+          addToast(`Waiting for confirmation...`);
           await kasplexClient.waitForTransactionReceipt({ hash });
 
-          toast.success(`"${domain}" listed successfully!`, { id: 'listDomain' });
+          addToast(`"${domain}" listed successfully!`, 'success');
           lastError = null;
           break;
 
@@ -116,11 +117,7 @@ export function useListDomain() {
           console.error(`[MetaMask] Attempt ${attempt} failed:`, err);
 
           if (attempt < RETRY_LIMIT) {
-            // toast(`⚠️ Attempt ${attempt} failed, retrying...`, { id: 'listDomain' });
-            toast(`Attempt ${attempt} failed, retrying...`, {
-              icon: '⚠️',
-              id: 'listDomain',
-            });
+            addToast(`Attempt ${attempt} failed. Retrying...`, 'info');
             await delay(RETRY_DELAY_MS);
           } else {
             throw err;
@@ -134,7 +131,7 @@ export function useListDomain() {
 
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong.';
-      toast.error(msg, { id: 'listDomain' });
+      addToast(msg, 'error');
       setError(msg);
     } finally {
       isSubmitting.current = false;
