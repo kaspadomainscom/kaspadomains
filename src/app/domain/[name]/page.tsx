@@ -8,6 +8,7 @@ import { DomainBreadcrumb } from "@/components/pages/domain/DomainBreadcrumb";
 import { DomainTitleSection } from "@/components/pages/domain/DomainTitleSection";
 import { DomainInfoPanel } from "@/components/pages/domain/DomainInfoPanel";
 import { DomainOwnerBio } from "@/components/pages/domain/DomainOwnerBio";
+import { VotingSection } from "@/components/pages/domain/VotingSection";
 
 type StaticParam = { name: string };
 
@@ -45,7 +46,8 @@ export async function generateMetadata({
 
   const category = findCategoryTitleByDomainName(domain.name) ?? "Unknown";
 
-  const description = `Buy ${domain.name}, a premium KNS domain listed in the ${category} category.` +
+  const description =
+    `Buy ${domain.name}, a premium KNS domain listed in the ${category} category.` +
     (domain.ownerBio ? ` ${domain.ownerBio.slice(0, 160)}` : "");
 
   return {
@@ -94,6 +96,9 @@ export default async function DomainPage({
       <DomainTitleSection domainName={domain.name} category={category} />
       <DomainInfoPanel domain={domain} category={category} />
       {domain.ownerBio && <DomainOwnerBio bio={domain.ownerBio} />}
+
+      {/* VotingSection is a client component */}
+      <VotingSection domainName={domain.name} />
     </main>
   );
 }
