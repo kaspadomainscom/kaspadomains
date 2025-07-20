@@ -6,7 +6,7 @@ import { kasplexClient } from '@/lib/viemClient';
 import { parseEther, createWalletClient, custom } from 'viem';
 import { kasplexTestnet } from '@/lib/viemChains';
 import { useMetamaskWallet } from '@/hooks/wallet/internal/useMetamaskWallet';
-import { toast } from 'sonner';
+import { toast } from 'react-hot-toast';
 
 type EthereumProvider = typeof window.ethereum;
 type EthereumProviderWithMetaMask = EthereumProvider & {
@@ -61,7 +61,7 @@ export function useListDomain() {
 
   const listDomain = async (domain: string) => {
     if (isSubmitting.current) {
-      toast.info('Transaction already in progress, please wait.');
+      toast('Transaction already in progress, please wait.', { icon: '⏳' });
       return;
     }
 
@@ -84,13 +84,13 @@ export function useListDomain() {
 
       const walletClient = createMetaMaskClient(account as `0x${string}`);
 
-      toast.message(`Preparing to list "${domain}"...`);
+      toast.loading(`Preparing to list "${domain}"...`, { id: 'listDomain' });
 
       let lastError: unknown = null;
 
       for (let attempt = 1; attempt <= RETRY_LIMIT; attempt++) {
         try {
-          toast.message(`Listing "${domain}"... (attempt ${attempt})`);
+          toast.loading(`Listing "${domain}"... (attempt ${attempt})`, { id: 'listDomain' });
 
           const hash = await walletClient.writeContract({
             address: contracts.KaspaDomainsRegistry.address,
@@ -104,10 +104,10 @@ export function useListDomain() {
           setTxHash(hash);
           console.log(`[MetaMask] Transaction hash (attempt ${attempt}):`, hash);
 
-          toast.message(`Waiting for confirmation...`);
+          toast.loading(`Waiting for confirmation...`, { id: 'listDomain' });
           await kasplexClient.waitForTransactionReceipt({ hash });
 
-          toast.success(`"${domain}" listed successfully!`);
+          toast.success(`"${domain}" listed successfully!`, { id: 'listDomain' });
           lastError = null;
           break;
 
@@ -116,7 +116,11 @@ export function useListDomain() {
           console.error(`[MetaMask] Attempt ${attempt} failed:`, err);
 
           if (attempt < RETRY_LIMIT) {
-            toast.warning(`Attempt ${attempt} failed, retrying...`);
+            // toast(`⚠️ Attempt ${attempt} failed, retrying...`, { id: 'listDomain' });
+            toast(`Attempt ${attempt} failed, retrying...`, {
+              icon: '⚠️',
+              id: 'listDomain',
+            });
             await delay(RETRY_DELAY_MS);
           } else {
             throw err;
@@ -130,7 +134,7 @@ export function useListDomain() {
 
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong.';
-      toast.error(msg);
+      toast.error(msg, { id: 'listDomain' });
       setError(msg);
     } finally {
       isSubmitting.current = false;

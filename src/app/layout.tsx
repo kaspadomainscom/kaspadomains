@@ -2,6 +2,7 @@
 
 import type { Metadata } from "next";
 import './globals.css'; // Tailwind CSS output file
+import 'react-hot-toast'; // ✅ Correct: automatically registers styles
 
 // import Header from '@/components/header/Header';
 import Footer from '@/components/Footer';
@@ -10,7 +11,8 @@ import { headers } from 'next/headers';
 import { NonceProvider } from "@/context/NonceProvider";
 import { QueryProvider } from "./providers/query-provider";
 import { WalletProvider } from "@/context/WalletContext";
-import { Toaster } from "sonner";
+import { Toaster } from 'react-hot-toast';
+
 
 
 export const dynamic = 'force-dynamic'; // Needed to access request headers per request
@@ -84,12 +86,8 @@ export default async function RootLayout({
         {/* Provide CSP nonce via React context */}
         <NonceProvider nonce={nonce}>
           <WalletProvider>
-            <Toaster
-              position="top-right"
-              richColors={false} // ❌ disable rich colors (prevents runtime <style>)
-              closeButton
-              theme="dark" // or "system", depending on your UI
-            />
+            <Toaster position="top-right" />
+
 
             {/* Header is outside flex wrapper for consistent layout */}
             {/* <Header /> */}
