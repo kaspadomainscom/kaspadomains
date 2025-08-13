@@ -10,11 +10,6 @@
 				"internalType": "address",
 				"name": "_registry",
 				"type": "address"
-			},
-			{
-				"internalType": "bytes32[]",
-				"name": "initialAllowedCategories",
-				"type": "bytes32[]"
 			}
 		],
 		"stateMutability": "nonpayable",
@@ -108,6 +103,19 @@
 	},
 	{
 		"inputs": [],
+		"name": "MAX_ALLOWED_CATEGORIES",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "MAX_CATEGORIES",
 		"outputs": [
 			{
@@ -117,6 +125,19 @@
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32[]",
+				"name": "categories",
+				"type": "bytes32[]"
+			}
+		],
+		"name": "addAllowedCategories",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -364,7 +385,7 @@
 		"outputs": [
 			{
 				"internalType": "bytes32",
-				"name": "result",
+				"name": "",
 				"type": "bytes32"
 			}
 		],

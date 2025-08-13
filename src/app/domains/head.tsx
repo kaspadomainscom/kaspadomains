@@ -1,25 +1,25 @@
+// src/app/domains/head.tsx
 import { headers } from "next/headers";
-import { categoriesData } from "@/data/categoriesManifest";
+import { loadCategoriesManifest } from "@/data/categoriesManifest";
 export const dynamic = 'force-dynamic';
 
 export default async function Head() {
-  
-  const headersList = await headers();
 
+    const headersList = await headers();
   const nonce = headersList.get("x-csp-nonce");
- 
-  const allListedDomains = Object.entries(categoriesData).flatMap(
-    ([categoryKey, { title, domains }]) =>
-      domains
-        .filter((d) => d.listed)
-        .map((d, index) => ({
-          "@type": "ListItem",
-          position: index + 1,
-          url: `https://kaspadomains.com/domain/${d.name}`,
-          name: `${d.name}.kas`,
-          categoryKey,
-          title,
-        }))
+
+  // Load categories manifest asynchronously
+  const categoriesData = await loadCategoriesManifest();
+
+  const allListedDomains = Object.values(categoriesData).flatMap(({ domains }) =>
+    domains
+      .filter((d) => d.isActive)
+      .map((d, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: `https://kaspadomains.com/domain/${d.name}`,
+        name: d.name.endsWith(".kas") ? d.name : `${d.name}.kas`,
+      }))
   );
 
   const jsonLd = {
@@ -31,7 +31,7 @@ export default async function Head() {
 
   return (
     <>
-      <title>Premium Kaspa Domains Marketplace | Kaspadomains</title>
+      <title>Premium Kaspa Domains Marketplace | KaspaDomains</title>
       <meta
         name="description"
         content="Discover and purchase premium .kas domains categorized by niche. Each listing is curated for uniqueness and value within the Kaspa ecosystem."

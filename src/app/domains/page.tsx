@@ -1,34 +1,93 @@
-// src/app/domains/page.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { Domain } from '@/data/types';
-import { loadDynamicCategoryPage } from '@/data/DynamicCategoriesManifest';
+import { loadCategoriesManifest, CategoryManifest } from '@/data/categoriesManifest'; // fix import as needed
 
 const ITEMS_PER_PAGE = 20;
 
+interface DomainWithUI extends Domain {
+  category: string;
+  price?: number;
+  listed?: boolean;
+  kaspaLink?: string;
+}
+
+// Wrapper to add category & pagination support client-side
+async function loadCategoriesManifestForCategory(
+  selectedCategory: string,
+  currentPage: number,
+  pageSize = ITEMS_PER_PAGE
+): Promise<CategoryManifest> {
+  // Load full manifest once
+  const fullManifest = await loadCategoriesManifest();
+
+  // If all categories selected, just paginate all domains across all categories
+  if (selectedCategory === 'all') {
+    // Flatten all domains with their categories
+    const allDomains: DomainWithUI[] = Object.entries(fullManifest).flatMap(([category, { domains }]) =>
+      domains.map((domain) => ({ ...domain, category }))
+    );
+
+    // Paginate allDomains client-side
+    const start = (currentPage - 1) * pageSize;
+    const pagedDomains = allDomains.slice(start, start + pageSize);
+
+    return {
+      all: {
+        title: 'All Categories',
+        domains: pagedDomains,
+      },
+    };
+  }
+
+  // Otherwise, paginate just the selected category domains
+  const categoryData = fullManifest[selectedCategory];
+  if (!categoryData) {
+    return {};
+  }
+
+  const start = (currentPage - 1) * pageSize;
+  const pagedDomains = categoryData.domains.slice(start, start + pageSize);
+
+  return {
+    [selectedCategory]: {
+      title: categoryData.title,
+      domains: pagedDomains,
+    },
+  };
+}
+
 export default function DomainPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [categoryMap, setCategoryMap] = useState<Record<string, { title: string; domains: Domain[] }>>({});
+  const [categoryMap, setCategoryMap] = useState<CategoryManifest>({});
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Load category data on category or page change
   useEffect(() => {
     async function fetchCategories() {
       setLoading(true);
       try {
-        const manifest = await loadDynamicCategoryPage(selectedCategory, currentPage);
+        const manifest = await loadCategoriesManifestForCategory(selectedCategory, currentPage, ITEMS_PER_PAGE);
+
         setCategoryMap(manifest);
 
-        const domainsCount = selectedCategory === 'all'
-          ? Object.values(manifest).reduce((acc, val) => acc + val.domains.length, 0)
-          : manifest[selectedCategory]?.domains.length ?? 0;
+        // Calculate total domain count for pagination
+        let domainsCount: number;
+        if (selectedCategory === 'all') {
+          // Sum domains counts from all categories in full manifest (needs fullManifest)
+          // To avoid double loading, just estimate total pages from fullManifest loaded once
+          const fullManifest = await loadCategoriesManifest();
+          domainsCount = Object.values(fullManifest).reduce((acc, val) => acc + val.domains.length, 0);
+        } else {
+          const fullManifest = await loadCategoriesManifest();
+          domainsCount = fullManifest[selectedCategory]?.domains.length ?? 0;
+        }
 
         setTotalPages(Math.max(1, Math.ceil(domainsCount / ITEMS_PER_PAGE)));
       } catch (err) {
-        console.error('Failed to load dynamic categories:', err);
+        console.error('Failed to load categories manifest:', err);
         setCategoryMap({});
         setTotalPages(1);
       } finally {
@@ -38,54 +97,65 @@ export default function DomainPage() {
     fetchCategories();
   }, [selectedCategory, currentPage]);
 
-  // Reset page when category changes
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedCategory]);
 
-  // Flatten all domains for "all" filter
-  const allDomains: (Domain & { category: string })[] = Object.entries(categoryMap).flatMap(
-    ([category, { domains }]) =>
-      domains.map((domain) => ({
-        ...domain,
-        category,
-      }))
-  );
+  // Removed unused allDomains variable here
 
-  // Filter domains based on selected category
-  const filteredDomains =
+  // For 'all', domains are under key 'all', else under selectedCategory key
+  const filteredDomains: DomainWithUI[] =
     selectedCategory === 'all'
-      ? allDomains
-      : categoryMap[selectedCategory]?.domains.map((d) => ({ ...d, category: selectedCategory })) ?? [];
+      ? categoryMap['all']?.domains.map((d) => ({
+          ...d,
+          category: 'all',
+          price: (d as unknown as { price?: number })?.price ?? 0,
+          listed: (d as unknown as { listed?: boolean })?.listed ?? false,
+          kaspaLink: (d as unknown as { kaspaLink?: string })?.kaspaLink ?? '#',
+        })) ?? []
+      : categoryMap[selectedCategory]?.domains.map((d) => ({
+          ...d,
+          category: selectedCategory,
+          price: (d as unknown as { price?: number })?.price ?? 0,
+          listed: (d as unknown as { listed?: boolean })?.listed ?? false,
+          kaspaLink: (d as unknown as { kaspaLink?: string })?.kaspaLink ?? '#',
+        })) ?? [];
 
-  // For now, manifest returns paged domains already, so just use filteredDomains as paginatedDomains
   const paginatedDomains = filteredDomains;
 
-  const categories = Object.entries(categoryMap).map(([key, { title }]) => ({
-    key,
-    title,
-  }));
+  // For category buttons, get full categories list from full manifest
+  // We load full manifest once and cache in state (optional)
+  // Here we use keys from full loaded categories for buttons
+  const [allCategories, setAllCategories] = useState<{ key: string; title: string }[]>([]);
+
+  useEffect(() => {
+    async function fetchAllCategories() {
+      try {
+        const fullManifest = await loadCategoriesManifest();
+        const cats = Object.entries(fullManifest).map(([key, { title }]) => ({ key, title }));
+        setAllCategories(cats);
+      } catch {
+        setAllCategories([]);
+      }
+    }
+    fetchAllCategories();
+  }, []);
 
   const totalDomainsListed = filteredDomains.length;
 
   return (
     <section className="max-w-7xl mx-auto px-6 py-12 space-y-16">
       <header className="space-y-6 max-w-3xl mx-auto text-center">
-        <h1 className="text-5xl font-extrabold text-kaspaDark tracking-tight">
-          kaspadomains Market
-        </h1>
+        <h1 className="text-5xl font-extrabold text-kaspaDark tracking-tight">kaspadomains Market</h1>
         <p className="text-lg text-gray-700 leading-relaxed">
-          Welcome to the <strong>kaspadomains premium domain marketplace</strong> – a curated
-          platform showcasing only the most unique and valuable domains in the Kaspa ecosystem.
+          Welcome to the <strong>kaspadomains premium domain marketplace</strong> – a curated platform showcasing only the most unique and valuable domains in the Kaspa ecosystem.
         </p>
         <p className="text-lg text-gray-700 leading-relaxed">
-          Each domain listed is carefully categorized — from <strong>Clubs</strong> to{' '}
-          <strong>Characters</strong> to <strong>Trending Memes</strong>. A{' '}
-          <strong>287 KAS listing fee</strong> ensures only high-quality domains appear here.
+          Each domain listed is carefully categorized — from <strong>Clubs</strong> to <strong>Characters</strong> to <strong>Trending Memes</strong>. A <strong>287 KAS listing fee</strong> ensures only high-quality domains appear here.
         </p>
         <p className="text-lg font-semibold text-kaspaDark">
           {totalDomainsListed.toLocaleString()} domains listed in{' '}
-          {selectedCategory === 'all' ? 'all categories' : categories.find(c => c.key === selectedCategory)?.title}
+          {selectedCategory === 'all' ? 'all categories' : allCategories.find((c) => c.key === selectedCategory)?.title}
         </p>
       </header>
 
@@ -102,7 +172,7 @@ export default function DomainPage() {
           >
             All
           </button>
-          {categories.map(({ key, title }) => (
+          {allCategories.map(({ key, title }) => (
             <button
               key={key}
               onClick={() => setSelectedCategory(key)}
@@ -134,7 +204,7 @@ export default function DomainPage() {
             onChange={(e) => setSelectedCategory(e.target.value)}
           >
             <option value="all">All Categories</option>
-            {categories.map(({ key, title }) => (
+            {allCategories.map(({ key, title }) => (
               <option key={key} value={key}>
                 {title}
               </option>
@@ -171,7 +241,7 @@ export default function DomainPage() {
               paginatedDomains.map((d) => (
                 <tr key={d.name} className="hover:bg-kaspaGreen/10 cursor-pointer">
                   <td className="px-6 py-4 font-medium text-kaspaDark">{d.name}</td>
-                  <td className="px-6 py-4 text-gray-700">{categoryMap[d.category]?.title}</td>
+                  <td className="px-6 py-4 text-gray-700">{categoryMap[d.category]?.title || d.category}</td>
                   <td className="px-6 py-4 text-gray-900 font-semibold">{(d.price ?? 0).toLocaleString()} KAS</td>
                   <td className="px-6 py-4">
                     <span
@@ -203,7 +273,6 @@ export default function DomainPage() {
         </table>
       </div>
 
-      {/* Pagination */}
       {!loading && totalPages > 1 && (
         <div className="flex justify-center gap-2 pt-10">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (

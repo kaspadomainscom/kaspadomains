@@ -1,11 +1,14 @@
-'use client';
+// src/app/domains/my-domains/page.tsx
+"use client";
 
 import { useEffect, useState, useMemo } from 'react';
 import { useWalletContext } from '@/context/WalletContext';
 import { usePaginatedDomains } from '@/hooks/kns/api/usePaginatedDomains';
 import { DomainCard } from '@/components/DomainCard';
 import Loader from '@/components/Loader';
+import { Domain } from '@/data/types';
 
+// Original DomainAsset type from API
 export interface DomainAsset {
   id: string;
   assetId: string;
@@ -25,21 +28,18 @@ export interface DomainAsset {
   };
 }
 
-interface Domain {
-  name: string;
-  price: number;
-  listed: boolean;
-  kaspaLink: string;
-  sellerTelegram?: string;
-}
-
+// Convert DomainAsset to Domain
 function mapDomainAssetToDomain(asset: DomainAsset): Domain {
   return {
+    id: Number(asset.id),
+    domainHash: BigInt(asset.assetId), // Assuming assetId is convertible to bigint
     name: asset.asset,
-    price: 0, // Placeholder; update if you have price info
-    listed: !!asset.listed,
-    kaspaLink: `https://kaspa.com/asset/${encodeURIComponent(asset.asset)}`,
-    sellerTelegram: undefined,
+    owner: asset.owner,
+    createdAt: asset.creationBlockTime
+      ? Math.floor(new Date(asset.creationBlockTime).getTime() / 1000)
+      : 0,
+    isActive: asset.listed !== undefined && asset.listed !== null,
+    feePaid: "0", // You can update if you have fee info
   };
 }
 
@@ -116,15 +116,18 @@ export default function MyDomainsPage() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
-        {domains.map((domain) => {
-          const key = domain.asset || domain.id || crypto.randomUUID();
+        {domains.map((domainAsset) => {
+          const key = domainAsset.asset || domainAsset.id || crypto.randomUUID();
 
-          if (!domain.asset) {
-            console.warn('[MyDomainsPage] Domain missing asset field:', domain);
+          if (!domainAsset.asset) {
+            console.warn('[MyDomainsPage] Domain missing asset field:', domainAsset);
             return null;
           }
 
-          return <DomainCard key={key} domain={mapDomainAssetToDomain(domain)} />;
+          // Map DomainAsset to Domain
+          const domain = mapDomainAssetToDomain(domainAsset);
+
+          return <DomainCard key={key} domain={domain} />;
         })}
       </div>
 

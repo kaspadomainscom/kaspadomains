@@ -3,7 +3,7 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_paymentsMinter",
+				"name": "_domainVotesManager",
 				"type": "address"
 			}
 		],
@@ -133,7 +133,7 @@
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "currentReward",
+				"name": "rewardAmount",
 				"type": "uint256"
 			},
 			{
@@ -347,6 +347,11 @@
 			{
 				"internalType": "address",
 				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "domainOwner",
 				"type": "address"
 			}
 		],

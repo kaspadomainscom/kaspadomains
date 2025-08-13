@@ -19,8 +19,8 @@ export function VotingSection({ domainName }: { domainName: string }) {
     const [loadingVoters, setLoadingVoters] = useState(false);
     const [txPending, setTxPending] = useState(false);
 
-    const YOUR_CONTRACT_ADDRESS = contracts.DomainLikesManager.address;
-    const YOUR_CONTRACT_ABI = contracts.DomainLikesManager.abi as JsonFragment[];
+    const YOUR_CONTRACT_ADDRESS = contracts.DomainVotesManager.address;
+    const YOUR_CONTRACT_ABI = contracts.DomainVotesManager.abi as JsonFragment[];
 
     // Initialize contract when signer changes
     useEffect(() => {

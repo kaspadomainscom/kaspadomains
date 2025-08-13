@@ -1,6 +1,6 @@
 // src/app/page.tsx
 import Link from "next/link";
-import { categoriesData } from "@/data/categoriesManifest";
+import { loadCategoriesManifest, type CategoryManifest } from "@/data/categoriesManifest";
 
 const previewDomains = [
   { name: "wallet.kas", likes: 234, price: 420 },
@@ -30,7 +30,16 @@ export const metadata = {
   },
 };
 
-export default function Home() {
+export default async function Home() {
+  // Load categories manifest asynchronously
+  let categoriesData: CategoryManifest = {};
+  try {
+    categoriesData = await loadCategoriesManifest();
+  } catch (e) {
+    console.error("Failed to load categories manifest", e);
+    // fallback to empty object so UI still renders
+  }
+
   return (
     <main className="space-y-28 bg-[#0E1E25] text-gray-100 min-h-screen">
       {/* Hero Section */}

@@ -3,8 +3,8 @@ import { useCallback } from 'react';
 import { contracts } from '@/lib/contracts';
 import type { PublicClient, Abi } from 'viem';
 
-const abi = contracts.DomainLikesManager.abi as Abi;
-const address = contracts.DomainLikesManager.address;
+const abi = contracts.DomainVotesManager.abi as Abi;
+const address = contracts.DomainVotesManager.address;
 
 export function useDomainLikes(client: PublicClient) {
   const getDomainLikeCount = useCallback(

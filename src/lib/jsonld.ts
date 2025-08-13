@@ -1,5 +1,4 @@
 // src/lib/jsonld.ts
-import { categoriesData } from "@/data/categoriesManifest";
 
 export type DomainJsonLdInput = {
   name: string;
@@ -90,10 +89,14 @@ export function getDomainJsonLd({
   };
 }
 
-export function getItemListJsonLd(limit = 6): ItemListJsonLd {
+import { loadCategoriesManifest } from "@/data/categoriesManifest"; // import the async loader
+
+export async function getItemListJsonLd(limit = 6): Promise<ItemListJsonLd> {
+  const categoriesData = await loadCategoriesManifest();
+
   const recentDomains = Object.values(categoriesData)
     .flatMap((cat) => cat.domains)
-    .filter((d) => d.listed)
+    .filter((d) => d.isActive)
     .slice(0, limit);
 
   return {
@@ -109,3 +112,4 @@ export function getItemListJsonLd(limit = 6): ItemListJsonLd {
     })),
   };
 }
+

@@ -21,7 +21,7 @@
 
 
 // // Define the expected method signatures
-// type DomainLikesManagerMethods = {
+// type DomainVotesManagerMethods = {
 //   likeDomain(domain: string, overrides: { value: bigint }): Promise<ContractTransactionResponse>;
 //   getDomainLikeCount(domain: string): Promise<bigint>;
 //   getAddressLikeCount(user: string): Promise<bigint>;
@@ -52,15 +52,15 @@
 
 
 
-// export function useDomainLikes(provider: Provider, signer?: Signer) {
+// export function useDomainVotesManager(provider: Provider, signer?: Signer) {
     
 //     const contract = useMemo(() => {
 //         if (!provider) return null;
 //         return new Contract(
 //         DOMAIN_LIKES_MANAGER_ADDRESS,
-//         contracts.DomainLikesManager.abi,
+//         contracts.DomainVotesManager.abi,
 //         signer ?? provider
-//         ) as unknown as DomainLikesManagerMethods;
+//         ) as unknown as DomainVotesManagerMethods;
 //     }, [provider, signer]);
 
 //     const likeDomain = useCallback(

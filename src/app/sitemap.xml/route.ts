@@ -1,6 +1,6 @@
 // src/app/sitemap.xml/route.ts
 
-import { categoriesData } from "@/data/categoriesManifest";
+import { loadCategoriesManifest } from "@/data/categoriesManifest";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-static";
@@ -9,6 +9,9 @@ export const revalidate = 3600;
 
 export async function GET() {
   const baseUrl = "https://kaspadomains.com"; // Use HTTPS
+
+  // Load categories manifest dynamically
+  const categoriesData = await loadCategoriesManifest();
 
   const staticRoutes = [
     "",
@@ -28,15 +31,15 @@ export async function GET() {
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
 ${allRoutes
-  .map(
-    (route) => `
+    .map(
+      (route) => `
   <url>
     <loc>${baseUrl}${route}</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>`
-  )
-  .join("")}
+    )
+    .join("")}
 </urlset>`;
 
   return new NextResponse(sitemap, {

@@ -1,12 +1,11 @@
-// // src/data/types.ts
+// src/data/types.ts
 
 export interface Domain {
+  id: number;
+  domainHash: bigint;
   name: string;
-  listed?: boolean;
-  price?: number;
-  kaspaLink?: string;
-  sellerTelegram?: string;
-  sellerTwitter?: string;
-  ownerBio?: string;
-  linkedWebsite?: string; // ← add this
+  owner: string;
+  createdAt: number;
+  isActive: boolean;
+  feePaid: string;
 };

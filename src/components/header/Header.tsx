@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import KaspaDomainsLogo from '../KaspaDomainsLogo';
 import { findDomainByName } from '@/data/domainLookup';
-import { categoriesData } from '@/data/categoriesManifest';
+import { loadCategoriesManifest, type CategoryManifest } from '@/data/categoriesManifest';
 import { useWalletContext } from '@/context/WalletContext';
 import TrendingDomainsComponent from './trendingDomains';
 
@@ -14,10 +14,6 @@ const NAV_ITEMS = [
   { label: 'Domains', href: '/domains' },
   { label: 'Learn', href: '/learn' },
 ];
-
-const trendingDomains = categoriesData.trending.domains.map(d =>
-  d.name.replace(/\.kas$/i, '')
-);
 
 function ConnectButton() {
   const {
@@ -44,7 +40,9 @@ function ConnectButton() {
     } catch (error) {
       console.error(`Failed to connect ${type} wallet:`, error);
       setConnectError(
-        `Failed to connect ${type} wallet: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to connect ${type} wallet: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   };
@@ -222,18 +220,36 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
 
+  const [categoriesData, setCategoriesData] = useState<CategoryManifest | null>(null);
+
+  // Load categories manifest once on mount
+  useEffect(() => {
+    loadCategoriesManifest()
+      .then(setCategoriesData)
+      .catch(err => {
+        console.error('Failed to load categories manifest', err);
+      });
+  }, []);
+
+  // Compute trending domains safely when categoriesData is ready
+  const trendingDomains = useMemo(() => {
+    if (!categoriesData?.trending) return [];
+    return categoriesData.trending.domains.map(d => d.name.replace(/\.kas$/i, ''));
+  }, [categoriesData]);
+
   const isPathActive = useCallback(
     (href: string) => pathname === href || (href !== '/' && pathname.startsWith(href)),
     [pathname]
   );
 
+  // Make handleSearch async to await findDomainByName
   const handleSearch = useCallback(
-    (raw: string) => {
+    async (raw: string) => {
       let term = raw.trim().toLowerCase();
       if (!term) return;
       if (term.endsWith('.kas')) term = term.slice(0, -4);
 
-      const exists = findDomainByName(term);
+      const exists = await findDomainByName(term);
       router.push(
         exists ? `/domain/${encodeURIComponent(term)}` : `/search?q=${encodeURIComponent(term)}`
       );

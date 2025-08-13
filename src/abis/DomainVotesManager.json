@@ -7,14 +7,9 @@
 				"type": "address"
 			},
 			{
-				"internalType": "address",
-				"name": "_payments",
+				"internalType": "address payable",
+				"name": "_ecosystemFund",
 				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_maxLikesPerUser",
-				"type": "uint256"
 			}
 		],
 		"stateMutability": "nonpayable",
@@ -53,24 +48,43 @@
 			},
 			{
 				"indexed": true,
-				"internalType": "bytes32",
-				"name": "domainHash",
-				"type": "bytes32"
-			},
-			{
-				"indexed": false,
 				"internalType": "uint256",
-				"name": "totalLikesForDomain",
+				"name": "domainHash",
 				"type": "uint256"
 			},
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "totalDomainsLikedByUser",
+				"name": "domainVotes",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "userVotes",
 				"type": "uint256"
 			}
 		],
-		"name": "DomainLiked",
+		"name": "DomainVoted",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "kdcToken",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "demoKns",
+				"type": "address"
+			}
+		],
+		"name": "Initialized",
 		"type": "event"
 	},
 	{
@@ -93,64 +107,65 @@
 		"type": "event"
 	},
 	{
-		"inputs": [],
-		"name": "MAX_DOMAIN_LENGTH",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "MAX_LIKES_PER_USER",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
+		"anonymous": false,
 		"inputs": [
 			{
-				"internalType": "address",
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "oldFee",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "newFee",
+				"type": "uint256"
+			}
+		],
+		"name": "VoteFeeUpdated",
+		"type": "event"
+	},
+	{
+		"inputs": [],
+		"name": "BATCH_SIZE",
+		"outputs": [
+			{
+				"internalType": "uint8",
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "autoVote",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "autoVoteCursor",
+		"outputs": [
+			{
+				"internalType": "uint32",
+				"name": "",
+				"type": "uint32"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "demoKns",
+		"outputs": [
+			{
+				"internalType": "contract IDemoKNS",
 				"name": "",
 				"type": "address"
-			}
-		],
-		"name": "addressLikedCount",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"name": "domainLikeCountByHash",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -172,12 +187,82 @@
 	{
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "domainVoteCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "ecosystemFund",
+		"outputs": [
+			{
+				"internalType": "address payable",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "domain",
+				"type": "string"
+			}
+		],
+		"name": "getDomainVoteCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "domainHashes",
+				"type": "uint256[]"
+			}
+		],
+		"name": "getTopVotedDomains",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "votes",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "address",
 				"name": "user",
 				"type": "address"
 			}
 		],
-		"name": "getAddressLikeCount",
+		"name": "getUserRemainingVotes",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -196,12 +281,12 @@
 				"type": "address"
 			}
 		],
-		"name": "getDomainHashesLikedByAddress",
+		"name": "getVotedDomainIds",
 		"outputs": [
 			{
-				"internalType": "bytes32[]",
-				"name": "",
-				"type": "bytes32[]"
+				"internalType": "uint256[]",
+				"name": "list",
+				"type": "uint256[]"
 			}
 		],
 		"stateMutability": "view",
@@ -225,55 +310,12 @@
 				"type": "uint256"
 			}
 		],
-		"name": "getDomainHashesLikedByAddressPaginated",
+		"name": "getVotedDomainIdsPaginated",
 		"outputs": [
 			{
-				"internalType": "bytes32[]",
+				"internalType": "uint256[]",
 				"name": "",
-				"type": "bytes32[]"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "domain",
-				"type": "string"
-			}
-		],
-		"name": "getDomainLikeCount",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			},
-			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"name": "hasLikedByHash",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
+				"type": "uint256[]"
 			}
 		],
 		"stateMutability": "view",
@@ -292,7 +334,7 @@
 				"type": "string"
 			}
 		],
-		"name": "hasUserLikedDomain",
+		"name": "hasUserVotedDomain",
 		"outputs": [
 			{
 				"internalType": "bool",
@@ -306,14 +348,82 @@
 	{
 		"inputs": [
 			{
-				"internalType": "string",
-				"name": "domain",
-				"type": "string"
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
-		"name": "likeDomain",
+		"name": "hasVoted",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_kdc",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_demoKns",
+				"type": "address"
+			}
+		],
+		"name": "initialize",
 		"outputs": [],
-		"stateMutability": "payable",
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "isInitialized",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "kdcToken",
+		"outputs": [
+			{
+				"internalType": "contract IKDCToken",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "maxVotesPerUser",
+		"outputs": [
+			{
+				"internalType": "uint16",
+				"name": "",
+				"type": "uint16"
+			}
+		],
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -331,19 +441,6 @@
 	},
 	{
 		"inputs": [],
-		"name": "payments",
-		"outputs": [
-			{
-				"internalType": "contract IDomainPayments",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
 		"name": "renounceOwnership",
 		"outputs": [],
 		"stateMutability": "nonpayable",
@@ -352,12 +449,12 @@
 	{
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "_payments",
-				"type": "address"
+				"internalType": "uint256",
+				"name": "newFee",
+				"type": "uint256"
 			}
 		],
-		"name": "setPayments",
+		"name": "setVoteFee",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -371,6 +468,71 @@
 			}
 		],
 		"name": "transferOwnership",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "userVoteCount",
+		"outputs": [
+			{
+				"internalType": "uint16",
+				"name": "",
+				"type": "uint16"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "batchIndex",
+				"type": "uint256"
+			}
+		],
+		"name": "voteBatch",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "domainHash",
+				"type": "uint256"
+			}
+		],
+		"name": "voteDomainByHash",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "voteFee",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "withdraw",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"

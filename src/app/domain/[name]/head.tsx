@@ -2,11 +2,10 @@
 
 import { headers } from "next/headers";
 import { getDomainJsonLd } from "@/lib/jsonld";
-import { findDomainByName } from "@/data/domainLookup";
 import type { Domain } from "@/data/types";
-import { categoriesData } from "@/data/categoriesManifest";
+import { loadCategoriesManifest } from "@/data/categoriesManifest";
 
-export const dynamic = 'force-dynamic'; // Required for access to request headers
+export const dynamic = "force-dynamic";
 
 /**
  * Ensure the incoming string is lowercase and ends with ".kas"
@@ -16,48 +15,83 @@ function ensureKasSuffix(name: string): string {
   return base.endsWith(".kas") ? base : `${base}.kas`;
 }
 
+/**
+ * Normalize domain name by trimming and removing ".kas" suffix
+ */
+function normalizeDomainName(name: string): string {
+  return name.trim().toLowerCase().replace(/\.kas$/, "");
+}
+
+/**
+ * Async function to find domain by name from the manifest
+ */
+async function findDomainByNameAsync(
+  name: string
+): Promise<Domain | undefined> {
+  const manifest = await loadCategoriesManifest();
+
+  const normalized = normalizeDomainName(name);
+  for (const category of Object.values(manifest)) {
+    const domain = category.domains.find(
+      (d) => normalizeDomainName(d.name) === normalized
+    );
+    if (domain) return domain;
+  }
+  return undefined;
+}
+
+/**
+ * Async function to find category title by domain name from manifest
+ */
+async function findCategoryTitleByDomainNameAsync(
+  domainName: string
+): Promise<string> {
+  const manifest = await loadCategoriesManifest();
+
+  const normalized = normalizeDomainName(domainName);
+  for (const category of Object.values(manifest)) {
+    if (
+      category.domains.some(
+        (d) => normalizeDomainName(d.name) === normalized
+      )
+    ) {
+      return category.title;
+    }
+  }
+  return "Unknown";
+}
+
 export default async function Head({
   params,
 }: {
   params: { name: string };
 }) {
-  
+  // Read CSP nonce from headers for script tag security
   const headersList = await headers();
-
   const nonce = headersList.get("x-csp-nonce");
 
-  // Canonicalize to lowercase + ".kas"
+  // Normalize domain name to canonical form
   const canonicalName = ensureKasSuffix(params.name);
 
-  // Lookup expects full "foo.kas"
-  const domainData: Domain | undefined = findDomainByName(canonicalName);
+  // Lookup domain data asynchronously from manifest
+  const domainData = await findDomainByNameAsync(canonicalName);
   if (!domainData) return null;
 
-  // Determine category title for meta description
-  const category = (() => {
-    const normalized = domainData.name.trim().toLowerCase().replace(/\.kas$/, "");
-    for (const cat of Object.values(categoriesData)) {
-      if (cat.domains.some((d) => d.name.trim().toLowerCase().replace(/\.kas$/, "") === normalized)) {
-        return cat.title;
-      }
-    }
-    return "Unknown";
-  })();
+  // Lookup category title asynchronously
+  const category = await findCategoryTitleByDomainNameAsync(domainData.name);
 
   const pageTitle = `${domainData.name} — Premium ${category} Domain | KaspaDomains.com`;
   const pageDescription = `Buy ${domainData.name}, a premium KNS domain listed in the ${category} category.`;
 
-  // Remove leading "@" from Telegram handle (if present)
-  const sellerName =
-    typeof domainData.sellerTelegram === "string" && domainData.sellerTelegram.trim()
-      ? domainData.sellerTelegram.replace(/^@/, "")
-      : undefined;
-
+  // Build JSON-LD structured data for SEO
   const jsonLd = getDomainJsonLd({
     name: domainData.name,
-    price: domainData.price ?? 0,
-    listed: domainData.listed ?? false,
-    seller: sellerName,
+    // Use 0 as fallback since price is not in your new Domain type
+    price: 0,
+    // Assume all domains from registry are active listings
+    listed: domainData.isActive,
+    // Use first 8 chars of owner as fallback seller name
+    seller: domainData.owner.slice(0, 8),
   });
 
   return (
@@ -75,10 +109,7 @@ export default async function Head({
         property="og:url"
         content={`https://kaspadomains.com/domain/${domainData.name}`}
       />
-      <meta
-        property="og:image"
-        content="https://kaspadomains.com/og-image.png"
-      />
+      <meta property="og:image" content="https://kaspadomains.com/og-image.png" />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
       <meta property="og:image:alt" content={domainData.name} />
@@ -87,10 +118,7 @@ export default async function Head({
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={pageTitle} />
       <meta name="twitter:description" content={pageDescription} />
-      <meta
-        name="twitter:image"
-        content="https://kaspadomains.com/og-image.png"
-      />
+      <meta name="twitter:image" content="https://kaspadomains.com/og-image.png" />
 
       {/* JSON-LD structured data */}
       <script

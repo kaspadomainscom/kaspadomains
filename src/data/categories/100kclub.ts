@@ -1,3 +1,4 @@
+// src/data/categories/100kclub.ts
 export const club100k = [
   {
     name: "100kclub.kas",

@@ -1,14 +1,17 @@
 // src/app/domains/categories/page.tsx
 import Link from "next/link";
-import { categoriesData } from "@/data/categoriesManifest";
 import { Metadata } from "next";
+import { loadCategoriesManifest, type CategoryManifest } from "@/data/categoriesManifest";
 
 export const metadata: Metadata = {
   title: "Domain Categories | kaspadomains.com",
   description: "Browse all KNS domain categories like finance, gaming, characters, memes, and more.",
 };
 
-export default function DomainCategoriesPage() {
+export default async function DomainCategoriesPage() {
+  // Load categories manifest dynamically (async)
+  const categoriesData: CategoryManifest = await loadCategoriesManifest();
+
   return (
     <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <h1 className="text-4xl font-extrabold tracking-tight text-kaspaDark mb-4">

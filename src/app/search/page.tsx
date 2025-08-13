@@ -1,4 +1,3 @@
-// src/app/search/page.tsx
 'use client';
 
 import { useSearchParams } from 'next/navigation';
@@ -16,14 +15,20 @@ export default function SearchPage() {
   const [results, setResults] = useState<Domain[] | null>(null);
 
   useEffect(() => {
-    if (!query) return;
+    if (!query) {
+      setResults(null);
+      return;
+    }
 
-    const allDomains = getAllDomains();
-    const filtered = allDomains.filter((d) =>
-      d.name.toLowerCase().includes(query)
-    );
+    async function fetchAndFilterDomains() {
+      const allDomains = await getAllDomains(); // await here
+      const filtered = allDomains.filter((d) =>
+        d.name.toLowerCase().includes(query)
+      );
+      setResults(filtered.length > 0 ? filtered : null);
+    }
 
-    setResults(filtered.length > 0 ? filtered : null);
+    fetchAndFilterDomains();
   }, [query]);
 
   if (!query) {
@@ -61,11 +66,7 @@ export default function SearchPage() {
                         </span>
                       </div>
                     </div>
-                    {domain.price && (
-                      <div className="text-sm text-green-600 font-semibold bg-green-100 px-3 py-1 rounded-full">
-                        {domain.price} KAS
-                      </div>
-                    )}
+                    {/* Removed price display */}
                   </div>
                 </Link>
               </li>

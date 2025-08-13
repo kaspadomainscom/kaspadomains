@@ -13,8 +13,8 @@ export function useDomainLikes(domain: string) {
     (async () => {
       try {
         const result = await kasplexClient.readContract({
-          address: contracts.DomainLikesManager.address,
-          abi: contracts.DomainLikesManager.abi,
+          address: contracts.DomainVotesManager.address,
+          abi: contracts.DomainVotesManager.abi,
           functionName: 'getDomainLikeCount',
           args: [domain],
         });

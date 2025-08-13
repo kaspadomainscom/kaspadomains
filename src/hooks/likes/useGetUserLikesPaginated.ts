@@ -17,8 +17,8 @@ export function useGetUserLikesPaginated(
     (async () => {
       try {
         const result = await kasplexClient.readContract({
-          address: contracts.DomainLikesManager.address,
-          abi: contracts.DomainLikesManager.abi,
+          address: contracts.DomainVotesManager.address,
+          abi: contracts.DomainVotesManager.abi,
           functionName: 'getDomainHashesLikedByAddressPaginated',
           args: [userAddress, offset, limit],
         });
