@@ -38,7 +38,7 @@ export function middleware(request: NextRequest) {
     `style-src 'self' 'nonce-${nonce}' 'unsafe-hashes' https://fonts.googleapis.com`, // 🔄 updated
     `style-src-attr 'self' 'unsafe-hashes' 'nonce-${nonce}'`,
     `img-src 'self' data: https://kaspadomains.com`,
-    `connect-src 'self' https://kaspadomains.com https://*.metamask.io https://supabase.com https://knsdomains.org https://api.knsdomains.org`,
+    `connect-src 'self' https://kaspadomains.com https://*.metamask.io https://rpc.kasplextest.xyz https://supabase.com https://knsdomains.org https://api.knsdomains.org`,
     // `font-src 'self'`,
     `font-src 'self' https://fonts.gstatic.com`,                                      // ✅ if using Google Fonts
     `object-src 'none'`,
