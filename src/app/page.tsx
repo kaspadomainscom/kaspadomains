@@ -97,19 +97,19 @@ export default async function Home() {
         <h2 className="text-3xl font-bold mb-6 text-white">How It Works</h2>
         <div className="text-lg text-gray-300 leading-relaxed space-y-6 mb-10">
           <p>
-            <strong>List your domain:</strong> A one-time 420 KAS fee adds your domain permanently to the KaspaDomains index. Only 10,000 domains will ever be listed.
+            <strong>List your domain:</strong> Pay a one-time 420 KAS fee to add your domain permanently to the KaspaDomains index. Only 10,000 domains can be listed.
           </p>
           <p>
-            <strong>Receive votes:</strong> Anyone can like your domain for 5 KAS. Each wallet can vote on up to 1000 domains.
+            <strong>Receive votes:</strong> Community members can like your domain for 5 KAS each. Each wallet can vote on up to 1,000 domains.
           </p>
           <p>
-            <strong>Earn KDC rewards:</strong> Every like gives <strong>1 KDC to the voter</strong> and <strong>1 KDC to the domain owner</strong>.
+            <strong>Earn KDC rewards:</strong> Every vote generates KDC rewards for both the voter and the domain owner.
           </p>
           <p>
-            <strong>Total Supply:</strong> KDC has a hard cap of <strong>2.1 million tokens</strong>. Once distributed, no more will ever be minted.
+            <strong>Total Supply:</strong> KDC has a fixed cap of 2.1 million tokens. No additional tokens will be minted once distributed.
           </p>
           <p>
-            <strong>Monetize attention:</strong> Domain owners earn KAS and KDC, building both revenue and social proof on-chain.
+            <strong>Build your presence:</strong> Domain owners earn KAS and KDC while gaining social proof and visibility in the Kaspa ecosystem.
           </p>
         </div>
         <Link
@@ -119,6 +119,7 @@ export default async function Home() {
           Submit Your Domain
         </Link>
       </section>
+
     </main>
   );
 }
