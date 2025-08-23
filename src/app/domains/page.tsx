@@ -178,7 +178,7 @@ export default function DomainPage() {
           Welcome to the <strong>kaspadomains premium domain marketplace</strong> – a curated platform showcasing only the most unique and valuable domains in the Kaspa ecosystem.
         </p>
         <p className="text-lg text-gray-700 leading-relaxed">
-          Each domain listed is carefully categorized — from <strong>Clubs</strong> to <strong>Characters</strong> to <strong>Trending Memes</strong>. A <strong>287 KAS listing fee</strong> ensures only high-quality domains appear here.
+          Each domain listed is carefully categorized — from <strong>Clubs</strong> to <strong>Characters</strong> to <strong>Trending Memes</strong>. A <strong>420 KAS listing fee</strong> ensures only high-quality domains appear here.
         </p>
         <p className="text-lg font-semibold text-kaspaDark">
           {filteredDomains.length.toLocaleString()} domains listed in{' '}
