@@ -9,20 +9,13 @@ import React, {
   useEffect,
   useState,
 } from 'react';
-
 import { ethers, Eip1193Provider } from 'ethers';
 
-import {
-  useMetamaskWallet,
-  WalletState as MetamaskWalletState,
-} from '@/hooks/wallet/internal/useMetamaskWallet';
-
-import {
-  useKaswareWallet,
-  WalletState as KaswareWalletState,
-} from '@/hooks/wallet/internal/useKaswareWallet';
+import { useMetamaskWallet, WalletState as MetamaskWalletState } from '@/hooks/wallet/internal/useMetamaskWallet';
+import { useKaswareWallet, WalletState as KaswareWalletState } from '@/hooks/wallet/internal/useKaswareWallet';
 import { kasplexTestnet } from '@/lib/viemChains';
 
+/* ---------------- Wallet Types ---------------- */
 export type WalletType = 'metamask' | 'kasware' | null;
 export type WalletStatus = 'idle' | 'connecting' | 'connected' | 'error' | 'unavailable' | null;
 
@@ -49,8 +42,10 @@ export interface CombinedWalletState {
   signer: ethers.Signer | null;
 }
 
+/* ---------------- Context ---------------- */
 const WalletContext = createContext<CombinedWalletState | undefined>(undefined);
 
+/* ---------------- Provider ---------------- */
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const metamask = useMetamaskWallet();
   const kasware = useKaswareWallet();
@@ -79,16 +74,15 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     return null;
   });
 
+  /* Auto-reconnect active wallet on mount */
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    if (activeWalletType === 'metamask' && !metaAccount) {
-      connectMeta().catch(() => {});
-    } else if (activeWalletType === 'kasware' && !kasAccount) {
-      connectKas().catch(() => {});
-    }
-  }, [activeWalletType, connectMeta, connectKas, metaAccount, kasAccount]);
+    if (activeWalletType === 'metamask' && !metaAccount) connectMeta().catch(() => {});
+    else if (activeWalletType === 'kasware' && !kasAccount) connectKas().catch(() => {});
+  }, [activeWalletType, metaAccount, kasAccount, connectMeta, connectKas]);
 
+  /* Persist wallet connection status */
   useEffect(() => {
     if (typeof window === 'undefined') return;
     localStorage.setItem('wallet-metamask', metaAccount ? 'true' : 'false');
@@ -99,30 +93,15 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('wallet-kasware', kasAccount ? 'true' : 'false');
   }, [kasAccount]);
 
-  const activeAccount = useMemo(() => {
-    if (activeWalletType === 'metamask') return metaAccount;
-    if (activeWalletType === 'kasware') return kasAccount;
-    return null;
-  }, [activeWalletType, metaAccount, kasAccount]);
-
-  const activeStatus = useMemo(() => {
-    if (activeWalletType === 'metamask') return metaStatus;
-    if (activeWalletType === 'kasware') return kasStatus;
-    return null;
-  }, [activeWalletType, metaStatus, kasStatus]);
-
-  const activeError = useMemo(() => {
-    if (activeWalletType === 'metamask') return metaError;
-    if (activeWalletType === 'kasware') return kasError;
-    return null;
-  }, [activeWalletType, metaError, kasError]);
-
+  /* Compute active wallet details */
+  const activeAccount = useMemo(() => (activeWalletType === 'metamask' ? metaAccount : activeWalletType === 'kasware' ? kasAccount : null), [activeWalletType, metaAccount, kasAccount]);
+  const activeStatus = useMemo(() => (activeWalletType === 'metamask' ? metaStatus : activeWalletType === 'kasware' ? kasStatus : null), [activeWalletType, metaStatus, kasStatus]);
+  const activeError = useMemo(() => (activeWalletType === 'metamask' ? metaError : activeWalletType === 'kasware' ? kasError : null), [activeWalletType, metaError, kasError]);
   const isFullyConnected = useMemo(() => !!(metaAccount && kasAccount), [metaAccount, kasAccount]);
 
-  const provider: Eip1193Provider | null = useMemo(() => {
-    return metaProvider ?? null;
-  }, [metaProvider]);
+  const provider: Eip1193Provider | null = useMemo(() => metaProvider ?? null, [metaProvider]);
 
+  /* Create ethers signer */
   const [signer, setSigner] = useState<ethers.Signer | null>(null);
 
   useEffect(() => {
@@ -138,11 +117,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       .then(async (sig) => {
         if (!mounted) return;
 
-        // Optional: Check if on correct network (Kasplex Testnet = 167012)
         try {
           const network = await sig.provider.getNetwork();
-        if (Number(network.chainId) !== kasplexTestnet.id) {
-            console.warn(`⚠️ Signer is connected to wrong network (chainId: ${network.chainId})`);
+          if (Number(network.chainId) !== kasplexTestnet.id) {
+            console.warn(`⚠️ Signer connected to wrong network (chainId: ${network.chainId})`);
           }
         } catch (err) {
           console.warn('⚠️ Could not verify signer network:', err);
@@ -159,14 +137,13 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [provider]);
 
+  /* Connect active wallet */
   const connect = useCallback(async () => {
-    if (activeWalletType === 'metamask') {
-      await connectMeta();
-    } else if (activeWalletType === 'kasware') {
-      await connectKas();
-    }
+    if (activeWalletType === 'metamask') await connectMeta();
+    else if (activeWalletType === 'kasware') await connectKas();
   }, [activeWalletType, connectMeta, connectKas]);
 
+  /* Disconnect active wallet */
   const disconnect = useCallback(() => {
     if (activeWalletType === 'metamask') {
       disconnectMeta();
@@ -177,6 +154,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [activeWalletType, disconnectMeta, disconnectKas]);
 
+  /* Disconnect all wallets */
   const disconnectAll = useCallback(() => {
     disconnectMeta();
     disconnectKas();
@@ -186,32 +164,31 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [disconnectMeta, disconnectKas]);
 
-  const value: CombinedWalletState = {
+  const value: CombinedWalletState = useMemo(() => ({
     kasware,
     metamask,
-
     activeWalletType,
     setActiveWalletType,
-
     activeAccount,
     activeStatus,
     activeError,
-
     isFullyConnected,
-
     connect,
     disconnect,
     disconnectAll,
-
     account: activeAccount,
     status: activeStatus,
     provider,
     signer,
-  };
+  }), [
+    kasware, metamask, activeWalletType, activeAccount, activeStatus, activeError,
+    isFullyConnected, connect, disconnect, disconnectAll, provider, signer
+  ]);
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 };
 
+/* ---------------- Hook ---------------- */
 export function useWalletContext(): CombinedWalletState {
   const context = useContext(WalletContext);
   if (!context) throw new Error('useWalletContext must be used within WalletProvider');
