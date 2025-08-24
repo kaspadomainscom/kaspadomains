@@ -97,19 +97,24 @@ export default async function Home() {
         <h2 className="text-3xl font-bold mb-6 text-white">How It Works</h2>
         <div className="text-lg text-gray-300 leading-relaxed space-y-6 mb-10">
           <p>
-            <strong>List your domain:</strong> Pay a one-time 420 KAS fee to add your domain permanently to the KaspaDomains index. Only 10,000 domains can be listed.
+            <strong>1. List your domain:</strong> Pay a one-time <strong>420 KAS</strong> fee to secure your spot in the KaspaDomains index. 
+            With a hard cap of 10,000 entries, every listing is scarce and permanent.
           </p>
           <p>
-            <strong>Receive votes:</strong> Community members can like your domain for 5 KAS each. Each wallet can vote on up to 1,000 domains.
+            <strong>2. Get voted on:</strong> Anyone can like your domain for <strong>5 KAS</strong>. 
+            Every wallet can support up to 1,000 domains, driving competition for attention.
           </p>
           <p>
-            <strong>Earn KDC rewards:</strong> Every vote generates KDC rewards for both the voter and the domain owner.
+            <strong>3. Earn KDC rewards:</strong> Each vote mints <strong>KDC for the voter</strong> and <strong>KDC for the domain owner</strong>, 
+            turning participation into real token rewards.
           </p>
           <p>
-            <strong>Total Supply:</strong> KDC has a fixed cap of 2.1 million tokens. No additional tokens will be minted once distributed.
+            <strong>4. Fixed supply:</strong> KDC has a hard cap of <strong>2.1 million tokens</strong>. Once distributed, 
+            no new tokens will ever be minted — making rewards scarce and valuable.
           </p>
           <p>
-            <strong>Build your presence:</strong> Domain owners earn KAS and KDC while gaining social proof and visibility in the Kaspa ecosystem.
+            <strong>5. Monetize attention:</strong> Domain owners earn <strong>KDC</strong>, 
+            converting community recognition into on-chain value and social proof.
           </p>
         </div>
         <Link
