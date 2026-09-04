@@ -14,6 +14,8 @@ points to them and holds the actively-updated loop backlog below.
 - [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) — current state and roadmap
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — technical architecture narrative
 - [`BUSINESS_PLAN.md`](./BUSINESS_PLAN.md) — product/business framing
+- [`KASPA_DEVELOPMENT.md`](./KASPA_DEVELOPMENT.md) — current Kaspa/Kasplex/Igra ecosystem
+  state, confirmed root cause of the MCOPY bug, and a phased plan for the Web3 layer
 - [`../README.md`](../README.md) — repo root entry point; now describes the actual
   project and links back into this folder (was still generic `create-next-app`
   boilerplate until this pass)
@@ -40,9 +42,16 @@ origin of the still-open "why does `connect-src` allowlist Supabase" question in
 Not yet checked, in rough priority order — full detail on each in [`GAPS.md`](./GAPS.md)
 and [`BUGS.md`](./BUGS.md):
 
-- [ ] `DomainLinksStorage.getLinks` throws `invalid opcode: MCOPY` in the browser console —
-      needs investigation, could mean the resources feature has the same "never actually
-      works" problem voting had.
+- [x] ~~`DomainLinksStorage.getLinks` throws `invalid opcode: MCOPY`~~ — investigated
+      2026-09-05 by querying the live RPC directly. Turned out much bigger than the one
+      function: **4 of 6 contracts in `contracts.ts` have no deployed code at all**
+      (Registry, VotesManager, CategoriesStorage, KDCToken — real fund-safety risk, see
+      `BUGS.md`), and the 2 that do exist (`DomainLinksStorage`, `DomainDataStorage`) fail
+      `invalid opcode: MCOPY` on **every** function touching a dynamic type, not just
+      `getLinks`. Full writeup in [`BUGS.md`](./BUGS.md)'s two new CRITICAL entries. This
+      is now the top-priority item for whoever owns contract deployment — needs correct
+      current addresses and/or a redeploy with an older EVM target, neither of which is
+      something to guess at or do autonomously.
 - [ ] Missing Terms/Privacy/About pages — flagged, not drafted without real input.
 - [ ] Internal linking + breadcrumbs on domain profile pages (`/domain/[name]`) — has a
       Home/Domains breadcrumb; worth checking whether it should also link to the domain's

@@ -9,25 +9,63 @@ actively-updated backlog the continuous audit loop appends to.
 
 ## Open
 
+- [ ] **CRITICAL — 4 of 6 contract addresses in `src/lib/contracts.ts` have no deployed
+      code on the live Kasplex testnet RPC.** Verified 2026-09-05 by querying
+      `https://rpc.kasplextest.xyz` directly (the exact endpoint hardcoded in
+      [`viemChains.ts`](../src/lib/viemChains.ts)) with raw `eth_getCode` calls, bypassing
+      the frontend entirely:
+      - `KaspaDomainsRegistry` (`0x599DB3Ffbba36FfaAB3f86e92e1fCA0465b2CDeA`) → `0x`
+      - `DomainVotesManager` (`0xbFB179D21A082cBb30ff245b6bCAb8a5b5566bAa`) → `0x`
+      - `DomainCategoriesStorage` (`0x73DeAC4CE5Ae3caCe36F1481B62cb635D9733E0D`) → `0x`
+      - `KDCToken` (`0x48526edd858a05f8591c0BA38c10f7493174ee1E`) → `0x`
+      - `DomainLinksStorage` and `DomainDataStorage` do have real bytecode — see below.
+
+      Checked at `latest`, `earliest`, and an early block (all empty), and confirmed the
+      address's transaction count is `0` — as far as this RPC's history goes, these
+      addresses never had a contract deployed on them. Most likely explanation: a testnet
+      reset/redeploy where only 2 of 6 addresses in `contracts.ts` were ever updated
+      afterward. **This is a fund-safety issue, not just "feature broken"**: `listDomain`
+      and `voteDomainByHash` are `payable`; a transaction sent to a codeless address
+      doesn't revert, it just transfers the KAS and silently succeeds doing nothing.
+      Completing the listing or voting flow right now risks **irrecoverably losing real
+      KAS with no on-chain error**. Do not test these flows with real funds until the
+      addresses are confirmed/fixed. Not something I can fix from here — I don't know
+      what the correct current addresses are (if they even exist yet), and guessing or
+      redeploying is out of scope (see [`MIND.md`](./MIND.md#9-money-moving-and-irreversible-actions-get-flagged-not-executed)).
+- [ ] **CRITICAL — Every function on the two contracts that *do* exist fails with
+      `invalid opcode: MCOPY`, on every call, regardless of input.** The previously-known
+      `DomainLinksStorage.getLinks` MCOPY error is real, but it's not an isolated case —
+      verified 2026-09-05 via raw `eth_call` against the live RPC:
+      `getLinks`, `getLinkCount`, `getDomainHash` (pure), and `updateLinks` (the write path
+      the resources editor uses) on `DomainLinksStorage`, and `getDomainData` on
+      `DomainDataStorage`, **all** return `{"code":-32000,"message":"invalid opcode:
+      MCOPY"}` for any input tried. Only the zero-argument, no-dynamic-type `MAX_LINKS()`
+      succeeds. **Root cause confirmed 2026-09-05 against Kasplex's own network-info docs
+      (see [`KASPA_DEVELOPMENT.md`](./KASPA_DEVELOPMENT.md)): Kasplex (testnet *and*
+      mainnet) explicitly targets the Shanghai EVM hardfork.** `MCOPY` (opcode `0x5E`) was
+      introduced later, in Cancun. Modern `solc` releases default `--evm-version` to
+      Cancun or newer, so any contract compiled without explicitly pinning
+      `--evm-version shanghai` (or `paris`) will silently emit MCOPY and revert on Kasplex
+      — this isn't a mystery infra bug, it's a compiler-target mismatch. Practical effect:
+      **the entire resources/links feature is non-functional end to end** (read and write
+      both fail), not just the read side as previously thought, and `DomainDataStorage`
+      would have the identical problem the moment anyone wires it up (see `GAPS.md`). Fix:
+      recompile with `--evm-version shanghai` pinned and redeploy — needs the Solidity
+      source (not in this repo, needs to be located/reconstructed) — see
+      `KASPA_DEVELOPMENT.md`'s Phase 0 plan.
 - [ ] **Displayed listing price (210 KAS) doesn't match the real on-chain charge
       (420 KAS).** By deliberate request — marketing/SEO copy was changed to 210 while the
       actual `KaspaDomainsRegistry.DOMAIN_FEE` (a contract constant, no setter) still
       charges 420. Real, ongoing risk: anyone who lists a domain today gets charged 420
-      after being told 210 everywhere on the site. See [`GAPS.md`](./GAPS.md) for what
-      actually resolving this requires (a new contract deployment).
-- [ ] **`DomainLinksStorage.getLinks` throws `invalid opcode: MCOPY`** in the browser
-      console on domain profile pages. MCOPY is a Cancun/Dencun-era EVM opcode — could be
-      an RPC/EVM-version mismatch, or a genuinely bad call. Not yet investigated. If it's a
-      real bug, the domain-resources (X account/links) feature has the same
-      "looks built but never actually works" problem voting had (see Fixed, below) — this
-      is the top-priority thing to check next.
+      after being told 210 everywhere on the site — **though see the item above: right
+      now `listDomain` can't be charged at all, since `KaspaDomainsRegistry` has no code
+      at its configured address.** See [`GAPS.md`](./GAPS.md) for what actually resolving
+      the price mismatch requires (a new contract deployment).
 - [ ] **Unverified access control on two contract-write paths**: whether a domain owner can
       call `DomainCategoriesStorage.updateCategories` and `DomainLinksStorage.updateLinks`
-      directly, or whether they're admin-gated. No Solidity source in this repo to check
-      directly; only testable by actually trying it on testnet with a real wallet. If
-      either turns out to be gated, the corresponding UI (category picker at listing time,
-      resource editor) will report success on the listing but silently fail the follow-up
-      write.
+      directly, or whether they're admin-gated. Moot for now given the two critical items
+      above (neither contract can be called successfully at all right now), but worth
+      revisiting once those are fixed. No Solidity source in this repo to check directly.
 - [ ] **MetaMask→Kasware EVM-signing migration is unverified against a real wallet.** The
       whole rewrite (see Fixed) follows Kasware's documented EIP-1193 conventions and
       passes `tsc`/lint/build/HTTP smoke tests, but there's no way to test against an
@@ -129,4 +167,6 @@ verified — not just "fixed X."
   ground truth that most of the bugs above turned out to violate).
 - [`MIND.md`](./MIND.md) — the operating principles this bug list came from (verify
   before trusting, no fabricated data, etc.).
+- [`KASPA_DEVELOPMENT.md`](./KASPA_DEVELOPMENT.md) — the confirmed root cause and fix plan
+  for the MCOPY/EVM-version bug above.
 - [`TODO.md`](./TODO.md) — live backlog, updated by the recurring audit loop.

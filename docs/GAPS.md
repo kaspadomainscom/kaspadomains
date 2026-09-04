@@ -18,10 +18,11 @@ live backlog the continuous audit loop appends to.
       Discord, etc.) shows a squished/cropped logo. Needs an actual design asset; not
       something fixable from code.
 - [ ] **`DomainDataStorage` (title/description/image/website) is unwired.** This is the
-      general "bio" side of a domain profile, distinct from the links/resources side
-      (which is real — see `BUGS.md`'s Fixed list). Decide if it's wanted before building
-      it; it was intentionally left out rather than half-faked when the resources feature
-      was built.
+      general "bio" side of a domain profile, distinct from the links/resources side.
+      Decide if it's wanted before building it — but note it has the identical
+      `invalid opcode: MCOPY` problem as `DomainLinksStorage` (confirmed 2026-09-05, see
+      `BUGS.md`'s CRITICAL entries), so wiring it up wouldn't work until that's fixed
+      regardless of the product decision.
 
 ## Incomplete / half-built code
 
@@ -87,7 +88,10 @@ live backlog the continuous audit loop appends to.
       contract-interaction hooks (`useListDomain`, wallet hooks) move real KAS value and
       are the highest-risk code paths to leave untested.
 - [ ] No Kasplex **mainnet** chain definition — only `kasplexTestnet` exists in
-      [`src/lib/viemChains.ts`](../src/lib/viemChains.ts).
+      [`src/lib/viemChains.ts`](../src/lib/viemChains.ts). Note: Kasplex mainnet is a real,
+      live network now (launched ~September 2025) with published endpoints
+      (`evmrpc.kasplex.org` / `explorer.kasplex.org`) — this is no longer a "doesn't exist
+      yet" gap, just an unadded config. See [`KASPA_DEVELOPMENT.md`](./KASPA_DEVELOPMENT.md).
 - [ ] No production contract addresses in `contracts.ts` (testnet-only).
 - [ ] No contract security audit — and no Solidity source in this repo to audit. Hard
       blocker before any mainnet deployment, regardless of frontend readiness.
@@ -120,15 +124,19 @@ live backlog the continuous audit loop appends to.
 - [ ] **KCC-0020** (Kaspa's draft covenant-native token standard) — a possible future
       successor to KRC-20 on Kaspa **L1**. Doesn't apply to this repo: `KDCToken` is a
       Solidity ERC-20 on **Kasplex (EVM L2)**, a different technology stack from L1
-      covenant/UTXO conventions. Revisit only if the standard finalizes and there's a
+      covenant/UTXO conventions. Kaspa L1 covenants themselves shipped for real via the
+      **Toccata hard fork (2026-06-30)** — see
+      [`KASPA_DEVELOPMENT.md`](./KASPA_DEVELOPMENT.md) — but that doesn't change this
+      assessment on its own. Revisit only if KCC-0020 itself finalizes and there's a
       concrete interop reason (e.g. a bridge). Sources:
       [kaspanet/kccs](https://github.com/kaspanet/kccs),
       [Kasplex KRC-20 wiki](https://wiki.kaspa.org/en/Kasplex_KRC_20).
 - [ ] **Igra Network** — a separate EVM L2 on Kaspa L1 (a different "based rollup" from
-      Kasplex, which this project uses). Just launched a public, Sigma-Prime-audited
-      mainnet (2026-03-19), while Kasplex has no mainnet in this repo yet. Worth watching
-      as a possible mainnet target, but switching means deploying all contracts fresh on a
-      different chain — not a config change. Not evaluated in depth yet.
+      Kasplex, which this project uses). Launched a public, Sigma-Prime-audited mainnet
+      (2026-03-19). Worth watching as a possible mainnet target, but switching means
+      deploying all contracts fresh on a different chain — not a config change. See
+      [`KASPA_DEVELOPMENT.md`](./KASPA_DEVELOPMENT.md#2-layer-2s-where-this-apps-contracts-actually-live)
+      for what's known about it so far; not evaluated in depth yet.
 
 ## Related docs
 
@@ -136,4 +144,6 @@ live backlog the continuous audit loop appends to.
 - [`SPEC.md`](./SPEC.md) — the verified technical reference these gaps are measured against.
 - [`LIFECYCLE.md`](./LIFECYCLE.md) — how a domain/fee/vote is meant to flow once these gaps
   are closed.
+- [`KASPA_DEVELOPMENT.md`](./KASPA_DEVELOPMENT.md) — current Kaspa/Kasplex/Igra ecosystem
+  state and a phased plan for closing the mainnet/deployment gaps above.
 - [`TODO.md`](./TODO.md) — live backlog, updated by the recurring audit loop.

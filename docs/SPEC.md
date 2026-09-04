@@ -11,6 +11,15 @@ JSON directly) before writing it — don't assume a name "sounds right."**
 Every signature below was read directly from `src/abis/*.json` this session, not assumed.
 No Solidity source exists in this repo — these ABIs are the only ground truth available.
 
+**⚠ Live-chain status (verified 2026-09-05, see [`BUGS.md`](./BUGS.md) for full detail):**
+signatures below are correct per the ABI, but as of this writing most of them **cannot
+currently be called successfully** against the live RPC — `KaspaDomainsRegistry`,
+`DomainVotesManager`, `DomainCategoriesStorage`, and `KDCToken` have **no deployed code**
+at their addresses in `contracts.ts` (confirmed via raw `eth_getCode`), and
+`DomainLinksStorage`/`DomainDataStorage` **do** have code but every function that touches
+a `string`/dynamic-array type fails with `invalid opcode: MCOPY`. Treat this table as the
+correct target to code against, not as proof any of it works on-chain today.
+
 ## Network
 
 | | |

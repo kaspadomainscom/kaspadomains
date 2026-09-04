@@ -119,6 +119,27 @@ directly ("admin can change price at any time" → correctly identified as requi
 deployment → not attempted). Frontend/docs changes that only ever *read* from contracts
 are fine to iterate on freely.
 
+## 10. ABI-correct isn't the same as chain-correct — verify against the live RPC, not just the ABI file
+
+**The incident**: this session's earlier fix to the voting feature (see #1) verified
+function names against `src/abis/*.json` and shipped it as "Fixed" — a real improvement,
+but never actually confirmed against the live chain. A later pass (2026-09-05) called
+`eth_getCode` directly against the RPC the app itself uses and found `DomainVotesManager`
+(along with `KaspaDomainsRegistry`, `DomainCategoriesStorage`, and `KDCToken`) has **no
+deployed code at all** at its configured address — the ABI-correct fix was calling a
+contract that doesn't exist. Separately, `DomainLinksStorage.updateLinks` — credited as a
+real, working write in the same "Fixed" list — turned out to revert with
+`invalid opcode: MCOPY` on every single call, an EVM-hardfork mismatch invisible from the
+ABI or the TypeScript types. Both were fund-safety-relevant (`payable` functions), not
+just cosmetic.
+
+**The rule**: matching the ABI is necessary but not sufficient. Before calling something
+"fixed" or "working" — especially anything `payable` or state-changing — check that the
+target address actually has code (`eth_getCode`) and that a real `eth_call`/simulation
+against the live RPC succeeds, not just that the TypeScript compiles and the function name
+matches. A static, offline check (grep the ABI) catches wrong-name bugs; it cannot catch
+wrong-address or wrong-EVM-version bugs, which need a live network round-trip.
+
 ## Related docs
 
 - [`SPEC.md`](./SPEC.md) — the verified ground truth principle #1 depends on.
