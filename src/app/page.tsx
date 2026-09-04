@@ -2,14 +2,11 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { loadCategoriesManifest, type CategoryManifest } from "@/data/categoriesManifest";
+import { loadTopVotedDomains, type DomainWithVotes } from "@/lib/topVotedDomains";
 import { getWebsiteJsonLd, getItemListJsonLd } from "@/lib/jsonld";
 import { JsonLd } from "@/components/JsonLd";
 
-const previewDomains = [
-  { name: "wallet.kas", likes: 234, price: 420 },
-  { name: "defi.kas", likes: 187, price: 420 },
-  { name: "dex.kas", likes: 150, price: 420 },
-];
+const TRENDING_COUNT = 3;
 
 export const metadata = {
   title: "KaspaDomains — Premium .kas Domains, Organized by Category",
@@ -51,6 +48,13 @@ export default async function Home() {
     // fallback to empty object so UI still renders
   }
 
+  let trendingDomains: DomainWithVotes[] = [];
+  try {
+    trendingDomains = await loadTopVotedDomains(TRENDING_COUNT);
+  } catch (e) {
+    console.error("Failed to load trending domains", e);
+  }
+
   const nonce = (await headers()).get("x-csp-nonce") || undefined;
   const itemListJsonLd = await getItemListJsonLd();
   const jsonLd = [getWebsiteJsonLd(), itemListJsonLd];
@@ -76,29 +80,41 @@ export default async function Home() {
         </Link>
       </section>
 
-      {/* Preview Domains */}
+      {/* Trending Domains */}
       <section className="max-w-7xl mx-auto px-6 md:px-8">
         <h2 className="text-3xl font-bold mb-10 text-center text-white">
           Trending .kas Domains
         </h2>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {previewDomains.map((domain) => (
-            <article
-              key={domain.name}
-              className="bg-[#121E28] p-6 rounded-2xl shadow-md hover:shadow-xl transition transform hover:-translate-y-1"
-            >
-              <h3 className="text-xl font-semibold text-white mb-2">{domain.name}</h3>
-              <p className="text-sm text-gray-400 mb-1">🔥 {domain.likes} votes</p>
-              <p className="text-sm text-gray-500">{domain.price} KAS listing fee</p>
-              <Link
-                href={`/domain/${domain.name}`}
-                className="text-yellow-400 underline text-sm mt-3 inline-block hover:text-yellow-300"
+        {trendingDomains.length > 0 ? (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {trendingDomains.map((domain) => (
+              <article
+                key={domain.name}
+                className="bg-[#121E28] p-6 rounded-2xl shadow-md hover:shadow-xl transition transform hover:-translate-y-1"
               >
-                View Domain →
-              </Link>
-            </article>
-          ))}
-        </div>
+                <h3 className="text-xl font-semibold text-white mb-2">{domain.name}</h3>
+                <p className="text-sm text-gray-400 mb-1">
+                  🔥 {domain.votes.toLocaleString()} vote{domain.votes === 1 ? "" : "s"}
+                </p>
+                <p className="text-sm text-gray-500">420 KAS listing fee</p>
+                <Link
+                  href={`/domain/${domain.name}`}
+                  className="text-yellow-400 underline text-sm mt-3 inline-block hover:text-yellow-300"
+                >
+                  View Domain →
+                </Link>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-gray-400">
+            No domains listed yet —{" "}
+            <Link href="/list-domain" className="text-yellow-400 underline hover:text-yellow-300">
+              be the first
+            </Link>
+            .
+          </p>
+        )}
       </section>
 
       {/* Categories */}

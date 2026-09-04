@@ -8,6 +8,25 @@ go stale.
 
 ## Recently shipped
 
+- [x] **Homepage "Trending .kas Domains" was 100% fabricated data.** A hardcoded array
+      (`wallet.kas`, `defi.kas`, `dex.kas` with made-up vote counts) — domains that don't
+      exist as real listings; clicking "View Domain" on any of them would 404. Found while
+      checking the site on a mobile viewport (375px) for this loop's first pass. Replaced
+      with real data via a new shared helper,
+      [`lib/topVotedDomains.ts`](../src/lib/topVotedDomains.ts) (extracted from
+      `/domains/top-voted`, now used by both), with a real "no domains listed yet" empty
+      state instead of silently showing nothing or crashing.
+      Verified with a running dev server + mobile viewport screenshot (not just build/lint)
+      that the empty state renders cleanly when the sandbox can't reach the real Kasplex
+      RPC — same offline-fallback situation every build this session has hit.
+- [x] **Another "Buy Now" instance, missed by the earlier grep pass** — the sitewide
+      header ticker ([`trendingDomains.tsx`](../src/components/header/trendingDomains.tsx)),
+      visible on every single page. The text was split as `Buy&nbsp;Now` (an HTML entity
+      inside JSX), which a plain-text grep for "Buy Now" doesn't match — worth remembering
+      for future audits. Its underlying data was already real (pulled from a `trending`
+      category via `categoriesManifest`), only the label was wrong. Changed to
+      "View Domain".
+
 - [x] **`/domains` (the main browse-all page) contradicted the site's own "not a
       marketplace" stance — a real, significant find, not cosmetic.** It branded itself
       "kaspadomains Market" / "premium domain marketplace" with a "Buy Now" button, while
@@ -236,6 +255,29 @@ go stale.
       **not imported anywhere in the app** — confirmed dead. The real category system is
       fully on-chain via `DomainCategoriesStorage` (see `categoriesManifest.ts`). Safe to
       delete unless they're meant as seed/reference data for something not yet built.
+
+## Continuous audit loop — backlog for next iterations
+
+A recurring local loop (`/loop 8m`, job `2e58e210`) is running audit-and-fix passes across
+UI/UX, content, SEO, and missing-page gaps. Checked so far: homepage + trending data,
+`/domains`, `/domains/top-voted`, `/search`, `DomainCard`, OG/Twitter metadata, robots.txt,
+marketplace-language across the whole site. Not yet checked, in rough priority order:
+
+- [ ] Mobile menu (hamburger) — clicked during this pass but couldn't confirm it opened
+      (browser pane went hidden mid-interaction); verify for real next iteration.
+- [ ] Missing pages: no Terms of Service, Privacy Policy, or About/Team page found
+      anywhere in `src/app/`. For a dApp handling real KAS payments this is a real
+      trust/legal gap, not just a nice-to-have — worth a decision on scope before writing
+      anything (legal content shouldn't be invented without input).
+- [ ] Image `alt` text audit across the site — spot-checked a few components, not
+      systematic yet.
+- [ ] Internal linking audit — e.g. does `/learn` link to `/list-domain`? Do category
+      pages cross-link to `/docs`? Not yet checked systematically.
+- [ ] Mobile check remaining pages: `/list-domain`, `/domain/[name]`, `/domain/update/[name]`,
+      `EcosystemAdmin`, `/domains/my-domains`, `/domains/my-votes`.
+- [ ] Competitor/search-intent research for Kaspa/KNS domain discovery sites — not started.
+- [ ] Re-grep periodically for marketplace-adjacent language using entity-aware patterns
+      (this pass's "Buy&nbsp;Now" catch shows plain-text grep isn't sufficient alone).
 
 ## Real gaps (not just cleanup)
 

@@ -21,7 +21,7 @@ export default function TrendingDomainsComponent({ trendingDomains }: TrendingDo
               className="flex-shrink-0 whitespace-nowrap hover:underline glow-green"
             >
               🔥 <span className="font-semibold">{domain}</span> —{' '}
-              <span className="underline underline-offset-4">Buy&nbsp;Now</span>
+              <span className="underline underline-offset-4">View&nbsp;Domain</span>
             </Link>
           ))
         ) : (

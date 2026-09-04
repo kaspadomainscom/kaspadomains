@@ -1,10 +1,7 @@
 // src/app/domains/top-voted/page.tsx
 import type { Metadata } from "next";
-import { loadCategoriesManifest } from "@/data/categoriesManifest";
-import { contracts } from "@/lib/contracts";
-import { kasplexClient } from "@/lib/viemClient";
+import { loadTopVotedDomains, type DomainWithVotes } from "@/lib/topVotedDomains";
 import { DomainCard } from "@/components/DomainCard";
-import type { Domain } from "@/data/types";
 
 const TOP_N = 24;
 
@@ -16,40 +13,12 @@ export const metadata: Metadata = {
   },
 };
 
-async function loadTopVotedDomains(): Promise<(Domain & { votes: number })[]> {
-  const manifest = await loadCategoriesManifest();
-
-  const seen = new Set<string>();
-  const domains: Domain[] = [];
-  for (const category of Object.values(manifest)) {
-    for (const domain of category.domains) {
-      if (!domain.isActive || seen.has(domain.name)) continue;
-      seen.add(domain.name);
-      domains.push(domain);
-    }
-  }
-
-  if (domains.length === 0) return [];
-
-  const votes = (await kasplexClient.readContract({
-    address: contracts.DomainVotesManager.address,
-    abi: contracts.DomainVotesManager.abi,
-    functionName: "getTopVotedDomains",
-    args: [domains.map((d) => d.domainHash)],
-  })) as readonly bigint[];
-
-  return domains
-    .map((domain, i) => ({ ...domain, votes: Number(votes[i] ?? BigInt(0)) }))
-    .sort((a, b) => b.votes - a.votes)
-    .slice(0, TOP_N);
-}
-
 export default async function TopVotedPage() {
-  let topDomains: (Domain & { votes: number })[] = [];
+  let topDomains: DomainWithVotes[] = [];
   let loadError = false;
 
   try {
-    topDomains = await loadTopVotedDomains();
+    topDomains = await loadTopVotedDomains(TOP_N);
   } catch (err) {
     console.error("Failed to load top voted domains:", err);
     loadError = true;
