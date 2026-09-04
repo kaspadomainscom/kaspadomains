@@ -8,6 +8,20 @@ go stale.
 
 ## Recently shipped
 
+- [x] **Loop iteration 4**: category pages (`/domains/categories` index and
+      `/domains/categories/category/[category]`) were the last light-themed pages left —
+      restyled dark, and both were missing breadcrumb navigation entirely (a visitor on a
+      specific category had no way back except the header nav). Added breadcrumbs and an
+      empty-state message for categories with no active listings.
+      **Process correction**: while touching `[category]/page.tsx`, `npm run lint` jumped
+      from 26 to 34 problems, which turned out to be a real, fixable issue in that file
+      ("Avoid constructing JSX within try/catch," `react-hooks/error-boundaries`) —
+      refactored to keep data-fetching in try/catch but construct JSX outside it, which
+      fixed all 12 instances and dropped the total to **22 problems (20 errors, 2
+      warnings)**. Checking this properly (full `grep`, not `tail`) revealed my last few
+      iterations' "same pre-existing N errors, nothing new" claims were checking `tail`
+      output only and likely missed files — the real, current, verified breakdown is now
+      recorded accurately below. Lesson: verify lint with a full grep/count, not `tail`.
 - [x] **Loop iteration 3**: heading-hierarchy audit found `/docs` and `/learn` had **zero
       `<h1>` tags** — every section used `<h2>` but nothing identified the page itself,
       a real on-page SEO/accessibility gap (every page should have exactly one `<h1>`).
@@ -283,16 +297,18 @@ A recurring local loop (`/loop 8m`, job `2e58e210`) is running audit-and-fix pas
 UI/UX, content, SEO, and missing-page gaps. Checked so far: homepage + trending data,
 `/domains`, `/domains/top-voted`, `/search`, `DomainCard`, OG/Twitter metadata, robots.txt,
 marketplace-language across the whole site, mobile hamburger menu, image alt text,
-heading hierarchy (all pages now have exactly one `<h1>`), internal linking on `/learn`,
-`/docs`, and `/business-plan`. Not yet checked, in rough priority order:
+heading hierarchy (all pages now have exactly one `<h1>`), internal linking + theme +
+breadcrumbs on `/learn`, `/docs`, `/business-plan`, and both category pages, and a full
+(non-`tail`-truncated) lint audit. Not yet checked, in rough priority order:
 
 - [ ] Missing pages: no Terms of Service, Privacy Policy, or About/Team page found
       anywhere in `src/app/`. For a dApp handling real KAS payments this is a real
       trust/legal gap, not just a nice-to-have — worth a decision on scope before writing
       anything (legal content shouldn't be invented without input from whoever owns that
       decision — flagging, not attempting to draft legal text autonomously).
-- [ ] Internal linking on the *remaining* pages — category pages and domain profile pages
-      not checked yet (home, `/learn`, `/docs`, `/business-plan` are done).
+- [ ] Internal linking + breadcrumbs on domain profile pages (`/domain/[name]`) — not
+      checked yet. It already has a Home/Domains breadcrumb (`DomainBreadcrumb`); worth
+      checking whether it should also link to the domain's specific category.
 - [ ] Mobile check remaining pages: `/list-domain`, `/domain/[name]`, `/domain/update/[name]`,
       `EcosystemAdmin`, `/domains/my-domains`, `/domains/my-votes`.
 - [ ] Competitor/search-intent research for Kaspa/KNS domain discovery sites — not started.
@@ -311,12 +327,19 @@ heading hierarchy (all pages now have exactly one `<h1>`), internal linking on `
       logo instead of a proper 1200×630 branded banner. This needs an actual design asset;
       I fixed the metadata to stop lying about it (see "Recently shipped"), but a real
       image is still needed.
-- [ ] Fix the 25 `react-hooks/set-state-in-effect` lint errors surfaced by the Next.js 16
-      upgrade's stricter `eslint-config-next` ruleset (`Sidebar.tsx`, `VotingSection.tsx`,
-      `WalletContext.tsx`, `useKasware.ts`, `useKaswareEvmWallet.ts`) — real, pre-existing
-      patterns (`setState` called synchronously inside `useEffect`), not build-blocking but
-      worth cleaning up, especially if `npm run lint` gets wired into CI (still on the
-      backlog below).
+- [ ] **Corrected, verified lint backlog (loop iteration 4)** — 22 problems total (20
+      errors, 2 warnings), none build-blocking (`next build` doesn't run ESLint in v16),
+      but real if `npm run lint` gets wired into CI:
+      - 15× `react-hooks/set-state-in-effect` (`setState` called synchronously inside
+        `useEffect`) across `Sidebar.tsx`, `VotingSection.tsx`, `WalletContext.tsx`,
+        `useKasware.ts`, `useKaswareEvmWallet.ts`, `EcosystemAdmin/page.tsx`,
+        `domain/update/[name]/page.tsx`, `domains/my-votes/page.tsx`,
+        `domains/page.tsx`, `search/page.tsx`.
+      - 5× `react-hooks/static-components` (a component function defined inside another
+        component's render body, so it's recreated every render) in
+        `domains/new-listings/page.tsx` and `DomainForm.tsx` — both already-flagged
+        dead/broken components (see Cleanup section), low priority to fix vs. just
+        resolving their dead-code status.
 - [ ] `DomainDataStorage` (title/description/image/website) is still unwired — the domain
       "bio"/profile-description side of things, as opposed to the links/resources side
       (which is now real, see "Recently shipped"). Decide if this is wanted at all before
