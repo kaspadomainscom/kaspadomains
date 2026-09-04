@@ -33,54 +33,57 @@ export default function SearchPage() {
 
   if (!query) {
     return (
-      <div className="max-w-2xl mx-auto px-6 py-10 text-center text-gray-500">
-        Please enter a search term.
+      <div className="min-h-screen bg-[#0b1e1d]">
+        <div className="max-w-2xl mx-auto px-6 py-10 text-center text-gray-400">
+          Please enter a search term.
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10">
-      <h1 className="text-3xl font-semibold mb-6 text-gray-900 tracking-tight">
-        Search results for{' '}
-        <span className="text-[#3DFDAD]">&quot;{query}.kas&quot;</span>
-      </h1>
+    <div className="min-h-screen bg-[#0b1e1d]">
+      <div className="max-w-5xl mx-auto px-6 py-10">
+        <h1 className="text-3xl font-semibold mb-6 text-white tracking-tight">
+          Search results for{' '}
+          <span className="text-kaspaMint">&quot;{query}.kas&quot;</span>
+        </h1>
 
-      {results ? (
-        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {results.map((domain) => {
-            const baseName = domain.name.replace(/\.kas$/, '');
+        {results ? (
+          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {results.map((domain) => {
+              const baseName = domain.name.replace(/\.kas$/, '');
 
-            return (
-              <li key={domain.name}>
-                <Link
-                  href={`/domain/${encodeURIComponent(baseName)}.kas`}
-                  className="group block rounded-xl border border-gray-200 bg-white hover:shadow-lg transition-all duration-200 p-5"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-lg font-semibold text-gray-800 group-hover:text-[#3DFDAD] transition">
-                        {baseName}
-                        <span className="text-sm ml-1 px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full border border-gray-200">
-                          .kas
-                        </span>
+              return (
+                <li key={domain.name}>
+                  <Link
+                    href={`/domain/${encodeURIComponent(baseName)}.kas`}
+                    className="group block rounded-xl border border-[#1d3b39] bg-[#122c2a] hover:border-kaspaMint/50 hover:shadow-lg transition-all duration-200 p-5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-lg font-semibold text-white group-hover:text-kaspaMint transition">
+                          {baseName}
+                          <span className="text-sm ml-1 px-2 py-0.5 bg-[#1d3b39] text-gray-300 rounded-full border border-[#2a4a47]">
+                            .kas
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    {/* Removed price display */}
-                  </div>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <div className="text-center text-gray-600 mt-10">
-          <p className="text-lg mb-2">No matching domains found.</p>
-          <p className="text-sm text-gray-400">
-            Try a different keyword or check back later.
-          </p>
-        </div>
-      )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <div className="text-center text-gray-400 mt-10">
+            <p className="text-lg mb-2">No matching domains found.</p>
+            <p className="text-sm text-gray-500">
+              Try a different keyword or check back later.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

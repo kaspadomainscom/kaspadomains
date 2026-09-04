@@ -43,8 +43,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "https://kaspadomains.com/og-image.png",
-        width: 1200,
-        height: 630,
+        width: 1024,
+        height: 1024,
         alt: "Kaspadomains Open Graph Image",
       },
     ],
@@ -54,8 +54,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Kaspadomains",
     description: "Search and explore Kaspa Name Service domains with helpful tools and learning guides.",
-    images: ["https://kaspadomains.com/twitter-image.png"],
-    creator: "@yourTwitterHandle", // replace if available
+    images: ["https://kaspadomains.com/og-image.png"],
   },
 
   robots: {

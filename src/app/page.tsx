@@ -24,8 +24,8 @@ export const metadata = {
     images: [
       {
         url: "/og-image.png",
-        width: 1200,
-        height: 630,
+        width: 1024,
+        height: 1024,
         alt: ".kas domain showcase",
       },
     ],

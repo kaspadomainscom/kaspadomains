@@ -5,11 +5,9 @@ export async function GET() {
   const disallowPaths = [
     "/api/",
     "/_next/",
-    "/admin/",
-    "/login",
-    "/signup",
-    "/domain/new",
-    "/domain/edit",
+    "/EcosystemAdmin",
+    "/domain/update/",
+    "/search",
   ];
 
   const content = `

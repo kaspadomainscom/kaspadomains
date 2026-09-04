@@ -8,6 +8,42 @@ go stale.
 
 ## Recently shipped
 
+- [x] **Design/SEO/pages audit pass.** Found and fixed several concrete bugs while going
+      through the remaining untouched pages:
+      - **`og-image.png` was actually `kaspadomains-logo.jpg` renamed** (byte-identical,
+        confirmed via SHA-256) — a 1024×1024 JPEG, not the 1200×630 PNG every page's
+        metadata claimed. Fixed the declared dimensions everywhere (`layout.tsx`,
+        `page.tsx`, category page, domain page) to the real 1024×1024. A proper branded
+        1200×630 banner image is still a real gap — see "Real gaps" below, this isn't
+        something I can generate.
+      - **`twitter-image.png` didn't exist at all** — referenced in `layout.tsx`, would
+        404 on every Twitter Card fetch. Pointed it at the real `og-image.png` instead.
+        Also removed a literal placeholder Twitter handle (`creator: "@yourTwitterHandle"`)
+        that was never filled in.
+      - **`robots.txt` blocked five routes that don't exist** (`/admin/`, `/login`,
+        `/signup`, `/domain/new`, `/domain/edit` — generic boilerplate, never real routes
+        here) **while leaving the actual admin dashboard and edit route fully
+        crawlable/indexable** (`/EcosystemAdmin`, `/domain/update/`). Fixed to disallow the
+        real sensitive routes plus `/search` (query-param space is unbounded, plus it's
+        already `noindex` via metadata).
+      - **`/domains/top-voted` was a literal stub** (`<p>what</p>`) backed by a fully dead,
+        commented-out hook (`useTopVotedDomains.ts`, imported a module that doesn't exist).
+        Rebuilt for real as a server component using
+        `DomainVotesManager.getTopVotedDomains(hashes[])` (a batch query — one call instead
+        of N) against all active listed domains from `categoriesManifest`, sorted and
+        capped at top 24. Deleted the dead hook. This page is linked from the sidebar nav,
+        so it was a real, reachable broken page, not an orphan.
+      - **`DomainCard.tsx`** (used on `/domains/top-voted`, `/domains/my-domains`,
+        `/domains/my-votes`, and category pages) was a white card with a purple accent —
+        the one remaining light-themed shared component after the earlier theme
+        unification pass. Restyled to match. Also fixed its "View on Kaspascan" link, which
+        pointed a Kaspa L1 block explorer at a Kasplex (EVM L2) domain hash as if it were
+        an L1 transaction ID — wrong chain, wrong ID type, guaranteed-broken link. Now
+        links to the owner's address on the Kasplex explorer instead.
+      - **`/search`** was light-themed with zero metadata (title/description just
+        inherited the generic root layout). Restyled dark, added a `layout.tsx` with real
+        metadata and `noindex` (search-result pages shouldn't be indexed).
+
 - [x] **Upgraded to Next.js 16** (`16.3.4`, from `15.3.3`). Verified real breaking changes
       against the official docs before touching anything:
       - `src/middleware.ts` → `src/proxy.ts` (`middleware()` → `proxy()`) — the middleware
@@ -179,6 +215,11 @@ go stale.
 
 ## Real gaps (not just cleanup)
 
+- [ ] **No real Open Graph banner image.** `public/og-image.png` is just the square logo
+      renamed — every social share (X, Discord, etc.) will show a squished/cropped square
+      logo instead of a proper 1200×630 branded banner. This needs an actual design asset;
+      I fixed the metadata to stop lying about it (see "Recently shipped"), but a real
+      image is still needed.
 - [ ] Fix the 25 `react-hooks/set-state-in-effect` lint errors surfaced by the Next.js 16
       upgrade's stricter `eslint-config-next` ruleset (`Sidebar.tsx`, `VotingSection.tsx`,
       `WalletContext.tsx`, `useKasware.ts`, `useKaswareEvmWallet.ts`) — real, pre-existing
