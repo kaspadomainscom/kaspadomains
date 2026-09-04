@@ -114,6 +114,24 @@ go stale.
 - [ ] Get the Solidity contracts reviewed/audited before any mainnet deployment (out of
       scope for this frontend repo, but a hard blocker for Phase 2 in the plan).
 
+## Future / watch (not actionable yet)
+
+- [ ] **KCC-0020 (covenant-native token standard) — watch, don't build against yet.**
+      Researched 2026-09-04 after a request to "upgrade Kaspa tech to KCC-0020": it's a
+      *draft* proposal under Kaspa's "Kaspa Calls for Conventions" (KCCs) for a
+      covenant-enforced fungible token standard on Kaspa **L1**, positioned as a possible
+      successor to KRC-20. As of this writing it has a documented "known supply-split
+      defect," has only been run on Kaspa testnet-10, and is not finalized.
+      **Doesn't apply to this repo's contracts**: `KDCToken` is a Solidity ERC-20 on
+      **Kasplex (an EVM L2)**, not an L1 covenant script — KCC-0020/KRC-20 are base-chain
+      UTXO/covenant conventions, a different technology stack from EVM ERC-20. There is no
+      code change in this app that would make it "KCC-0020 compliant." Revisit only once
+      the standard is finalized and there's a concrete reason an EVM-side contract would
+      need to interoperate with it (e.g. a bridge or wrapped-asset design) — not before.
+      Sources: [kaspanet/kccs](https://github.com/kaspanet/kccs) (the KCC spec repo),
+      [Kasplex KRC-20 wiki](https://wiki.kaspa.org/en/Kasplex_KRC_20) (current, live
+      standard for comparison).
+
 ## Process note
 
 Recent commit history (`git log`) has no descriptive messages ("Your commit message",
