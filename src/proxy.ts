@@ -1,4 +1,4 @@
-// src/middleware.ts
+// src/proxy.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -9,7 +9,7 @@ function base64url(bytes: Uint8Array): string {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Exclude static assets, API routes, and common files
@@ -71,7 +71,7 @@ export function middleware(request: NextRequest) {
   }));
 
   if (process.env.NODE_ENV !== "production") {
-    console.log(`[middleware] Injected nonce: ${nonce} for ${pathname}`);
+    console.log(`[proxy] Injected nonce: ${nonce} for ${pathname}`);
   }
 
   return response;
