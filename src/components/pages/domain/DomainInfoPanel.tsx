@@ -14,26 +14,26 @@ type Props = {
 
 export function DomainInfoPanel({ domain, category }: Props) {
     return (
-        <section className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm space-y-4 text-gray-800">
+        <section className="bg-[#122c2a] border border-[#1d3b39] rounded-xl p-6 shadow-md space-y-4 text-gray-100">
             <Detail label="Category" value={category} />
 
             <Detail
                 label="Status"
                 value={domain.isActive ? "Listed" : "Unlisted"}
-                valueClass={domain.isActive ? "text-green-600" : "text-gray-500"}
+                valueClass={domain.isActive ? "text-kaspaMint font-semibold" : "text-gray-500"}
             />
 
             <Detail
                 label="Likes"
                 value={<DomainLikeCount domain={domain.name} />}
-                valueClass="text-pink-600 font-semibold"
+                valueClass="text-pink-400 font-semibold"
             />
 
             <DomainResources domainName={domain.name} />
 
             <Link
                 href={`/domain/update/${domain.name}`}
-                className="inline-block text-sm text-kaspaGreen hover:underline"
+                className="inline-block text-sm text-kaspaMint hover:underline"
             >
                 Own this domain? Manage its resources →
             </Link>

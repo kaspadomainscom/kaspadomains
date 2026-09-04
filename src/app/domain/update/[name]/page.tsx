@@ -123,7 +123,7 @@ export default function UpdateDomainPage() {
 
   if (loading) {
     return (
-      <main className="max-w-xl mx-auto p-6 mt-10 text-center text-gray-600">
+      <main className="max-w-xl mx-auto p-6 mt-10 text-center text-gray-400">
         <p>Loading domain data...</p>
       </main>
     );
@@ -131,7 +131,7 @@ export default function UpdateDomainPage() {
 
   if (error) {
     return (
-      <main className="max-w-xl mx-auto p-6 mt-10 text-center text-red-500">
+      <main className="max-w-xl mx-auto p-6 mt-10 text-center text-red-400">
         {error}
       </main>
     );
@@ -139,7 +139,7 @@ export default function UpdateDomainPage() {
 
   if (!isKaspaConnected || !isEvmConnected) {
     return (
-      <main className="max-w-xl mx-auto p-6 mt-10 text-center text-yellow-600">
+      <main className="max-w-xl mx-auto p-6 mt-10 text-center text-yellow-400">
         Connect both your Kasware (KNS ownership) and MetaMask (Kasplex transaction) wallets to manage this domain.
         <div className="mt-4">
           <button
@@ -158,16 +158,16 @@ export default function UpdateDomainPage() {
 
   if (!isOwner) {
     return (
-      <main className="max-w-xl mx-auto p-6 mt-10 text-center text-red-500">
+      <main className="max-w-xl mx-auto p-6 mt-10 text-center text-red-400">
         ❌ You are not the owner of <strong>{domainName || '(unknown)'}</strong>.
       </main>
     );
   }
 
   return (
-    <main className="max-w-xl mx-auto p-6 bg-white dark:bg-neutral-900 rounded shadow-md mt-8">
-      <h1 className="text-2xl font-bold mb-2 text-kaspaGreen">Edit Domain: {domainName}</h1>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+    <main className="max-w-xl mx-auto p-6 bg-[#122c2a] border border-[#1d3b39] rounded-xl shadow-md mt-8 text-gray-100">
+      <h1 className="text-2xl font-bold mb-2 text-white">Edit Domain: {domainName}</h1>
+      <p className="text-sm text-gray-400 mb-6">
         Add resources — your X (Twitter) account and any other links — so visitors can find you.
       </p>
 
@@ -179,20 +179,20 @@ export default function UpdateDomainPage() {
               value={link.name}
               onChange={(e) => updateLinkField(i, 'name', e.target.value)}
               placeholder="Label (e.g. X)"
-              className="w-1/3 border border-gray-300 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 text-gray-800 dark:text-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-kaspaGreen"
+              className="w-1/3 border border-[#1d3b39] bg-[#0F2F2E] text-gray-100 placeholder-gray-500 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-kaspaMint"
             />
             <input
               type="text"
               value={link.url}
               onChange={(e) => updateLinkField(i, 'url', e.target.value)}
               placeholder="https://x.com/yourhandle"
-              className="flex-1 border border-gray-300 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 text-gray-800 dark:text-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-kaspaGreen"
+              className="flex-1 border border-[#1d3b39] bg-[#0F2F2E] text-gray-100 placeholder-gray-500 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-kaspaMint"
             />
             <button
               type="button"
               onClick={() => removeLinkRow(i)}
               aria-label="Remove link"
-              className="px-2 py-2 text-red-500 hover:text-red-700"
+              className="px-2 py-2 text-red-400 hover:text-red-300"
             >
               ✕
             </button>
@@ -203,17 +203,17 @@ export default function UpdateDomainPage() {
           type="button"
           onClick={addLinkRow}
           disabled={links.length >= maxLinks}
-          className="text-sm text-kaspaGreen hover:underline disabled:text-gray-400 disabled:no-underline"
+          className="text-sm text-kaspaMint hover:underline disabled:text-gray-500 disabled:no-underline"
         >
           + Add another link
         </button>
 
-        <p className="text-xs text-gray-400">{links.length} / {maxLinks} links</p>
+        <p className="text-xs text-gray-500">{links.length} / {maxLinks} links</p>
 
         <button
           type="submit"
           disabled={saving}
-          className="w-full bg-kaspaGreen hover:bg-kaspaMint text-white font-semibold py-2 rounded transition disabled:opacity-50"
+          className="w-full bg-kaspaMint hover:bg-[#3DFDAD]/90 text-[#0F2F2E] font-semibold py-2 rounded transition disabled:opacity-50"
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </button>

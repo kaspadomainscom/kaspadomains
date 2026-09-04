@@ -14,7 +14,7 @@ export function DomainResources({ domainName }: { domainName: string }) {
 
   return (
     <div className="pt-2">
-      <span className="font-medium text-gray-700 min-w-[120px] block mb-2 text-sm md:text-base">
+      <span className="font-medium text-gray-400 min-w-[120px] block mb-2 text-sm md:text-base">
         Resources:
       </span>
       <ul className="flex flex-wrap gap-2">
@@ -24,7 +24,7 @@ export function DomainResources({ domainName }: { domainName: string }) {
               href={isExternalUrl(link.url) ? link.url : `https://${link.url}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block px-3 py-1 rounded-full bg-gray-100 hover:bg-gray-200 text-sm text-gray-800 border border-gray-200 transition"
+              className="inline-block px-3 py-1 rounded-full bg-[#1d3b39] hover:bg-kaspaMint hover:text-[#0F2F2E] text-sm text-kaspaMint border border-[#3DFDAD]/30 transition"
             >
               {link.name}
             </a>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const sections = [
   { id: 'what', label: 'What is KaspaDomains?' },
@@ -16,6 +16,9 @@ const sections = [
 ];
 
 export default function Docs() {
+  const [activeId, setActiveId] = useState(sections[0].id);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
   useEffect(() => {
     const hash = window.location.hash.slice(1);
     if (hash) {
@@ -24,19 +27,43 @@ export default function Docs() {
     }
   }, []);
 
+  // Scroll-spy: highlight whichever section is currently in view
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.find((e) => e.isIntersecting);
+        if (visible) setActiveId(visible.target.id);
+      },
+      { rootMargin: '-15% 0px -70% 0px', threshold: 0 }
+    );
+
+    sections.forEach((s) => {
+      const el = document.getElementById(s.id);
+      if (el) observerRef.current?.observe(el);
+    });
+
+    return () => observerRef.current?.disconnect();
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#0b1e1d] text-gray-100 px-6 py-12">
-      <div className="max-w-5xl mx-auto space-y-12">
+      <div className="max-w-6xl mx-auto md:grid md:grid-cols-[220px_1fr] md:gap-10">
 
-        {/* Table of Contents */}
-        <nav className="bg-[#142f2c] rounded-2xl shadow p-4 md:p-6 mb-8">
-          <h2 className="text-white text-lg font-semibold mb-2">Docs Navigation</h2>
-          <ul className="text-sm space-y-1 md:flex md:flex-wrap md:gap-4 md:space-y-0">
+        {/* Sidebar navigation */}
+        <nav className="mb-8 md:mb-0 md:sticky md:top-24 md:self-start bg-[#142f2c] rounded-2xl shadow p-4 md:p-5">
+          <h2 className="text-white text-sm font-semibold uppercase tracking-wide mb-3">
+            Docs
+          </h2>
+          <ul className="text-sm space-y-1">
             {sections.map((s) => (
               <li key={s.id}>
                 <a
                   href={`#${s.id}`}
-                  className="text-gray-300 hover:text-white underline underline-offset-2"
+                  className={`block px-2 py-1.5 rounded-md transition ${
+                    activeId === s.id
+                      ? 'bg-kaspaMint text-[#0F2F2E] font-medium'
+                      : 'text-gray-300 hover:text-white hover:bg-[#1d3b39]'
+                  }`}
                 >
                   {s.label}
                 </a>
@@ -45,95 +72,98 @@ export default function Docs() {
           </ul>
         </nav>
 
-        {/* Sections */}
-        <Section id="what" title="What is KaspaDomains?">
-          <p>
-            KaspaDomains is an on-chain registry for verified KNS (.kas) domains. Any domain holder can permanently list their domain by paying a one-time fee of <strong>420 KAS</strong>.
-          </p>
-          <p className="text-gray-400 text-sm">
-            No marketplace, no intermediaries — only you control your domain.
-          </p>
-        </Section>
+        {/* Content */}
+        <div className="space-y-8">
+          <Section id="what" title="What is KaspaDomains?">
+            <p>
+              KaspaDomains is an on-chain registry for verified KNS (.kas) domains. Any domain holder can permanently list their domain by paying a one-time fee of <strong>420 KAS</strong>.
+            </p>
+            <p className="text-gray-400 text-sm">
+              No marketplace, no intermediaries — only you control your domain.
+            </p>
+          </Section>
 
-        <Section id="how" title="How It Works">
-          <ul>
-            <li>Own a verified KNS domain (e.g. <code>player456.kas</code>)</li>
-            <li>Pay a one-time <strong>420 KAS</strong> fee to list forever</li>
-            <li>Your domain is assigned a unique ID (0–9999)</li>
-            <li>Listings are immutable, secure, and on-chain</li>
-            <li>You retain full ownership — we don&apos;t sell domains</li>
-          </ul>
-        </Section>
+          <Section id="how" title="How It Works">
+            <ul>
+              <li>Own a verified KNS domain (e.g. <code>player456.kas</code>)</li>
+              <li>Pay a one-time <strong>420 KAS</strong> fee to list forever</li>
+              <li>Your domain is assigned a unique ID (0–9999)</li>
+              <li>Listings are immutable, secure, and on-chain</li>
+              <li>You retain full ownership — we don&apos;t sell domains</li>
+            </ul>
+          </Section>
 
-        <Section id="kns" title="KNS Verification">
-          <p>We will use the official KNS smart contracts to ensure domain legitimacy:</p>
-          <ul>
-            <li><code>ownerOf(tokenId)</code> — to verify ownership</li>
-            <li><code>isVerifiedDomain(name)</code> — to validate name</li>
-            <li><code>keccak256(&quot;yourdomain.kas&quot;)</code> — for domain hashing</li>
-            <li>Only real owners can list. No duplicates, no fakes.</li>
-          </ul>
-        </Section>
+          <Section id="kns" title="KNS Verification">
+            <p>We use the official KNS smart contracts to ensure domain legitimacy:</p>
+            <ul>
+              <li><code>ownerOf(tokenId)</code> — to verify ownership</li>
+              <li><code>isVerifiedDomain(name)</code> — to validate name</li>
+              <li><code>keccak256(&quot;yourdomain.kas&quot;)</code> — for domain hashing</li>
+              <li>Only real owners can list. No duplicates, no fakes.</li>
+            </ul>
+          </Section>
 
-        <Section id="details" title="Listing Details">
-          <ul>
-            <li>Plaintext domain (e.g. <code>example.kas</code>)</li>
-            <li>Hashed domain (<code>keccak256(&quot;example.kas&quot;)</code>)</li>
-            <li>Wallet address of the domain owner</li>
-            <li>Unique ID (0–9999) tied to listing</li>
-          </ul>
-        </Section>
+          <Section id="details" title="Listing Details">
+            <ul>
+              <li>Plaintext domain (e.g. <code>example.kas</code>)</li>
+              <li>Hashed domain (<code>keccak256(&quot;example.kas&quot;)</code>)</li>
+              <li>Wallet address of the domain owner</li>
+              <li>Unique ID (0–9999) tied to listing</li>
+            </ul>
+          </Section>
 
-        <Section id="rules" title="Listing Rules">
-          <ul>
-            <li>Must be a verified KNS domain</li>
-            <li>You must be the on-chain owner</li>
-            <li>Each domain can only be listed once</li>
-            <li>Listings are permanent — no edits or removals</li>
-          </ul>
-        </Section>
+          <Section id="rules" title="Listing Rules">
+            <ul>
+              <li>Must be a verified KNS domain</li>
+              <li>You must be the on-chain owner</li>
+              <li>Each domain can only be listed once</li>
+              <li>Must belong to at least one category</li>
+              <li>Listings are permanent — no edits or removals</li>
+            </ul>
+          </Section>
 
-        <Section id="resources" title="Domain Resources">
-          <p>
-            Once listed, you can attach resources to your domain&apos;s profile page —
-            your <strong>X (Twitter) account</strong> and any links you want visitors to see
-            (website, Discord, docs, whatever represents you). This is how people who find
-            your domain through search or category browsing actually reach you.
-          </p>
-        </Section>
+          <Section id="resources" title="Domain Resources">
+            <p>
+              Once listed, you can attach resources to your domain&apos;s profile page —
+              your <strong>X (Twitter) account</strong> and any links you want visitors to see
+              (website, Discord, docs, whatever represents you). This is how people who find
+              your domain through search or category browsing actually reach you.
+            </p>
+          </Section>
 
-        <Section id="benefits" title="Why List Your Domain?">
-          <ul>
-            <li>Get permanently indexed on KaspaDomains, organized by category</li>
-            <li>Attach an X account and links so people can find you</li>
-            <li>Participate in community voting and rankings</li>
-            <li>Build brand identity across the Kaspa ecosystem</li>
-          </ul>
-        </Section>
+          <Section id="benefits" title="Why List Your Domain?">
+            <ul>
+              <li>Get permanently indexed on KaspaDomains, organized by category</li>
+              <li>Attach an X account and links so people can find you</li>
+              <li>Participate in community voting and rankings</li>
+              <li>Build brand identity across the Kaspa ecosystem</li>
+            </ul>
+          </Section>
 
-        <Section id="voting" title="Community Voting">
-          <p>
-            Users can support a domain for <strong>6 KAS</strong> per vote. Votes raise a
-            domain&apos;s ranking and visibility across the site — a portion goes to the
-            domain owner, the rest funds the ecosystem.
-          </p>
-          <p className="text-gray-400 text-sm">Voting empowers domain owners and strengthens community engagement.</p>
-        </Section>
+          <Section id="voting" title="Community Voting">
+            <p>
+              Users can support a domain for <strong>6 KAS</strong> per vote. Votes raise a
+              domain&apos;s ranking and visibility across the site — a portion goes to the
+              domain owner, the rest funds the ecosystem.
+            </p>
+            <p className="text-gray-400 text-sm">Voting empowers domain owners and strengthens community engagement.</p>
+          </Section>
 
-        <Section id="notmarketplace" title="We Are Not a Marketplace">
-          <p>
-            KaspaDomains does not sell domains. We&apos;re a registry — not a reseller. Every listing is owned and controlled by the original wallet that created it. There&apos;s no gatekeeping, no central control.
-          </p>
-        </Section>
+          <Section id="notmarketplace" title="We Are Not a Marketplace">
+            <p>
+              KaspaDomains does not sell domains. We&apos;re a registry — not a reseller. Every listing is owned and controlled by the original wallet that created it. There&apos;s no gatekeeping, no central control.
+            </p>
+          </Section>
 
-        <Section id="start" title="Get Started">
-          <p>
-            Ready to list your domain? Connect your wallet, verify your KNS domain, and pay the 420 KAS fee. Your domain will be recorded on-chain — forever.
-          </p>
-          <p className="text-sm text-gray-500">
-            Need help? Join the KaspaDomains community on X or Discord and help shape the future of identity on Kaspa.
-          </p>
-        </Section>
+          <Section id="start" title="Get Started">
+            <p>
+              Ready to list your domain? Connect your wallet, verify your KNS domain, and pay the 420 KAS fee. Your domain will be recorded on-chain — forever.
+            </p>
+            <p className="text-sm text-gray-500">
+              Need help? Join the KaspaDomains community on X or Discord and help shape the future of identity on Kaspa.
+            </p>
+          </Section>
+        </div>
 
       </div>
     </div>
@@ -142,7 +172,7 @@ export default function Docs() {
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
-    <section id={id} className="bg-[#122c2a] p-4 md:p-8 rounded-2xl shadow-md space-y-4">
+    <section id={id} className="bg-[#122c2a] p-4 md:p-8 rounded-2xl shadow-md space-y-4 scroll-mt-24">
       <h2 className="text-2xl font-semibold text-white">{title}</h2>
       <div className="text-gray-300 text-sm md:text-base space-y-2">{children}</div>
     </section>

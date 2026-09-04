@@ -8,6 +8,30 @@ go stale.
 
 ## Recently shipped
 
+- [x] **Site-wide theme unification.** The site was split between a dark navy theme
+      (home, docs, learn, header, sidebar) and a light theme left over on the domain
+      profile page, `VotingSection`, `domain/update/[name]`, and the footer. Standardized
+      everything on the dark theme: `layout.tsx` body background, `Footer.tsx` (also gained
+      a real nav with links to Domains/Categories/Learn/Docs/Business Plan), and every
+      component under `domain/[name]` and `domain/update/[name]`. Also fixed a broken CSS
+      class (`text-kaspa-green` — no matching rule anywhere in `globals.css`, so that text
+      was silently rendering in the default color) in `learn/page.tsx`, replaced with the
+      real `text-kaspaMint` utility.
+- [x] **`/docs` rebuilt as an actual wiki-style page.** Was a flat single column with a
+      top TOC block. Now a sticky sidebar nav with scroll-spy active-section highlighting
+      (`IntersectionObserver`), plus a `layout.tsx` giving it real metadata (it had none —
+      inherited only the generic root title before). Also fixed a stale copy claim ("We
+      *will* use the official KNS smart contracts" — future tense, but this is already
+      implemented) and added categories as a listed requirement.
+- [x] **`docs/BUSINESS_PLAN.md` is now also a real public page** at
+      [`/business-plan`](../src/app/business-plan/page.tsx) (adapted for a public audience —
+      the internal doc's risk log and open questions weren't republished verbatim), linked
+      from the footer and included in `sitemap.xml`.
+- [x] **Fixed remaining vote-price copy inconsistencies.** The real on-chain vote cost is
+      6 KAS (`VotingSection.tsx`'s `parseEther("6")`), but copy elsewhere said 5 KAS or
+      24 KAS in different places before this session's earlier passes; this pass verified
+      all remaining live copy (home, docs, learn) now consistently says 6 KAS.
+
 - [x] **Category is now mandatory when listing a domain.** `PickDomainModal` fetches the
       on-chain allowed-category list (`useGetAllowedCategories`) and disables the "List for
       420 KAS" action until at least one is picked. On successful listing, the new
@@ -69,6 +93,14 @@ go stale.
 
 ## Cleanup
 
+- [ ] **`src/app/domains/new-listings/page.tsx` is completely non-functional** — found while
+      chasing down a "999 KAS" price inconsistency. `CONTRACT_ADDRESS` is the literal string
+      `'0xYourContractAddressHere'` (never filled in), the fee is hardcoded to 999 KAS
+      (should be 420), and it calls `contract.listDomain(domainInput, {...})` with a whole
+      object as the first argument — the real `KaspaDomainsRegistry.listDomain` signature is
+      `(string domain, address to)`, so even with a real address this call would revert.
+      It's not linked from anywhere in the app (no nav link, not in `sitemap.xml`), so low
+      urgency, but worth a decision: finish it for real or delete it.
 - [ ] [`src/app/list-domain-test/page.tsx`](../src/app/list-domain-test/page.tsx) is still
       an exact duplicate of `src/app/list-domain/page.tsx` (both import the same
       `PickDomainModal`, so it did pick up the new category-selection behavior — it's just

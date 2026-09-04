@@ -145,7 +145,7 @@ export default async function DomainPage({ params }: PageProps): Promise<JSX.Ele
     manifest = await loadCategoriesManifest();
   } catch {
     return (
-      <main className="max-w-3xl mx-auto px-4 py-10 text-center">
+      <main className="max-w-3xl mx-auto px-4 py-10 text-center text-gray-100">
         <h1 className="text-2xl font-bold mb-4">Contract Unavailable</h1>
         <p>
           Sorry, we are unable to load domain data right now because the smart contract is not

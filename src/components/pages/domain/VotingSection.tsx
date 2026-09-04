@@ -120,16 +120,16 @@ export function VotingSection({ domainName }: { domainName: string }) {
     const isConnected = status === "connected" && !!account;
 
     return (
-        <section className="mt-10 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Support this Domain</h2>
+        <section className="mt-10 bg-[#122c2a] border border-[#1d3b39] rounded-xl p-6 shadow-md text-gray-100">
+            <h2 className="text-xl font-semibold mb-4 text-white">Support this Domain</h2>
 
             <div className="flex items-center gap-4 mb-4">
                 <button
                     onClick={onVote}
                     disabled={!isConnected || userHasLiked || txPending}
-                    className={`px-4 py-2 rounded font-semibold text-white ${userHasLiked
-                            ? "bg-gray-400 cursor-not-allowed"
-                            : "bg-green-600 hover:bg-green-700"
+                    className={`px-4 py-2 rounded font-semibold ${userHasLiked
+                            ? "bg-gray-600 text-gray-300 cursor-not-allowed"
+                            : "bg-kaspaMint text-[#0F2F2E] hover:bg-[#3DFDAD]/90"
                         }`}
                 >
                     {userHasLiked
@@ -139,17 +139,17 @@ export function VotingSection({ domainName }: { domainName: string }) {
                             : "Vote to this domain (6 KAS)"}
                 </button>
 
-                <span className="text-lg font-semibold">Votes: {likesCount}</span>
+                <span className="text-lg font-semibold text-white">Votes: {likesCount}</span>
             </div>
 
-            <h3 className="font-medium mb-2">Voters</h3>
+            <h3 className="font-medium mb-2 text-gray-200">Voters</h3>
 
             {loadingVoters ? (
-                <p>Loading voters...</p>
+                <p className="text-gray-400">Loading voters...</p>
             ) : voters.length === 0 ? (
-                <p>No votes yet. Be the first to vote!</p>
+                <p className="text-gray-400">No votes yet. Be the first to vote!</p>
             ) : (
-                <ul className="space-y-1 max-h-48 overflow-auto border border-gray-200 rounded p-2 font-mono text-sm">
+                <ul className="space-y-1 max-h-48 overflow-auto border border-[#1d3b39] rounded p-2 font-mono text-sm text-gray-300">
                     {voters.map((voter) => (
                         <li key={voter}>{voter}</li>
                     ))}
@@ -161,14 +161,14 @@ export function VotingSection({ domainName }: { domainName: string }) {
                 <button
                     onClick={() => setPage((p) => Math.max(p - 1, 1))}
                     disabled={page === 1}
-                    className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50"
+                    className="px-2 py-1 bg-[#1d3b39] text-gray-200 rounded disabled:opacity-50"
                 >
                     Previous
                 </button>
                 <button
                     onClick={() => setPage((p) => p + 1)}
                     disabled={voters.length < DOMAIN_LIKES_PER_PAGE}
-                    className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50"
+                    className="px-2 py-1 bg-[#1d3b39] text-gray-200 rounded disabled:opacity-50"
                 >
                     Next
                 </button>

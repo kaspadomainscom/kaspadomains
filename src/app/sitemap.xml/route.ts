@@ -18,6 +18,9 @@ export async function GET() {
     "/list-domain",
     "/domains",
     "/domains/categories",
+    "/docs",
+    "/learn",
+    "/business-plan",
     ...Object.keys(categoriesData).map((cat) => `/domains/categories/category/${cat}`),
   ];
 

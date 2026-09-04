@@ -10,8 +10,8 @@ type Props = {
 export function Detail({ label, value, valueClass = "" }: Props) {
   return (
     <div className="flex gap-2 text-sm md:text-base">
-      <span className="font-medium text-gray-700 min-w-[120px]">{label}:</span>
-      <span className={valueClass}>{value}</span>
+      <span className="font-medium text-gray-400 min-w-[120px]">{label}:</span>
+      <span className={valueClass || 'text-gray-100'}>{value}</span>
     </div>
   );
 }

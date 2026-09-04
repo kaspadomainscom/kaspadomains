@@ -16,7 +16,7 @@ export default function Learn() {
           <h2 className="text-4xl font-bold text-white mb-4">What is KaspaDomains?</h2>
           <p className="text-gray-300 leading-relaxed">
             <span className="text-white font-semibold">KaspaDomains.com</span> is a registry
-            and showcase for KNS <code className="text-kaspa-green">.kas</code> domains. Any
+            and showcase for KNS <code className="text-kaspaMint">.kas</code> domains. Any
             KNS domain holder can list their name, place it in a category, and attach
             resources like an X account and links — so the domain is actually discoverable
             and reachable, not just held.
@@ -28,9 +28,9 @@ export default function Learn() {
           <h2 className="text-4xl font-bold text-white mb-4">How It Works</h2>
           <ul className="list-disc list-inside text-gray-300 space-y-2">
             <li>Connect your Kasware wallet (proves KNS ownership) and MetaMask (for the Kasplex transaction)</li>
-            <li>Pick a verified <code className="text-kaspa-green">.kas</code> domain you own</li>
+            <li>Pick a verified <code className="text-kaspaMint">.kas</code> domain you own</li>
             <li>Choose at least one category so your domain can be found</li>
-            <li>Pay a one-time <span className="text-kaspa-green font-semibold">420 KAS</span> listing fee — no renewals, ever</li>
+            <li>Pay a one-time <span className="text-kaspaMint font-semibold">420 KAS</span> listing fee — no renewals, ever</li>
             <li>Add your X account and other links to your domain&apos;s profile</li>
           </ul>
         </section>
@@ -59,7 +59,7 @@ export default function Learn() {
         <section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]">
           <h2 className="text-4xl font-bold text-white mb-4">Community Voting</h2>
           <p className="text-gray-300 leading-relaxed">
-            Anyone can support a listed domain for <span className="text-kaspa-green font-semibold">6 KAS</span> per
+            Anyone can support a listed domain for <span className="text-kaspaMint font-semibold">6 KAS</span> per
             vote. Votes raise a domain&apos;s ranking and visibility across the site,
             surfacing the domains the community values most.
           </p>

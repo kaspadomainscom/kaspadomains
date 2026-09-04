@@ -81,7 +81,7 @@ export default async function RootLayout({
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <body
-        className="antialiased bg-kaspaGreenLight text-gray-900 selection:bg-kaspaMint selection:text-black"
+        className="antialiased bg-[#0b1e1d] text-gray-100 selection:bg-kaspaMint selection:text-black"
       >
         {/* Provide CSP nonce via React context */}
         <NonceProvider nonce={nonce}>
