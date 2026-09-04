@@ -8,6 +8,14 @@ value proposition. The product is a domain listing + discovery service; the unde
 not covered here as a business driver. See [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) and
 [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the technical picture.
 
+**Pricing note (2026-09-04):** the live site now *displays* a 210 KAS listing price for
+marketing/SEO purposes, by explicit request. The actual on-chain charge is unchanged —
+`KaspaDomainsRegistry.DOMAIN_FEE` is a contract constant with no setter (verified against
+the ABI), currently 420 KAS, and cannot be changed without deploying a new contract. This
+plan describes the real, enforced economics (420 KAS) rather than the displayed marketing
+figure; see [`TODO.md`](./TODO.md) for the tracked mismatch and what resolving it would
+require.
+
 ## 1. Executive summary
 
 The core logic is simple: a domain owner pays a one-time **420 KAS** fee, and that listing —

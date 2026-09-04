@@ -80,7 +80,7 @@ export default function Docs() {
         <div className="space-y-8">
           <Section id="what" title="What is KaspaDomains?">
             <p>
-              KaspaDomains is an on-chain registry for verified KNS (.kas) domains. Any domain holder can permanently list their domain by paying a one-time fee of <strong>420 KAS</strong>.
+              KaspaDomains is an on-chain registry for verified KNS (.kas) domains. Any domain holder can permanently list their domain by paying a one-time fee of <strong>210 KAS</strong>.
             </p>
             <p className="text-gray-400 text-sm">
               No marketplace, no intermediaries — only you control your domain.
@@ -90,7 +90,7 @@ export default function Docs() {
           <Section id="how" title="How It Works">
             <ul>
               <li>Own a verified KNS domain (e.g. <code>player456.kas</code>)</li>
-              <li>Pay a one-time <strong>420 KAS</strong> fee to list forever</li>
+              <li>Pay a one-time <strong>210 KAS</strong> fee to list forever</li>
               <li>Your domain is assigned a unique ID (0–9999)</li>
               <li>Listings are immutable, secure, and on-chain</li>
               <li>You retain full ownership — we don&apos;t sell domains</li>
@@ -171,7 +171,7 @@ export default function Docs() {
 
           <Section id="start" title="Get Started">
             <p>
-              Ready to list your domain? Connect your wallet, verify your KNS domain, and pay the 420 KAS fee. Your domain will be recorded on-chain — forever.
+              Ready to list your domain? Connect your wallet, verify your KNS domain, and pay the 210 KAS fee. Your domain will be recorded on-chain — forever.
             </p>
             <Link
               href="/list-domain"

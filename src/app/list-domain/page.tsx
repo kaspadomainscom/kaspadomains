@@ -57,7 +57,7 @@ export default function ListDomainPage() {
             <h2 className="text-3xl font-bold text-white">Listing Benefits</h2>
             <p className="text-gray-300 leading-relaxed">
               Listing your domain costs a one-time fee of{' '}
-              <span className="font-semibold text-yellow-400">420 KAS</span>. No renewals. No subscriptions.
+              <span className="font-semibold text-yellow-400">210 KAS</span>. No renewals. No subscriptions.
               Your domain is permanently listed and promoted on the network.
             </p>
 

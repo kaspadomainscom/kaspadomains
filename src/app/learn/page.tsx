@@ -35,7 +35,7 @@ export default function Learn() {
             <li>Connect your Kasware wallet — it proves KNS ownership and signs the Kasplex transaction</li>
             <li>Pick a verified <code className="text-kaspaMint">.kas</code> domain you own</li>
             <li>Choose at least one category so your domain can be found</li>
-            <li>Pay a one-time <span className="text-kaspaMint font-semibold">420 KAS</span> listing fee — no renewals, ever</li>
+            <li>Pay a one-time <span className="text-kaspaMint font-semibold">210 KAS</span> listing fee — no renewals, ever</li>
             <li>Add your X account and other links to your domain&apos;s profile</li>
           </ul>
         </section>

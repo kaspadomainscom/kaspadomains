@@ -58,6 +58,12 @@ export function useListDomain() {
         try {
           addToast(`Listing "${domain}"... (Attempt ${attempt})`);
 
+          // NOTE: KaspaDomainsRegistry.DOMAIN_FEE is a contract constant with no
+          // setter (verified against the ABI) -- it currently equals 420 KAS on the
+          // deployed testnet contract. Site copy was changed to display "210 KAS"
+          // for marketing/SEO, but this value MUST stay in sync with the real
+          // on-chain DOMAIN_FEE or every listing transaction will revert. See
+          // docs/TODO.md for the tracked mismatch this creates.
           const hash = await walletClient.writeContract({
             address: contracts.KaspaDomainsRegistry.address,
             abi: contracts.KaspaDomainsRegistry.abi,

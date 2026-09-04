@@ -38,7 +38,7 @@ export default function BusinessPlanPage() {
         <Section title="The Solution">
           <ol className="list-decimal list-inside space-y-2">
             <li><strong>Prove ownership</strong> — connect Kasware to verify the .kas name on KNS.</li>
-            <li><strong>List it</strong> — pay a one-time <strong className="text-kaspaMint">420 KAS</strong> fee via Kasware. No renewals, ever.</li>
+            <li><strong>List it</strong> — pay a one-time <strong className="text-kaspaMint">210 KAS</strong> fee via Kasware. No renewals, ever.</li>
             <li><strong>Categorize it</strong> — pick at least one category so it can actually be found.</li>
             <li><strong>Add resources</strong> — attach an X account and links to the domain&apos;s public profile.</li>
             <li><strong>Get discovered</strong> — the domain appears on its category page and in search.</li>
@@ -52,7 +52,7 @@ export default function BusinessPlanPage() {
         <Section title="Revenue Model">
           <ul className="space-y-2">
             <li>
-              <strong className="text-kaspaMint">Listing fees</strong> — 420 KAS per domain,
+              <strong className="text-kaspaMint">Listing fees</strong> — 210 KAS per domain,
               one-time, capped at 10,000 listings.
             </li>
             <li>

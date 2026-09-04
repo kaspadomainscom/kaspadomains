@@ -8,6 +8,36 @@ go stale.
 
 ## Recently shipped
 
+- [x] **Displayed listing price changed to 210 KAS (site copy/SEO only) — real on-chain
+      price is unchanged at 420 KAS.** Explicit request: "change price of listing to 210
+      kas in all app and docs." Before touching anything, checked whether this was
+      actually possible: `KaspaDomainsRegistry.DOMAIN_FEE` is a `view`-only contract
+      constant with **no setter function anywhere in the ABI** (unlike `voteFee`, which
+      has `setVoteFee`) — it cannot be changed without deploying an entirely new contract
+      (Solidity source isn't even in this repo), which is a real money-moving deployment
+      action, not a documentation change. Flagged this to the user before proceeding; they
+      confirmed they want the *displayed* price changed for marketing/SEO regardless,
+      understanding this creates an intentional mismatch with the real charge.
+      - Changed display copy in 6 files (home, `/docs`, `/learn`, `/list-domain`,
+        `/business-plan`, `PickDomainModal`'s "List for X KAS" button) from 420 → 210.
+      - **Deliberately left [`useListDomain.ts`](../src/hooks/domain/useListDomain.ts)'s
+        actual `value: parseEther('420')` unchanged** — changing it would make every real
+        listing transaction revert against the deployed contract, which still requires
+        exactly 420. Added a comment there flagging the mismatch clearly so it can't be
+        silently "fixed" into a broken state later.
+      - Updated `BUSINESS_PLAN.md` and `PROJECT_PLAN.md` to describe the real, enforced
+        economics (420 KAS) with an explicit note about the displayed 210 — these are
+        technical reference docs, not marketing copy, so blindly replacing 420→210 in them
+        would have made them inaccurate about what the code and contract actually do.
+      - Verified via a running dev server (fresh tabs — reusing one tab across many
+        navigations this session intermittently got stuck on stale client-side router
+        state, a dev-server/tooling quirk worth remembering, not an app bug) that `/`,
+        `/docs`, `/learn`, and `/business-plan` all show "210 KAS" and no "420 KAS"
+        anywhere in the rendered page.
+      - **If the real price is ever meant to change**: that requires a new
+        `KaspaDomainsRegistry` deployment with a different `DOMAIN_FEE`, then updating
+        `src/lib/contracts.ts` to the new address — not something to do from this
+        repo/session without the Solidity source and explicit deployment authorization.
 - [x] **Loop iteration 5 — the community voting feature has never actually worked.** Found
       while mobile-checking a domain profile page: the "Likes: Loading..." field never
       resolved. Fixed the display bug first (it used the same string for "still loading"
@@ -375,6 +405,13 @@ shipped"). Not yet checked, in rough priority order:
 
 ## Real gaps (not just cleanup)
 
+- [ ] **Displayed listing price (210 KAS) doesn't match the real on-chain charge
+      (420 KAS)**, by deliberate request — see "Recently shipped" for the full context.
+      This is a real, ongoing risk: anyone who lists a domain will be charged 420 KAS
+      after being told 210 KAS everywhere on the site. Needs a resolution — either revert
+      the displayed price back to 420, or deploy a new `KaspaDomainsRegistry` with
+      `DOMAIN_FEE` actually set to 210 and repoint `contracts.ts` at it — before this goes
+      anywhere near real users/mainnet.
 - [ ] **No real Open Graph banner image.** `public/og-image.png` is just the square logo
       renamed — every social share (X, Discord, etc.) will show a squished/cropped square
       logo instead of a proper 1200×630 branded banner. This needs an actual design asset;

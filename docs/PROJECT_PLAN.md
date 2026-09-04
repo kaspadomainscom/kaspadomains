@@ -10,7 +10,11 @@ listing + voting economy on top of domains that already exist on KNS:
 
 - A user proves they own a `.kas` name on KNS (via **Kasware**), then lists it into the
   `KaspaDomainsRegistry` contract on Kasplex (Kasware also signs this, via its EIP-1193
-  EVM provider) for a one-time fee of 420 KAS. Cap: 10,000 listings, ever. Listing now
+  EVM provider) for a one-time fee of **420 KAS — the real, on-chain-enforced amount**
+  (`DOMAIN_FEE` is a contract constant with no setter). The live site's marketing copy
+  displays "210 KAS" instead, by explicit request (2026-09-04); `useListDomain.ts` still
+  sends the real 420 KAS on-chain, so the two are intentionally out of sync — see
+  [`TODO.md`](./TODO.md) for the tracked risk. Cap: 10,000 listings, ever. Listing now
   requires picking at least one category, and owners can attach resources (an X account,
   links) to their domain's profile — see §3.
 - Other users can vote/support a listed domain for 6 KAS per vote, which boosts its
