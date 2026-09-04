@@ -3,46 +3,10 @@
 import { useState, useRef } from 'react';
 import { contracts } from '@/lib/contracts';
 import { kasplexClient } from '@/lib/viemClient';
-import { parseEther, createWalletClient, custom } from 'viem';
-import { kasplexTestnet } from '@/lib/viemChains';
-import { useMetamaskWallet } from '@/hooks/wallet/internal/useMetamaskWallet';
+import { parseEther } from 'viem';
+import { useKaswareEvmWallet } from '@/hooks/wallet/internal/useKaswareEvmWallet';
+import { createKaswareEvmClient } from '@/lib/kaswareEvm';
 import { useToast } from '@/components/ToastProvider';
-
-type EthereumProvider = typeof window.ethereum;
-type EthereumProviderWithMetaMask = EthereumProvider & {
-  providers?: EthereumProvider[];
-  isMetaMask?: boolean;
-  isKasware?: boolean;
-  isPhantom?: boolean;
-};
-
-function getMetaMaskProvider(): EthereumProviderWithMetaMask | null {
-  if (typeof window === 'undefined') return null;
-
-  const eth = window.ethereum as EthereumProviderWithMetaMask;
-  if (!eth) return null;
-
-  if (Array.isArray(eth.providers)) {
-    return eth.providers.find(
-      (p) => p.isMetaMask && !p.isKasware && !p.isPhantom
-    ) ?? null;
-  }
-
-  return eth.isMetaMask && !eth.isKasware && !eth.isPhantom ? eth : null;
-}
-
-function createMetaMaskClient(account: `0x${string}`) {
-  const provider = getMetaMaskProvider();
-  if (!provider) {
-    throw new Error('MetaMask provider not found. Please install or enable MetaMask.');
-  }
-
-  return createWalletClient({
-    account,
-    chain: kasplexTestnet,
-    transport: custom(provider),
-  });
-}
 
 const RETRY_LIMIT = 3;
 const RETRY_DELAY_MS = 3000;
@@ -57,7 +21,7 @@ export function useListDomain() {
   const [error, setError] = useState<string | null>(null);
   const isSubmitting = useRef(false);
 
-  const { account, connect } = useMetamaskWallet();
+  const { account, connect } = useKaswareEvmWallet();
   const { addToast } = useToast();
 
   const listDomain = async (domain: string): Promise<`0x${string}` | null> => {
@@ -80,10 +44,10 @@ export function useListDomain() {
     try {
       if (!account || !/^0x[a-fA-F0-9]{40}$/.test(account)) {
         await connect();
-        throw new Error('MetaMask is not connected.');
+        throw new Error('Kasware (Kasplex) is not connected.');
       }
 
-      const walletClient = createMetaMaskClient(account as `0x${string}`);
+      const walletClient = createKaswareEvmClient(account as `0x${string}`);
 
       addToast(`Preparing to list "${domain}"...`);
 
@@ -104,7 +68,7 @@ export function useListDomain() {
           });
 
           setTxHash(hash);
-          console.log(`[MetaMask] Transaction hash (attempt ${attempt}):`, hash);
+          console.log(`[Kasplex] Transaction hash (attempt ${attempt}):`, hash);
 
           addToast(`Waiting for confirmation...`);
           await kasplexClient.waitForTransactionReceipt({ hash });
@@ -116,7 +80,7 @@ export function useListDomain() {
 
         } catch (err) {
           lastError = err;
-          console.error(`[MetaMask] Attempt ${attempt} failed:`, err);
+          console.error(`[Kasplex] Attempt ${attempt} failed:`, err);
 
           if (attempt < RETRY_LIMIT) {
             addToast(`Attempt ${attempt} failed. Retrying...`, 'info');

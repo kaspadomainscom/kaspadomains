@@ -8,11 +8,11 @@ KaspaDomains is a directory/showcase dApp for `.kas` domain names (issued by KNS
 native Kaspa chain). It runs on **Kasplex**, an EVM-compatible Kaspa L2, and layers a
 listing + voting economy on top of domains that already exist on KNS:
 
-- A user proves they own a `.kas` name on KNS (via the **Kasware** wallet), then lists it
-  into the `KaspaDomainsRegistry` contract on Kasplex (via **MetaMask**) for a one-time
-  fee of 420 KAS. Cap: 10,000 listings, ever. Listing now requires picking at least one
-  category, and owners can attach resources (an X account, links) to their domain's
-  profile — see §3.
+- A user proves they own a `.kas` name on KNS (via **Kasware**), then lists it into the
+  `KaspaDomainsRegistry` contract on Kasplex (Kasware also signs this, via its EIP-1193
+  EVM provider) for a one-time fee of 420 KAS. Cap: 10,000 listings, ever. Listing now
+  requires picking at least one category, and owners can attach resources (an X account,
+  links) to their domain's profile — see §3.
 - Other users can vote/support a listed domain for 6 KAS per vote, which boosts its
   visibility/ranking.
 - Listed domains get a profile page, category placement, search visibility, and a public
@@ -39,9 +39,10 @@ still mint it on-chain; this was a messaging change, not a contract change.
   [`src/lib/contracts.ts`](../src/lib/contracts.ts)): `KaspaDomainsRegistry`,
   `DomainLinksStorage`, `DomainDataStorage`, `DomainCategoriesStorage`,
   `DomainVotesManager`, `KDCToken`, `KaspadomainsFund`, plus a `DemoKNS` test contract.
-- **Wallet model**: dual-wallet by design — Kasware for Kaspa/KNS ownership proof,
-  MetaMask for Kasplex (EVM) transactions. See `src/context/WalletContext.tsx` and
-  `src/hooks/wallet/`.
+- **Wallet model**: single wallet, Kasware — its L1 methods prove KNS ownership, and its
+  EIP-1193 `window.kasware.ethereum` provider signs Kasplex (EVM) transactions. MetaMask
+  was removed on 2026-09-04 once this was confirmed against Kasware's own docs (see §3 and
+  `TODO.md`). See `src/context/WalletContext.tsx` and `src/hooks/wallet/`.
 - **Categories/data**: category membership is fully on-chain, via `DomainCategoriesStorage`
   (`getAllowedCategories`, `updateCategories`, `getDomainsByCategoryPaginated`), read
   through `src/data/categoriesManifest.ts`. Listing now requires picking at least one
@@ -60,10 +61,10 @@ not an already-agreed roadmap.
 
 ## 3. Core listing flow (confirmed working, as of 2026-09-04)
 
-Connect Kasware (proves KNS ownership) + MetaMask (signs the Kasplex tx) → pick a
-*verified* KNS domain → pick at least one category from the on-chain allowed list (now
-mandatory, previously missing entirely) → pay 420 KAS via `KaspaDomainsRegistry.listDomain`
-→ on success, the chosen categories are written via
+Connect Kasware — its L1 methods prove KNS ownership, its EIP-1193 EVM provider signs the
+Kasplex tx — → pick a *verified* KNS domain → pick at least one category from the on-chain
+allowed list (now mandatory, previously missing entirely) → pay 420 KAS via
+`KaspaDomainsRegistry.listDomain` → on success, the chosen categories are written via
 `DomainCategoriesStorage.updateCategories`. See
 [`useListDomain`](../src/hooks/domain/useListDomain.ts),
 [`useSetDomainCategories`](../src/hooks/domain/useSetDomainCategories.ts), and

@@ -3,17 +3,7 @@
 
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 
-declare global {
-  interface Window {
-    kasware?: {
-      getAccounts: () => Promise<string[]>;
-      requestAccounts: () => Promise<string[]>;
-      disconnect: (origin: string) => Promise<void>;
-      on: (event: 'accountsChanged', handler: (accounts: string[]) => void) => void;
-      removeListener: (event: 'accountsChanged', handler: (accounts: string[]) => void) => void;
-    };
-  }
-}
+// Window.kasware is declared globally in src/types/global.d.ts
 
 interface UseKaswareOptions {
   onConnectSuccess?: (address: string | null) => void;
@@ -119,7 +109,8 @@ export function useKasware(options?: UseKaswareOptions) {
     fetchAccounts();
 
     // Listen for account changes
-    const handleAccountsChanged = (accounts: string[]) => {
+    const handleAccountsChanged = (payload: unknown) => {
+      const accounts = Array.isArray(payload) ? (payload as string[]) : [];
       updateAddress(accounts[0] || null);
     };
 

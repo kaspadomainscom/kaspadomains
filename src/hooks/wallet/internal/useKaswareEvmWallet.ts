@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import detectEthereumProvider from '@metamask/detect-provider';
-import { MetaMaskInpageProvider } from '@metamask/providers';
+import type { EIP1193Provider } from 'viem';
 import { KASPLEX_TESTNET } from '@/lib/kasplex';
+import { getKaswareEvmProvider } from '@/lib/kaswareEvm';
 
 export type WalletStatus = 'idle' | 'connecting' | 'connected' | 'error' | 'unavailable';
 
@@ -15,60 +15,7 @@ export interface WalletState {
   switchNetwork: () => Promise<void>;
   disconnect: () => void;
   error: string | null;
-  provider: MetaMaskInpageProvider | null;  // Added provider here
-}
-
-interface EthereumWithProviders {
-  providers?: MetaMaskInpageProvider[];
-}
-
-// interface ExtendedProvider extends MetaMaskInpageProvider {
-//   isKasware?: boolean;
-//   isPhantom?: boolean;
-//   isCoinbaseWallet?: boolean;
-//   selectedAddress: string | null;
-// }
-
-async function isGenuineMetaMask(provider: unknown): Promise<boolean> {
-  try {
-    const p = provider as Partial<MetaMaskInpageProvider> & {
-      _metamask?: { isUnlocked?: () => boolean };
-      isKasware?: boolean;
-      isPhantom?: boolean;
-      isCoinbaseWallet?: boolean;
-    };
-
-    return (
-      !!p.isMetaMask &&
-      !p.isKasware &&
-      !p.isPhantom &&
-      !p.isCoinbaseWallet &&
-      typeof p._metamask?.isUnlocked === 'function'
-    );
-  } catch {
-    return false;
-  }
-}
-
-async function getMetaMaskProvider(): Promise<MetaMaskInpageProvider | null> {
-  if (typeof window === 'undefined') return null;
-
-  const eth = window.ethereum as EthereumWithProviders & MetaMaskInpageProvider;
-
-  if (Array.isArray(eth?.providers)) {
-    for (const p of eth.providers) {
-      if (await isGenuineMetaMask(p)) {
-        return p as MetaMaskInpageProvider;
-      }
-    }
-  }
-
-  const fallback = (await detectEthereumProvider()) as MetaMaskInpageProvider | null;
-  if (fallback && (await isGenuineMetaMask(fallback))) {
-    return fallback;
-  }
-
-  return null;
+  provider: EIP1193Provider | null;
 }
 
 function getErrorMessage(e: unknown): string {
@@ -78,20 +25,23 @@ function getErrorMessage(e: unknown): string {
   return String(e);
 }
 
-export function useMetamaskWallet(): WalletState {
+// Signs Kasplex (Kaspa's EVM L2) transactions via Kasware's EIP-1193 provider
+// at window.kasware.ethereum -- this is a separate EVM-format address/keypair
+// from the Kaspa L1 address exposed via useKaswareWallet.ts.
+export function useKaswareEvmWallet(): WalletState {
   const [account, setAccount] = useState<string | null>(null);
   const [status, setStatus] = useState<WalletStatus>('idle');
   const [chainId, setChainId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [provider, setProvider] = useState<MetaMaskInpageProvider | null>(null); // state for provider
+  const [provider, setProvider] = useState<EIP1193Provider | null>(null);
 
   const connect = useCallback(async () => {
-    const prov = await getMetaMaskProvider();
+    const prov = getKaswareEvmProvider();
     setProvider(prov);
 
     if (!prov) {
       setStatus('unavailable');
-      setError('MetaMask not found or not supported');
+      setError('Kasware not found. Install it from https://www.kasware.xyz to continue.');
       return;
     }
 
@@ -114,9 +64,9 @@ export function useMetamaskWallet(): WalletState {
   }, []);
 
   const switchNetwork = useCallback(async () => {
-    const prov = await getMetaMaskProvider();
+    const prov = getKaswareEvmProvider();
     if (!prov) {
-      setError('MetaMask not available');
+      setError('Kasware not available');
       return;
     }
 
@@ -128,8 +78,7 @@ export function useMetamaskWallet(): WalletState {
       setChainId(KASPLEX_TESTNET.chainId);
       setError(null);
     } catch (err) {
-      const msg = getErrorMessage(err);
-      setError(msg);
+      setError(getErrorMessage(err));
     }
   }, []);
 
@@ -143,7 +92,10 @@ export function useMetamaskWallet(): WalletState {
 
   useEffect(() => {
     let mounted = true;
-    let prov: MetaMaskInpageProvider | null = null;
+    const prov = getKaswareEvmProvider();
+    if (!prov) return;
+
+    setProvider(prov);
 
     const handleAccountsChanged = (accounts: unknown) => {
       if (!Array.isArray(accounts)) return;
@@ -153,26 +105,17 @@ export function useMetamaskWallet(): WalletState {
     };
 
     const handleChainChanged = (cid: unknown) => {
-      if (typeof cid === 'string') {
-        setChainId(cid);
-      }
+      if (typeof cid === 'string') setChainId(cid);
     };
 
-    getMetaMaskProvider().then((p) => {
-      if (!mounted || !p) return;
-      prov = p;
-      setProvider(prov);
-
-      prov.on?.('accountsChanged', handleAccountsChanged);
-      prov.on?.('chainChanged', handleChainChanged);
-    });
+    prov.on?.('accountsChanged', handleAccountsChanged);
+    prov.on?.('chainChanged', handleChainChanged);
 
     return () => {
+      if (!mounted) return;
       mounted = false;
-      if (prov) {
-        prov.removeListener?.('accountsChanged', handleAccountsChanged);
-        prov.removeListener?.('chainChanged', handleChainChanged);
-      }
+      prov.removeListener?.('accountsChanged', handleAccountsChanged);
+      prov.removeListener?.('chainChanged', handleChainChanged);
     };
   }, []);
 
@@ -184,6 +127,6 @@ export function useMetamaskWallet(): WalletState {
     switchNetwork,
     disconnect,
     error,
-    provider,  // expose provider here
+    provider,
   };
 }

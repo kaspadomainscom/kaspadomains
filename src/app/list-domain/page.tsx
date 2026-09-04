@@ -6,12 +6,12 @@ import { useOwnedDomains } from '@/hooks/kns/api/useOwnedDomains';
 import { useWalletContext } from '@/context/WalletContext';
 
 export default function ListDomainPage() {
-  const { kasware, metamask } = useWalletContext();
+  const { kasware, kasplex } = useWalletContext();
 
-  const isEvmConnected = metamask.status === 'connected';
+  const isEvmConnected = kasplex.status === 'connected';
   const isKaspaConnected = kasware.status === 'connected';
 
-  const evmAccount = metamask.account;
+  const evmAccount = kasplex.account;
   const kaspaAccount = kasware.account;
 
   const {
@@ -37,16 +37,16 @@ export default function ListDomainPage() {
       {/* Wallets Not Connected */}
       {shouldShowConnectPrompt ? (
         <section className="rounded-3xl border border-[#1e2d38] bg-gradient-to-br from-[#121E28] to-[#0E1E25] p-8 md:p-10 shadow-xl text-yellow-400 font-semibold text-center">
-          Please connect both your MetaMask (EVM) and Kasware (KNS) wallets in the header to list domains.
+          Please connect your Kasware wallet in the header to list domains.
           <div className="mt-4">
             <button
               className="underline text-sm text-yellow-300"
               onClick={() => {
-                metamask.connect();
+                kasplex.connect();
                 kasware.connect();
               }}
             >
-              Retry connecting wallets
+              Retry connecting wallet
             </button>
           </div>
         </section>
@@ -72,7 +72,7 @@ export default function ListDomainPage() {
             </div>
 
             <p className="text-sm text-gray-400">
-              * You must own the domain on the <strong>KNS</strong> contract (Kasware) and list it using your EVM wallet (MetaMask).
+              * You must own the domain on the <strong>KNS</strong> contract, verified and listed with your Kasware wallet.
             </p>
 
             {/* Domain Picker Section */}
@@ -91,8 +91,8 @@ export default function ListDomainPage() {
             )}
 
             {/* Wallet Errors */}
-            {(kasware.error || metamask.error) && (
-              <p className="text-red-400 text-sm mt-4">{kasware.error || metamask.error}</p>
+            {(kasware.error || kasplex.error) && (
+              <p className="text-red-400 text-sm mt-4">{kasware.error || kasplex.error}</p>
             )}
           </div>
         </section>

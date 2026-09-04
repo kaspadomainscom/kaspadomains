@@ -38,7 +38,7 @@ export default function PickDomainModal({
   if (!evmAccount || !kaspaAccount) {
     return (
       <p className="text-center mt-10 text-white">
-        Connect both Kasware and MetaMask wallets to continue.
+        Connect your Kasware wallet to continue.
       </p>
     );
   }

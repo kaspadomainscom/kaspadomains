@@ -30,8 +30,8 @@ account, a website, a Discord — to their domain.
 A single listing flow, gated by ownership proof on both chains involved:
 
 1. **Prove ownership** — connect Kasware (verifies the `.kas` name on KNS, Kaspa L1).
-2. **List it** — connect MetaMask and pay a one-time **420 KAS** fee via the
-   `KaspaDomainsRegistry` contract on Kasplex (Kaspa's EVM L2). No renewals, no
+2. **List it** — pay a one-time **420 KAS** fee via the `KaspaDomainsRegistry` contract on
+   Kasplex (Kaspa's EVM L2), signed by Kasware's own EVM provider. No renewals, no
    subscriptions — the listing is permanent.
 3. **Categorize it** — pick at least one category from the on-chain allowed list
    (`DomainCategoriesStorage`). This is mandatory: an uncategorized listing can't happen.
@@ -72,7 +72,7 @@ Hard cap: **10,000 listings, ever** — scarcity is structural, not promotional.
 - Public domain profile pages (`/domain/[name]`) showing category, status, vote count, and
   attached resources.
 - Owner-only resource management (`/domain/update/[name]`) — add/edit an X account and
-  links, gated by KNS ownership proof + a MetaMask-signed on-chain write.
+  links, gated by KNS ownership proof + a Kasware-signed on-chain write.
 - Community voting for visibility ranking (`VotingSection`).
 - An internal ecosystem-fund admin dashboard (`/EcosystemAdmin`) for operational tracking —
   not customer-facing.

@@ -34,7 +34,7 @@ function normalizeAddress(addr?: string | null) {
 
 export default function UpdateDomainPage() {
   const { name: domainSlug } = useParams() as { name: string };
-  const { kasware, metamask } = useWalletContext();
+  const { kasware, kasplex } = useWalletContext();
 
   const [domainName, setDomainName] = useState('');
   const [owner, setOwner] = useState('');
@@ -45,7 +45,7 @@ export default function UpdateDomainPage() {
   const [maxLinks, setMaxLinks] = useState(DEFAULT_MAX_LINKS);
   const [linksSeeded, setLinksSeeded] = useState(false);
 
-  const isEvmConnected = metamask.status === 'connected';
+  const isEvmConnected = kasplex.status === 'connected';
   const isKaspaConnected = kasware.status === 'connected';
   const isOwner = normalizeAddress(owner) === normalizeAddress(kasware.account);
 
@@ -113,9 +113,9 @@ export default function UpdateDomainPage() {
     e.preventDefault();
     setMessage('');
 
-    if (!metamask.account) return;
+    if (!kasplex.account) return;
 
-    const ok = await updateLinks(domainName, metamask.account as `0x${string}`, links);
+    const ok = await updateLinks(domainName, kasplex.account as `0x${string}`, links);
     if (ok) {
       setMessage(`✅ Resources for '${domainName}' updated successfully.`);
     }
@@ -140,16 +140,16 @@ export default function UpdateDomainPage() {
   if (!isKaspaConnected || !isEvmConnected) {
     return (
       <main className="max-w-xl mx-auto p-6 mt-10 text-center text-yellow-400">
-        Connect both your Kasware (KNS ownership) and MetaMask (Kasplex transaction) wallets to manage this domain.
+        Connect your Kasware wallet to manage this domain.
         <div className="mt-4">
           <button
             className="underline text-sm"
             onClick={() => {
-              metamask.connect();
+              kasplex.connect();
               kasware.connect();
             }}
           >
-            Retry connecting wallets
+            Retry connecting wallet
           </button>
         </div>
       </main>

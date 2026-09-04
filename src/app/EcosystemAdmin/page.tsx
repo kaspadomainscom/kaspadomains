@@ -71,11 +71,11 @@ function exportCSV(filename: string, rows: string[][]) {
 }
 
 export default function EcosystemAdmin() {
-  const { account, provider, metamask, disconnectAll } = useWalletContext();
+  const { account, provider, kasplex, disconnectAll } = useWalletContext();
 
   const rawProvider = useMemo<Eip1193Provider | null>(() => {
     if (provider) return provider as Eip1193Provider;
-    if (metamask && "request" in metamask) return metamask as Eip1193Provider;
+    if (kasplex.provider) return kasplex.provider as unknown as Eip1193Provider;
     if (typeof window !== "undefined") {
       const win = window as unknown as { ethereum?: unknown };
       if (
@@ -86,7 +86,7 @@ export default function EcosystemAdmin() {
       }
     }
     return null;
-  }, [provider, metamask]);
+  }, [provider, kasplex.provider]);
 
   const [signer, setSigner] = useState<ethers.Signer | null>(null);
 
@@ -342,10 +342,10 @@ export default function EcosystemAdmin() {
           </h2>
           <p className="max-w-lg mx-auto mb-6 text-gray-600">
             To administer the KaspaDomains Ecosystem Fund, please connect your
-            Ethereum-compatible wallet. MetaMask is recommended for ease of use.
+            Kasware wallet.
           </p>
           <button
-            onClick={metamask.connect}
+            onClick={kasplex.connect}
             aria-busy={loading}
             disabled={loading}
             className={`px-7 py-3 text-lg font-medium rounded-md shadow transition-colors ${
@@ -357,7 +357,7 @@ export default function EcosystemAdmin() {
             {loading ? (
               <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-5 w-5 mx-auto"></div>
             ) : (
-              "Connect with MetaMask"
+              "Connect with Kasware"
             )}
           </button>
           {errorMessage && (

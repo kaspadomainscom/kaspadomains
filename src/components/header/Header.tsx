@@ -16,74 +16,64 @@ const NAV_ITEMS = [
 ];
 
 function ConnectButton() {
-  const { kasware, metamask, disconnectAll, activeError } = useWalletContext();
+  const { kasware, kasplex, disconnectAll, activeError } = useWalletContext();
   const [connectError, setConnectError] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState(false);
 
-  const shortMetamask = useMemo(
-    () => (metamask.account ? `${metamask.account.slice(0, 6)}…${metamask.account.slice(-4)}` : ''),
-    [metamask.account]
-  );
   const shortKasware = useMemo(
     () => (kasware.account ? `${kasware.account.slice(0, 6)}…${kasware.account.slice(-4)}` : ''),
     [kasware.account]
   );
 
-  const handleConnect = async (type: 'kasware' | 'metamask') => {
+  const isConnected = !!kasware.account && !!kasplex.account;
+
+  // One wallet, two capabilities: the Kaspa L1 address (KNS ownership) and the
+  // Kasplex EVM signer both come from Kasware, so a single click connects both.
+  const handleConnect = async () => {
     try {
       setConnectError(null);
-      if (type === 'kasware' && !kasware.account) await kasware.connect();
-      if (type === 'metamask' && !metamask.account) await metamask.connect();
+      setConnecting(true);
+      if (!kasware.account) await kasware.connect();
+      if (!kasplex.account) await kasplex.connect();
     } catch (error) {
-      console.error(`Failed to connect ${type} wallet:`, error);
+      console.error('Failed to connect Kasware:', error);
       setConnectError(
-        `Failed to connect ${type} wallet: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to connect Kasware: ${error instanceof Error ? error.message : String(error)}`
       );
+    } finally {
+      setConnecting(false);
     }
   };
 
   return (
     <div className="flex flex-col items-end gap-1">
       <div className="flex items-center space-x-2">
-        {/* MetaMask */}
         <button
-          onClick={() => handleConnect('metamask')}
-          disabled={metamask.status === 'connecting'}
-          className={`bg-kaspaMint hover:bg-[#3DFDAD]/90 text-[#0F2F2E] font-semibold py-1.5 px-4 rounded-lg transition disabled:opacity-50 flex items-center gap-1`}
+          onClick={handleConnect}
+          disabled={connecting}
+          className="bg-kaspaMint hover:bg-[#3DFDAD]/90 text-[#0F2F2E] font-semibold py-1.5 px-4 rounded-lg transition disabled:opacity-50 flex items-center gap-1"
         >
-          {metamask.status === 'connecting' ? 'Connecting…' : 'MetaMask'}
-          {metamask.account && <span className="text-green-400 text-xs">●</span>}
-        </button>
-        {metamask.account && <span className="text-white text-sm font-mono">{shortMetamask}</span>}
-      </div>
-
-      <div className="flex items-center space-x-2">
-        {/* Kasware */}
-        <button
-          onClick={() => handleConnect('kasware')}
-          disabled={kasware.status === 'connecting' || !metamask.account} // optional dependent
-          className={`bg-[#5183f5] hover:bg-[#4169c9] text-white font-semibold py-1.5 px-4 rounded-lg transition disabled:opacity-50 flex items-center gap-1`}
-        >
-          {kasware.status === 'connecting' ? 'Connecting…' : 'Kasware'}
-          {kasware.account && <span className="text-green-400 text-xs">●</span>}
+          {connecting ? 'Connecting…' : isConnected ? 'Kasware' : 'Connect Kasware'}
+          {isConnected && <span className="text-green-700 text-xs">●</span>}
         </button>
         {kasware.account && <span className="text-white text-sm font-mono">{shortKasware}</span>}
       </div>
 
-      {/* Logout Button if both connected */}
-      {metamask.account && kasware.account && (
+      {/* Logout button once connected */}
+      {isConnected && (
         <button
           onClick={disconnectAll}
           className="bg-red-600 hover:bg-red-700 text-white font-semibold py-1.5 px-3 rounded-lg transition mt-1"
-          aria-label="Logout from wallets"
+          aria-label="Logout from wallet"
         >
           Logout
         </button>
       )}
 
       {/* Errors */}
-      {(connectError || activeError || kasware.error || metamask.error) && (
+      {(connectError || activeError || kasware.error || kasplex.error) && (
         <p className="text-red-500 text-xs mt-1">
-          {connectError || activeError || kasware.error || metamask.error}
+          {connectError || activeError || kasware.error || kasplex.error}
         </p>
       )}
     </div>

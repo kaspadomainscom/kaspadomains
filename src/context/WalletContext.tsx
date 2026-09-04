@@ -11,17 +11,20 @@ import React, {
 } from 'react';
 import { ethers, Eip1193Provider } from 'ethers';
 
-import { useMetamaskWallet, WalletState as MetamaskWalletState } from '@/hooks/wallet/internal/useMetamaskWallet';
+import { useKaswareEvmWallet, WalletState as KaswareEvmWalletState } from '@/hooks/wallet/internal/useKaswareEvmWallet';
 import { useKaswareWallet, WalletState as KaswareWalletState } from '@/hooks/wallet/internal/useKaswareWallet';
 import { kasplexTestnet } from '@/lib/viemChains';
 
 /* ---------------- Wallet Types ---------------- */
-export type WalletType = 'metamask' | 'kasware' | null;
+// Both "kasware" and "kasplex" come from the same Kasware wallet extension --
+// "kasware" is the Kaspa L1 address (KNS ownership proof), "kasplex" is the
+// EVM address/signer for Kasplex (Kaspa's EVM L2) transactions.
+export type WalletType = 'kasplex' | 'kasware' | null;
 export type WalletStatus = 'idle' | 'connecting' | 'connected' | 'error' | 'unavailable' | null;
 
 export interface CombinedWalletState {
   kasware: KaswareWalletState;
-  metamask: MetamaskWalletState;
+  kasplex: KaswareEvmWalletState;
 
   activeWalletType: WalletType;
   setActiveWalletType: (walletType: WalletType) => void;
@@ -47,17 +50,17 @@ const WalletContext = createContext<CombinedWalletState | undefined>(undefined);
 
 /* ---------------- Provider ---------------- */
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
-  const metamask = useMetamaskWallet();
+  const kasplex = useKaswareEvmWallet();
   const kasware = useKaswareWallet();
 
   const {
-    account: metaAccount,
-    connect: connectMeta,
-    disconnect: disconnectMeta,
-    status: metaStatus,
-    error: metaError,
-    provider: metaProvider,
-  } = metamask;
+    account: kasplexAccount,
+    connect: connectKasplex,
+    disconnect: disconnectKasplex,
+    status: kasplexStatus,
+    error: kasplexError,
+    provider: kasplexProvider,
+  } = kasplex;
 
   const {
     account: kasAccount,
@@ -69,7 +72,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
   const [activeWalletType, setActiveWalletType] = useState<WalletType>(() => {
     if (typeof window === 'undefined') return null;
-    if (localStorage.getItem('wallet-metamask') === 'true') return 'metamask';
+    if (localStorage.getItem('wallet-kasplex') === 'true') return 'kasplex';
     if (localStorage.getItem('wallet-kasware') === 'true') return 'kasware';
     return null;
   });
@@ -78,15 +81,15 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    if (activeWalletType === 'metamask' && !metaAccount) connectMeta().catch(() => {});
+    if (activeWalletType === 'kasplex' && !kasplexAccount) connectKasplex().catch(() => {});
     else if (activeWalletType === 'kasware' && !kasAccount) connectKas().catch(() => {});
-  }, [activeWalletType, metaAccount, kasAccount, connectMeta, connectKas]);
+  }, [activeWalletType, kasplexAccount, kasAccount, connectKasplex, connectKas]);
 
   /* Persist wallet connection status */
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    localStorage.setItem('wallet-metamask', metaAccount ? 'true' : 'false');
-  }, [metaAccount]);
+    localStorage.setItem('wallet-kasplex', kasplexAccount ? 'true' : 'false');
+  }, [kasplexAccount]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -94,12 +97,12 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   }, [kasAccount]);
 
   /* Compute active wallet details */
-  const activeAccount = useMemo(() => (activeWalletType === 'metamask' ? metaAccount : activeWalletType === 'kasware' ? kasAccount : null), [activeWalletType, metaAccount, kasAccount]);
-  const activeStatus = useMemo(() => (activeWalletType === 'metamask' ? metaStatus : activeWalletType === 'kasware' ? kasStatus : null), [activeWalletType, metaStatus, kasStatus]);
-  const activeError = useMemo(() => (activeWalletType === 'metamask' ? metaError : activeWalletType === 'kasware' ? kasError : null), [activeWalletType, metaError, kasError]);
-  const isFullyConnected = useMemo(() => !!(metaAccount && kasAccount), [metaAccount, kasAccount]);
+  const activeAccount = useMemo(() => (activeWalletType === 'kasplex' ? kasplexAccount : activeWalletType === 'kasware' ? kasAccount : null), [activeWalletType, kasplexAccount, kasAccount]);
+  const activeStatus = useMemo(() => (activeWalletType === 'kasplex' ? kasplexStatus : activeWalletType === 'kasware' ? kasStatus : null), [activeWalletType, kasplexStatus, kasStatus]);
+  const activeError = useMemo(() => (activeWalletType === 'kasplex' ? kasplexError : activeWalletType === 'kasware' ? kasError : null), [activeWalletType, kasplexError, kasError]);
+  const isFullyConnected = useMemo(() => !!(kasplexAccount && kasAccount), [kasplexAccount, kasAccount]);
 
-  const provider: Eip1193Provider | null = useMemo(() => metaProvider ?? null, [metaProvider]);
+  const provider: Eip1193Provider | null = useMemo(() => (kasplexProvider as unknown as Eip1193Provider) ?? null, [kasplexProvider]);
 
   /* Create ethers signer */
   const [signer, setSigner] = useState<ethers.Signer | null>(null);
@@ -139,34 +142,34 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
   /* Connect active wallet */
   const connect = useCallback(async () => {
-    if (activeWalletType === 'metamask') await connectMeta();
+    if (activeWalletType === 'kasplex') await connectKasplex();
     else if (activeWalletType === 'kasware') await connectKas();
-  }, [activeWalletType, connectMeta, connectKas]);
+  }, [activeWalletType, connectKasplex, connectKas]);
 
   /* Disconnect active wallet */
   const disconnect = useCallback(() => {
-    if (activeWalletType === 'metamask') {
-      disconnectMeta();
-      if (typeof window !== 'undefined') localStorage.setItem('wallet-metamask', 'false');
+    if (activeWalletType === 'kasplex') {
+      disconnectKasplex();
+      if (typeof window !== 'undefined') localStorage.setItem('wallet-kasplex', 'false');
     } else if (activeWalletType === 'kasware') {
       disconnectKas();
       if (typeof window !== 'undefined') localStorage.setItem('wallet-kasware', 'false');
     }
-  }, [activeWalletType, disconnectMeta, disconnectKas]);
+  }, [activeWalletType, disconnectKasplex, disconnectKas]);
 
   /* Disconnect all wallets */
   const disconnectAll = useCallback(() => {
-    disconnectMeta();
+    disconnectKasplex();
     disconnectKas();
     if (typeof window !== 'undefined') {
-      localStorage.setItem('wallet-metamask', 'false');
+      localStorage.setItem('wallet-kasplex', 'false');
       localStorage.setItem('wallet-kasware', 'false');
     }
-  }, [disconnectMeta, disconnectKas]);
+  }, [disconnectKasplex, disconnectKas]);
 
   const value: CombinedWalletState = useMemo(() => ({
     kasware,
-    metamask,
+    kasplex,
     activeWalletType,
     setActiveWalletType,
     activeAccount,
@@ -181,7 +184,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     provider,
     signer,
   }), [
-    kasware, metamask, activeWalletType, activeAccount, activeStatus, activeError,
+    kasware, kasplex, activeWalletType, activeAccount, activeStatus, activeError,
     isFullyConnected, connect, disconnect, disconnectAll, provider, signer
   ]);
 

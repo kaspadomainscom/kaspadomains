@@ -14,20 +14,30 @@ Last updated: 2026-09-04
 - **Charts**: `recharts`, used in the admin dashboard
   (`src/components/pages/EcosystemAdmin/DistributionChart.tsx`).
 
-## Two chains, two wallets
+## Two chains, one wallet
 
-KaspaDomains bridges two separate chains, which is the central architectural fact of this
-app:
+KaspaDomains bridges two separate chains — Kaspa L1 and Kasplex (an EVM L2) — which is the
+central architectural fact of this app. As of 2026-09-04, a single wallet extension,
+**Kasware**, covers both:
 
-| Chain | Purpose | Wallet | Where |
+| Chain | Purpose | Capability | Where |
 |---|---|---|---|
-| Kaspa L1 (KNS) | Source of truth for `.kas` domain ownership | **Kasware** | `src/hooks/wallet/internal/useKaswareWallet.ts`, `src/hooks/kns/**` |
-| Kasplex (EVM L2, testnet) | KaspaDomains registry, votes, KDC token, fund | **MetaMask** | `src/hooks/wallet/internal/useMetamaskWallet.ts`, `src/hooks/solidity/**`, `src/lib/contracts.ts` |
+| Kaspa L1 (KNS) | Source of truth for `.kas` domain ownership | `window.kasware` (L1 methods) | `src/hooks/wallet/internal/useKaswareWallet.ts`, `src/hooks/kns/**` |
+| Kasplex (EVM L2, testnet) | KaspaDomains registry, votes, KDC token, fund | `window.kasware.ethereum` (EIP-1193) | `src/hooks/wallet/internal/useKaswareEvmWallet.ts`, `src/lib/kaswareEvm.ts`, `src/hooks/solidity/**`, `src/lib/contracts.ts` |
 
-Both wallets are managed together via `src/context/WalletContext.tsx`, and most flows
-(e.g. listing a domain) require **both** to be connected: Kasware to prove KNS ownership,
-MetaMask to sign the Kasplex transaction. See `src/app/list-domain/page.tsx` for the
-canonical example of gating UI on both connection states.
+Both capabilities are exposed together via `src/context/WalletContext.tsx` as `kasware`
+(L1 identity) and `kasplex` (L2 signer) — same underlying wallet, two separate
+`requestAccounts()` calls with two different address formats (a Kaspa L1 address vs. an
+EVM `0x...` address). Most flows (e.g. listing a domain) still require both connections;
+the Header's single "Connect Kasware" button triggers both in sequence. See
+`src/app/list-domain/page.tsx` for the canonical example of gating UI on both connection
+states.
+
+MetaMask was removed (previously required as a second wallet for Kasplex signing) once
+Kasware's EIP-1193 EVM provider was confirmed to cover that job — see
+[`TODO.md`](./TODO.md#recently-shipped) for what changed and the testing caveat (this
+integration is unverified against a real Kasware extension, only against its documented
+API).
 
 `src/hooks/kns/` talks to the external KNS API (`knsdomains.org` / `api.knsdomains.org`,
 allowlisted in the CSP `connect-src`) for ownership/availability lookups —
@@ -78,16 +88,17 @@ RPC `https://rpc.kasplextest.xyz`, explorer `https://frontend.kasplextest.xyz`).
 - `/domain/[name]` — public domain profile page (`src/components/pages/domain/*`:
   `Detail`, `DomainInfoPanel`, `DomainOwnerBio`, `DomainTitleSection`, `VotingSection`);
   renders `Product` JSON-LD and a canonical URL.
-- `/domain/update/[name]` — owner-only resource editing (X account + links), gated on both
-  Kasware (KNS ownership proof) and MetaMask (the `DomainLinksStorage.updateLinks` tx
-  signer). The general bio/title/image/website side (`DomainDataStorage`) is still
-  unwired — see `TODO.md`.
+- `/domain/update/[name]` — owner-only resource editing (X account + links), gated on
+  Kasware's two capabilities: L1 KNS ownership proof and its EVM provider as the
+  `DomainLinksStorage.updateLinks` tx signer. The general bio/title/image/website side
+  (`DomainDataStorage`) is still unwired — see `TODO.md`.
 - `/list-domain` — the real listing flow (wallet-gated, `PickDomainModal` +
   `useListDomain` + `useSetDomainCategories`; category selection is mandatory).
-- `/list-domain-test` — duplicate of `/list-domain` (cleanup candidate).
 - `/EcosystemAdmin` — fund/distribution dashboard.
-- `/learn` — explainer content (`EcosystemDistribution` component).
-- `/docs` — in-app product documentation (user-facing, not this `docs/` folder).
+- `/learn` — explainer content (category/resources/voting, no tokenomics — see `TODO.md`).
+- `/docs` — in-app product documentation, rebuilt as a sticky-sidebar wiki page (not this
+  `docs/` folder).
+- `/business-plan` — public page adapting `BUSINESS_PLAN.md` for a general audience.
 - `/search` — domain search.
 - API routes: `/api/csp-violation-report` (CSP report sink), `/robots.txt`, `/sitemap.xml`
   (generated, not static files).
@@ -106,8 +117,8 @@ RPC `https://rpc.kasplextest.xyz`, explorer `https://frontend.kasplextest.xyz`).
 ## Security
 
 `src/middleware.ts` generates a per-request nonce and sets a strict CSP (`default-src
-'none'`, nonce+`strict-dynamic` scripts, explicit `connect-src` allowlist for MetaMask,
-Kasplex RPC, Supabase, and KNS domains), plus HSTS, COOP, and CORP. `next.config.ts` adds
+'none'`, nonce+`strict-dynamic` scripts, explicit `connect-src` allowlist for the Kasplex
+RPC, Supabase, and KNS domains), plus HSTS, COOP, and CORP. `next.config.ts` adds
 `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and a restrictive
 `Permissions-Policy`. This is already in reasonably good shape; the main thing to revisit
 before mainnet is whether the allowlisted hosts (especially `connect-src`) still match

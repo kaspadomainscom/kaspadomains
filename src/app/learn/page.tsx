@@ -27,7 +27,7 @@ export default function Learn() {
         <section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]">
           <h2 className="text-4xl font-bold text-white mb-4">How It Works</h2>
           <ul className="list-disc list-inside text-gray-300 space-y-2">
-            <li>Connect your Kasware wallet (proves KNS ownership) and MetaMask (for the Kasplex transaction)</li>
+            <li>Connect your Kasware wallet — it proves KNS ownership and signs the Kasplex transaction</li>
             <li>Pick a verified <code className="text-kaspaMint">.kas</code> domain you own</li>
             <li>Choose at least one category so your domain can be found</li>
             <li>Pay a one-time <span className="text-kaspaMint font-semibold">420 KAS</span> listing fee — no renewals, ever</li>

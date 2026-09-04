@@ -3,46 +3,9 @@
 import { useState, useRef } from 'react';
 import { contracts } from '@/lib/contracts';
 import { kasplexClient } from '@/lib/viemClient';
-import { createWalletClient, custom } from 'viem';
-import { kasplexTestnet } from '@/lib/viemChains';
 import { stringToBytes32 } from '@/lib/utils';
+import { createKaswareEvmClient } from '@/lib/kaswareEvm';
 import { useToast } from '@/components/ToastProvider';
-
-type EthereumProvider = typeof window.ethereum;
-type EthereumProviderWithMetaMask = EthereumProvider & {
-  providers?: EthereumProvider[];
-  isMetaMask?: boolean;
-  isKasware?: boolean;
-  isPhantom?: boolean;
-};
-
-function getMetaMaskProvider(): EthereumProviderWithMetaMask | null {
-  if (typeof window === 'undefined') return null;
-
-  const eth = window.ethereum as EthereumProviderWithMetaMask;
-  if (!eth) return null;
-
-  if (Array.isArray(eth.providers)) {
-    return eth.providers.find(
-      (p) => p.isMetaMask && !p.isKasware && !p.isPhantom
-    ) ?? null;
-  }
-
-  return eth.isMetaMask && !eth.isKasware && !eth.isPhantom ? eth : null;
-}
-
-function createMetaMaskClient(account: `0x${string}`) {
-  const provider = getMetaMaskProvider();
-  if (!provider) {
-    throw new Error('MetaMask provider not found. Please install or enable MetaMask.');
-  }
-
-  return createWalletClient({
-    account,
-    chain: kasplexTestnet,
-    transport: custom(provider),
-  });
-}
 
 export function useSetDomainCategories() {
   const [isLoading, setIsLoading] = useState(false);
@@ -74,7 +37,7 @@ export function useSetDomainCategories() {
         args: [domain],
       })) as bigint;
 
-      const walletClient = createMetaMaskClient(account);
+      const walletClient = createKaswareEvmClient(account);
       const categoryBytes32 = categories.map(stringToBytes32);
 
       addToast(`Assigning categories to "${domain}"...`);

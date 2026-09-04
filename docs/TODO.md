@@ -8,6 +8,33 @@ go stale.
 
 ## Recently shipped
 
+- [x] **MetaMask removed — Kasware now signs Kasplex transactions too.** Verified against
+      Kasware's official docs (docs.kasware.xyz) that it ships an EIP-1193-compliant EVM
+      provider at `window.kasware.ethereum` for Kasplex (Kaspa's EVM L2), detectable via
+      `window.kasware.ethereum.isKasWare` — separate from `window.kasware`'s L1 methods
+      used for KNS ownership proof. One wallet extension now covers both jobs, so the
+      MetaMask connection is no longer needed.
+      - New [`useKaswareEvmWallet.ts`](../src/hooks/wallet/internal/useKaswareEvmWallet.ts)
+        + [`lib/kaswareEvm.ts`](../src/lib/kaswareEvm.ts) (shared provider/client helper,
+        used by all three write hooks instead of each duplicating MetaMask-detection code).
+      - `WalletContext`'s `metamask` field is renamed `kasplex` throughout (13 consuming
+        files updated); the Header's two wallet buttons became one "Connect Kasware" button
+        that connects both the L1 and L2 capabilities in sequence.
+      - Deleted `useMetamaskWallet.ts`, the `@metamask/detect-provider` and
+        `@metamask/providers` npm packages, the `metamask.io` CSP entry, and (finally)
+        `list-domain-test/page.tsx` (the long-flagged exact duplicate of `list-domain`,
+        removed now rather than kept in sync through this refactor for no reason).
+      - **Important caveat**: this was verified with `tsc`/lint/build and HTTP smoke tests
+        of every route, but **not against a real Kasware browser extension** — there's no
+        way to do that in this sandbox. The integration follows Kasware's documented
+        conventions, but real-world testing (connect, list a domain, vote, save resources)
+        with the actual extension is still needed before trusting this on testnet/mainnet.
+      - Not touched (pre-existing, unrelated dead code, already broken/unused before this
+        change): `useRegisterDomain.ts`, `useKaspaDomainsRegistry.ts` (unused anywhere),
+        and `domains/new-listings/page.tsx` (already flagged elsewhere in this file as
+        non-functional — its stray "MetaMask" text doesn't matter until someone decides to
+        fix or delete the whole page).
+
 - [x] **Site-wide theme unification.** The site was split between a dark navy theme
       (home, docs, learn, header, sidebar) and a light theme left over on the domain
       profile page, `VotingSection`, `domain/update/[name]`, and the footer. Standardized
