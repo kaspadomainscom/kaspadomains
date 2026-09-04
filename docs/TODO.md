@@ -1,512 +1,62 @@
 # TODO / Backlog
 
-Last updated: 2026-09-04
+Last updated: 2026-09-05
 
-Flat, actionable version of the gaps identified in [`PROJECT_PLAN.md`](./PROJECT_PLAN.md#3-known-gaps-found-during-this-audit).
-Check items off as they land; keep this list in sync with reality rather than letting it
-go stale.
+This file is now a **live scratchpad and index**, not the full record. The detailed,
+organized content that used to live here has moved into focused files — this file just
+points to them and holds the actively-updated loop backlog below.
 
-## Recently shipped
+- [`BUGS.md`](./BUGS.md) — what's broken (open + a fixed-bugs changelog)
+- [`GAPS.md`](./GAPS.md) — what's missing or incomplete (features, dead code, infra)
+- [`LIFECYCLE.md`](./LIFECYCLE.md) — how a domain/fee/vote flows through the system
+- [`SPEC.md`](./SPEC.md) — verified contract addresses and function signatures
+- [`MIND.md`](./MIND.md) — operating principles for working on this codebase
+- [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) — current state and roadmap
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — technical architecture narrative
+- [`BUSINESS_PLAN.md`](./BUSINESS_PLAN.md) — product/business framing
+- [`../README.md`](../README.md) — repo root entry point; now describes the actual
+  project and links back into this folder (was still generic `create-next-app`
+  boilerplate until this pass)
 
-- [x] **"Admin can change domain price listing at any time" — checked, confirmed
-      impossible with the current contract, made what's actually safe to do instead.**
-      Re-verified the full `KaspaDomainsRegistry` ABI function-by-function: `DOMAIN_FEE`
-      is `view`-only with no `set*`/`update*` counterpart anywhere (unlike
-      `DomainVotesManager`, which has real `voteFee` + `setVoteFee`). There is no way to
-      make the listing price admin-adjustable without deploying a new contract with a
-      setter — real Solidity development plus a funded deployment, not something
-      achievable from this repo (no `.sol` source anywhere) or something I'll do
-      autonomously (irreversible, real-money, needs its own explicit authorization).
-      What I did instead: [`useListDomain.ts`](../src/hooks/domain/useListDomain.ts) now
-      reads `DOMAIN_FEE()` live from the contract at submit time instead of hardcoding
-      `parseEther('420')`. This doesn't grant new admin capability, but it means the code
-      no longer has a hardcoded price that can silently drift out of sync with the real
-      contract (the exact class of bug that broke voting — see below) — if a future
-      contract version does add a setter, or a new contract is deployed at a different
-      fee, this code keeps working unmodified. The "210 KAS" display copy is intentionally
-      left static (that was an explicit prior decision, not something this change should
-      undo). **Real admin-adjustability is now a specced, tracked future feature** — see
-      "Real gaps" below for what it would actually require.
-- [x] **Displayed listing price changed to 210 KAS (site copy/SEO only) — real on-chain
-      price is unchanged at 420 KAS.** Explicit request: "change price of listing to 210
-      kas in all app and docs." Before touching anything, checked whether this was
-      actually possible: `KaspaDomainsRegistry.DOMAIN_FEE` is a `view`-only contract
-      constant with **no setter function anywhere in the ABI** (unlike `voteFee`, which
-      has `setVoteFee`) — it cannot be changed without deploying an entirely new contract
-      (Solidity source isn't even in this repo), which is a real money-moving deployment
-      action, not a documentation change. Flagged this to the user before proceeding; they
-      confirmed they want the *displayed* price changed for marketing/SEO regardless,
-      understanding this creates an intentional mismatch with the real charge.
-      - Changed display copy in 6 files (home, `/docs`, `/learn`, `/list-domain`,
-        `/business-plan`, `PickDomainModal`'s "List for X KAS" button) from 420 → 210.
-      - **Deliberately left [`useListDomain.ts`](../src/hooks/domain/useListDomain.ts)'s
-        actual `value: parseEther('420')` unchanged** — changing it would make every real
-        listing transaction revert against the deployed contract, which still requires
-        exactly 420. Added a comment there flagging the mismatch clearly so it can't be
-        silently "fixed" into a broken state later.
-      - Updated `BUSINESS_PLAN.md` and `PROJECT_PLAN.md` to describe the real, enforced
-        economics (420 KAS) with an explicit note about the displayed 210 — these are
-        technical reference docs, not marketing copy, so blindly replacing 420→210 in them
-        would have made them inaccurate about what the code and contract actually do.
-      - Verified via a running dev server (fresh tabs — reusing one tab across many
-        navigations this session intermittently got stuck on stale client-side router
-        state, a dev-server/tooling quirk worth remembering, not an app bug) that `/`,
-        `/docs`, `/learn`, and `/business-plan` all show "210 KAS" and no "420 KAS"
-        anywhere in the rendered page.
-      - **If the real price is ever meant to change**: that requires a new
-        `KaspaDomainsRegistry` deployment with a different `DOMAIN_FEE`, then updating
-        `src/lib/contracts.ts` to the new address — not something to do from this
-        repo/session without the Solidity source and explicit deployment authorization.
-- [x] **Loop iteration 5 — the community voting feature has never actually worked.** Found
-      while mobile-checking a domain profile page: the "Likes: Loading..." field never
-      resolved. Fixed the display bug first (it used the same string for "still loading"
-      and "failed to load," so a failure looked identical to a stuck spinner forever), which
-      then surfaced the real cause in the browser console: `Function "getDomainLikeCount"
-      not found on ABI`. Checked `DomainVotesManager`'s actual ABI and found the entire
-      voting UI was calling functions/an event that don't exist on the deployed contract:
-      - [`VotingSection.tsx`](../src/components/pages/domain/VotingSection.tsx) (the "Vote
-        to this domain" button on every domain page) called `getDomainLikeCount`,
-        `hasUserLikedDomain`, `likeDomain(domainName, {value})`, and listened for a
-        `DomainLiked` event — **none of which exist**. The real names are
-        `getDomainVoteCount`, `hasUserVotedDomain`, `voteDomainByHash(domainHash, {value})`
-        (takes a `uint256` hash, not the domain name string!), and the `DomainVoted` event.
-        It also called ethers v5's `.toNumber()` on results, which doesn't exist in ethers
-        v6 (this project's version) — contract reads return native `bigint`. Fixed all of
-        it, and replaced the hardcoded "6 KAS" vote price with a live read of the
-        contract's actual `voteFee()` (owner-adjustable, so hardcoding it risks the
-        transaction reverting if it's ever changed).
-      - [`useGetDomainLikeCount.ts`](../src/hooks/domain/useGetDomainLikeCount.ts) (feeds
-        the "Likes:" field on every domain's `DomainInfoPanel`) had the identical
-        `getDomainLikeCount` → should-be `getDomainVoteCount` bug. Fixed.
-      - [`useMyVotes.tsx`](../src/hooks/domains/useMyVotes.tsx) (powers `/domains/my-votes`)
-        called `getVotesByAddress`, which also doesn't exist — real equivalent is
-        `getVotedDomainIds(user)`. Fixed.
-      - **Found but not fixed — confirmed dead code, not a live bug**: `src/hooks/likes/*`
-        (5 files: `useDomainLikes.ts`, `useGetUserLikesPaginated.ts`, `useHasUserLiked.ts`,
-        `useLikeDomain.ts`, `useTotalLikesUsed.ts`) have the exact same wrong-function-name
-        pattern, but grepped and confirmed none of them are imported anywhere in the app —
-        an entire parallel, unused hook directory. Left alone rather than fixing dead code;
-        flagged in Cleanup below.
-      - Verified via a running dev server: the "Unavailable" error state now renders
-        correctly instead of an infinite "Loading...", no console crashes, `/domains/my-votes`
-        renders without error. `tsc`/lint/build all clean (lint count actually the same
-        ballpark as before — one new pre-existing-style `set-state-in-effect` instance from
-        the status-tracking fix, already covered by the existing lint backlog item).
-- [x] **Loop iteration 4**: category pages (`/domains/categories` index and
-      `/domains/categories/category/[category]`) were the last light-themed pages left —
-      restyled dark, and both were missing breadcrumb navigation entirely (a visitor on a
-      specific category had no way back except the header nav). Added breadcrumbs and an
-      empty-state message for categories with no active listings.
-      **Process correction**: while touching `[category]/page.tsx`, `npm run lint` jumped
-      from 26 to 34 problems, which turned out to be a real, fixable issue in that file
-      ("Avoid constructing JSX within try/catch," `react-hooks/error-boundaries`) —
-      refactored to keep data-fetching in try/catch but construct JSX outside it, which
-      fixed all 12 instances and dropped the total to **22 problems (20 errors, 2
-      warnings)**. Checking this properly (full `grep`, not `tail`) revealed my last few
-      iterations' "same pre-existing N errors, nothing new" claims were checking `tail`
-      output only and likely missed files — the real, current, verified breakdown is now
-      recorded accurately below. Lesson: verify lint with a full grep/count, not `tail`.
-- [x] **Loop iteration 3**: heading-hierarchy audit found `/docs` and `/learn` had **zero
-      `<h1>` tags** — every section used `<h2>` but nothing identified the page itself,
-      a real on-page SEO/accessibility gap (every page should have exactly one `<h1>`).
-      Added one to each. Also found `/business-plan` had the same "explains everything,
-      links to nothing" gap as `/learn`/`/docs` did last iteration — added a docs/domains
-      cross-link and a "List Your Domain" CTA. Verified all headings/links render
-      correctly via a running dev server (1 `<h1>` per page, correct text, all links
-      resolve to real routes) before committing.
-- [x] **Loop iteration 2**: verified the mobile hamburger menu works (couldn't confirm
-      last iteration — `computer` browser actions need a visible pane, unreliable in this
-      unattended loop; switched to reading source + driving via `javascript_tool` instead,
-      more reliable for background verification going forward). Image alt-text audit came
-      back clean (no raw `<img>` tags anywhere; the one `next/image` usage already has
-      correct alt text). **Internal-linking audit found a real, systemic gap**: `/learn`
-      and `/docs` — two of the site's main explainer pages — had **zero internal links or
-      CTAs anywhere in their content** (only the `/docs` sidebar's own `#anchor` scroll
-      links). A reader could read the entire "How It Works" explanation and have no way to
-      click through to actually list a domain, browse categories, or see rankings — pure
-      conversion loss. Added a "List Your Domain" / "Browse Domains" CTA to the end of
-      `/learn`, plus contextual links (categories, top-voted) in both pages' relevant
-      sections. Verified all new links resolve to real routes via a running dev server.
-- [x] **Homepage "Trending .kas Domains" was 100% fabricated data.** A hardcoded array
-      (`wallet.kas`, `defi.kas`, `dex.kas` with made-up vote counts) — domains that don't
-      exist as real listings; clicking "View Domain" on any of them would 404. Found while
-      checking the site on a mobile viewport (375px) for this loop's first pass. Replaced
-      with real data via a new shared helper,
-      [`lib/topVotedDomains.ts`](../src/lib/topVotedDomains.ts) (extracted from
-      `/domains/top-voted`, now used by both), with a real "no domains listed yet" empty
-      state instead of silently showing nothing or crashing.
-      Verified with a running dev server + mobile viewport screenshot (not just build/lint)
-      that the empty state renders cleanly when the sandbox can't reach the real Kasplex
-      RPC — same offline-fallback situation every build this session has hit.
-- [x] **Another "Buy Now" instance, missed by the earlier grep pass** — the sitewide
-      header ticker ([`trendingDomains.tsx`](../src/components/header/trendingDomains.tsx)),
-      visible on every single page. The text was split as `Buy&nbsp;Now` (an HTML entity
-      inside JSX), which a plain-text grep for "Buy Now" doesn't match — worth remembering
-      for future audits. Its underlying data was already real (pulled from a `trending`
-      category via `categoriesManifest`), only the label was wrong. Changed to
-      "View Domain".
-
-- [x] **`/domains` (the main browse-all page) contradicted the site's own "not a
-      marketplace" stance — a real, significant find, not cosmetic.** It branded itself
-      "kaspadomains Market" / "premium domain marketplace" with a "Buy Now" button, while
-      `/docs` and `BUSINESS_PLAN.md` explicitly and repeatedly say KaspaDomains does not
-      sell domains. Worse, the data backing it was fake: `Domain` has no `price`/`listed`/
-      `kaspaLink` fields, so those were cast-and-defaulted (`?? 0`, `?? false`, `?? '#'`)
-      — meaning **every domain showed as "Sold" with a dead `href="#"` Buy Now link**, and
-      the price/status filters operated on data that was never real. Rebuilt: dropped the
-      marketplace framing and the fake price/status filters/columns entirely (there's
-      nothing real to filter — every listing costs the same fixed 420 KAS), switched from
-      an ad-hoc table to a `DomainCard` grid (consistent with every other domain-listing
-      page in the app — this was the only page still using a different layout pattern),
-      dark theme. Also fixed `/domains/layout.tsx`'s metadata, which had the same
-      "Marketplace"/"purchase" framing.
-- [x] **Structured data (JSON-LD) had the same problem, on every single domain page.**
-      `getDomainJsonLd()` used schema.org's `Product`/`Offer` vocabulary — the literal
-      structured-data shape for "this is for sale" (price, availability, seller) — which
-      is precisely what a search engine or shopping aggregator would key off of to treat
-      a listing as purchasable. Rewrote it as `ProfilePage`/`Thing` (no commerce fields),
-      and fixed the matching "Buy X, a premium KNS domain..." meta description and the
-      homepage's `WebSite` JSON-LD description ("...purchase premium KNS domains...").
-      Found by grepping the whole codebase for "marketplace"/"Buy Now"/"purchase"/"Sold"
-      after finding the `/domains` page issue — this was the only other place it appeared.
-
-- [x] **Design/SEO/pages audit pass.** Found and fixed several concrete bugs while going
-      through the remaining untouched pages:
-      - **`og-image.png` was actually `kaspadomains-logo.jpg` renamed** (byte-identical,
-        confirmed via SHA-256) — a 1024×1024 JPEG, not the 1200×630 PNG every page's
-        metadata claimed. Fixed the declared dimensions everywhere (`layout.tsx`,
-        `page.tsx`, category page, domain page) to the real 1024×1024. A proper branded
-        1200×630 banner image is still a real gap — see "Real gaps" below, this isn't
-        something I can generate.
-      - **`twitter-image.png` didn't exist at all** — referenced in `layout.tsx`, would
-        404 on every Twitter Card fetch. Pointed it at the real `og-image.png` instead.
-        Also removed a literal placeholder Twitter handle (`creator: "@yourTwitterHandle"`)
-        that was never filled in.
-      - **`robots.txt` blocked five routes that don't exist** (`/admin/`, `/login`,
-        `/signup`, `/domain/new`, `/domain/edit` — generic boilerplate, never real routes
-        here) **while leaving the actual admin dashboard and edit route fully
-        crawlable/indexable** (`/EcosystemAdmin`, `/domain/update/`). Fixed to disallow the
-        real sensitive routes plus `/search` (query-param space is unbounded, plus it's
-        already `noindex` via metadata).
-      - **`/domains/top-voted` was a literal stub** (`<p>what</p>`) backed by a fully dead,
-        commented-out hook (`useTopVotedDomains.ts`, imported a module that doesn't exist).
-        Rebuilt for real as a server component using
-        `DomainVotesManager.getTopVotedDomains(hashes[])` (a batch query — one call instead
-        of N) against all active listed domains from `categoriesManifest`, sorted and
-        capped at top 24. Deleted the dead hook. This page is linked from the sidebar nav,
-        so it was a real, reachable broken page, not an orphan.
-      - **`DomainCard.tsx`** (used on `/domains/top-voted`, `/domains/my-domains`,
-        `/domains/my-votes`, and category pages) was a white card with a purple accent —
-        the one remaining light-themed shared component after the earlier theme
-        unification pass. Restyled to match. Also fixed its "View on Kaspascan" link, which
-        pointed a Kaspa L1 block explorer at a Kasplex (EVM L2) domain hash as if it were
-        an L1 transaction ID — wrong chain, wrong ID type, guaranteed-broken link. Now
-        links to the owner's address on the Kasplex explorer instead.
-      - **`/search`** was light-themed with zero metadata (title/description just
-        inherited the generic root layout). Restyled dark, added a `layout.tsx` with real
-        metadata and `noindex` (search-result pages shouldn't be indexed).
-
-- [x] **Upgraded to Next.js 16** (`16.3.4`, from `15.3.3`). Verified real breaking changes
-      against the official docs before touching anything:
-      - `src/middleware.ts` → `src/proxy.ts` (`middleware()` → `proxy()`) — the middleware
-        convention is deprecated in v16 in favor of `proxy`; confirmed working post-rename
-        (`ƒ Proxy (Middleware)` in build output, CSP header with nonce present at runtime).
-      - `next lint` was removed entirely. Migrated via the official
-        `npx @next/codemod@canary next-lint-to-eslint-cli .` — hand-editing
-        `eslint.config.mjs` to native `eslint-config-next/core-web-vitals` +
-        `eslint-config-next/typescript` imports first hit a real bug (the old
-        `FlatCompat().extends(...)` bridge pattern crashes with `Converting circular
-        structure to JSON` against v16's `eslint-config-next`), so the codemod's version
-        (native flat-config imports) is the one that shipped.
-      - No sync `params`/`headers`/`cookies` usage was found anywhere (already async
-        throughout from earlier work this session) — nothing to change there.
-      - `next.config.ts` had no custom `webpack` config or `eslint` option, so
-        Turbopack-by-default (`next build`) and the `eslint` option removal needed no
-        changes.
-      - Verified with `tsc`, the new `eslint .` lint script, `next build`, and an HTTP
-        smoke test of a running production server.
-      - **New finding from the stricter v16 lint ruleset**: `eslint-config-next@16` ships a
-        stricter `react-hooks` ruleset that now flags 25 pre-existing
-        `react-hooks/set-state-in-effect` violations (calling `setState` synchronously
-        inside `useEffect`) across `Sidebar.tsx`, `VotingSection.tsx`, `WalletContext.tsx`,
-        `useKasware.ts`, and `useKaswareEvmWallet.ts` — none of these block the build
-        (`next build` no longer runs ESLint at all in v16), but they're real lint failures
-        now if `npm run lint` is wired into CI. Not fixed in this pass — pre-existing
-        patterns across many files, a separate piece of work from the framework upgrade
-        itself. See the "Real gaps" section below.
-
-- [x] **MetaMask removed — Kasware now signs Kasplex transactions too.** Verified against
-      Kasware's official docs (docs.kasware.xyz) that it ships an EIP-1193-compliant EVM
-      provider at `window.kasware.ethereum` for Kasplex (Kaspa's EVM L2), detectable via
-      `window.kasware.ethereum.isKasWare` — separate from `window.kasware`'s L1 methods
-      used for KNS ownership proof. One wallet extension now covers both jobs, so the
-      MetaMask connection is no longer needed.
-      - New [`useKaswareEvmWallet.ts`](../src/hooks/wallet/internal/useKaswareEvmWallet.ts)
-        + [`lib/kaswareEvm.ts`](../src/lib/kaswareEvm.ts) (shared provider/client helper,
-        used by all three write hooks instead of each duplicating MetaMask-detection code).
-      - `WalletContext`'s `metamask` field is renamed `kasplex` throughout (13 consuming
-        files updated); the Header's two wallet buttons became one "Connect Kasware" button
-        that connects both the L1 and L2 capabilities in sequence.
-      - Deleted `useMetamaskWallet.ts`, the `@metamask/detect-provider` and
-        `@metamask/providers` npm packages, the `metamask.io` CSP entry, and (finally)
-        `list-domain-test/page.tsx` (the long-flagged exact duplicate of `list-domain`,
-        removed now rather than kept in sync through this refactor for no reason).
-      - **Important caveat**: this was verified with `tsc`/lint/build and HTTP smoke tests
-        of every route, but **not against a real Kasware browser extension** — there's no
-        way to do that in this sandbox. The integration follows Kasware's documented
-        conventions, but real-world testing (connect, list a domain, vote, save resources)
-        with the actual extension is still needed before trusting this on testnet/mainnet.
-      - Not touched (pre-existing, unrelated dead code, already broken/unused before this
-        change): `useRegisterDomain.ts`, `useKaspaDomainsRegistry.ts` (unused anywhere),
-        and `domains/new-listings/page.tsx` (already flagged elsewhere in this file as
-        non-functional — its stray "MetaMask" text doesn't matter until someone decides to
-        fix or delete the whole page).
-
-- [x] **Site-wide theme unification.** The site was split between a dark navy theme
-      (home, docs, learn, header, sidebar) and a light theme left over on the domain
-      profile page, `VotingSection`, `domain/update/[name]`, and the footer. Standardized
-      everything on the dark theme: `layout.tsx` body background, `Footer.tsx` (also gained
-      a real nav with links to Domains/Categories/Learn/Docs/Business Plan), and every
-      component under `domain/[name]` and `domain/update/[name]`. Also fixed a broken CSS
-      class (`text-kaspa-green` — no matching rule anywhere in `globals.css`, so that text
-      was silently rendering in the default color) in `learn/page.tsx`, replaced with the
-      real `text-kaspaMint` utility.
-- [x] **`/docs` rebuilt as an actual wiki-style page.** Was a flat single column with a
-      top TOC block. Now a sticky sidebar nav with scroll-spy active-section highlighting
-      (`IntersectionObserver`), plus a `layout.tsx` giving it real metadata (it had none —
-      inherited only the generic root title before). Also fixed a stale copy claim ("We
-      *will* use the official KNS smart contracts" — future tense, but this is already
-      implemented) and added categories as a listed requirement.
-- [x] **`docs/BUSINESS_PLAN.md` is now also a real public page** at
-      [`/business-plan`](../src/app/business-plan/page.tsx) (adapted for a public audience —
-      the internal doc's risk log and open questions weren't republished verbatim), linked
-      from the footer and included in `sitemap.xml`.
-- [x] **Fixed remaining vote-price copy inconsistencies.** The real on-chain vote cost is
-      6 KAS (`VotingSection.tsx`'s `parseEther("6")`), but copy elsewhere said 5 KAS or
-      24 KAS in different places before this session's earlier passes; this pass verified
-      all remaining live copy (home, docs, learn) now consistently says 6 KAS.
-
-- [x] **Category is now mandatory when listing a domain.** `PickDomainModal` fetches the
-      on-chain allowed-category list (`useGetAllowedCategories`) and disables the "List for
-      420 KAS" action until at least one is picked. On successful listing, the new
-      [`useSetDomainCategories`](../src/hooks/domain/useSetDomainCategories.ts) hook writes
-      the choice to `DomainCategoriesStorage.updateCategories`. **Unverified risk:** the
-      Solidity source isn't in this repo, so whether `updateCategories` is callable by the
-      domain owner (vs. admin-only) hasn't been confirmed — if it reverts, the toast will
-      say listing succeeded but category assignment failed. Watch for this on testnet and
-      confirm with whoever holds the contract source.
-- [x] **Full SEO pass.** Found and fixed a real, live bug: `src/app/**/head.tsx` (4 files)
-      is a Next.js App Router convention that was removed in favor of the Metadata API —
-      confirmed against current Next.js docs — so none of that JSON-LD or those meta tags
-      were ever actually rendered. Ported the real content into `generateMetadata` /
-      page bodies and deleted the dead files:
-      - Home (`/`), domain profile (`/domain/[name]`), category (`/domains/categories/category/[category]`),
-        and the domain browser (`/domains`, via a new `layout.tsx` since its `page.tsx` is a
-        client component) now all render real JSON-LD (`WebSite`, `Product`, `ItemList`).
-      - Added `alternates.canonical` to domain and category pages.
-      - Fixed [`sitemap.xml`](../src/app/sitemap.xml/route.ts): it was linking to
-        `/domains/{name}` and `/domains/categories/{cat}`, neither of which are real routes
-        (should be `/domain/{name}` and `/domains/categories/category/{cat}`) — every
-        listed domain was effectively unindexable via the sitemap until this fix.
-      - Verified with a production build + server (title tags, canonical links, and JSON-LD
-        all confirmed present in rendered HTML).
-- [x] **Removed KDC/token-reward pitching from the live site.** Product direction: lead
-      with domain listing + categories + resources, not tokenomics. Rewrote copy on the
-      homepage, `/docs`, and `/learn` (which was 100% tokenomics — halving schedule, minted
-      supply, LP burn stats — and got fully rewritten); deleted the now-unused
-      `EcosystemDistribution` (learn) component. Left `src/lib/contracts.ts` and the ABI
-      JSON files untouched — the `KDCToken` contract still exists and votes still mint it
-      on-chain, this only changes what the site *says*, not the deployed contract behavior.
-      `/EcosystemAdmin` (internal fund dashboard) was also left untouched — it's an
-      operational tool, not marketing copy.
-- [x] **Domain resource links (X account + other links) — built for real.** This closes
-      part of the long-standing "domain profile updates are faked" gap:
-      - Fixed a real type bug in
-        [`useGetDomainLinks.ts`](../src/hooks/domain/useGetDomainLinks.ts) — it declared
-        the contract's return type as `string[]` when `DomainLinksStorage.getLinks` actually
-        returns `{name, url}[]` tuples. Links were never going to render correctly before
-        this fix.
-      - New [`useUpdateDomainLinks.ts`](../src/hooks/domain/useUpdateDomainLinks.ts) hook
-        writes to `DomainLinksStorage.updateLinks` (bulk replace) via MetaMask.
-      - [`domain/update/[name]/page.tsx`](../src/app/domain/update/[name]/page.tsx) rewritten:
-        dropped the fake bio/Twitter fields (the `await new Promise(setTimeout...)` stub),
-        replaced with a real links editor (label + URL rows, capped at the contract's
-        `MAX_LINKS`), gated on both Kasware (KNS ownership proof) and MetaMask (tx signer),
-        matching the same dual-wallet pattern as `/list-domain`.
-      - New [`DomainResources.tsx`](../src/components/pages/domain/DomainResources.tsx)
-        renders the links on the public domain profile page
-        (wired into `DomainInfoPanel.tsx`), with a "Manage its resources" link to the
-        update page.
-      - **Still open**: `DomainDataStorage` (title/description/image/website — the
-        general "bio" side of a domain profile) is not wired up; this pass only covers
-        the links/resources piece that was explicitly requested. Bio was intentionally
-        dropped rather than left half-fake.
-- [x] **`docs/BUSINESS_PLAN.md` added** — written around the listing + category + resources
-      model, explicitly not pitching token rewards. See the doc itself for the "not a
-      marketplace" positioning and the revenue model (420 KAS listing fee, 6 KAS votes).
-
-## Cleanup
-
-- [ ] **`src/hooks/likes/*`** (`useDomainLikes.ts`, `useGetUserLikesPaginated.ts`,
-      `useHasUserLiked.ts`, `useLikeDomain.ts`, `useTotalLikesUsed.ts`) — an entire unused
-      hook directory, confirmed via grep that none are imported anywhere. Also all call
-      wrong/nonexistent `DomainVotesManager` function names (see loop iteration 5 above),
-      so they're doubly not worth keeping as-is. Safe to delete, or fix if there's a reason
-      to keep them as scaffolding for a future feature.
-- [ ] **`src/app/domains/new-listings/page.tsx` is completely non-functional** — found while
-      chasing down a "999 KAS" price inconsistency. `CONTRACT_ADDRESS` is the literal string
-      `'0xYourContractAddressHere'` (never filled in), the fee is hardcoded to 999 KAS
-      (should be 420), and it calls `contract.listDomain(domainInput, {...})` with a whole
-      object as the first argument — the real `KaspaDomainsRegistry.listDomain` signature is
-      `(string domain, address to)`, so even with a real address this call would revert.
-      It's not linked from anywhere in the app (no nav link, not in `sitemap.xml`), so low
-      urgency, but worth a decision: finish it for real or delete it.
-- [ ] [`src/app/list-domain-test/page.tsx`](../src/app/list-domain-test/page.tsx) is still
-      an exact duplicate of `src/app/list-domain/page.tsx` (both import the same
-      `PickDomainModal`, so it did pick up the new category-selection behavior — it's just
-      redundant, not stale). Left as-is since deleting it wasn't part of this pass; still a
-      cleanup candidate.
-- [ ] Resolve [`src/components/DomainForm.tsx`](../src/components/DomainForm.tsx) — either
-      delete it (the real flow already works via `useListDomain` +
-      `PickDomainModal`) or finish wiring its submit handler to the registry contract and
-      replace the `alert(...)` stub.
-- [ ] Resolve [`src/components/CustomizeDomainForm.tsx`](../src/components/CustomizeDomainForm.tsx)
-      — finish the commented-out tagline/bio fields or remove the dead JSX.
-- [ ] Confirm whether `ethers` is still needed alongside `viem`, or whether chain access has
-      fully migrated to `viem` and the `ethers` dependency can be dropped.
-- [ ] Confirm whether the `https://supabase.com` entry in the CSP `connect-src`
-      (`src/middleware.ts`) reflects real/planned infra or can be removed.
-- [ ] `src/data/categories/*.ts` (14 files: `100kclub.ts`, `web3.ts`, `meme.ts`, etc.) are
-      **not imported anywhere in the app** — confirmed dead. The real category system is
-      fully on-chain via `DomainCategoriesStorage` (see `categoriesManifest.ts`). Safe to
-      delete unless they're meant as seed/reference data for something not yet built.
+When recording new work: a broken thing goes in `BUGS.md`, a missing thing goes in
+`GAPS.md`, a new operating lesson goes in `MIND.md`. Use this file for short-lived,
+in-progress notes only.
 
 ## Continuous audit loop — backlog for next iterations
 
 A recurring local loop (`/loop 8m`, job `2e58e210`) is running audit-and-fix passes across
-UI/UX, content, SEO, and missing-page gaps. Checked so far: homepage + trending data,
-`/domains`, `/domains/top-voted`, `/search`, `DomainCard`, OG/Twitter metadata, robots.txt,
-marketplace-language across the whole site, mobile hamburger menu, image alt text,
-heading hierarchy (all pages now have exactly one `<h1>`), internal linking + theme +
-breadcrumbs on `/learn`, `/docs`, `/business-plan`, both category pages, a full
-(non-`tail`-truncated) lint audit, and — the big one — the entire community voting
-feature, which was calling nonexistent contract functions everywhere (see "Recently
-shipped"). Not yet checked, in rough priority order:
+UI/UX, content, SEO, and missing-page gaps, recording completed work in `BUGS.md`/`GAPS.md`
+as it goes. Checked so far: homepage + trending data, `/domains`, `/domains/top-voted`,
+`/search`, `DomainCard`, OG/Twitter metadata, robots.txt, marketplace-language across the
+whole site, mobile hamburger menu, image alt text, heading hierarchy (all pages now have
+exactly one `<h1>`), internal linking + theme + breadcrumbs on `/learn`, `/docs`,
+`/business-plan`, both category pages, a full (non-`tail`-truncated) lint audit, the entire
+community voting feature (was calling nonexistent contract functions everywhere), and the
+listing-price display/admin-adjustability questions. Also fixed this pass: `README.md` was
+still unedited `create-next-app` boilerplate (no project description, no link into this
+folder) — rewritten; and found `src/types/db.ts` is dead code (never imported) containing
+a marketplace-shaped `Domain` type and an old commented-out CSP draft that's the likely
+origin of the still-open "why does `connect-src` allowlist Supabase" question in `GAPS.md`.
+Not yet checked, in rough priority order — full detail on each in [`GAPS.md`](./GAPS.md)
+and [`BUGS.md`](./BUGS.md):
 
-- [ ] **`DomainLinksStorage.getLinks` throws `invalid opcode: MCOPY`** in the browser
-      console on the domain profile page (seen while verifying the voting fix). MCOPY is
-      an EVM opcode from the Cancun/Dencun upgrade — this could mean an RPC/EVM-version
-      mismatch, or a genuinely bad call. This is the domain-resources (X account/links)
-      feature built earlier this session — needs investigation, since if it's a real bug
-      the resources feature has the same "never actually works" problem voting had.
-- [ ] Missing pages: no Terms of Service, Privacy Policy, or About/Team page found
-      anywhere in `src/app/`. For a dApp handling real KAS payments this is a real
-      trust/legal gap, not just a nice-to-have — worth a decision on scope before writing
-      anything (legal content shouldn't be invented without input from whoever owns that
-      decision — flagging, not attempting to draft legal text autonomously).
-- [ ] Internal linking + breadcrumbs on domain profile pages (`/domain/[name]`) — not
-      checked yet. It already has a Home/Domains breadcrumb (`DomainBreadcrumb`); worth
-      checking whether it should also link to the domain's specific category.
+- [ ] `DomainLinksStorage.getLinks` throws `invalid opcode: MCOPY` in the browser console —
+      needs investigation, could mean the resources feature has the same "never actually
+      works" problem voting had.
+- [ ] Missing Terms/Privacy/About pages — flagged, not drafted without real input.
+- [ ] Internal linking + breadcrumbs on domain profile pages (`/domain/[name]`) — has a
+      Home/Domains breadcrumb; worth checking whether it should also link to the domain's
+      category.
 - [ ] Mobile check remaining pages: `/domain/update/[name]`, `EcosystemAdmin`,
-      `/domains/my-domains` (`/list-domain`, `/domain/[name]`, `/domains/my-votes` done).
+      `/domains/my-domains`.
 - [ ] Competitor/search-intent research for Kaspa/KNS domain discovery sites — not started.
-- [ ] Re-grep periodically for marketplace-adjacent language using entity-aware patterns
-      (the "Buy&nbsp;Now" catch a few iterations ago shows plain-text grep isn't sufficient
-      alone).
-- [ ] Core Web Vitals — `next.config.ts` sets `images.unoptimized: true`, which trades
-      image optimization away; worth a decision on whether that's intentional (e.g. static
-      export constraints) or worth revisiting once there's real image content beyond the
-      logo.
-- [ ] Given voting's function names were this stale, spot-check the other contract-call
-      sites (`useListDomain`, `useSetDomainCategories`, `useUpdateDomainLinks`,
-      `useRegisterDomain`/`useKaspaDomainsRegistry` (already known dead)) against their
-      real ABIs too, rather than assuming they're correct because they're not "likes"-named.
-
-## Real gaps (not just cleanup)
-
-- [ ] **Displayed listing price (210 KAS) doesn't match the real on-chain charge
-      (420 KAS)**, by deliberate request — see "Recently shipped" for the full context.
-      This is a real, ongoing risk: anyone who lists a domain will be charged 420 KAS
-      after being told 210 KAS everywhere on the site. Needs a resolution — either revert
-      the displayed price back to 420, or deploy a new `KaspaDomainsRegistry` with
-      `DOMAIN_FEE` actually set to 210 and repoint `contracts.ts` at it — before this goes
-      anywhere near real users/mainnet.
-- [ ] **Future feature spec: admin-adjustable listing fee.** Explicitly requested
-      ("admin can change domain price listing at any time"); not achievable with the
-      currently deployed contract (`DOMAIN_FEE` is a constant, no setter — see "Recently
-      shipped"). What it would actually take:
-      1. A new `KaspaDomainsRegistry` contract version with a `setDomainFee(uint256)`
-         (owner-only), mirroring `DomainVotesManager.setVoteFee` — needs real Solidity
-         source and a security review before any deployment, same bar as the rest of the
-         contract suite (see `PROJECT_PLAN.md` for the broader "no audit yet" gap).
-      2. Deploy it, then update `src/lib/contracts.ts` to the new address (this repo's
-         side — straightforward once the contract exists).
-      3. Add an admin control for it in `/EcosystemAdmin` (which already has some
-         owner-only patterns to follow) — not built yet since there's no function to call.
-      4. `useListDomain.ts` already reads `DOMAIN_FEE()` live rather than hardcoding it
-         (done in this pass), so once the above lands, the listing flow needs no further
-         frontend changes to pick up admin-set price changes automatically.
-- [ ] **No real Open Graph banner image.** `public/og-image.png` is just the square logo
-      renamed — every social share (X, Discord, etc.) will show a squished/cropped square
-      logo instead of a proper 1200×630 branded banner. This needs an actual design asset;
-      I fixed the metadata to stop lying about it (see "Recently shipped"), but a real
-      image is still needed.
-- [ ] **Corrected, verified lint backlog (loop iteration 4)** — 22 problems total (20
-      errors, 2 warnings), none build-blocking (`next build` doesn't run ESLint in v16),
-      but real if `npm run lint` gets wired into CI:
-      - 15× `react-hooks/set-state-in-effect` (`setState` called synchronously inside
-        `useEffect`) across `Sidebar.tsx`, `VotingSection.tsx`, `WalletContext.tsx`,
-        `useKasware.ts`, `useKaswareEvmWallet.ts`, `EcosystemAdmin/page.tsx`,
-        `domain/update/[name]/page.tsx`, `domains/my-votes/page.tsx`,
-        `domains/page.tsx`, `search/page.tsx`.
-      - 5× `react-hooks/static-components` (a component function defined inside another
-        component's render body, so it's recreated every render) in
-        `domains/new-listings/page.tsx` and `DomainForm.tsx` — both already-flagged
-        dead/broken components (see Cleanup section), low priority to fix vs. just
-        resolving their dead-code status.
-- [ ] `DomainDataStorage` (title/description/image/website) is still unwired — the domain
-      "bio"/profile-description side of things, as opposed to the links/resources side
-      (which is now real, see "Recently shipped"). Decide if this is wanted at all before
-      building it.
-- [ ] Confirm `updateCategories` access control on `DomainCategoriesStorage` (see "Recently
-      shipped" above) — this determines whether the new mandatory-category listing flow
-      actually works end-to-end on-chain.
-- [ ] Same unverified-access-control risk applies to `DomainLinksStorage.updateLinks` — not
-      confirmed whether a domain owner can call it directly or if it's admin-gated.
-
-## Process / infra
-
-- [ ] Add a CI workflow (GitHub Actions) running `npm run lint` and `npm run build` on
-      every push/PR — none exists today.
-- [ ] Add real test coverage, at minimum for the contract-interaction hooks
-      (`useListDomain`, `useLikeDomain`, `useRegisterDomain`, wallet hooks) since these move
-      real KAS/KDC value. `src/test/a.tsx` is currently an empty placeholder.
-- [ ] Add a Kasplex **mainnet** chain definition in `src/lib/viemChains.ts` alongside
-      `kasplexTestnet`, switched via environment variable rather than hardcoded.
-- [ ] Add production contract addresses to `src/lib/contracts.ts`, gated by network.
-- [ ] Get the Solidity contracts reviewed/audited before any mainnet deployment (out of
-      scope for this frontend repo, but a hard blocker for Phase 2 in the plan).
-
-## Future / watch (not actionable yet)
-
-- [ ] **KCC-0020 (covenant-native token standard) — watch, don't build against yet.**
-      Researched 2026-09-04 after a request to "upgrade Kaspa tech to KCC-0020": it's a
-      *draft* proposal under Kaspa's "Kaspa Calls for Conventions" (KCCs) for a
-      covenant-enforced fungible token standard on Kaspa **L1**, positioned as a possible
-      successor to KRC-20. As of this writing it has a documented "known supply-split
-      defect," has only been run on Kaspa testnet-10, and is not finalized.
-      **Doesn't apply to this repo's contracts**: `KDCToken` is a Solidity ERC-20 on
-      **Kasplex (an EVM L2)**, not an L1 covenant script — KCC-0020/KRC-20 are base-chain
-      UTXO/covenant conventions, a different technology stack from EVM ERC-20. There is no
-      code change in this app that would make it "KCC-0020 compliant." Revisit only once
-      the standard is finalized and there's a concrete reason an EVM-side contract would
-      need to interoperate with it (e.g. a bridge or wrapped-asset design) — not before.
-      Sources: [kaspanet/kccs](https://github.com/kaspanet/kccs) (the KCC spec repo),
-      [Kasplex KRC-20 wiki](https://wiki.kaspa.org/en/Kasplex_KRC_20) (current, live
-      standard for comparison).
+- [ ] Re-grep periodically for marketplace-adjacent language using entity-aware patterns.
+- [ ] Core Web Vitals — `next.config.ts` sets `images.unoptimized: true`; worth a decision.
+- [ ] Spot-check remaining contract-call sites against `SPEC.md` (the voting bug means
+      nothing gets a pass just because it's not "likes"-named).
 
 ## Process note
 
 Recent commit history (`git log`) has no descriptive messages ("Your commit message",
-"sdsd", etc.). Consider writing real commit messages going forward so `git log`/`git
-blame` stay useful — memory and docs can't substitute for that.
+"sdsd", etc.) prior to this session. Continue writing real commit messages so `git log`/
+`git blame` stay useful — memory and docs can't substitute for that.

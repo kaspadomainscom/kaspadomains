@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KaspaDomains
 
-## Getting Started
+A directory/discovery dApp for `.kas` domain names (issued by KNS on Kaspa L1). Owners
+prove ownership via **Kasware**, list their domain on **Kasplex** (an EVM-compatible
+Kaspa L2) for a one-time fee, pick a category, and can attach resources (an X account,
+links) to their domain's public profile. Other users can vote on listed domains to boost
+their visibility. KaspaDomains is **not a marketplace** — it never sells, transfers, or
+brokers `.kas` names; it only makes a name the owner already controls more findable.
 
-First, run the development server:
+Currently live on **Kasplex testnet** only.
+
+## Documentation
+
+Full project documentation lives in [`docs/`](./docs). Start at [`docs/TODO.md`](./docs/TODO.md),
+which is the live index — it currently points to:
+
+- [`docs/PROJECT_PLAN.md`](./docs/PROJECT_PLAN.md) — current state and roadmap
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — technical architecture (stack, contracts, routing)
+- [`docs/SPEC.md`](./docs/SPEC.md) — verified contract addresses and function signatures
+- [`docs/LIFECYCLE.md`](./docs/LIFECYCLE.md) — how a domain/fee/vote flows through the system
+- [`docs/BUSINESS_PLAN.md`](./docs/BUSINESS_PLAN.md) — product/business framing
+- [`docs/BUGS.md`](./docs/BUGS.md) — what's currently broken, and a fixed-bugs changelog
+- [`docs/GAPS.md`](./docs/GAPS.md) — what's missing or incomplete
+- [`docs/MIND.md`](./docs/MIND.md) — operating principles for working on this codebase
+
+## Stack
+
+Next.js 16 (App Router, Turbopack), React 19, TypeScript, Tailwind CSS v4, viem for chain
+access, TanStack Query for data fetching. See [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)
+for the full picture.
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). You'll need the
+[Kasware](https://www.kasware.xyz/) browser extension to exercise wallet-gated flows
+(listing, voting, editing resources) against Kasplex testnet.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Other scripts: `npm run build`, `npm run lint`, `npm run start`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Contract addresses
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Kasplex testnet addresses and ABIs are centralized in
+[`src/lib/contracts.ts`](./src/lib/contracts.ts); verified function signatures are in
+[`docs/SPEC.md`](./docs/SPEC.md). No mainnet deployment exists yet.

@@ -1,6 +1,6 @@
 # KaspaDomains — Business Plan
 
-Last updated: 2026-09-04
+Last updated: 2026-09-05
 
 Positioning note: this plan deliberately does **not** pitch token rewards as part of the
 value proposition. The product is a domain listing + discovery service; the underlying
@@ -138,4 +138,7 @@ actual profile page someone would link in their bio.
 
 - [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) — technical roadmap and current state.
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — contracts, data flow, wallet model.
-- [`TODO.md`](./TODO.md) — actionable backlog.
+- [`LIFECYCLE.md`](./LIFECYCLE.md) — how the fee/vote economics described above actually flow.
+- [`GAPS.md`](./GAPS.md) — missing features, including the admin-adjustable-fee spec.
+- [`BUGS.md`](./BUGS.md) — the displayed-vs-real price mismatch this plan flags, and others.
+- [`TODO.md`](./TODO.md) — live scratchpad and index.

@@ -1,6 +1,6 @@
 # Architecture
 
-Last updated: 2026-09-04
+Last updated: 2026-09-05
 
 ## Stack
 
@@ -126,6 +126,19 @@ RPC, Supabase, and KNS domains), plus HSTS, COOP, and CORP. `next.config.ts` add
 before mainnet is whether the allowlisted hosts (especially `connect-src`) still match
 production infrastructure.
 
-Note: `connect-src` currently allowlists `https://supabase.com` even though no Supabase
-usage was found elsewhere in `src/` during this audit — worth confirming whether that's
-planned infra or a leftover.
+Note: `connect-src` currently allowlists `https://supabase.com` even though no live Supabase
+usage was found elsewhere in `src/` during this audit. The likely origin: a fully
+commented-out earlier draft of this middleware in `src/types/db.ts` (dead code, never
+imported — see `GAPS.md`) already had the same Supabase entry, alongside a marketplace-
+shaped `Domain` interface (`price`, `seller_telegram`, etc.) predating the on-chain-only
+data model described above. Still worth confirming with whoever owns infra whether it's
+planned or safe to drop from the live CSP.
+
+## Related docs
+
+- [`SPEC.md`](./SPEC.md) — the formal, verified version of the contracts/routes tables above.
+- [`LIFECYCLE.md`](./LIFECYCLE.md) — how this architecture is used over time.
+- [`BUGS.md`](./BUGS.md) — where the real code deviates from what this doc describes.
+- [`GAPS.md`](./GAPS.md) — dead code and infrastructure gaps mentioned above, tracked in detail.
+- [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) — current state and roadmap.
+- [`TODO.md`](./TODO.md) — live scratchpad and index.

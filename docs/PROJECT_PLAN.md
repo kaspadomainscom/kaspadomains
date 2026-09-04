@@ -1,6 +1,6 @@
 # KaspaDomains — Project Plan
 
-Last updated: 2026-09-04
+Last updated: 2026-09-05
 
 ## 1. What this project is
 
@@ -157,6 +157,11 @@ before treating it as committed.
 ## 7. Related docs
 
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — technical map of contracts, data flow, wallets.
+- [`SPEC.md`](./SPEC.md) — verified contract addresses and function signatures.
+- [`LIFECYCLE.md`](./LIFECYCLE.md) — how a domain/fee/vote flows through the system.
 - [`BUSINESS_PLAN.md`](./BUSINESS_PLAN.md) — product/business framing, revenue model,
   positioning.
-- [`TODO.md`](./TODO.md) — flat, actionable task list derived from this plan.
+- [`BUGS.md`](./BUGS.md) — what's broken (open issues + a fixed-bugs changelog).
+- [`GAPS.md`](./GAPS.md) — what's missing or incomplete (features, dead code, infra).
+- [`MIND.md`](./MIND.md) — operating principles for working on this codebase.
+- [`TODO.md`](./TODO.md) — live scratchpad and index, updated by the continuous audit loop.
