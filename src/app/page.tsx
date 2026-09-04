@@ -12,13 +12,13 @@ const previewDomains = [
 ];
 
 export const metadata = {
-  title: "KaspaDomains — Premium .kas Domains • Earn, Vote & Showcase",
+  title: "KaspaDomains — Premium .kas Domains, Organized by Category",
   description:
-    "List your .kas domain for 420 KAS. Get discovered, earn KDC rewards, and build your Kaspa-native identity. Only 10,000 listings. Join the on-chain domain revolution.",
+    "List your .kas domain for 420 KAS. Get placed in a category, add your X account and links, and build your Kaspa-native identity. Only 10,000 listings, ever.",
   openGraph: {
-    title: "KaspaDomains — Premium .kas Domains • Earn, Vote & Showcase",
+    title: "KaspaDomains — Premium .kas Domains, Organized by Category",
     description:
-      "Showcase your .kas domain on-chain. Limited to 10,000 listings. Earn KDC from votes, grow your visibility, and monetize attention in the Kaspa ecosystem.",
+      "Showcase your .kas domain on-chain, organized by category, with your own X account and links attached. Limited to 10,000 listings.",
     url: "https://kaspadomains.com",
     siteName: "KaspaDomains",
     images: [
@@ -34,9 +34,9 @@ export const metadata = {
   twitter: {
     card: "summary_large_image",
     site: "@KaspaDomains",
-    title: "KaspaDomains — Premium .kas Domains • Earn, Vote & Showcase",
+    title: "KaspaDomains — Premium .kas Domains, Organized by Category",
     description:
-      "List your .kas domain, earn KDC rewards, and get discovered by the Kaspa community. Limited to 10,000 listings.",
+      "List your .kas domain, get placed in a category, and get discovered by the Kaspa community. Limited to 10,000 listings.",
     image: "/og-image.png",
   },
 };
@@ -64,8 +64,8 @@ export default async function Home() {
           Own the Future of <span className="text-yellow-400">.kas</span> Domains
         </h1>
         <p className="text-lg md:text-xl max-w-3xl mx-auto mb-8 text-white/90">
-          Secure your premium .kas domain for just 420 KAS. Earn KDC rewards, 
-          attract votes from the Kaspa community, and showcase your on-chain identity. 
+          Secure your premium .kas domain for just 420 KAS. Get placed in a category,
+          attach your X account and links, and showcase your on-chain identity.
           Limited to only <strong>10,000 domains</strong> forever.
         </p>
         <Link
@@ -133,20 +133,20 @@ export default async function Home() {
             With a cap of just 10,000 listings, every spot is scarce and valuable.
           </p>
           <p>
-            <strong>2. Get voted on:</strong> The community can like your domain for <strong>5 KAS</strong> per vote. 
-            Each wallet can support up to 1,000 domains — fueling competition for visibility.
+            <strong>2. Pick a category:</strong> Every listing must belong to at least one category —
+            DeFi, gaming, brandable, and more — so the community can actually find it.
           </p>
           <p>
-            <strong>3. Earn rewards:</strong> Every vote mints <strong>KDC for the voter</strong> and <strong>KDC for the domain owner</strong>, 
-            aligning incentives across the ecosystem.
+            <strong>3. Add your resources:</strong> Attach your X (Twitter) account and links to your
+            domain&apos;s profile so visitors can find you everywhere.
           </p>
           <p>
-            <strong>4. Scarce tokenomics:</strong> KDC has a hard cap of <strong>2.1 million tokens</strong>. Once distributed, 
-            no new tokens will ever be minted.
+            <strong>4. Get voted on:</strong> The community can support your domain for <strong>6 KAS</strong> per vote,
+            boosting its visibility and ranking.
           </p>
           <p>
-            <strong>5. Monetize attention:</strong> Domain owners earn <strong>KDC</strong>, 
-            transforming votes into measurable on-chain value and reputation.
+            <strong>5. Built to last:</strong> One-time payment, no renewals, no subscriptions —
+            your listing and profile are yours for good.
           </p>
         </div>
         <Link

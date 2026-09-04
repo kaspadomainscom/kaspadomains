@@ -1,47 +1,12 @@
-'use client';
+// src/app/learn/page.tsx
 
-import EcosystemDistribution from '@/components/pages/learn/EcosystemDistribution';
-import { useEffect, useState } from 'react';
-import { useCspNonce } from '@/context/NonceProvider';
-
-async function fetchContractData() {
-  return {
-    totalVotes: 750000,
-    totalKDCMinted: 900000,
-    currentReward: 1,
-    totalLiquidityKAS: 2520000,
-    totalLiquidityKDC: 420000,
-  };
-}
-
-function formatNumber(n: number) {
-  return n.toLocaleString();
-}
+export const metadata = {
+  title: "Learn | KaspaDomains",
+  description:
+    "How KaspaDomains works: list your .kas domain, place it in a category, add your resources, and get discovered.",
+};
 
 export default function Learn() {
-  const nonce = useCspNonce();
-  const [data, setData] = useState({
-    totalVotes: 0,
-    totalKDCMinted: 0,
-    currentReward: 1,
-    totalLiquidityKAS: 0,
-    totalLiquidityKDC: 0,
-  });
-
-  useEffect(() => {
-    fetchContractData().then(setData);
-  }, []);
-
-  const halving = [
-    { stage: '0–525k votes', reward: 2 },
-    { stage: '525k–1.05m votes', reward: 1 },
-    { stage: '1.05m–1.575m votes', reward: 0.5 },
-    { stage: '1.575m–2.1m votes', reward: 0.25 },
-  ];
-
-  const voteProgress = Math.min(data.totalVotes / 2100000, 1);
-  const progressStyle = `width: ${(voteProgress * 100).toFixed(2)}%`;
-
   return (
     <div className="min-h-screen bg-[#0b1e1d] text-gray-100 px-6 py-12">
       <div className="max-w-5xl mx-auto space-y-12">
@@ -50,110 +15,57 @@ export default function Learn() {
         <section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]">
           <h2 className="text-4xl font-bold text-white mb-4">What is KaspaDomains?</h2>
           <p className="text-gray-300 leading-relaxed">
-            <span className="text-white font-semibold">KaspaDomains.com</span> is a community‑powered registry for KNS <code className="text-kaspa-green">.kas</code> domains.
-            Any KNS domain holder can register their name, then open it for public voting. Votes highlight the most valued domains
-            and mint KDC tokens to voters and domain owners—no auctions, only votes and rewards.
+            <span className="text-white font-semibold">KaspaDomains.com</span> is a registry
+            and showcase for KNS <code className="text-kaspa-green">.kas</code> domains. Any
+            KNS domain holder can list their name, place it in a category, and attach
+            resources like an X account and links — so the domain is actually discoverable
+            and reachable, not just held.
           </p>
         </section>
 
         {/* How it works */}
         <section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]">
           <h2 className="text-4xl font-bold text-white mb-4">How It Works</h2>
-          <p className="text-gray-300 mb-4">
-            Pay <span className="text-kaspa-green font-semibold">6 KAS</span> to vote on a domain:
-          </p>
-          <ul className="list-disc list-inside text-gray-300 space-y-1 mb-6">
-            <li>Voter receives <strong>1 KDC</strong></li>
-            <li>Domain owner receives <strong>0.2 KDC</strong></li>
-            <li><strong>6 KAS</strong> goes to the KaspaDomains.com fund</li>
+          <ul className="list-disc list-inside text-gray-300 space-y-2">
+            <li>Connect your Kasware wallet (proves KNS ownership) and MetaMask (for the Kasplex transaction)</li>
+            <li>Pick a verified <code className="text-kaspa-green">.kas</code> domain you own</li>
+            <li>Choose at least one category so your domain can be found</li>
+            <li>Pay a one-time <span className="text-kaspa-green font-semibold">420 KAS</span> listing fee — no renewals, ever</li>
+            <li>Add your X account and other links to your domain&apos;s profile</li>
           </ul>
-
-          {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
-            {[
-              ['Total Votes', formatNumber(data.totalVotes)],
-              ['Minted KDC', formatNumber(data.totalKDCMinted)],
-              ['Reward/vote', `${data.currentReward} KDC`],
-              ['Liquidity KAS/KDC', `${formatNumber(data.totalLiquidityKAS)} / ${formatNumber(data.totalLiquidityKDC)}`],
-            ].map(([label, value], i) => (
-              <div key={i} className="bg-[#1d3b39] rounded-lg p-4 text-center">
-                <div className="text-xs uppercase text-gray-400">{label}</div>
-                <div className="text-2xl font-bold text-kaspa-green">{value}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Vote Progress Bar */}
-          <div className="mb-8">
-            <div className="text-sm text-gray-400 mb-1">
-              Progress to max supply ({formatNumber(data.totalVotes)} / 2,100,000 votes)
-            </div>
-            <div className="w-full h-4 bg-[#1a3533] rounded-full overflow-hidden relative">
-              <style nonce={nonce}>{`
-                .vote-progress::before {
-                  content: '';
-                  display: block;
-                  height: 100%;
-                  width: ${progressStyle};
-                  background: linear-gradient(to right, #3bf5b2, #1e3d38);
-                }
-              `}</style>
-              <div className="vote-progress absolute top-0 left-0 h-full" />
-            </div>
-          </div>
-
-          {/* Halving */}
-          <p className="text-gray-300 leading-relaxed mb-4">
-            Rewards halve every <strong>525,000 votes</strong> until max supply of <strong>2.1 M</strong> KDC.
-          </p>
-          <div className="space-y-2">
-            {halving.map((h, idx) => (
-              <div
-                key={idx}
-                className="flex justify-between bg-[#1d3b39] rounded px-4 py-2 text-gray-300 text-sm"
-              >
-                <span>{h.stage}</span>
-                <span>{h.reward} KDC</span>
-              </div>
-            ))}
-          </div>
         </section>
 
-        {/* KDC Tokens */}
+        {/* Categories */}
         <section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]">
-          <h2 className="text-4xl font-bold text-white mb-4">What Are KDC Tokens?</h2>
-          <p className="text-gray-300">
-            <strong>KDC</strong> is the native ERC‑20 reward token (2.1 M total):
-          </p>
-          <ul className="list-disc list-inside mt-2 space-y-1 text-gray-300">
-            <li><strong>20%</strong> (420 k) pre‑minted & LP‑burned for liquidity</li>
-            <li><strong>10%</strong> reserved for future listings</li>
-            <li><strong>70%</strong> (1.47 M) community-minted via voting:
-              <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
-                <li><strong>83.33%</strong> → voters (≈1.225 M)</li>
-                <li><strong>16.67%</strong> → domain owners (≈245 k)</li>
-              </ul>
-            </li>
-          </ul>
-          <p className="mt-4 text-gray-300">
-            No private sales, no team allocations — everything is earned on‑chain.
+          <h2 className="text-4xl font-bold text-white mb-4">Categories</h2>
+          <p className="text-gray-300 leading-relaxed">
+            Every listed domain belongs to at least one category — DeFi, gaming, brandable,
+            business, and more. Categories are how the community browses and discovers
+            domains, so picking the right one for your domain matters.
           </p>
         </section>
 
-        {/* Ecosystem Fund */}
-        <EcosystemDistribution />
+        {/* Domain resources */}
+        <section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]">
+          <h2 className="text-4xl font-bold text-white mb-4">Domain Resources</h2>
+          <p className="text-gray-300 leading-relaxed">
+            Once listed, attach resources to your domain&apos;s profile — your X (Twitter)
+            account and any links you want visitors to see. This is what turns a listing
+            into an actual point of contact for your Kaspa-native identity.
+          </p>
+        </section>
+
+        {/* Voting */}
+        <section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]">
+          <h2 className="text-4xl font-bold text-white mb-4">Community Voting</h2>
+          <p className="text-gray-300 leading-relaxed">
+            Anyone can support a listed domain for <span className="text-kaspa-green font-semibold">6 KAS</span> per
+            vote. Votes raise a domain&apos;s ranking and visibility across the site,
+            surfacing the domains the community values most.
+          </p>
+        </section>
+
       </div>
     </div>
   );
 }
-
-
-{/* Token Pie Chart */ }
-// <section> 
-{/* <div className="relative w-48 h-48 mx-auto rounded-full overflow-hidden mb-6">
-            <div className="absolute inset-0 bg-gradient-to-tr from-[#3bf5b2] via-[#5fcf8f] to-[#1e3d38]" />
-            <div className="absolute inset-4 bg-[#0b1e1d] rounded-full flex items-center justify-center text-center text-gray-400 text-sm">
-              20% LP<br />64% Voters<br />16% Owners
-            </div>
-          </div>
-         </section> */}

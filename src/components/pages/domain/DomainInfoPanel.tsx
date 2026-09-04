@@ -1,9 +1,11 @@
 // src/components/pages/domain/DomainInfoPanel.tsx
 "use client";
 
+import Link from "next/link";
 import { Domain } from "@/data/types";
 import { DomainLikeCount } from "@/components/contracts/DomainVotesManager/DomainLikeCount";
 import { Detail } from "./Detail";
+import { DomainResources } from "./DomainResources";
 
 type Props = {
     domain: Domain;
@@ -27,6 +29,14 @@ export function DomainInfoPanel({ domain, category }: Props) {
                 valueClass="text-pink-600 font-semibold"
             />
 
+            <DomainResources domainName={domain.name} />
+
+            <Link
+                href={`/domain/update/${domain.name}`}
+                className="inline-block text-sm text-kaspaGreen hover:underline"
+            >
+                Own this domain? Manage its resources →
+            </Link>
         </section>
     );
 }

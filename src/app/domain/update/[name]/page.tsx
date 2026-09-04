@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useKasware } from '@/hooks/kns/useKasware';
+import { useWalletContext } from '@/context/WalletContext';
+import { useGetDomainLinks, type DomainLink } from '@/hooks/domain/useGetDomainLinks';
+import { useUpdateDomainLinks } from '@/hooks/domain/useUpdateDomainLinks';
+import { contracts } from '@/lib/contracts';
+import { kasplexClient } from '@/lib/viemClient';
+
+const DEFAULT_MAX_LINKS = 10;
 
 async function fetchDomainOwner(domain: string): Promise<string> {
   const encoded = encodeURIComponent(domain.toLowerCase());
@@ -14,7 +20,6 @@ async function fetchDomainOwner(domain: string): Promise<string> {
   }
 
   const data = await res.json();
-  console.log('🐞 API response:', data);
 
   if (data?.success && data?.data?.owner) {
     return data.data.owner;
@@ -29,24 +34,23 @@ function normalizeAddress(addr?: string | null) {
 
 export default function UpdateDomainPage() {
   const { name: domainSlug } = useParams() as { name: string };
-  const { address: walletAddress, connecting } = useKasware();
+  const { kasware, metamask } = useWalletContext();
 
   const [domainName, setDomainName] = useState('');
   const [owner, setOwner] = useState('');
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [bio, setBio] = useState('');
-  const [twitter, setTwitter] = useState('');
+  const [links, setLinks] = useState<DomainLink[]>([{ name: 'X', url: '' }]);
+  const [maxLinks, setMaxLinks] = useState(DEFAULT_MAX_LINKS);
+  const [linksSeeded, setLinksSeeded] = useState(false);
 
-  const status = connecting
-    ? 'connecting'
-    : walletAddress
-    ? 'connected'
-    : 'disconnected';
+  const isEvmConnected = metamask.status === 'connected';
+  const isKaspaConnected = kasware.status === 'connected';
+  const isOwner = normalizeAddress(owner) === normalizeAddress(kasware.account);
 
-  const isOwner = normalizeAddress(owner) === normalizeAddress(walletAddress);
+  const { links: existingLinks, loading: linksLoading } = useGetDomainLinks(domainName);
+  const { updateLinks, isLoading: saving, error: saveError } = useUpdateDomainLinks();
 
   useEffect(() => {
     if (!domainSlug) return;
@@ -70,41 +74,84 @@ export default function UpdateDomainPage() {
     loadOwner();
   }, [domainSlug]);
 
+  // Fetch the contract's link cap once
+  useEffect(() => {
+    kasplexClient
+      .readContract({
+        address: contracts.DomainLinksStorage.address,
+        abi: contracts.DomainLinksStorage.abi,
+        functionName: 'MAX_LINKS',
+      })
+      .then((val) => setMaxLinks(Number(val)))
+      .catch(() => {
+        // fall back to the client-side default
+      });
+  }, []);
+
+  // Seed the editor with existing on-chain links, once, when they load
+  useEffect(() => {
+    if (linksSeeded || linksLoading) return;
+    if (existingLinks.length > 0) {
+      setLinks(existingLinks);
+    }
+    setLinksSeeded(true);
+  }, [existingLinks, linksLoading, linksSeeded]);
+
+  function updateLinkField(index: number, field: 'name' | 'url', value: string) {
+    setLinks((prev) => prev.map((l, i) => (i === index ? { ...l, [field]: value } : l)));
+  }
+
+  function addLinkRow() {
+    setLinks((prev) => (prev.length >= maxLinks ? prev : [...prev, { name: '', url: '' }]));
+  }
+
+  function removeLinkRow(index: number) {
+    setLinks((prev) => prev.filter((_, i) => i !== index));
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage('');
-    setError('');
-    setSaving(true);
 
-    try {
-      // TODO: Call actual API to update bio and Twitter handle
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      setMessage(`✅ Domain '${domainName}' updated successfully.`);
-    } catch {
-      setError('❌ Failed to update domain.');
-    } finally {
-      setSaving(false);
+    if (!metamask.account) return;
+
+    const ok = await updateLinks(domainName, metamask.account as `0x${string}`, links);
+    if (ok) {
+      setMessage(`✅ Resources for '${domainName}' updated successfully.`);
     }
   };
 
-  if (loading || status === 'connecting') {
+  if (loading) {
     return (
       <main className="max-w-xl mx-auto p-6 mt-10 text-center text-gray-600">
         <p>Loading domain data...</p>
-        <pre className="mt-4 text-xs text-gray-400">
-          {`domainSlug: ${domainSlug}\ndomainName: ${domainName}\nloading: ${loading}`}
-        </pre>
       </main>
     );
   }
 
-  if (status === 'disconnected') {
+  if (error) {
     return (
       <main className="max-w-xl mx-auto p-6 mt-10 text-center text-red-500">
-        ❌ Please connect your Kaspa wallet to edit this domain.
-        <p className="mt-4 text-sm text-gray-500">
-          {"Use the 'Connect Wallet' button in the header."}
-        </p>
+        {error}
+      </main>
+    );
+  }
+
+  if (!isKaspaConnected || !isEvmConnected) {
+    return (
+      <main className="max-w-xl mx-auto p-6 mt-10 text-center text-yellow-600">
+        Connect both your Kasware (KNS ownership) and MetaMask (Kasplex transaction) wallets to manage this domain.
+        <div className="mt-4">
+          <button
+            className="underline text-sm"
+            onClick={() => {
+              metamask.connect();
+              kasware.connect();
+            }}
+          >
+            Retry connecting wallets
+          </button>
+        </div>
       </main>
     );
   }
@@ -113,49 +160,56 @@ export default function UpdateDomainPage() {
     return (
       <main className="max-w-xl mx-auto p-6 mt-10 text-center text-red-500">
         ❌ You are not the owner of <strong>{domainName || '(unknown)'}</strong>.
-        <div className="mt-4 text-left text-xs text-gray-500 dark:text-gray-400">
-          <p>domainSlug: {domainSlug}</p>
-          <p>domainName: {domainName}</p>
-          <p>Owner: {owner}</p>
-          <p>Your Wallet: {walletAddress}</p>
-        </div>
       </main>
     );
   }
 
   return (
     <main className="max-w-xl mx-auto p-6 bg-white dark:bg-neutral-900 rounded shadow-md mt-8">
-      <h1 className="text-2xl font-bold mb-6 text-kaspaGreen">Edit Domain: {domainName}</h1>
+      <h1 className="text-2xl font-bold mb-2 text-kaspaGreen">Edit Domain: {domainName}</h1>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+        Add resources — your X (Twitter) account and any other links — so visitors can find you.
+      </p>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Bio Field */}
-        <div>
-          <label htmlFor="bio" className="block text-sm font-medium mb-1">Bio / Description</label>
-          <textarea
-            id="bio"
-            rows={4}
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            placeholder="Write something about this domain..."
-            className="w-full border border-gray-300 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 text-gray-800 dark:text-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-kaspaGreen"
-          />
-        </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {links.map((link, i) => (
+          <div key={i} className="flex gap-2 items-start">
+            <input
+              type="text"
+              value={link.name}
+              onChange={(e) => updateLinkField(i, 'name', e.target.value)}
+              placeholder="Label (e.g. X)"
+              className="w-1/3 border border-gray-300 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 text-gray-800 dark:text-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-kaspaGreen"
+            />
+            <input
+              type="text"
+              value={link.url}
+              onChange={(e) => updateLinkField(i, 'url', e.target.value)}
+              placeholder="https://x.com/yourhandle"
+              className="flex-1 border border-gray-300 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 text-gray-800 dark:text-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-kaspaGreen"
+            />
+            <button
+              type="button"
+              onClick={() => removeLinkRow(i)}
+              aria-label="Remove link"
+              className="px-2 py-2 text-red-500 hover:text-red-700"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
 
-        {/* Twitter Field */}
-        <div>
-          <label htmlFor="twitter" className="block text-sm font-medium mb-1">Twitter / X Handle</label>
-          <input
-            id="twitter"
-            name='twitter'
-            type="text"
-            value={twitter}
-            onChange={(e) => setTwitter(e.target.value)}
-            placeholder="@example"
-            className="w-full border border-gray-300 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 text-gray-800 dark:text-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-kaspaGreen"
-          />
-        </div>
+        <button
+          type="button"
+          onClick={addLinkRow}
+          disabled={links.length >= maxLinks}
+          className="text-sm text-kaspaGreen hover:underline disabled:text-gray-400 disabled:no-underline"
+        >
+          + Add another link
+        </button>
 
-        {/* Submit */}
+        <p className="text-xs text-gray-400">{links.length} / {maxLinks} links</p>
+
         <button
           type="submit"
           disabled={saving}
@@ -165,9 +219,8 @@ export default function UpdateDomainPage() {
         </button>
       </form>
 
-      {/* Feedback */}
       {message && <p className="mt-4 text-sm text-green-600">{message}</p>}
-      {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
+      {saveError && <p className="mt-4 text-sm text-red-500">{saveError}</p>}
     </main>
   );
 }

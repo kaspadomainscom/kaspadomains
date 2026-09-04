@@ -8,9 +8,9 @@ const sections = [
   { id: 'kns', label: 'KNS Verification' },
   { id: 'details', label: 'Listing Details' },
   { id: 'rules', label: 'Listing Rules' },
+  { id: 'resources', label: 'Domain Resources' },
   { id: 'benefits', label: 'Why List Your Domain?' },
-  { id: 'distribution', label: 'KAS Distribution' },
-  { id: 'voting', label: 'Voting & KDC Rewards' },
+  { id: 'voting', label: 'Community Voting' },
   { id: 'notmarketplace', label: 'We Are Not a Marketplace' },
   { id: 'start', label: 'Get Started' },
 ];
@@ -93,32 +93,30 @@ export default function Docs() {
           </ul>
         </Section>
 
+        <Section id="resources" title="Domain Resources">
+          <p>
+            Once listed, you can attach resources to your domain&apos;s profile page —
+            your <strong>X (Twitter) account</strong> and any links you want visitors to see
+            (website, Discord, docs, whatever represents you). This is how people who find
+            your domain through search or category browsing actually reach you.
+          </p>
+        </Section>
+
         <Section id="benefits" title="Why List Your Domain?">
           <ul>
-            <li>Get permanently indexed on KaspaDomains</li>
-            <li>Qualify for KDC (KaspaDomains Community) rewards</li>
-            <li>Participate in voting, rankings, and airdrops</li>
+            <li>Get permanently indexed on KaspaDomains, organized by category</li>
+            <li>Attach an X account and links so people can find you</li>
+            <li>Participate in community voting and rankings</li>
             <li>Build brand identity across the Kaspa ecosystem</li>
           </ul>
         </Section>
 
-        <Section id="distribution" title="KAS Distribution">
-          <p>Each 420 KAS listing fee is split evenly:</p>
-          <ul>
-            <li><strong>50%</strong> — Mints KDC tokens for community incentives</li>
-            <li><strong>50%</strong> — Funds the ecosystem: liquidity, dev, and growth</li>
-          </ul>
-        </Section>
-
-        <Section id="voting" title="Voting & KDC Rewards">
+        <Section id="voting" title="Community Voting">
           <p>
-            Users can vote on domains using <strong>24 KAS</strong> per vote. In return:
+            Users can support a domain for <strong>6 KAS</strong> per vote. Votes raise a
+            domain&apos;s ranking and visibility across the site — a portion goes to the
+            domain owner, the rest funds the ecosystem.
           </p>
-          <ul>
-            <li>Voter gets KDC tokens minted to their wallet</li>
-            <li>12 KAS goes to the domain owner</li>
-            <li>12 KAS goes to the treasury</li>
-          </ul>
           <p className="text-gray-400 text-sm">Voting empowers domain owners and strengthens community engagement.</p>
         </Section>
 
