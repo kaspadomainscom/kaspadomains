@@ -1,4 +1,5 @@
 // src/app/learn/page.tsx
+import Link from "next/link";
 
 export const metadata = {
   title: "Learn | KaspaDomains",
@@ -41,7 +42,12 @@ export default function Learn() {
           <p className="text-gray-300 leading-relaxed">
             Every listed domain belongs to at least one category — DeFi, gaming, brandable,
             business, and more. Categories are how the community browses and discovers
-            domains, so picking the right one for your domain matters.
+            domains, so picking the right one for your domain matters. Browse the current
+            list on the{" "}
+            <Link href="/domains/categories" className="text-kaspaMint hover:underline">
+              categories page
+            </Link>
+            .
           </p>
         </section>
 
@@ -61,7 +67,38 @@ export default function Learn() {
           <p className="text-gray-300 leading-relaxed">
             Anyone can support a listed domain for <span className="text-kaspaMint font-semibold">6 KAS</span> per
             vote. Votes raise a domain&apos;s ranking and visibility across the site,
-            surfacing the domains the community values most.
+            surfacing the domains the community values most — see who&apos;s currently
+            leading on{" "}
+            <Link href="/domains/top-voted" className="text-kaspaMint hover:underline">
+              top voted domains
+            </Link>
+            .
+          </p>
+        </section>
+
+        {/* CTA */}
+        <section className="text-center py-6">
+          <h2 className="text-2xl font-bold text-white mb-4">Ready to list your domain?</h2>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link
+              href="/list-domain"
+              className="inline-block bg-kaspaMint text-[#0F2F2E] px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-[#3DFDAD]/90 transition"
+            >
+              List Your Domain
+            </Link>
+            <Link
+              href="/domains"
+              className="inline-block bg-[#1d3b39] text-gray-200 px-8 py-3 rounded-full font-semibold hover:bg-[#26504c] transition"
+            >
+              Browse Domains
+            </Link>
+          </div>
+          <p className="text-gray-500 text-sm mt-4">
+            More detail on ownership rules and listing requirements is in the{" "}
+            <Link href="/docs" className="text-kaspaMint hover:underline">
+              docs
+            </Link>
+            .
           </p>
         </section>
 

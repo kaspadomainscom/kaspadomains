@@ -8,6 +8,19 @@ go stale.
 
 ## Recently shipped
 
+- [x] **Loop iteration 2**: verified the mobile hamburger menu works (couldn't confirm
+      last iteration — `computer` browser actions need a visible pane, unreliable in this
+      unattended loop; switched to reading source + driving via `javascript_tool` instead,
+      more reliable for background verification going forward). Image alt-text audit came
+      back clean (no raw `<img>` tags anywhere; the one `next/image` usage already has
+      correct alt text). **Internal-linking audit found a real, systemic gap**: `/learn`
+      and `/docs` — two of the site's main explainer pages — had **zero internal links or
+      CTAs anywhere in their content** (only the `/docs` sidebar's own `#anchor` scroll
+      links). A reader could read the entire "How It Works" explanation and have no way to
+      click through to actually list a domain, browse categories, or see rankings — pure
+      conversion loss. Added a "List Your Domain" / "Browse Domains" CTA to the end of
+      `/learn`, plus contextual links (categories, top-voted) in both pages' relevant
+      sections. Verified all new links resolve to real routes via a running dev server.
 - [x] **Homepage "Trending .kas Domains" was 100% fabricated data.** A hardcoded array
       (`wallet.kas`, `defi.kas`, `dex.kas` with made-up vote counts) — domains that don't
       exist as real listings; clicking "View Domain" on any of them would 404. Found while
@@ -261,23 +274,29 @@ go stale.
 A recurring local loop (`/loop 8m`, job `2e58e210`) is running audit-and-fix passes across
 UI/UX, content, SEO, and missing-page gaps. Checked so far: homepage + trending data,
 `/domains`, `/domains/top-voted`, `/search`, `DomainCard`, OG/Twitter metadata, robots.txt,
-marketplace-language across the whole site. Not yet checked, in rough priority order:
+marketplace-language across the whole site, mobile hamburger menu, image alt text,
+internal linking on `/learn` + `/docs`. Not yet checked, in rough priority order:
 
-- [ ] Mobile menu (hamburger) — clicked during this pass but couldn't confirm it opened
-      (browser pane went hidden mid-interaction); verify for real next iteration.
 - [ ] Missing pages: no Terms of Service, Privacy Policy, or About/Team page found
       anywhere in `src/app/`. For a dApp handling real KAS payments this is a real
       trust/legal gap, not just a nice-to-have — worth a decision on scope before writing
-      anything (legal content shouldn't be invented without input).
-- [ ] Image `alt` text audit across the site — spot-checked a few components, not
-      systematic yet.
-- [ ] Internal linking audit — e.g. does `/learn` link to `/list-domain`? Do category
-      pages cross-link to `/docs`? Not yet checked systematically.
+      anything (legal content shouldn't be invented without input from whoever owns that
+      decision — flagging, not attempting to draft legal text autonomously).
+- [ ] Internal linking on the *remaining* pages — only `/learn` and `/docs` checked so far.
+      Check `/business-plan`, category pages, and domain profile pages for the same
+      "explains everything, links to nothing" pattern.
 - [ ] Mobile check remaining pages: `/list-domain`, `/domain/[name]`, `/domain/update/[name]`,
       `EcosystemAdmin`, `/domains/my-domains`, `/domains/my-votes`.
 - [ ] Competitor/search-intent research for Kaspa/KNS domain discovery sites — not started.
 - [ ] Re-grep periodically for marketplace-adjacent language using entity-aware patterns
-      (this pass's "Buy&nbsp;Now" catch shows plain-text grep isn't sufficient alone).
+      (the "Buy&nbsp;Now" catch two iterations ago shows plain-text grep isn't sufficient
+      alone).
+- [ ] Heading hierarchy audit (one `<h1>` per page, logical `<h2>`/`<h3>` nesting) — not
+      yet checked systematically.
+- [ ] Core Web Vitals — `next.config.ts` sets `images.unoptimized: true`, which trades
+      image optimization away; worth a decision on whether that's intentional (e.g. static
+      export constraints) or worth revisiting once there's real image content beyond the
+      logo.
 
 ## Real gaps (not just cleanup)
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 
 const sections = [
   { id: 'what', label: 'What is KaspaDomains?' },
@@ -133,9 +134,19 @@ export default function Docs() {
 
           <Section id="benefits" title="Why List Your Domain?">
             <ul>
-              <li>Get permanently indexed on KaspaDomains, organized by category</li>
+              <li>
+                Get permanently indexed on KaspaDomains, organized by{" "}
+                <Link href="/domains/categories" className="text-kaspaMint hover:underline">
+                  category
+                </Link>
+              </li>
               <li>Attach an X account and links so people can find you</li>
-              <li>Participate in community voting and rankings</li>
+              <li>
+                Participate in community voting and{" "}
+                <Link href="/domains/top-voted" className="text-kaspaMint hover:underline">
+                  rankings
+                </Link>
+              </li>
               <li>Build brand identity across the Kaspa ecosystem</li>
             </ul>
           </Section>
@@ -159,7 +170,13 @@ export default function Docs() {
             <p>
               Ready to list your domain? Connect your wallet, verify your KNS domain, and pay the 420 KAS fee. Your domain will be recorded on-chain — forever.
             </p>
-            <p className="text-sm text-gray-500">
+            <Link
+              href="/list-domain"
+              className="inline-block bg-kaspaMint text-[#0F2F2E] px-6 py-2.5 rounded-full font-semibold hover:bg-[#3DFDAD]/90 transition mt-2"
+            >
+              List Your Domain
+            </Link>
+            <p className="text-sm text-gray-500 mt-4">
               Need help? Join the KaspaDomains community on X or Discord and help shape the future of identity on Kaspa.
             </p>
           </Section>
