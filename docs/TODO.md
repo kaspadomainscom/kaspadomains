@@ -8,6 +8,25 @@ go stale.
 
 ## Recently shipped
 
+- [x] **"Admin can change domain price listing at any time" — checked, confirmed
+      impossible with the current contract, made what's actually safe to do instead.**
+      Re-verified the full `KaspaDomainsRegistry` ABI function-by-function: `DOMAIN_FEE`
+      is `view`-only with no `set*`/`update*` counterpart anywhere (unlike
+      `DomainVotesManager`, which has real `voteFee` + `setVoteFee`). There is no way to
+      make the listing price admin-adjustable without deploying a new contract with a
+      setter — real Solidity development plus a funded deployment, not something
+      achievable from this repo (no `.sol` source anywhere) or something I'll do
+      autonomously (irreversible, real-money, needs its own explicit authorization).
+      What I did instead: [`useListDomain.ts`](../src/hooks/domain/useListDomain.ts) now
+      reads `DOMAIN_FEE()` live from the contract at submit time instead of hardcoding
+      `parseEther('420')`. This doesn't grant new admin capability, but it means the code
+      no longer has a hardcoded price that can silently drift out of sync with the real
+      contract (the exact class of bug that broke voting — see below) — if a future
+      contract version does add a setter, or a new contract is deployed at a different
+      fee, this code keeps working unmodified. The "210 KAS" display copy is intentionally
+      left static (that was an explicit prior decision, not something this change should
+      undo). **Real admin-adjustability is now a specced, tracked future feature** — see
+      "Real gaps" below for what it would actually require.
 - [x] **Displayed listing price changed to 210 KAS (site copy/SEO only) — real on-chain
       price is unchanged at 420 KAS.** Explicit request: "change price of listing to 210
       kas in all app and docs." Before touching anything, checked whether this was
@@ -412,6 +431,21 @@ shipped"). Not yet checked, in rough priority order:
       the displayed price back to 420, or deploy a new `KaspaDomainsRegistry` with
       `DOMAIN_FEE` actually set to 210 and repoint `contracts.ts` at it — before this goes
       anywhere near real users/mainnet.
+- [ ] **Future feature spec: admin-adjustable listing fee.** Explicitly requested
+      ("admin can change domain price listing at any time"); not achievable with the
+      currently deployed contract (`DOMAIN_FEE` is a constant, no setter — see "Recently
+      shipped"). What it would actually take:
+      1. A new `KaspaDomainsRegistry` contract version with a `setDomainFee(uint256)`
+         (owner-only), mirroring `DomainVotesManager.setVoteFee` — needs real Solidity
+         source and a security review before any deployment, same bar as the rest of the
+         contract suite (see `PROJECT_PLAN.md` for the broader "no audit yet" gap).
+      2. Deploy it, then update `src/lib/contracts.ts` to the new address (this repo's
+         side — straightforward once the contract exists).
+      3. Add an admin control for it in `/EcosystemAdmin` (which already has some
+         owner-only patterns to follow) — not built yet since there's no function to call.
+      4. `useListDomain.ts` already reads `DOMAIN_FEE()` live rather than hardcoding it
+         (done in this pass), so once the above lands, the listing flow needs no further
+         frontend changes to pick up admin-set price changes automatically.
 - [ ] **No real Open Graph banner image.** `public/og-image.png` is just the square logo
       renamed — every social share (X, Discord, etc.) will show a squished/cropped square
       logo instead of a proper 1200×630 branded banner. This needs an actual design asset;

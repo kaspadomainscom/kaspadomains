@@ -3,7 +3,6 @@
 import { useState, useRef } from 'react';
 import { contracts } from '@/lib/contracts';
 import { kasplexClient } from '@/lib/viemClient';
-import { parseEther } from 'viem';
 import { useKaswareEvmWallet } from '@/hooks/wallet/internal/useKaswareEvmWallet';
 import { createKaswareEvmClient } from '@/lib/kaswareEvm';
 import { useToast } from '@/components/ToastProvider';
@@ -51,6 +50,19 @@ export function useListDomain() {
 
       addToast(`Preparing to list "${domain}"...`);
 
+      // Read the real fee from the contract at submit time rather than hardcoding
+      // it -- DOMAIN_FEE is currently a constant with no setter (verified against
+      // the ABI), but reading it live means this code keeps working unmodified if
+      // a future contract version makes it admin-adjustable. Site copy displays
+      // "210 KAS" for marketing/SEO while this reads whatever the real deployed
+      // contract actually charges (currently 420 KAS) -- see docs/TODO.md for the
+      // tracked mismatch and what a real fix requires (a new contract deployment).
+      const domainFee = (await kasplexClient.readContract({
+        address: contracts.KaspaDomainsRegistry.address,
+        abi: contracts.KaspaDomainsRegistry.abi,
+        functionName: 'DOMAIN_FEE',
+      })) as bigint;
+
       let lastError: unknown = null;
       let confirmedHash: `0x${string}` | null = null;
 
@@ -58,19 +70,13 @@ export function useListDomain() {
         try {
           addToast(`Listing "${domain}"... (Attempt ${attempt})`);
 
-          // NOTE: KaspaDomainsRegistry.DOMAIN_FEE is a contract constant with no
-          // setter (verified against the ABI) -- it currently equals 420 KAS on the
-          // deployed testnet contract. Site copy was changed to display "210 KAS"
-          // for marketing/SEO, but this value MUST stay in sync with the real
-          // on-chain DOMAIN_FEE or every listing transaction will revert. See
-          // docs/TODO.md for the tracked mismatch this creates.
           const hash = await walletClient.writeContract({
             address: contracts.KaspaDomainsRegistry.address,
             abi: contracts.KaspaDomainsRegistry.abi,
             functionName: 'listDomain',
             args: [domain, account],
             account: account as `0x${string}`,
-            value: parseEther('420'),
+            value: domainFee,
           });
 
           setTxHash(hash);
