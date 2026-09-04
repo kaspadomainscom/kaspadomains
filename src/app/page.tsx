@@ -1,6 +1,9 @@
 // src/app/page.tsx
 import Link from "next/link";
+import { headers } from "next/headers";
 import { loadCategoriesManifest, type CategoryManifest } from "@/data/categoriesManifest";
+import { getWebsiteJsonLd, getItemListJsonLd } from "@/lib/jsonld";
+import { JsonLd } from "@/components/JsonLd";
 
 const previewDomains = [
   { name: "wallet.kas", likes: 234, price: 420 },
@@ -48,8 +51,13 @@ export default async function Home() {
     // fallback to empty object so UI still renders
   }
 
+  const nonce = (await headers()).get("x-csp-nonce") || undefined;
+  const itemListJsonLd = await getItemListJsonLd();
+  const jsonLd = [getWebsiteJsonLd(), itemListJsonLd];
+
   return (
     <main className="space-y-28 bg-[#0E1E25] text-gray-100 min-h-screen">
+      <JsonLd json={jsonLd} nonce={nonce} />
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-[#00AEEF] to-[#0E1E25] py-28 text-center px-6 md:px-8">
         <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-snug mb-6">

@@ -16,14 +16,15 @@ export async function GET() {
   const staticRoutes = [
     "",
     "/list-domain",
-    "/domain",
     "/domains",
     "/domains/categories",
-    ...Object.keys(categoriesData).map((cat) => `/domains/categories/${cat}`),
+    ...Object.keys(categoriesData).map((cat) => `/domains/categories/category/${cat}`),
   ];
 
   const domainRoutes = Object.values(categoriesData).flatMap((category) =>
-    category.domains.map((d) => `/domains/${d.name}`)
+    category.domains
+      .filter((d) => d.isActive)
+      .map((d) => `/domain/${d.name}`)
   );
 
   const allRoutes = [...staticRoutes, ...domainRoutes];

@@ -1,9 +1,13 @@
 // src/app/domain/[name]/page.tsx
 import { notFound, redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { formatEther } from "viem";
 import type { Metadata } from "next";
 import type { Domain } from "@/data/types";
 
 import { loadCategoriesManifest } from "@/data/categoriesManifest";
+import { getDomainJsonLd } from "@/lib/jsonld";
+import { JsonLd } from "@/components/JsonLd";
 
 import { DomainBreadcrumb } from "@/components/pages/domain/DomainBreadcrumb";
 import { DomainTitleSection } from "@/components/pages/domain/DomainTitleSection";
@@ -87,6 +91,9 @@ export async function generateMetadata({
     return {
       title: `${domain.name} — Premium ${category} Domain | kaspadomains.com`,
       description,
+      alternates: {
+        canonical: `https://kaspadomains.com/domain/${domain.name}`,
+      },
       openGraph: {
         title: domain.name,
         description: `Premium KNS domain in ${category}`,
@@ -152,9 +159,17 @@ export default async function DomainPage({ params }: PageProps): Promise<JSX.Ele
   if (!domain) return notFound();
 
   const category = findCategoryTitleByDomainName(domain.name, manifest) ?? "Unknown";
+  const nonce = (await headers()).get("x-csp-nonce") || undefined;
+  const jsonLd = getDomainJsonLd({
+    name: domain.name,
+    price: domain.feePaid ? formatEther(BigInt(domain.feePaid)) : 420,
+    listed: domain.isActive,
+    seller: domain.owner.slice(0, 8),
+  });
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
+      <JsonLd json={jsonLd} nonce={nonce} />
       <DomainBreadcrumb domainName={domain.name} />
       <DomainTitleSection domainName={domain.name} category={category} />
       <DomainInfoPanel domain={domain} category={category} />

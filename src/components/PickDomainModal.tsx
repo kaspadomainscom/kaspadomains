@@ -2,6 +2,8 @@
 
 import { DomainAsset } from '@/hooks/kns/types';
 import { useListDomain } from '@/hooks/domain/useListDomain';
+import { useSetDomainCategories } from '@/hooks/domain/useSetDomainCategories';
+import { useGetAllowedCategories } from '@/hooks/domains/useGetAllowedCategories';
 import { useState } from 'react';
 
 type PickDomainModalProps = {
@@ -16,9 +18,21 @@ export default function PickDomainModal({
   kaspaAccount,
 }: PickDomainModalProps) {
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const { listDomain, txHash, isLoading: listing, error: listError } = useListDomain();
+  const { setCategories, isLoading: assigningCategories } = useSetDomainCategories();
+  const { categories: allowedCategories, loading: categoriesLoading } = useGetAllowedCategories();
 
   const verifiedDomains = domains.filter((domain) => domain.isVerifiedDomain === true);
+  const busy = listing || assigningCategories;
+
+  function toggleCategory(category: string) {
+    setSelectedCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category]
+    );
+  }
 
   // Require both wallets connected
   if (!evmAccount || !kaspaAccount) {
@@ -46,36 +60,82 @@ export default function PickDomainModal({
         Total verified domains: {verifiedDomains.length}
       </p>
 
+      {/* Category selection — required before a domain can be listed */}
+      <div className="mb-4">
+        <p className="text-sm text-white font-medium mb-2">
+          Choose at least one category <span className="text-red-400">*</span>
+        </p>
+        {categoriesLoading ? (
+          <p className="text-sm text-gray-400">Loading categories…</p>
+        ) : allowedCategories.length === 0 ? (
+          <p className="text-sm text-red-400">No categories available right now.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {allowedCategories.map((category) => {
+              const active = selectedCategories.includes(category);
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => toggleCategory(category)}
+                  disabled={busy}
+                  aria-pressed={active}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition
+                    ${active
+                      ? 'bg-kaspaMint text-[#0F2F2E] border-kaspaMint'
+                      : 'bg-transparent text-gray-300 border-gray-600 hover:border-kaspaMint'
+                    }`}
+                >
+                  {category}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <ul className="space-y-2">
         {verifiedDomains.map((domain) => (
           <li key={domain.assetId}>
             <button
               onClick={async () => {
+                if (selectedCategories.length === 0) return;
                 setSelectedDomain(domain.asset);
                 try {
-                  await listDomain(domain.asset);
+                  const hash = await listDomain(domain.asset);
+                  if (hash) {
+                    await setCategories(domain.asset, evmAccount as `0x${string}`, selectedCategories);
+                  }
                 } catch {
-                  // error handled inside useListDomain
+                  // errors are surfaced via toasts inside the hooks
                 }
               }}
-              disabled={listing}
+              disabled={busy || selectedCategories.length === 0}
               className={`w-full flex items-center justify-between px-4 py-2 rounded-md transition
-                ${listing && selectedDomain === domain.asset
+                ${busy && selectedDomain === domain.asset
                   ? 'bg-[#3DFDAD]/90 text-[#0F2F2E] cursor-wait'
+                  : selectedCategories.length === 0
+                  ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
                   : 'bg-kaspaMint text-[#0F2F2E] hover:bg-[#3DFDAD]/90 cursor-pointer'
                 }`}
-              aria-busy={listing && selectedDomain === domain.asset}
-              aria-disabled={listing}
+              aria-busy={busy && selectedDomain === domain.asset}
+              aria-disabled={busy || selectedCategories.length === 0}
               type="button"
             >
               <span>{domain.asset}</span>
               <span className="text-xs font-semibold">
-                {listing && selectedDomain === domain.asset ? 'Listing…' : 'List for 420 KAS'}
+                {busy && selectedDomain === domain.asset ? 'Listing…' : 'List for 420 KAS'}
               </span>
             </button>
           </li>
         ))}
       </ul>
+
+      {selectedCategories.length === 0 && (
+        <p className="text-yellow-400 text-xs mt-2">
+          Pick a category above to enable listing.
+        </p>
+      )}
 
       {txHash && (
         <p className="text-green-400 text-sm mt-4 break-all">

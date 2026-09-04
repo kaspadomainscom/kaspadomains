@@ -1,8 +1,10 @@
 // src/app/domains/categories/category/[category]/page.tsx
 
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { loadCategoriesManifest } from "@/data/categoriesManifest";
 import { DomainCard } from "@/components/DomainCard";
+import { JsonLd } from "@/components/JsonLd";
 import type { Metadata } from "next";
 
 type StaticParam = { category: string };
@@ -40,6 +42,9 @@ export async function generateMetadata({
     return {
       title,
       description,
+      alternates: {
+        canonical: `https://kaspadomains.com/domains/categories/category/${category}`,
+      },
       openGraph: {
         title,
         description,
@@ -83,8 +88,23 @@ export default async function CategoryPage({ params }: PageProps) {
 
     if (!categoryData) return notFound();
 
+    const activeDomains = categoryData.domains.filter((d) => d.isActive);
+    const nonce = (await headers()).get("x-csp-nonce") || undefined;
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: `Premium ${categoryData.title} Domains`,
+      itemListElement: activeDomains.map((domain, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: `https://kaspadomains.com/domain/${domain.name}`,
+        name: domain.name.endsWith(".kas") ? domain.name : `${domain.name}.kas`,
+      })),
+    };
+
     return (
       <main className="p-6 max-w-5xl mx-auto">
+        <JsonLd json={jsonLd} nonce={nonce} />
         <h1 className="text-3xl font-semibold mb-6">{categoryData.title}</h1>
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
           {categoryData.domains.map((domain) => (

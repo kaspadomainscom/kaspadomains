@@ -60,10 +60,10 @@ export function useListDomain() {
   const { account, connect } = useMetamaskWallet();
   const { addToast } = useToast();
 
-  const listDomain = async (domain: string) => {
+  const listDomain = async (domain: string): Promise<`0x${string}` | null> => {
     if (isSubmitting.current) {
       addToast('Transaction already in progress. Please wait.');
-      return;
+      return null;
     }
 
     setError(null);
@@ -71,7 +71,7 @@ export function useListDomain() {
 
     if (!domain || !domain.endsWith('.kas') || domain.length < 5) {
       addToast('Invalid domain. Must end with ".kas" and be at least 5 characters.', 'error');
-      return;
+      return null;
     }
 
     isSubmitting.current = true;
@@ -88,6 +88,7 @@ export function useListDomain() {
       addToast(`Preparing to list "${domain}"...`);
 
       let lastError: unknown = null;
+      let confirmedHash: `0x${string}` | null = null;
 
       for (let attempt = 1; attempt <= RETRY_LIMIT; attempt++) {
         try {
@@ -110,6 +111,7 @@ export function useListDomain() {
 
           addToast(`"${domain}" listed successfully!`, 'success');
           lastError = null;
+          confirmedHash = hash;
           break;
 
         } catch (err) {
@@ -129,10 +131,13 @@ export function useListDomain() {
         throw lastError;
       }
 
+      return confirmedHash;
+
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong.';
       addToast(msg, 'error');
       setError(msg);
+      return null;
     } finally {
       isSubmitting.current = false;
       setIsLoading(false);
