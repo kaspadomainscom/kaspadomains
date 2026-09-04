@@ -10,16 +10,23 @@ listing + voting economy on top of domains that already exist on KNS:
 
 - A user proves they own a `.kas` name on KNS (via the **Kasware** wallet), then lists it
   into the `KaspaDomainsRegistry` contract on Kasplex (via **MetaMask**) for a one-time
-  fee of 420 KAS. Cap: 10,000 listings, ever.
-- Other users can "like"/vote on a listed domain for 5 KAS per vote (up to 1,000 votes per
-  wallet). Each vote mints **KDC** (KaspaDomains Coin) to both the voter and the domain
-  owner. KDC is hard-capped at 2.1M tokens.
+  fee of 420 KAS. Cap: 10,000 listings, ever. Listing now requires picking at least one
+  category, and owners can attach resources (an X account, links) to their domain's
+  profile — see §3.
+- Other users can vote/support a listed domain for 6 KAS per vote, which boosts its
+  visibility/ranking.
 - Listed domains get a profile page, category placement, search visibility, and a public
   "ecosystem fund" that the admin panel (`/EcosystemAdmin`) reports on.
 
 This is **not** a domain marketplace — KaspaDomains does not sell or transfer `.kas` names,
 it only indexes/showcases names a user already owns on KNS. See
-[`src/app/docs/page.tsx`](../src/app/docs/page.tsx) for the user-facing explanation.
+[`src/app/docs/page.tsx`](../src/app/docs/page.tsx) for the user-facing explanation, and
+[`BUSINESS_PLAN.md`](./BUSINESS_PLAN.md) for the product/business framing.
+
+**Product-direction note (2026-09-04):** the site's copy no longer pitches KDC/token
+rewards as the hook — the business decision is to lead with listing + categories +
+resources instead (see `BUSINESS_PLAN.md`). The `KDCToken` contract still exists and votes
+still mint it on-chain; this was a messaging change, not a contract change.
 
 ## 2. Current state (as of this audit)
 
@@ -70,6 +77,11 @@ URLs, and `sitemap.xml` links to the correct (previously broken) URLs — see
 Open risk: whether `DomainCategoriesStorage.updateCategories` is callable by a domain's
 owner or is admin-only couldn't be verified (no Solidity source in this repo) — flagged in
 the TODO list, worth confirming on testnet.
+
+Separately, domain owners can now attach resources — an X (Twitter) account and other
+links — to their domain's profile at `/domain/update/[name]`, written to
+`DomainLinksStorage.updateLinks` and rendered publicly on `/domain/[name]`. Same unverified
+access-control risk as above applies to this contract too.
 
 ## 4. Known gaps found during this audit
 
@@ -140,4 +152,6 @@ before treating it as committed.
 ## 7. Related docs
 
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — technical map of contracts, data flow, wallets.
+- [`BUSINESS_PLAN.md`](./BUSINESS_PLAN.md) — product/business framing, revenue model,
+  positioning.
 - [`TODO.md`](./TODO.md) — flat, actionable task list derived from this plan.

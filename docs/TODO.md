@@ -32,6 +32,40 @@ go stale.
         listed domain was effectively unindexable via the sitemap until this fix.
       - Verified with a production build + server (title tags, canonical links, and JSON-LD
         all confirmed present in rendered HTML).
+- [x] **Removed KDC/token-reward pitching from the live site.** Product direction: lead
+      with domain listing + categories + resources, not tokenomics. Rewrote copy on the
+      homepage, `/docs`, and `/learn` (which was 100% tokenomics — halving schedule, minted
+      supply, LP burn stats — and got fully rewritten); deleted the now-unused
+      `EcosystemDistribution` (learn) component. Left `src/lib/contracts.ts` and the ABI
+      JSON files untouched — the `KDCToken` contract still exists and votes still mint it
+      on-chain, this only changes what the site *says*, not the deployed contract behavior.
+      `/EcosystemAdmin` (internal fund dashboard) was also left untouched — it's an
+      operational tool, not marketing copy.
+- [x] **Domain resource links (X account + other links) — built for real.** This closes
+      part of the long-standing "domain profile updates are faked" gap:
+      - Fixed a real type bug in
+        [`useGetDomainLinks.ts`](../src/hooks/domain/useGetDomainLinks.ts) — it declared
+        the contract's return type as `string[]` when `DomainLinksStorage.getLinks` actually
+        returns `{name, url}[]` tuples. Links were never going to render correctly before
+        this fix.
+      - New [`useUpdateDomainLinks.ts`](../src/hooks/domain/useUpdateDomainLinks.ts) hook
+        writes to `DomainLinksStorage.updateLinks` (bulk replace) via MetaMask.
+      - [`domain/update/[name]/page.tsx`](../src/app/domain/update/[name]/page.tsx) rewritten:
+        dropped the fake bio/Twitter fields (the `await new Promise(setTimeout...)` stub),
+        replaced with a real links editor (label + URL rows, capped at the contract's
+        `MAX_LINKS`), gated on both Kasware (KNS ownership proof) and MetaMask (tx signer),
+        matching the same dual-wallet pattern as `/list-domain`.
+      - New [`DomainResources.tsx`](../src/components/pages/domain/DomainResources.tsx)
+        renders the links on the public domain profile page
+        (wired into `DomainInfoPanel.tsx`), with a "Manage its resources" link to the
+        update page.
+      - **Still open**: `DomainDataStorage` (title/description/image/website — the
+        general "bio" side of a domain profile) is not wired up; this pass only covers
+        the links/resources piece that was explicitly requested. Bio was intentionally
+        dropped rather than left half-fake.
+- [x] **`docs/BUSINESS_PLAN.md` added** — written around the listing + category + resources
+      model, explicitly not pitching token rewards. See the doc itself for the "not a
+      marketplace" positioning and the revenue model (420 KAS listing fee, 6 KAS votes).
 
 ## Cleanup
 
@@ -57,14 +91,15 @@ go stale.
 
 ## Real gaps (not just cleanup)
 
-- [ ] Wire up real persistence for domain profile updates in
-      [`src/app/domain/update/[name]/page.tsx`](../src/app/domain/update/[name]/page.tsx)
-      — currently fakes success with a `setTimeout`. Needs a decision: on-chain write via
-      `DomainDataStorage`/`DomainLinksStorage`, or an off-chain API. See open question in
-      the plan.
+- [ ] `DomainDataStorage` (title/description/image/website) is still unwired — the domain
+      "bio"/profile-description side of things, as opposed to the links/resources side
+      (which is now real, see "Recently shipped"). Decide if this is wanted at all before
+      building it.
 - [ ] Confirm `updateCategories` access control on `DomainCategoriesStorage` (see "Recently
       shipped" above) — this determines whether the new mandatory-category listing flow
       actually works end-to-end on-chain.
+- [ ] Same unverified-access-control risk applies to `DomainLinksStorage.updateLinks` — not
+      confirmed whether a domain owner can call it directly or if it's admin-gated.
 
 ## Process / infra
 

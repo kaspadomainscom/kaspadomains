@@ -78,8 +78,10 @@ RPC `https://rpc.kasplextest.xyz`, explorer `https://frontend.kasplextest.xyz`).
 - `/domain/[name]` — public domain profile page (`src/components/pages/domain/*`:
   `Detail`, `DomainInfoPanel`, `DomainOwnerBio`, `DomainTitleSection`, `VotingSection`);
   renders `Product` JSON-LD and a canonical URL.
-- `/domain/update/[name]` — owner-only profile editing (currently simulated, see gap #4 in
-  the plan).
+- `/domain/update/[name]` — owner-only resource editing (X account + links), gated on both
+  Kasware (KNS ownership proof) and MetaMask (the `DomainLinksStorage.updateLinks` tx
+  signer). The general bio/title/image/website side (`DomainDataStorage`) is still
+  unwired — see `TODO.md`.
 - `/list-domain` — the real listing flow (wallet-gated, `PickDomainModal` +
   `useListDomain` + `useSetDomainCategories`; category selection is mandatory).
 - `/list-domain-test` — duplicate of `/list-domain` (cleanup candidate).
