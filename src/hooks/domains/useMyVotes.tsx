@@ -24,7 +24,7 @@ export function useMyVotes() {
         const result = await kasplexClient.readContract({
           address: contracts.DomainVotesManager.address,
           abi: contracts.DomainVotesManager.abi,
-          functionName: 'getVotesByAddress',
+          functionName: 'getVotedDomainIds',
           args: [account as Address],
         });
 

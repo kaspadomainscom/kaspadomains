@@ -8,6 +8,41 @@ go stale.
 
 ## Recently shipped
 
+- [x] **Loop iteration 5 — the community voting feature has never actually worked.** Found
+      while mobile-checking a domain profile page: the "Likes: Loading..." field never
+      resolved. Fixed the display bug first (it used the same string for "still loading"
+      and "failed to load," so a failure looked identical to a stuck spinner forever), which
+      then surfaced the real cause in the browser console: `Function "getDomainLikeCount"
+      not found on ABI`. Checked `DomainVotesManager`'s actual ABI and found the entire
+      voting UI was calling functions/an event that don't exist on the deployed contract:
+      - [`VotingSection.tsx`](../src/components/pages/domain/VotingSection.tsx) (the "Vote
+        to this domain" button on every domain page) called `getDomainLikeCount`,
+        `hasUserLikedDomain`, `likeDomain(domainName, {value})`, and listened for a
+        `DomainLiked` event — **none of which exist**. The real names are
+        `getDomainVoteCount`, `hasUserVotedDomain`, `voteDomainByHash(domainHash, {value})`
+        (takes a `uint256` hash, not the domain name string!), and the `DomainVoted` event.
+        It also called ethers v5's `.toNumber()` on results, which doesn't exist in ethers
+        v6 (this project's version) — contract reads return native `bigint`. Fixed all of
+        it, and replaced the hardcoded "6 KAS" vote price with a live read of the
+        contract's actual `voteFee()` (owner-adjustable, so hardcoding it risks the
+        transaction reverting if it's ever changed).
+      - [`useGetDomainLikeCount.ts`](../src/hooks/domain/useGetDomainLikeCount.ts) (feeds
+        the "Likes:" field on every domain's `DomainInfoPanel`) had the identical
+        `getDomainLikeCount` → should-be `getDomainVoteCount` bug. Fixed.
+      - [`useMyVotes.tsx`](../src/hooks/domains/useMyVotes.tsx) (powers `/domains/my-votes`)
+        called `getVotesByAddress`, which also doesn't exist — real equivalent is
+        `getVotedDomainIds(user)`. Fixed.
+      - **Found but not fixed — confirmed dead code, not a live bug**: `src/hooks/likes/*`
+        (5 files: `useDomainLikes.ts`, `useGetUserLikesPaginated.ts`, `useHasUserLiked.ts`,
+        `useLikeDomain.ts`, `useTotalLikesUsed.ts`) have the exact same wrong-function-name
+        pattern, but grepped and confirmed none of them are imported anywhere in the app —
+        an entire parallel, unused hook directory. Left alone rather than fixing dead code;
+        flagged in Cleanup below.
+      - Verified via a running dev server: the "Unavailable" error state now renders
+        correctly instead of an infinite "Loading...", no console crashes, `/domains/my-votes`
+        renders without error. `tsc`/lint/build all clean (lint count actually the same
+        ballpark as before — one new pre-existing-style `set-state-in-effect` instance from
+        the status-tracking fix, already covered by the existing lint backlog item).
 - [x] **Loop iteration 4**: category pages (`/domains/categories` index and
       `/domains/categories/category/[category]`) were the last light-themed pages left —
       restyled dark, and both were missing breadcrumb navigation entirely (a visitor on a
@@ -263,6 +298,12 @@ go stale.
 
 ## Cleanup
 
+- [ ] **`src/hooks/likes/*`** (`useDomainLikes.ts`, `useGetUserLikesPaginated.ts`,
+      `useHasUserLiked.ts`, `useLikeDomain.ts`, `useTotalLikesUsed.ts`) — an entire unused
+      hook directory, confirmed via grep that none are imported anywhere. Also all call
+      wrong/nonexistent `DomainVotesManager` function names (see loop iteration 5 above),
+      so they're doubly not worth keeping as-is. Safe to delete, or fix if there's a reason
+      to keep them as scaffolding for a future feature.
 - [ ] **`src/app/domains/new-listings/page.tsx` is completely non-functional** — found while
       chasing down a "999 KAS" price inconsistency. `CONTRACT_ADDRESS` is the literal string
       `'0xYourContractAddressHere'` (never filled in), the fee is hardcoded to 999 KAS
@@ -298,9 +339,17 @@ UI/UX, content, SEO, and missing-page gaps. Checked so far: homepage + trending 
 `/domains`, `/domains/top-voted`, `/search`, `DomainCard`, OG/Twitter metadata, robots.txt,
 marketplace-language across the whole site, mobile hamburger menu, image alt text,
 heading hierarchy (all pages now have exactly one `<h1>`), internal linking + theme +
-breadcrumbs on `/learn`, `/docs`, `/business-plan`, and both category pages, and a full
-(non-`tail`-truncated) lint audit. Not yet checked, in rough priority order:
+breadcrumbs on `/learn`, `/docs`, `/business-plan`, both category pages, a full
+(non-`tail`-truncated) lint audit, and — the big one — the entire community voting
+feature, which was calling nonexistent contract functions everywhere (see "Recently
+shipped"). Not yet checked, in rough priority order:
 
+- [ ] **`DomainLinksStorage.getLinks` throws `invalid opcode: MCOPY`** in the browser
+      console on the domain profile page (seen while verifying the voting fix). MCOPY is
+      an EVM opcode from the Cancun/Dencun upgrade — this could mean an RPC/EVM-version
+      mismatch, or a genuinely bad call. This is the domain-resources (X account/links)
+      feature built earlier this session — needs investigation, since if it's a real bug
+      the resources feature has the same "never actually works" problem voting had.
 - [ ] Missing pages: no Terms of Service, Privacy Policy, or About/Team page found
       anywhere in `src/app/`. For a dApp handling real KAS payments this is a real
       trust/legal gap, not just a nice-to-have — worth a decision on scope before writing
@@ -309,8 +358,8 @@ breadcrumbs on `/learn`, `/docs`, `/business-plan`, and both category pages, and
 - [ ] Internal linking + breadcrumbs on domain profile pages (`/domain/[name]`) — not
       checked yet. It already has a Home/Domains breadcrumb (`DomainBreadcrumb`); worth
       checking whether it should also link to the domain's specific category.
-- [ ] Mobile check remaining pages: `/list-domain`, `/domain/[name]`, `/domain/update/[name]`,
-      `EcosystemAdmin`, `/domains/my-domains`, `/domains/my-votes`.
+- [ ] Mobile check remaining pages: `/domain/update/[name]`, `EcosystemAdmin`,
+      `/domains/my-domains` (`/list-domain`, `/domain/[name]`, `/domains/my-votes` done).
 - [ ] Competitor/search-intent research for Kaspa/KNS domain discovery sites — not started.
 - [ ] Re-grep periodically for marketplace-adjacent language using entity-aware patterns
       (the "Buy&nbsp;Now" catch a few iterations ago shows plain-text grep isn't sufficient
@@ -319,6 +368,10 @@ breadcrumbs on `/learn`, `/docs`, `/business-plan`, and both category pages, and
       image optimization away; worth a decision on whether that's intentional (e.g. static
       export constraints) or worth revisiting once there's real image content beyond the
       logo.
+- [ ] Given voting's function names were this stale, spot-check the other contract-call
+      sites (`useListDomain`, `useSetDomainCategories`, `useUpdateDomainLinks`,
+      `useRegisterDomain`/`useKaspaDomainsRegistry` (already known dead)) against their
+      real ABIs too, rather than assuming they're correct because they're not "likes"-named.
 
 ## Real gaps (not just cleanup)
 

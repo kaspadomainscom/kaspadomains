@@ -14,7 +14,7 @@ export function useDomainLikes(client: PublicClient) {
       const result = await client.readContract({
         address,
         abi,
-        functionName: 'getDomainLikeCount',
+        functionName: 'getDomainVoteCount',
         args: [domain],
       });
 

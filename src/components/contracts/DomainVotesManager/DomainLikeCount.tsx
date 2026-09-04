@@ -10,6 +10,7 @@ type Props = {
 
 export function DomainLikeCount({ domain }: Props) {
   const [likes, setLikes] = useState<number | null>(null);
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
 
   const { getDomainLikeCount } = useDomainLikes(kasplexClient);
 
@@ -17,14 +18,18 @@ export function DomainLikeCount({ domain }: Props) {
     if (!domain) return;
 
     let isMounted = true;
+    setStatus('loading');
 
     (async () => {
       try {
         const count = await getDomainLikeCount(domain);
-        if (isMounted) setLikes(Number(count));
+        if (!isMounted) return;
+        setLikes(Number(count));
+        setStatus('success');
       } catch (err) {
         console.error('Failed to fetch like count:', err);
-        if (isMounted) setLikes(null);
+        if (!isMounted) return;
+        setStatus('error');
       }
     })();
 
@@ -35,7 +40,11 @@ export function DomainLikeCount({ domain }: Props) {
 
   return (
     <span className="inline-block text-sm text-gray-300">
-      {likes === null ? 'Loading...' : `${likes.toLocaleString()} Like${likes === 1 ? '' : 's'}`}
+      {status === 'loading'
+        ? 'Loading...'
+        : status === 'error'
+          ? 'Unavailable'
+          : `${(likes ?? 0).toLocaleString()} Like${likes === 1 ? '' : 's'}`}
     </span>
   );
 }
