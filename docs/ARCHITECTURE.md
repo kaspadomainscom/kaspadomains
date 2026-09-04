@@ -4,7 +4,9 @@ Last updated: 2026-09-04
 
 ## Stack
 
-- **Framework**: Next.js 15 (App Router), React 19, TypeScript.
+- **Framework**: Next.js 16 (App Router, Turbopack build by default), React 19, TypeScript.
+  `src/proxy.ts` (renamed from `middleware.ts` in the v16 upgrade) handles CSP/security
+  headers — see [`TODO.md`](./TODO.md#recently-shipped).
 - **Styling**: Tailwind CSS v4 + `class-variance-authority`/`tailwind-merge`, shadcn-style
   config in [`components.json`](../components.json) / [`schemas/shadcn-schema.json`](../schemas/shadcn-schema.json).
 - **Chain access**: `viem` (primary) and `ethers` (present as a dependency; check usage
@@ -116,7 +118,7 @@ RPC `https://rpc.kasplextest.xyz`, explorer `https://frontend.kasplextest.xyz`).
 
 ## Security
 
-`src/middleware.ts` generates a per-request nonce and sets a strict CSP (`default-src
+`src/proxy.ts` generates a per-request nonce and sets a strict CSP (`default-src
 'none'`, nonce+`strict-dynamic` scripts, explicit `connect-src` allowlist for the Kasplex
 RPC, Supabase, and KNS domains), plus HSTS, COOP, and CORP. `next.config.ts` adds
 `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and a restrictive

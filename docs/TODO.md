@@ -8,6 +8,35 @@ go stale.
 
 ## Recently shipped
 
+- [x] **Upgraded to Next.js 16** (`16.3.4`, from `15.3.3`). Verified real breaking changes
+      against the official docs before touching anything:
+      - `src/middleware.ts` → `src/proxy.ts` (`middleware()` → `proxy()`) — the middleware
+        convention is deprecated in v16 in favor of `proxy`; confirmed working post-rename
+        (`ƒ Proxy (Middleware)` in build output, CSP header with nonce present at runtime).
+      - `next lint` was removed entirely. Migrated via the official
+        `npx @next/codemod@canary next-lint-to-eslint-cli .` — hand-editing
+        `eslint.config.mjs` to native `eslint-config-next/core-web-vitals` +
+        `eslint-config-next/typescript` imports first hit a real bug (the old
+        `FlatCompat().extends(...)` bridge pattern crashes with `Converting circular
+        structure to JSON` against v16's `eslint-config-next`), so the codemod's version
+        (native flat-config imports) is the one that shipped.
+      - No sync `params`/`headers`/`cookies` usage was found anywhere (already async
+        throughout from earlier work this session) — nothing to change there.
+      - `next.config.ts` had no custom `webpack` config or `eslint` option, so
+        Turbopack-by-default (`next build`) and the `eslint` option removal needed no
+        changes.
+      - Verified with `tsc`, the new `eslint .` lint script, `next build`, and an HTTP
+        smoke test of a running production server.
+      - **New finding from the stricter v16 lint ruleset**: `eslint-config-next@16` ships a
+        stricter `react-hooks` ruleset that now flags 25 pre-existing
+        `react-hooks/set-state-in-effect` violations (calling `setState` synchronously
+        inside `useEffect`) across `Sidebar.tsx`, `VotingSection.tsx`, `WalletContext.tsx`,
+        `useKasware.ts`, and `useKaswareEvmWallet.ts` — none of these block the build
+        (`next build` no longer runs ESLint at all in v16), but they're real lint failures
+        now if `npm run lint` is wired into CI. Not fixed in this pass — pre-existing
+        patterns across many files, a separate piece of work from the framework upgrade
+        itself. See the "Real gaps" section below.
+
 - [x] **MetaMask removed — Kasware now signs Kasplex transactions too.** Verified against
       Kasware's official docs (docs.kasware.xyz) that it ships an EIP-1193-compliant EVM
       provider at `window.kasware.ethereum` for Kasplex (Kaspa's EVM L2), detectable via
@@ -150,6 +179,12 @@ go stale.
 
 ## Real gaps (not just cleanup)
 
+- [ ] Fix the 25 `react-hooks/set-state-in-effect` lint errors surfaced by the Next.js 16
+      upgrade's stricter `eslint-config-next` ruleset (`Sidebar.tsx`, `VotingSection.tsx`,
+      `WalletContext.tsx`, `useKasware.ts`, `useKaswareEvmWallet.ts`) — real, pre-existing
+      patterns (`setState` called synchronously inside `useEffect`), not build-blocking but
+      worth cleaning up, especially if `npm run lint` gets wired into CI (still on the
+      backlog below).
 - [ ] `DomainDataStorage` (title/description/image/website) is still unwired — the domain
       "bio"/profile-description side of things, as opposed to the links/resources side
       (which is now real, see "Recently shipped"). Decide if this is wanted at all before

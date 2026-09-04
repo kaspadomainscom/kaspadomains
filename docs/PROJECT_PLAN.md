@@ -33,7 +33,7 @@ still mint it on-chain; this was a messaging change, not a contract change.
 - **Network**: Kasplex **testnet only** (`kasplexTestnet`, chain id 167012,
   `rpc.kasplextest.xyz`). No mainnet chain config exists yet. See
   [`src/lib/viemChains.ts`](../src/lib/viemChains.ts).
-- **Stack**: Next.js 15 (App Router) + React 19, Tailwind v4, viem/ethers for chain access,
+- **Stack**: Next.js 16 (App Router) + React 19, Tailwind v4, viem/ethers for chain access,
   TanStack Query for data fetching, no test framework wired up beyond a placeholder file.
 - **Contracts** (all under `src/abis/`, addresses in
   [`src/lib/contracts.ts`](../src/lib/contracts.ts)): `KaspaDomainsRegistry`,
@@ -50,7 +50,7 @@ still mint it on-chain; this was a messaging change, not a contract change.
   `100kclub.ts`, `web3.ts`, `meme.ts`) look like an earlier static approach and are dead
   code — not imported anywhere in the app.
 - **Security posture**: nonce-based CSP, HSTS, COOP/CORP, and standard hardening headers
-  are already wired in `src/middleware.ts` and `next.config.ts` — more mature than most
+  are already wired in `src/proxy.ts` and `next.config.ts` — more mature than most
   early-stage dApps.
 - **No CI**: no `.github/workflows`, no automated lint/build/test gate on push.
 
@@ -89,8 +89,7 @@ access-control risk as above applies to this contract too.
 These are concrete, code-verified issues (not speculation) — see
 [`TODO.md`](./TODO.md) for the actionable checklist:
 
-1. **`src/app/list-domain-test/page.tsx` is a byte-for-byte duplicate** of
-   `src/app/list-domain/page.tsx` — looks like scaffolding left behind.
+1. ~~`src/app/list-domain-test/page.tsx` duplicate~~ — resolved, deleted.
 2. **`src/components/DomainForm.tsx`** is disconnected from the real listing flow: its
    submit handler just does `alert('Form submitted (implement actual logic)')` with a
    `// TODO: Add smart contract interaction here`. The real flow
@@ -98,14 +97,15 @@ These are concrete, code-verified issues (not speculation) — see
    this component appears to be dead/legacy.
 3. **`src/components/CustomizeDomainForm.tsx`** has large blocks of commented-out JSX
    (tagline/bio fields) — half-finished component.
-4. **Domain profile updates are faked**: `src/app/domain/update/[name]/page.tsx` simulates
-   saving bio/Twitter with `await new Promise((resolve) => setTimeout(resolve, 600))` and a
-   `// TODO: Call actual API to update bio and Twitter handle` — there is no real
-   persistence path yet (no API route or contract write wired up).
+4. ~~Domain profile updates are faked~~ — resolved for the links/resources side (real
+   `DomainLinksStorage` write); the general bio/title/image/website side
+   (`DomainDataStorage`) is still unwired, see `TODO.md`.
 5. **No mainnet configuration** — the whole app currently only knows about Kasplex
    testnet.
 6. **No automated tests or CI** — `src/test/a.tsx` is an empty placeholder; nothing runs on
    push/PR.
+7. **New**: 25 `react-hooks/set-state-in-effect` lint errors surfaced by the Next.js 16
+   upgrade's stricter ruleset — see `TODO.md`.
 
 ## 5. Proposed roadmap
 
@@ -132,7 +132,7 @@ before treating it as committed.
 - Define and add a Kasplex mainnet chain config alongside testnet (`viemChains.ts`), with
   an env-driven switch rather than a hardcoded chain.
 - Deploy production contract addresses and gate `contracts.ts` by network.
-- Revisit CSP `connect-src`/`img-src` allowlists in `middleware.ts` for the production
+- Revisit CSP `connect-src`/`img-src` allowlists in `proxy.ts` for the production
   domain and any new API hosts.
 
 ### Phase 3 — Growth features
