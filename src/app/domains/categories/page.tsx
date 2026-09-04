@@ -9,8 +9,16 @@ export const metadata: Metadata = {
 };
 
 export default async function DomainCategoriesPage() {
-  // Load categories manifest dynamically (async)
-  const categoriesData: CategoryManifest = await loadCategoriesManifest();
+  // Load categories manifest dynamically (async). Degrades to the existing
+  // "No categories available right now" empty state on failure rather than
+  // crashing -- this manifest no longer fabricates fallback data on error,
+  // so every caller needs its own honest degraded state (see docs/BUGS.md).
+  let categoriesData: CategoryManifest = {};
+  try {
+    categoriesData = await loadCategoriesManifest();
+  } catch (error) {
+    console.error("Failed to load categories manifest:", error);
+  }
 
   return (
     <div className="min-h-screen bg-[#0b1e1d]">

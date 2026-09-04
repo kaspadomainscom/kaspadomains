@@ -1,6 +1,6 @@
 // src/app/sitemap.xml/route.ts
 
-import { loadCategoriesManifest } from "@/data/categoriesManifest";
+import { loadCategoriesManifest, type CategoryManifest } from "@/data/categoriesManifest";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-static";
@@ -10,8 +10,17 @@ export const revalidate = 3600;
 export async function GET() {
   const baseUrl = "https://kaspadomains.com"; // Use HTTPS
 
-  // Load categories manifest dynamically
-  const categoriesData = await loadCategoriesManifest();
+  // Load categories manifest dynamically. On failure, fall back to just the
+  // static routes below rather than crashing this route (or, worse, ever
+  // publishing a fabricated placeholder URL -- see docs/BUGS.md) -- a
+  // sitemap missing category/domain entries is a better failure mode than
+  // one that's wrong or one that doesn't build at all.
+  let categoriesData: CategoryManifest = {};
+  try {
+    categoriesData = await loadCategoriesManifest();
+  } catch (error) {
+    console.error("Failed to load categories manifest for sitemap:", error);
+  }
 
   const staticRoutes = [
     "",

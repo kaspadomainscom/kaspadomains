@@ -21,6 +21,7 @@ which is the live index — it currently points to:
 - [`docs/BUSINESS_PLAN.md`](./docs/BUSINESS_PLAN.md) — product/business framing
 - [`docs/KASPA_DEVELOPMENT.md`](./docs/KASPA_DEVELOPMENT.md) — current Kaspa/Kasplex/Igra
   ecosystem state and a plan for developing the on-chain layer forward
+- [`docs/HISTORY.md`](./docs/HISTORY.md) — dated narrative history of development sessions
 - [`docs/BUGS.md`](./docs/BUGS.md) — what's currently broken, and a fixed-bugs changelog
 - [`docs/GAPS.md`](./docs/GAPS.md) — what's missing or incomplete
 - [`docs/MIND.md`](./docs/MIND.md) — operating principles for working on this codebase

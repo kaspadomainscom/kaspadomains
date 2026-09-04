@@ -65,7 +65,24 @@ export function getDomainJsonLd({ name, owner, category }: DomainJsonLdInput) {
 import { loadCategoriesManifest } from "@/data/categoriesManifest"; // import the async loader
 
 export async function getItemListJsonLd(limit = 6): Promise<ItemListJsonLd> {
-  const categoriesData = await loadCategoriesManifest();
+  const emptyList: ItemListJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "@id": "https://kaspadomains.com/#recent-domains",
+    name: "Recent Premium Kaspa Domains",
+    itemListElement: [],
+  };
+
+  let categoriesData;
+  try {
+    categoriesData = await loadCategoriesManifest();
+  } catch (error) {
+    // Degrade to an empty (but honest) item list rather than crashing the
+    // page that renders this JSON-LD -- see docs/BUGS.md for why this
+    // function's data source no longer fabricates a fallback domain.
+    console.error("Failed to load categories for ItemList JSON-LD:", error);
+    return emptyList;
+  }
 
   const recentDomains = Object.values(categoriesData)
     .flatMap((cat) => cat.domains)
@@ -73,10 +90,7 @@ export async function getItemListJsonLd(limit = 6): Promise<ItemListJsonLd> {
     .slice(0, limit);
 
   return {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    "@id": "https://kaspadomains.com/#recent-domains",
-    name: "Recent Premium Kaspa Domains",
+    ...emptyList,
     itemListElement: recentDomains.map((domain, index) => ({
       "@type": "ListItem",
       position: index + 1,

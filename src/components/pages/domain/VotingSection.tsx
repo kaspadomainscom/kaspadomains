@@ -26,6 +26,7 @@ export function VotingSection({ domainName }: { domainName: string }) {
     const [loadingVoters, setLoadingVoters] = useState(false);
     const [txPending, setTxPending] = useState(false);
     const [voteFeeWei, setVoteFeeWei] = useState<bigint | null>(null);
+    const [contractUnavailable, setContractUnavailable] = useState(false);
 
     const YOUR_CONTRACT_ADDRESS = contracts.DomainVotesManager.address;
     const YOUR_CONTRACT_ABI = contracts.DomainVotesManager.abi as JsonFragment[];
@@ -46,8 +47,17 @@ export function VotingSection({ domainName }: { domainName: string }) {
         if (!contract) return;
         contract
             .voteFee()
-            .then((fee: bigint) => setVoteFeeWei(fee))
-            .catch(console.error);
+            .then((fee: bigint) => {
+                setVoteFeeWei(fee);
+                setContractUnavailable(false);
+            })
+            .catch((err: unknown) => {
+                // DomainVotesManager is unreachable at its configured address
+                // (see docs/BUGS.md) -- surface this as an explicit, honest
+                // state rather than leaving the button clickable forever.
+                console.error(err);
+                setContractUnavailable(true);
+            });
     }, [contract]);
 
     // Load total vote count
@@ -114,6 +124,10 @@ export function VotingSection({ domainName }: { domainName: string }) {
             alert("Please connect your wallet");
             return;
         }
+        if (contractUnavailable) {
+            alert("Voting is temporarily unavailable. Please try again later.");
+            return;
+        }
         if (voteFeeWei === null) {
             alert("Vote fee not loaded yet, please try again in a moment.");
             return;
@@ -145,16 +159,24 @@ export function VotingSection({ domainName }: { domainName: string }) {
         <section className="mt-10 bg-[#122c2a] border border-[#1d3b39] rounded-xl p-6 shadow-md text-gray-100">
             <h2 className="text-xl font-semibold mb-4 text-white">Support this Domain</h2>
 
+            {contractUnavailable && (
+                <p className="mb-4 text-sm text-yellow-400 bg-yellow-400/10 border border-yellow-400/30 rounded px-3 py-2">
+                    Voting is temporarily unavailable — we&apos;re aware and working on it.
+                </p>
+            )}
+
             <div className="flex items-center gap-4 mb-4">
                 <button
                     onClick={onVote}
-                    disabled={!isConnected || userHasLiked || txPending}
-                    className={`px-4 py-2 rounded font-semibold ${userHasLiked
+                    disabled={!isConnected || userHasLiked || txPending || contractUnavailable}
+                    className={`px-4 py-2 rounded font-semibold ${userHasLiked || contractUnavailable
                             ? "bg-gray-600 text-gray-300 cursor-not-allowed"
                             : "bg-kaspaMint text-[#0F2F2E] hover:bg-[#3DFDAD]/90"
                         }`}
                 >
-                    {userHasLiked
+                    {contractUnavailable
+                        ? "Unavailable"
+                        : userHasLiked
                         ? "You have voted"
                         : txPending
                             ? "Voting..."

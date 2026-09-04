@@ -72,24 +72,6 @@ export async function loadCategoriesManifest(
     client: kasplexClient,
   });
 
-  // Fallback static manifest (adjust or expand as needed)
-  const fallbackManifest: CategoryManifest = {
-    exampleCategory: {
-      title: "Example Category",
-      domains: [
-        {
-          id: 0,
-          domainHash: BigInt(0),
-          name: "example.kaspa",
-          owner: "0x0000000000000000000000000000000000000000",
-          createdAt: 0,
-          isActive: true,
-          feePaid: "0",
-        },
-      ],
-    },
-  };
-
   try {
     const manifest: CategoryManifest = {};
 
@@ -149,7 +131,15 @@ export async function loadCategoriesManifest(
 
     return manifest;
   } catch (error) {
-    console.error("Failed to load categories from contract, returning fallback manifest:", error);
-    return fallbackManifest;
+    // Never fabricate data here -- this function is the sole source of truth
+    // for domains/categories across ~11 callers (homepage, sitemap, category
+    // pages, JSON-LD, search, the header). A previous version of this catch
+    // swallowed the error and returned a hardcoded fake domain
+    // ("example.kaspa"), which could surface as real-looking content anywhere
+    // in the app and silently prevented callers' own honest error states
+    // (e.g. app/domain/[name]/page.tsx's "Contract Unavailable" UI) from ever
+    // running. Every caller must handle a rejected promise here.
+    console.error("Failed to load categories from contract:", error);
+    throw error;
   }
 }

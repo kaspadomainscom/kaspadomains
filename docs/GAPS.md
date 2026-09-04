@@ -39,31 +39,33 @@ live backlog the continuous audit loop appends to.
       argument — the real signature is `(string domain, address to)`, so even a real
       address wouldn't save it. Not linked anywhere in the app (no nav, not in
       `sitemap.xml`), so low urgency, but needs a decide-or-delete call.
-- [ ] [`src/app/list-domain-test/page.tsx`](../src/app/list-domain-test/page.tsx) — exact
-      duplicate of `list-domain/page.tsx`. Redundant, not broken (both import the same
-      `PickDomainModal`, so it stays in sync automatically). Still a cleanup candidate.
 
 ## Dead code (confirmed unused, safe to delete)
 
-- [ ] **`src/hooks/likes/*`** (5 files: `useDomainLikes.ts`, `useGetUserLikesPaginated.ts`,
-      `useHasUserLiked.ts`, `useLikeDomain.ts`, `useTotalLikesUsed.ts`) — an entire unused
-      hook directory, confirmed via grep. Also all call the same wrong/nonexistent
-      `DomainVotesManager` function names the real voting code used to (see `BUGS.md`).
-- [ ] **`src/data/categories/*.ts`** (14 files) — not imported anywhere. The real category
-      system is fully on-chain via `DomainCategoriesStorage` (see `categoriesManifest.ts`).
-      Safe to delete unless meant as seed data for something not yet built.
-- [ ] **`useRegisterDomain.ts`, `useKaspaDomainsRegistry.ts`** (`src/hooks/solidity/`) —
-      unused anywhere in the app.
-- [ ] **`src/types/db.ts`** — never imported anywhere (confirmed via grep). Two things
-      worth knowing if anyone finds it: (1) its `Domain` interface has `price`,
-      `seller_telegram`, `kaspa_link`, `listed` fields — the exact marketplace shape that
-      `/domains` used to fake before that was fixed (see `BUGS.md`); (2) it contains a
-      fully commented-out earlier draft of the CSP middleware (pre-`proxy.ts` rename) that
-      references `https://supabase.com` in `connect-src`. This is the likely origin of the
-      "why does live `proxy.ts` still allowlist Supabase with no Supabase usage in `src/`"
-      question below — a leftover from an earlier design, not evidence of planned infra.
-      Doesn't change the live-CSP question (still open), just explains where the string
-      probably came from.
+Everything previously listed here has been deleted (2026-09-05), after re-confirming via
+precise import-statement greps (not just a directory-name substring match) that nothing
+outside each file's own directory imported it, and that no barrel/`index.ts` re-exported
+any of them:
+
+- **`src/hooks/likes/*`** (5 files) — an entire unused hook directory that also called the
+  same wrong/nonexistent `DomainVotesManager` function names the real voting code used to
+  (see `BUGS.md`).
+- **`src/hooks/solidity/*`** (5 files) — turned out to be the *entire* directory, not just
+  the 2 files (`useRegisterDomain.ts`, `useKaspaDomainsRegistry.ts`) originally flagged
+  here; `useDomainLikes.ts`, `useMyVotes.ts`, and `useNewListings.ts` in that same
+  directory were confirmed unused too.
+- **`src/data/categories/*.ts`** (16 files, not 14 as originally counted here) — the real
+  category system is fully on-chain via `DomainCategoriesStorage`
+  (`categoriesManifest.ts`).
+- **`src/types/db.ts`** — its `Domain` interface had `price`/`seller_telegram`/
+  `kaspa_link`/`listed` fields (the marketplace shape `/domains` used to fake, separately
+  fixed) and a commented-out earlier CSP draft referencing `https://supabase.com` — likely
+  the origin of the still-open "why does live `proxy.ts` allowlist Supabase" question
+  below. That question is still open even though this file is gone; this just explains
+  where the string probably came from.
+
+Verified with a real `npm run build` (exit 0) and `tsc --noEmit` after deletion, not just
+a grep.
 
 ## Future feature specs (things explicitly requested, not achievable today)
 
@@ -95,17 +97,24 @@ live backlog the continuous audit loop appends to.
 - [ ] No production contract addresses in `contracts.ts` (testnet-only).
 - [ ] No contract security audit — and no Solidity source in this repo to audit. Hard
       blocker before any mainnet deployment, regardless of frontend readiness.
-- [ ] <a id="lint-debt"></a>**Lint debt**: ~20 problems, none build-blocking (`next build`
-      doesn't run ESLint in v16) but real if `npm run lint` ever joins CI:
+- [ ] <a id="lint-debt"></a>**Lint debt**: exactly 21 errors + 2 unrelated config-file
+      warnings, per a full `npx eslint .` run (2026-09-05, not a `tail`-truncated one —
+      the previous "~20 problems" estimate here had also miscategorized one file, see
+      `MIND.md` principle #6). None build-blocking (`next build` doesn't run ESLint in
+      v16) but real if `npm run lint` ever joins CI:
       - `react-hooks/set-state-in-effect` (calling `setState` synchronously inside
-        `useEffect`) across `Sidebar.tsx`, `VotingSection.tsx`, `WalletContext.tsx`,
-        `useKasware.ts`, `useKaswareEvmWallet.ts`, `EcosystemAdmin/page.tsx`,
-        `domain/update/[name]/page.tsx`, `domains/my-votes/page.tsx`, `domains/page.tsx`,
-        `search/page.tsx`.
+        `useEffect`) — 16 instances across 12 files: `Sidebar.tsx` (1),
+        `VotingSection.tsx` (2), `WalletContext.tsx` (1), `useKasware.ts` (1),
+        `useKaswareEvmWallet.ts` (1), `EcosystemAdmin/page.tsx` (2),
+        `domain/update/[name]/page.tsx` (2), `domains/my-votes/page.tsx` (1),
+        `domains/page.tsx` (1), `search/page.tsx` (1), `DomainForm.tsx` (1) — previously
+        miscategorized here as `static-components`, it's actually this rule — and
+        `contracts/DomainVotesManager/DomainLikeCount.tsx` (1), which was missing from
+        this list entirely before.
       - `react-hooks/static-components` (a component defined inside another component's
-        render body) in `domains/new-listings/page.tsx` and `DomainForm.tsx` — both
-        already-flagged dead/broken components above, so fixing their dead-code status
-        matters more than fixing their lint.
+        render body) — 5 instances, all in `domains/new-listings/page.tsx` (`InputField`
+        used 4 times, `DynamicListInput` once) — already flagged as dead/non-functional
+        above, so fixing its dead-code status matters more than fixing its lint.
 - [ ] Confirm whether `ethers` is still needed alongside `viem`, or fully migrated.
 - [ ] Confirm whether `https://supabase.com` in the CSP `connect-src`
       ([`src/proxy.ts`](../src/proxy.ts)) reflects real/planned infra or can be removed.

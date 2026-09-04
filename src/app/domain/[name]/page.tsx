@@ -78,11 +78,27 @@ export async function generateMetadata({
   const name = resolvedParams.name;
   const canonical = ensureKasSuffix(name);
 
+  let manifest;
   try {
-    const manifest = await loadCategoriesManifest();
-    const domain = findDomainByName(canonical, manifest);
-    if (!domain) notFound();
+    manifest = await loadCategoriesManifest();
+  } catch (error) {
+    // Only a genuine load failure lands here now -- notFound() below is
+    // called outside this try/catch specifically so it isn't misreported as
+    // "Contract Unavailable" (it previously was, since notFound()'s internal
+    // throw and a real contract failure landed in the same catch block; see
+    // docs/BUGS.md).
+    console.error("Failed to load categories manifest for domain metadata:", error);
+    return {
+      title: "Kaspa Domains - Contract Unavailable",
+      description:
+        "Unable to load domain data due to contract unavailability. Please try again later.",
+    };
+  }
 
+  const domain = findDomainByName(canonical, manifest);
+  if (!domain) notFound();
+
+  try {
     const category = findCategoryTitleByDomainName(domain.name, manifest) ?? "Unknown";
 
     const description = `${domain.name}, a premium KNS domain listed in the ${category} category on KaspaDomains.`;

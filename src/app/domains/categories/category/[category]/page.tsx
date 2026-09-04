@@ -82,9 +82,13 @@ interface PageProps {
 export default async function CategoryPage({ params }: PageProps) {
   // Data-fetching (which can throw) stays in try/catch; JSX is constructed
   // outside it so unexpected render errors surface to the nearest error
-  // boundary instead of being silently swallowed here.
+  // boundary instead of being silently swallowed here. A genuine load
+  // failure and "this category doesn't exist" are kept as separate outcomes
+  // below -- collapsing them into one notFound() call previously meant a
+  // real outage was mislabeled as a 404 (see docs/MIND.md principle #11).
   let categoryData: Awaited<ReturnType<typeof loadCategoriesManifest>>[string] | undefined;
   let nonce: string | undefined;
+  let contractUnavailable = false;
 
   try {
     const resolvedParams = await params;
@@ -95,7 +99,19 @@ export default async function CategoryPage({ params }: PageProps) {
     nonce = (await headers()).get("x-csp-nonce") || undefined;
   } catch (error) {
     console.error("Failed to load category page data:", error);
-    return notFound();
+    contractUnavailable = true;
+  }
+
+  if (contractUnavailable) {
+    return (
+      <main className="max-w-3xl mx-auto px-4 py-10 text-center text-gray-100">
+        <h1 className="text-2xl font-bold mb-4">Contract Unavailable</h1>
+        <p>
+          Sorry, we are unable to load domain data right now because the smart contract is not
+          responding or not deployed. Please try again later.
+        </p>
+      </main>
+    );
   }
 
   if (!categoryData) return notFound();

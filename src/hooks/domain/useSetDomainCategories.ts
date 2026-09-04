@@ -30,12 +30,20 @@ export function useSetDomainCategories() {
     setIsLoading(true);
 
     try {
-      const domainHash = (await kasplexClient.readContract({
-        address: contracts.KaspaDomainsRegistry.address,
-        abi: contracts.KaspaDomainsRegistry.abi,
-        functionName: 'domainHashPublic',
-        args: [domain],
-      })) as bigint;
+      let domainHash: bigint;
+      try {
+        domainHash = (await kasplexClient.readContract({
+          address: contracts.KaspaDomainsRegistry.address,
+          abi: contracts.KaspaDomainsRegistry.abi,
+          functionName: 'domainHashPublic',
+          args: [domain],
+        })) as bigint;
+      } catch {
+        // Registry contract unreachable at its configured address (see
+        // docs/BUGS.md) -- fail with a clear, honest message instead of the
+        // raw "returned no data" decode error.
+        throw new Error('Category assignment is temporarily unavailable. Please try again later.');
+      }
 
       const walletClient = createKaswareEvmClient(account);
       const categoryBytes32 = categories.map(stringToBytes32);

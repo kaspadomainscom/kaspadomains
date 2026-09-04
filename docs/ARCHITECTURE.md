@@ -25,7 +25,7 @@ central architectural fact of this app. As of 2026-09-04, a single wallet extens
 | Chain | Purpose | Capability | Where |
 |---|---|---|---|
 | Kaspa L1 (KNS) | Source of truth for `.kas` domain ownership | `window.kasware` (L1 methods) | `src/hooks/wallet/internal/useKaswareWallet.ts`, `src/hooks/kns/**` |
-| Kasplex (EVM L2, testnet) | KaspaDomains registry, votes, KDC token, fund | `window.kasware.ethereum` (EIP-1193) | `src/hooks/wallet/internal/useKaswareEvmWallet.ts`, `src/lib/kaswareEvm.ts`, `src/hooks/solidity/**`, `src/lib/contracts.ts` |
+| Kasplex (EVM L2, testnet) | KaspaDomains registry, votes, KDC token, fund | `window.kasware.ethereum` (EIP-1193) | `src/hooks/wallet/internal/useKaswareEvmWallet.ts`, `src/lib/kaswareEvm.ts`, `src/hooks/domain/**`, `src/hooks/domains/**`, `src/lib/contracts.ts` |
 
 Both capabilities are exposed together via `src/context/WalletContext.tsx` as `kasware`
 (L1 identity) and `kasplex` (L2 signer) — same underlying wallet, two separate
@@ -63,8 +63,12 @@ All addresses/ABIs are centralized in [`src/lib/contracts.ts`](../src/lib/contra
   [`PickDomainModal`](../src/components/PickDomainModal.tsx). Whether `updateCategories` is
   callable by the domain owner or admin-only is unverified (no Solidity source in this
   repo) — see the open question in the plan.
-- **`DomainVotesManager`** — likes/votes; see `src/hooks/likes/*` and
-  `src/hooks/solidity/useDomainLikes.ts` / `useTopVotedDomains.ts`.
+- **`DomainVotesManager`** — likes/votes; see
+  [`VotingSection.tsx`](../src/components/pages/domain/VotingSection.tsx),
+  [`useGetDomainLikeCount.ts`](../src/hooks/domain/useGetDomainLikeCount.ts), and
+  [`useMyVotes.tsx`](../src/hooks/domains/useMyVotes.tsx). (`src/hooks/likes/*` and
+  `src/hooks/solidity/*` were parallel, unused implementations with the same wrong
+  function names the code above used to have — deleted 2026-09-05, see `GAPS.md`.)
 - **`KDCToken`** — the reward token minted on votes (2.1M hard cap per product docs).
 - **`KaspadomainsFund`** — the ecosystem fund tracked by `/EcosystemAdmin`
   (`src/components/pages/EcosystemAdmin/*`: `FundSummary`, `DistributionChart`,
@@ -107,14 +111,16 @@ RPC `https://rpc.kasplextest.xyz`, explorer `https://frontend.kasplextest.xyz`).
 
 ## Data model
 
-- **On-chain**: domain registration, votes, KDC balances, fund flows — all read through the
-  `src/hooks/solidity/*` hooks using the contracts above.
+- **On-chain**: domain registration, votes, KDC balances, fund flows — all read through
+  the `src/hooks/domain/*` and `src/hooks/domains/*` hooks using the contracts above.
+  (`src/hooks/solidity/*` was a parallel, entirely unused implementation — deleted
+  2026-09-05, see `GAPS.md`.)
 - **KNS (external API)**: ownership/availability of the underlying `.kas` name —
   `src/hooks/kns/api/*`.
-- **`src/data/categories/*.ts`** (14 files) look like an earlier static-category approach.
-  They are **not imported anywhere** in the app — dead code, safe to remove unless kept
-  intentionally as reference/seed data. `src/data/types.ts` defines the shared `Domain`
-  interface used by the real, on-chain-backed `categoriesManifest.ts`.
+- `src/data/types.ts` defines the shared `Domain` interface used by the real,
+  on-chain-backed `categoriesManifest.ts`. (`src/data/categories/*.ts`, 16 files from an
+  earlier static-category approach, were never imported anywhere and were deleted
+  2026-09-05 — see `GAPS.md`.)
 
 ## Security
 
@@ -129,7 +135,7 @@ production infrastructure.
 Note: `connect-src` currently allowlists `https://supabase.com` even though no live Supabase
 usage was found elsewhere in `src/` during this audit. The likely origin: a fully
 commented-out earlier draft of this middleware in `src/types/db.ts` (dead code, never
-imported — see `GAPS.md`) already had the same Supabase entry, alongside a marketplace-
+imported, deleted 2026-09-05 — see `GAPS.md`) already had the same Supabase entry, alongside a marketplace-
 shaped `Domain` interface (`price`, `seller_telegram`, etc.) predating the on-chain-only
 data model described above. Still worth confirming with whoever owns infra whether it's
 planned or safe to drop from the live CSP.

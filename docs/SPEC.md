@@ -93,7 +93,8 @@ filename, calls `getDomainVoteCount`), [`useMyVotes.tsx`](../src/hooks/domains/u
 Used by: [`useGetAllowedCategories.ts`](../src/hooks/domains/useGetAllowedCategories.ts),
 [`useSetDomainCategories.ts`](../src/hooks/domain/useSetDomainCategories.ts),
 [`categoriesManifest.ts`](../src/data/categoriesManifest.ts) (this is the sole source of
-truth for categories — `src/data/categories/*.ts` static files are dead code, see `GAPS.md`).
+truth for categories — the old `src/data/categories/*.ts` static files were dead code and
+were deleted 2026-09-05, see `GAPS.md`).
 
 ### `DomainLinksStorage` — `0x1B1D19d94b3355CE1521f9d565B517Bd84AB4B6C`
 
@@ -153,7 +154,6 @@ code; route all EVM signing through `lib/kaswareEvm.ts`'s shared helper.
 | `/domain/[name]` | Server | Public profile, `ProfilePage` JSON-LD |
 | `/domain/update/[name]` | Client | Owner-only resource editor |
 | `/list-domain` | Client | The real listing flow |
-| `/list-domain-test` | Client | Duplicate of `/list-domain`, see `GAPS.md` |
 | `/EcosystemAdmin` | Client | Internal fund dashboard, not public-facing |
 | `/docs`, `/learn`, `/business-plan` | Mixed | Explainer content |
 | `/search` | Client + `layout.tsx` | `noindex` |

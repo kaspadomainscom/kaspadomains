@@ -57,11 +57,20 @@ export function useListDomain() {
       // "210 KAS" for marketing/SEO while this reads whatever the real deployed
       // contract actually charges (currently 420 KAS) -- see docs/TODO.md for the
       // tracked mismatch and what a real fix requires (a new contract deployment).
-      const domainFee = (await kasplexClient.readContract({
-        address: contracts.KaspaDomainsRegistry.address,
-        abi: contracts.KaspaDomainsRegistry.abi,
-        functionName: 'DOMAIN_FEE',
-      })) as bigint;
+      let domainFee: bigint;
+      try {
+        domainFee = (await kasplexClient.readContract({
+          address: contracts.KaspaDomainsRegistry.address,
+          abi: contracts.KaspaDomainsRegistry.abi,
+          functionName: 'DOMAIN_FEE',
+        })) as bigint;
+      } catch {
+        // The registry contract is unreachable at its configured address (see
+        // docs/BUGS.md) -- surface this as a clear, honest state rather than
+        // the raw "returned no data" decode error, and stop before ever
+        // constructing a value-carrying transaction.
+        throw new Error('Listing is temporarily unavailable. Please try again later.');
+      }
 
       let lastError: unknown = null;
       let confirmedHash: `0x${string}` | null = null;

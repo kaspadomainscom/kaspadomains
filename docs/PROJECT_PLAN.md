@@ -50,9 +50,9 @@ still mint it on-chain; this was a messaging change, not a contract change.
 - **Categories/data**: category membership is fully on-chain, via `DomainCategoriesStorage`
   (`getAllowedCategories`, `updateCategories`, `getDomainsByCategoryPaginated`), read
   through `src/data/categoriesManifest.ts`. Listing now requires picking at least one
-  category (see §3). The TypeScript files under `src/data/categories/*.ts` (e.g.
-  `100kclub.ts`, `web3.ts`, `meme.ts`) look like an earlier static approach and are dead
-  code — not imported anywhere in the app.
+  category (see §3). (`src/data/categories/*.ts` — 16 files from an earlier static
+  approach, e.g. `100kclub.ts`, `web3.ts`, `meme.ts` — were never imported anywhere and
+  were deleted 2026-09-05, see `GAPS.md`.)
 - **Security posture**: nonce-based CSP, HSTS, COOP/CORP, and standard hardening headers
   are already wired in `src/proxy.ts` and `next.config.ts` — more mature than most
   early-stage dApps.
@@ -117,8 +117,9 @@ This is a starting proposal — confirm priorities with whoever owns the product
 before treating it as committed.
 
 ### Phase 0 — Cleanup (low risk, do first)
-- Remove or finish `list-domain-test`, `DomainForm.tsx`, `CustomizeDomainForm.tsx` (either
-  delete dead code or finish and wire them in — pick one per component).
+- Remove or finish `DomainForm.tsx`, `CustomizeDomainForm.tsx` (either delete dead code or
+  finish and wire them in — pick one per component; `list-domain-test` already resolved,
+  see §4 above).
 - Decide the real persistence mechanism for domain profile updates (bio/Twitter/links):
   on-chain write via `DomainDataStorage`/`DomainLinksStorage`, or an off-chain API/DB. Wire
   `domain/update/[name]/page.tsx` to it for real.
@@ -126,8 +127,8 @@ before treating it as committed.
 
 ### Phase 1 — Testnet hardening
 - Add automated tests around the contract-interaction hooks (`useListDomain`,
-  `useLikeDomain`, `useRegisterDomain`, etc.) and the wallet-connection flows, since these
-  move real value (KAS/KDC) and are the highest-risk code paths.
+  `useSetDomainCategories`, `VotingSection`'s vote flow, etc.) and the wallet-connection
+  flows, since these move real value (KAS/KDC) and are the highest-risk code paths.
 - Get a second set of eyes (or a formal audit) on the Solidity contracts before any mainnet
   commitment — this plan only covers the frontend/app layer, not contract security.
 - Confirm `updateCategories` access control (owner-only vs. domain-owner-callable) — see §3.

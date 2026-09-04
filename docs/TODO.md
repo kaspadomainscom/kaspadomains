@@ -16,6 +16,10 @@ points to them and holds the actively-updated loop backlog below.
 - [`BUSINESS_PLAN.md`](./BUSINESS_PLAN.md) — product/business framing
 - [`KASPA_DEVELOPMENT.md`](./KASPA_DEVELOPMENT.md) — current Kaspa/Kasplex/Igra ecosystem
   state, confirmed root cause of the MCOPY bug, and a phased plan for the Web3 layer
+- [`mind/`](./mind/) — working checklists derived from `MIND.md`'s 12 principles
+  (verification, fallback-auditing, shared-function changes, testnet-reset context)
+- [`HISTORY.md`](./HISTORY.md) — dated narrative log of what was built/found/decided each
+  session, broader than `BUGS.md`'s bug-only changelog
 - [`../README.md`](../README.md) — repo root entry point; now describes the actual
   project and links back into this folder (was still generic `create-next-app`
   boilerplate until this pass)
@@ -52,6 +56,34 @@ and [`BUGS.md`](./BUGS.md):
       is now the top-priority item for whoever owns contract deployment — needs correct
       current addresses and/or a redeploy with an older EVM target, neither of which is
       something to guess at or do autonomously.
+- [x] Live-traced whether the dead-contract bug could cause real fund loss through the
+      app's own UI (2026-09-05): it can't, right now — `useListDomain.ts`,
+      `useSetDomainCategories.ts`, and `VotingSection.tsx` all read a live value from the
+      broken contracts *before* constructing any payable transaction, and that read throws
+      cleanly, so none of the three flows can currently reach a value-carrying write. This
+      is fragile/accidental, not by design — see `BUGS.md`. Replaced the raw RPC error
+      text those three flows would otherwise show with an honest "temporarily unavailable"
+      message.
+- [x] Found and **fixed** a second, deeper instance of the fabricated-data anti-pattern
+      while tracing the above: `loadCategoriesManifest()` (called from 11 files across the
+      app) swallowed contract failures and returned a hardcoded fake domain instead of an
+      honest error — which was also why `app/domain/[name]/page.tsx`'s already-written
+      "Contract Unavailable" error state never fired, showing a misleading generic 404
+      instead. All 11 call sites checked and given an honest degraded state; a fully dead
+      duplicate implementation deleted; verified with a real `npm run build` (exit 0) and
+      a clean generated `sitemap.xml`. Full writeup in `BUGS.md`'s Fixed section and
+      [`mind/fallback-audit-checklist.md`](./mind/fallback-audit-checklist.md).
+- [x] Found and fixed the identical `notFound()`-vs-real-failure conflation in a second
+      file, `app/domains/categories/category/[category]/page.tsx`'s page body (the first
+      was `domain/[name]/page.tsx`'s metadata function) — now shows an honest "Contract
+      Unavailable" message for a real load failure instead of a misleading 404, while
+      preserving the file's existing "no JSX inside try/catch" lint-fix structure.
+      Verified with `tsc`, `eslint` on the file, and a full build.
+- [x] Deleted 773 lines of confirmed-dead code (`src/hooks/likes/`, all of
+      `src/hooks/solidity/` — turned out to be the whole directory, not just the 2 files
+      `GAPS.md` had flagged — `src/data/categories/*.ts` (16 files), and `src/types/db.ts`)
+      after re-verifying each with precise import-statement greps and checking for barrel
+      exports. Verified with a real `npm run build` (exit 0), not just the grep.
 - [ ] Missing Terms/Privacy/About pages — flagged, not drafted without real input.
 - [ ] Internal linking + breadcrumbs on domain profile pages (`/domain/[name]`) — has a
       Home/Domains breadcrumb; worth checking whether it should also link to the domain's

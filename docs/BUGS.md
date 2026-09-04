@@ -24,14 +24,26 @@ actively-updated backlog the continuous audit loop appends to.
       address's transaction count is `0` — as far as this RPC's history goes, these
       addresses never had a contract deployed on them. Most likely explanation: a testnet
       reset/redeploy where only 2 of 6 addresses in `contracts.ts` were ever updated
-      afterward. **This is a fund-safety issue, not just "feature broken"**: `listDomain`
-      and `voteDomainByHash` are `payable`; a transaction sent to a codeless address
-      doesn't revert, it just transfers the KAS and silently succeeds doing nothing.
-      Completing the listing or voting flow right now risks **irrecoverably losing real
-      KAS with no on-chain error**. Do not test these flows with real funds until the
-      addresses are confirmed/fixed. Not something I can fix from here — I don't know
-      what the correct current addresses are (if they even exist yet), and guessing or
-      redeploying is out of scope (see [`MIND.md`](./MIND.md#9-money-moving-and-irreversible-actions-get-flagged-not-executed)).
+      afterward (see [`mind/testnet-mainnet-transitions.md`](./mind/testnet-mainnet-transitions.md)
+      for industry context on how plausible/common this kind of reset is). `listDomain` and `voteDomainByHash` are `payable`, and a transaction sent
+      to a codeless address doesn't revert — it just transfers the KAS and silently
+      succeeds doing nothing — which would normally be a direct fund-loss path. **Traced
+      the actual code 2026-09-05: this app happens not to be exposed to it right now**,
+      incidentally rather than by design —
+      [`useListDomain.ts`](../src/hooks/domain/useListDomain.ts) reads `DOMAIN_FEE()` live
+      and [`VotingSection.tsx`](../src/components/pages/domain/VotingSection.tsx) reads
+      `voteFee()` live *before* constructing the value-carrying transaction, and
+      [`useSetDomainCategories.ts`](../src/hooks/domain/useSetDomainCategories.ts) reads
+      `domainHashPublic()` first too; all three reads throw cleanly against a codeless
+      address (same "returned no data" failure mode as the `eth_getCode` checks above), so
+      none of the three flows can currently reach the point of sending value. **This is
+      fragile, accidental protection, not a guarantee** — it depends on this exact
+      read-before-write ordering never changing, so still treat real funds as at risk and
+      don't rely on this holding. The underlying bug (core product completely
+      non-functional) remains just as critical either way. Not something I can fix from
+      here — I don't know what the correct current addresses are (if they even exist yet),
+      and guessing or redeploying is out of scope (see
+      [`MIND.md`](./MIND.md#9-money-moving-and-irreversible-actions-get-flagged-not-executed)).
 - [ ] **CRITICAL — Every function on the two contracts that *do* exist fails with
       `invalid opcode: MCOPY`, on every call, regardless of input.** The previously-known
       `DomainLinksStorage.getLinks` MCOPY error is real, but it's not an isolated case —
@@ -82,6 +94,65 @@ actively-updated backlog the continuous audit loop appends to.
 Most recent first. Each entry names the file(s), what was actually wrong, and how it was
 verified — not just "fixed X."
 
+- **The same catch-block conflation as the `loadCategoriesManifest()` fix, found in a
+  second file.** `app/domains/categories/category/[category]/page.tsx`'s page body
+  caught a genuine manifest-load failure and called the generic `notFound()` — the same
+  bug class as the `domain/[name]/page.tsx` metadata fix above (see `MIND.md` principle
+  #11), just in the page body instead of `generateMetadata`. Fixed by separating "the
+  contract failed to load" (now shows an honest "Contract Unavailable" message, matching
+  `domain/[name]/page.tsx`'s existing pattern) from "this category genuinely doesn't
+  exist" (still a real `notFound()`) — while preserving the file's existing "no JSX
+  inside try/catch" structure from an earlier lint fix (see the Fixed entry below on
+  `react-hooks/error-boundaries`), so the new honest-error JSX is constructed in a plain
+  `if` block after the try/catch exits, not inside it. Verified with `tsc --noEmit`,
+  `eslint` on the file directly (clean, confirming the lint fix wasn't undone), and a full
+  `npm run build`.
+- **Deleted 773 lines of confirmed-dead code** (28 files, per `git diff --stat`): the
+  entire `src/hooks/likes/` (5
+  files) and `src/hooks/solidity/` (5 files — turned out to be all of it, not just the 2
+  originally flagged in `GAPS.md`) directories, all 16 files in `src/data/categories/`,
+  and `src/types/db.ts`. Re-verified each with precise import-statement greps (not just a
+  directory-name substring match, which can false-positive on a file's own header
+  comment) and checked for barrel/`index.ts` re-exports before deleting anything.
+  Verified safe with a real `npm run build` (exit 0) and `tsc --noEmit`, not just the
+  grep. Full detail in `GAPS.md`'s (now historical) dead-code section.
+- **`loadCategoriesManifest()` fabricated a fake domain and swallowed real errors,
+  feeding placeholder data into ~11 files across the entire app.**
+  [`categoriesManifest.ts`](../src/data/categoriesManifest.ts)'s `catch` block returned a
+  hardcoded `fallbackManifest` containing one fake entry, `"example.kaspa"` (not even a
+  valid `.kas` name), instead of surfacing the failure — and given the still-open CRITICAL
+  "no deployed code" item in the Open section above, that fallback was firing on every
+  call. Fixed
+  by removing the fallback and letting the error propagate; every one of the 11 real
+  call sites was checked individually and given its own honest degraded state rather than
+  assuming they'd all cope with a new rejection: `app/page.tsx` and
+  `app/domains/page.tsx` already degraded to an empty manifest correctly; `lib/jsonld.ts`'s
+  `getItemListJsonLd` (called unwrapped from the homepage) now catches internally and
+  returns an empty item list; `app/sitemap.xml/route.ts` (a build-time static route, the
+  highest-risk unwrapped caller) now catches and falls back to just the static routes
+  instead of risking a build failure; `app/domains/categories/page.tsx` now wraps the call
+  and reuses its existing "No categories available right now" empty state;
+  `data/domainLookup.ts`'s `findDomainByName`/`getAllDomains` (called from the header
+  search and `/search` without their own wrapping) now catch and return
+  `undefined`/`[]`. A fully dead, unused duplicate implementation
+  (`src/hooks/categories/useCategoriesData.ts`, never imported anywhere) was deleted
+  rather than fixed. **Direct consequence, also fixed**:
+  [`app/domain/[name]/page.tsx`](../src/app/domain/[name]/page.tsx) had a well-written,
+  honest "Contract Unavailable" error UI that was dead code — the manifest never actually
+  threw, so it always fell through to a generic, misleading "Domain Not Found" 404
+  instead. Its `generateMetadata` also conflated Next's internal `notFound()` throw (a
+  legitimately-nonexistent domain) with a real contract failure in the same `catch`;
+  split into two separate paths so a real 404 and a real outage no longer share a message.
+  *Verified*: a full `npm run build` succeeds (exit 0) against the still-broken live
+  contracts, the build log shows the new specific error messages being logged instead of
+  silent fake success, and the generated `sitemap.xml` contains only the 7 real static
+  routes with zero fabricated entries — confirmed against a stale pre-fix dev-cache
+  artifact that had actually prerendered a `/domain/example.kaspa.kas` page, direct proof
+  this wasn't a theoretical risk. Not fixed: the lower-priority conflation in
+  `app/domains/categories/category/[category]/page.tsx` (a real load failure there still
+  calls `notFound()` rather than showing its own "unavailable" message) — same class of
+  issue, lower traffic path, left for a future pass. Full checklist this was worked from:
+  [`mind/fallback-audit-checklist.md`](./mind/fallback-audit-checklist.md).
 - **The entire community voting feature called contract functions/an event that don't
   exist.** `VotingSection.tsx` (the "Vote to this domain" button on every domain page)
   called `getDomainLikeCount`, `hasUserLikedDomain`, `likeDomain(domainName, {value})`, and
@@ -96,8 +167,9 @@ verified — not just "fixed X."
   `getVotesByAddress` — real name `getVotedDomainIds`) had the same class of bug. All
   fixed; the hardcoded "6 KAS" vote price was also replaced with a live read of the
   contract's `voteFee()`. An entire parallel, unused hook directory
-  (`src/hooks/likes/*`, 5 files) has the identical wrong-function-name pattern but is
-  confirmed dead code (not imported anywhere) — left alone, flagged in `GAPS.md`.
+  (`src/hooks/likes/*`, 5 files) had the identical wrong-function-name pattern but was
+  confirmed dead code (not imported anywhere) at the time — left alone and flagged in
+  `GAPS.md`, later deleted the same day (see the dead-code entry above).
   *Root cause discovered by*: a display bug (`DomainLikeCount` used the same string for
   "loading" and "failed to load," so an infinite spinner and a real failure looked
   identical) that, once fixed, surfaced the real ABI-mismatch error in the console.
