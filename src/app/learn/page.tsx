@@ -12,6 +12,10 @@ export default function Learn() {
     <div className="min-h-screen bg-[#0b1e1d] text-gray-100 px-6 py-12">
       <div className="max-w-5xl mx-auto space-y-12">
 
+        <h1 className="text-4xl font-extrabold text-white text-center">
+          Learn How KaspaDomains Works
+        </h1>
+
         {/* Intro */}
         <section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]">
           <h2 className="text-4xl font-bold text-white mb-4">What is KaspaDomains?</h2>

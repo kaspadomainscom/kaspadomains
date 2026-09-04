@@ -48,6 +48,9 @@ export default function Docs() {
 
   return (
     <div className="min-h-screen bg-[#0b1e1d] text-gray-100 px-6 py-12">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-4xl font-extrabold text-white mb-8">KaspaDomains Docs</h1>
+      </div>
       <div className="max-w-6xl mx-auto md:grid md:grid-cols-[220px_1fr] md:gap-10">
 
         {/* Sidebar navigation */}

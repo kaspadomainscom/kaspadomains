@@ -8,6 +8,14 @@ go stale.
 
 ## Recently shipped
 
+- [x] **Loop iteration 3**: heading-hierarchy audit found `/docs` and `/learn` had **zero
+      `<h1>` tags** — every section used `<h2>` but nothing identified the page itself,
+      a real on-page SEO/accessibility gap (every page should have exactly one `<h1>`).
+      Added one to each. Also found `/business-plan` had the same "explains everything,
+      links to nothing" gap as `/learn`/`/docs` did last iteration — added a docs/domains
+      cross-link and a "List Your Domain" CTA. Verified all headings/links render
+      correctly via a running dev server (1 `<h1>` per page, correct text, all links
+      resolve to real routes) before committing.
 - [x] **Loop iteration 2**: verified the mobile hamburger menu works (couldn't confirm
       last iteration — `computer` browser actions need a visible pane, unreliable in this
       unattended loop; switched to reading source + driving via `javascript_tool` instead,
@@ -275,24 +283,22 @@ A recurring local loop (`/loop 8m`, job `2e58e210`) is running audit-and-fix pas
 UI/UX, content, SEO, and missing-page gaps. Checked so far: homepage + trending data,
 `/domains`, `/domains/top-voted`, `/search`, `DomainCard`, OG/Twitter metadata, robots.txt,
 marketplace-language across the whole site, mobile hamburger menu, image alt text,
-internal linking on `/learn` + `/docs`. Not yet checked, in rough priority order:
+heading hierarchy (all pages now have exactly one `<h1>`), internal linking on `/learn`,
+`/docs`, and `/business-plan`. Not yet checked, in rough priority order:
 
 - [ ] Missing pages: no Terms of Service, Privacy Policy, or About/Team page found
       anywhere in `src/app/`. For a dApp handling real KAS payments this is a real
       trust/legal gap, not just a nice-to-have — worth a decision on scope before writing
       anything (legal content shouldn't be invented without input from whoever owns that
       decision — flagging, not attempting to draft legal text autonomously).
-- [ ] Internal linking on the *remaining* pages — only `/learn` and `/docs` checked so far.
-      Check `/business-plan`, category pages, and domain profile pages for the same
-      "explains everything, links to nothing" pattern.
+- [ ] Internal linking on the *remaining* pages — category pages and domain profile pages
+      not checked yet (home, `/learn`, `/docs`, `/business-plan` are done).
 - [ ] Mobile check remaining pages: `/list-domain`, `/domain/[name]`, `/domain/update/[name]`,
       `EcosystemAdmin`, `/domains/my-domains`, `/domains/my-votes`.
 - [ ] Competitor/search-intent research for Kaspa/KNS domain discovery sites — not started.
 - [ ] Re-grep periodically for marketplace-adjacent language using entity-aware patterns
-      (the "Buy&nbsp;Now" catch two iterations ago shows plain-text grep isn't sufficient
+      (the "Buy&nbsp;Now" catch a few iterations ago shows plain-text grep isn't sufficient
       alone).
-- [ ] Heading hierarchy audit (one `<h1>` per page, logical `<h2>`/`<h3>` nesting) — not
-      yet checked systematically.
 - [ ] Core Web Vitals — `next.config.ts` sets `images.unoptimized: true`, which trades
       image optimization away; worth a decision on whether that's intentional (e.g. static
       export constraints) or worth revisiting once there's real image content beyond the

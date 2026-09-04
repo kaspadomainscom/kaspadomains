@@ -1,5 +1,6 @@
 // src/app/business-plan/page.tsx
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Business Plan | KaspaDomains",
@@ -89,10 +90,27 @@ export default function BusinessPlanPage() {
           <p>
             The full flow described above — wallet-gated listing, mandatory categories,
             resource management, community voting, category and search browsing — is live and
-            working today on Kasplex testnet. A mainnet launch, a formal contract security
-            review, and continued ecosystem growth are the next milestones.
+            working today on Kasplex testnet. See the{" "}
+            <Link href="/docs" className="text-kaspaMint hover:underline">
+              docs
+            </Link>{" "}
+            for the details, or browse{" "}
+            <Link href="/domains" className="text-kaspaMint hover:underline">
+              what&apos;s already listed
+            </Link>
+            . A mainnet launch, a formal contract security review, and continued ecosystem
+            growth are the next milestones.
           </p>
         </Section>
+
+        <section className="text-center py-4">
+          <Link
+            href="/list-domain"
+            className="inline-block bg-kaspaMint text-[#0F2F2E] px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-[#3DFDAD]/90 transition"
+          >
+            List Your Domain
+          </Link>
+        </section>
 
       </div>
     </div>
