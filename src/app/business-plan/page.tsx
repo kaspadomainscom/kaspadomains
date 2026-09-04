@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Business Plan | KaspaDomains",
   description:
-    "How KaspaDomains works and makes money: list premium .kas domains by category, add resources, one-time listing fee, community voting.",
+    "The logic behind KaspaDomains: a one-time on-chain listing, then SEO and additional data per domain.",
   alternates: {
     canonical: "https://kaspadomains.com/business-plan",
   },
@@ -18,19 +18,19 @@ export default function BusinessPlanPage() {
         <header className="text-center space-y-4">
           <h1 className="text-4xl md:text-5xl font-extrabold text-white">Business Plan</h1>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            KaspaDomains is a curated registry and discovery layer for premium .kas domains —
-            organized by category, enriched with owner resources, and never a reseller of the
-            names themselves.
+            Pay once, get listed on-chain — then KaspaDomains&apos; job is SEO and additional
+            data per domain: an indexed, discoverable page and resources a bare on-chain
+            record can&apos;t carry.
           </p>
         </header>
 
         <Section title="The Problem">
           <p>
-            A .kas domain on its own is just an ownership record on KNS — it isn&apos;t
-            discoverable, isn&apos;t categorized, and doesn&apos;t tell a visitor who holds it
-            or where to find them. There&apos;s no curated place to browse premium Kaspa-native
-            names by niche, and no standard way to attach an identity — an X account, a
-            website — to a domain.
+            A .kas domain on its own is an on-chain ownership record — nothing more. No SEO
+            footprint, no meta tags, no structured data a search engine can read, no category,
+            nothing telling a visitor who holds it or where to find them. There&apos;s no
+            curated place to browse premium Kaspa-native names by niche, and no standard way to
+            attach an identity — an X account, a website — to a domain.
           </p>
         </Section>
 

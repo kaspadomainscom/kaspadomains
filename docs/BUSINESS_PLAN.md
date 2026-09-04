@@ -10,18 +10,24 @@ not covered here as a business driver. See [`PROJECT_PLAN.md`](./PROJECT_PLAN.md
 
 ## 1. Executive summary
 
-KaspaDomains is a curated, on-chain registry and discovery layer for `.kas` domain names
-(issued by KNS on the Kaspa L1 chain). Anyone who owns a `.kas` name can list it for a
-one-time fee, place it in a category, and attach resources (an X account, links) so the
-domain is actually reachable — not just held. The product's value is **discoverability and
-presentation**, not domain sales: KaspaDomains never sells, transfers, or brokers `.kas`
-names — it indexes and showcases names the owner already controls on KNS.
+The core logic is simple: a domain owner pays a one-time **420 KAS** fee, and that listing —
+plus its category and any resources attached to it — is recorded permanently on-chain
+(Kasplex). That on-chain record is the foundation, not the product. **KaspaDomains' actual
+job is what happens on top of it: SEO and additional per-domain data.** A bare on-chain
+listing is invisible — no title, no meta tags, no structured data, nothing for a search
+engine or a visitor to find. KaspaDomains turns it into an actual indexed, discoverable web
+page (see [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the JSON-LD/sitemap/canonical-URL work
+this involves), placed in a category, and lets the owner attach data a bare on-chain record
+can't carry — an X account, links — so the listing is a real point of contact, not just an
+entry in a registry. KaspaDomains never sells, transfers, or brokers `.kas` names — it only
+makes a name the owner already controls more findable and more informative.
 
 ## 2. Problem
 
-A `.kas` domain on its own is just an ownership record — it isn't discoverable, isn't
-categorized, and doesn't tell a visitor anything about who holds it or where to find them.
-There's no curated place to browse premium Kaspa-native names by niche (DeFi, gaming,
+A `.kas` domain on its own is an on-chain ownership record — nothing more. It has no SEO
+footprint (no indexable page, no meta tags, no structured data a search engine can read),
+isn't categorized, and doesn't tell a visitor anything about who holds it or where to find
+them. There's no curated place to browse premium Kaspa-native names by niche (DeFi, gaming,
 brandable, business, etc.), and no standard way for an owner to attach identity — an X
 account, a website, a Discord — to their domain.
 
