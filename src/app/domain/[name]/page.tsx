@@ -1,7 +1,6 @@
 // src/app/domain/[name]/page.tsx
 import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { formatEther } from "viem";
 import type { Metadata } from "next";
 import type { Domain } from "@/data/types";
 
@@ -86,7 +85,7 @@ export async function generateMetadata({
 
     const category = findCategoryTitleByDomainName(domain.name, manifest) ?? "Unknown";
 
-    const description = `Buy ${domain.name}, a premium KNS domain listed in the ${category} category.`;
+    const description = `${domain.name}, a premium KNS domain listed in the ${category} category on KaspaDomains.`;
 
     return {
       title: `${domain.name} — Premium ${category} Domain | kaspadomains.com`,
@@ -162,9 +161,8 @@ export default async function DomainPage({ params }: PageProps): Promise<JSX.Ele
   const nonce = (await headers()).get("x-csp-nonce") || undefined;
   const jsonLd = getDomainJsonLd({
     name: domain.name,
-    price: domain.feePaid ? formatEther(BigInt(domain.feePaid)) : 420,
-    listed: domain.isActive,
-    seller: domain.owner.slice(0, 8),
+    owner: domain.owner,
+    category,
   });
 
   return (

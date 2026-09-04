@@ -2,9 +2,8 @@
 
 export type DomainJsonLdInput = {
   name: string;
-  price: string | number;
-  listed: boolean;
-  seller?: string;
+  owner: string;
+  category?: string;
 };
 
 type ListItem = {
@@ -29,7 +28,7 @@ export function getWebsiteJsonLd() {
     name: "Kaspa Domains",
     url: "https://kaspadomains.com",
     description:
-      "Discover and purchase premium KNS domains for Kaspa wallets. Perfect for identity, payments, or branding.",
+      "Discover premium KNS domains for Kaspa wallets — a registry and discovery layer, not a marketplace. Perfect for identity, payments, or branding.",
     potentialAction: {
       "@type": "SearchAction",
       target: "https://kaspadomains.com/search?q={search_term_string}",
@@ -38,54 +37,28 @@ export function getWebsiteJsonLd() {
   };
 }
 
-export function getDomainJsonLd({
-  name,
-  price,
-  listed,
-  seller,
-}: DomainJsonLdInput) {
+export function getDomainJsonLd({ name, owner, category }: DomainJsonLdInput) {
+  // ProfilePage, not Product/Offer: KaspaDomains is a registry and discovery layer,
+  // not a marketplace -- this domain isn't for sale here, so it shouldn't carry
+  // commerce-shaped structured data (price/availability/seller) that implies it is.
   return {
     "@context": "https://schema.org",
-    "@type": "Product",
+    "@type": "ProfilePage",
     name: `${name}.kas`,
-    description:
-      "Premium KNS domain pointing to a Kaspa wallet. Perfect for identity, payments, or branding.",
-    sku: `KNS-${name}`,
-    productID: name,
+    description: `${name}.kas — a premium KNS domain on Kaspa, showcased on KaspaDomains. Owned and controlled by its holder.`,
     url: `https://kaspadomains.com/domain/${name}`,
-    mainEntityOfPage: {
-      "@type": "WebPage",
-      "@id": `https://kaspadomains.com/domain/${name}`,
+    mainEntity: {
+      "@type": "Thing",
+      name: `${name}.kas`,
+      identifier: `KNS-${name}`,
+      additionalProperty: [
+        { "@type": "PropertyValue", name: "KNS Type", value: "Kaspa Domain Name" },
+        { "@type": "PropertyValue", name: "Owner", value: owner },
+        ...(category
+          ? [{ "@type": "PropertyValue" as const, name: "Category", value: category }]
+          : []),
+      ],
     },
-    category: "KNS Domain",
-    brand: {
-      "@type": "Brand",
-      name: "Kaspa Domains",
-      url: "https://kaspadomains.com",
-    },
-    offers: {
-      "@type": "Offer",
-      price: typeof price === "string" ? parseFloat(price) || 0 : price,
-      priceCurrency: "KAS",
-      availability: listed
-        ? "https://schema.org/InStock"
-        : "https://schema.org/OutOfStock",
-      ...(seller
-        ? {
-            seller: {
-              "@type": "Person",
-              name: seller,
-            },
-          }
-        : {}),
-    },
-    additionalProperty: [
-      {
-        "@type": "PropertyValue",
-        name: "KNS Type",
-        value: "Kaspa Domain Name",
-      },
-    ],
   };
 }
 

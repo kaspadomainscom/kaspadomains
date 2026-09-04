@@ -8,6 +8,30 @@ go stale.
 
 ## Recently shipped
 
+- [x] **`/domains` (the main browse-all page) contradicted the site's own "not a
+      marketplace" stance — a real, significant find, not cosmetic.** It branded itself
+      "kaspadomains Market" / "premium domain marketplace" with a "Buy Now" button, while
+      `/docs` and `BUSINESS_PLAN.md` explicitly and repeatedly say KaspaDomains does not
+      sell domains. Worse, the data backing it was fake: `Domain` has no `price`/`listed`/
+      `kaspaLink` fields, so those were cast-and-defaulted (`?? 0`, `?? false`, `?? '#'`)
+      — meaning **every domain showed as "Sold" with a dead `href="#"` Buy Now link**, and
+      the price/status filters operated on data that was never real. Rebuilt: dropped the
+      marketplace framing and the fake price/status filters/columns entirely (there's
+      nothing real to filter — every listing costs the same fixed 420 KAS), switched from
+      an ad-hoc table to a `DomainCard` grid (consistent with every other domain-listing
+      page in the app — this was the only page still using a different layout pattern),
+      dark theme. Also fixed `/domains/layout.tsx`'s metadata, which had the same
+      "Marketplace"/"purchase" framing.
+- [x] **Structured data (JSON-LD) had the same problem, on every single domain page.**
+      `getDomainJsonLd()` used schema.org's `Product`/`Offer` vocabulary — the literal
+      structured-data shape for "this is for sale" (price, availability, seller) — which
+      is precisely what a search engine or shopping aggregator would key off of to treat
+      a listing as purchasable. Rewrote it as `ProfilePage`/`Thing` (no commerce fields),
+      and fixed the matching "Buy X, a premium KNS domain..." meta description and the
+      homepage's `WebSite` JSON-LD description ("...purchase premium KNS domains...").
+      Found by grepping the whole codebase for "marketplace"/"Buy Now"/"purchase"/"Sold"
+      after finding the `/domains` page issue — this was the only other place it appeared.
+
 - [x] **Design/SEO/pages audit pass.** Found and fixed several concrete bugs while going
       through the remaining untouched pages:
       - **`og-image.png` was actually `kaspadomains-logo.jpg` renamed** (byte-identical,
