@@ -16,6 +16,8 @@ points to them and holds the actively-updated loop backlog below.
 - [`BUSINESS_PLAN.md`](./BUSINESS_PLAN.md) — product/business framing
 - [`KASPA_DEVELOPMENT.md`](./KASPA_DEVELOPMENT.md) — current Kaspa/Kasplex/Igra ecosystem
   state, confirmed root cause of the MCOPY bug, and a phased plan for the Web3 layer
+- [`Toccata-Dev.md`](./Toccata-Dev.md) — Kaspa L1 covenants (Toccata): reference, links,
+  and the analysis of whether our data can eventually move off the database onto L1
 - [`mind/`](./mind/) — working checklists derived from `MIND.md`'s 12 principles
   (verification, fallback-auditing, shared-function changes, testnet-reset context)
 - [`HISTORY.md`](./HISTORY.md) — dated narrative log of what was built/found/decided each

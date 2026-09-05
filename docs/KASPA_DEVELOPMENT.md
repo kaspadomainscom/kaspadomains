@@ -31,11 +31,17 @@ GHOSTDAG protocol to order parallel blocks instead of orphaning them. Current st
 - **Full node**: Rusty Kaspa (Rust), currently v2.0.1, gRPC + UTXO indexing.
 
 **What this means for this project**: Kaspa L1 still has no general-purpose smart-contract
-VM — covenants are UTXO-spending rules, not a Solidity-equivalent runtime. This app's
-actual contract logic (listing, votes, categories) has nowhere to live on L1 itself; that's
-what the L2s below are for. L1 covenants are a real, live capability now, but adopting them
-would mean a different tech stack (a Rust/WASM SDK and covenant scripts, not Solidity/viem)
-— a future architectural option, not a drop-in extension of the current app.
+VM — covenants are UTXO-spending rules, not a Solidity-equivalent runtime. Adopting them
+means a different stack (SilverScript and Rust tooling, not Solidity/viem), so it is not a
+drop-in extension of the current app.
+
+It is, however, the most plausible long-term home for our data, for one specific reason:
+on L1 the domain owner's key is the key that signs, so ownership becomes a native
+signature check instead of the cross-chain inference we currently cannot make. That closes
+the `ownership_verified` gap the database migration left open. **The full evaluation,
+reference material and a migration sketch are in
+[`Toccata-Dev.md`](./Toccata-Dev.md)** — including the finding that our listings map
+cleanly onto covenant families while voting hits a documented design alarm.
 
 ## 2. Layer 2s: where this app's contracts actually live
 

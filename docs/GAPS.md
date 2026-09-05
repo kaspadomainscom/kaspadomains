@@ -47,7 +47,9 @@ Supabase is unconfigured. What's genuinely outstanding:
       encoding reimplemented — deliberately not hand-rolled untested, because a verifier
       that wrongly accepts is worse than an admitted gap. `@noble/curves` is already a
       dependency and is the right tool when someone can test against a real Kasware
-      wallet.
+      wallet. **Longer term this gap dissolves rather than shrinks**: on Kaspa L1 the
+      owner's key is the signing key, so ownership is a native check — see
+      [`Toccata-Dev.md`](./Toccata-Dev.md).
 - [ ] **Site copy still describes the on-chain product.** `/docs`, the homepage's
       single-payment permanence claims and "210 KAS", and `/business-plan` all
       promise permanence, on-chain recording and a fee. None of that is what happens now.
