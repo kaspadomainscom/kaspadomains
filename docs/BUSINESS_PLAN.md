@@ -24,12 +24,14 @@ require.
 > Three things in this plan are now false as written, and they are the three that matter
 > most commercially:
 >
-> 1. **No fee is being collected.** The 420 KAS charge lived in
->    `KaspaDomainsRegistry.listDomain`, which has no deployed code. Listings and votes now
->    go through the database and are **free**. §5's revenue model — 10,000 × 420 KAS —
->    describes a mechanism that currently does not exist. Restoring revenue needs a
->    deliberate choice (a redeployed contract, a plain on-chain payment address checked
->    server-side, or an off-chain processor); none is implemented.
+> 1. **Fees are collected again, at new rates.** Owner decision, 2026-09-05: **200 KAS to
+>    list** (was 420 on-chain / 210 in copy) and **1 KAS per vote** (was 6). They are paid
+>    on Kaspa L1 straight to a treasury address and verified server-side — no contract
+>    involved. §5's ceiling therefore becomes 10,000 × 200 KAS = **2,000,000 KAS**, and
+>    the vote fee is materially cheaper, which should be read as a deliberate shift toward
+>    volume rather than a like-for-like revenue estimate. Note the split described in §5
+>    (a portion to the domain owner) is **not implemented** — every fee currently goes to
+>    the treasury address in full.
 > 2. **Listings are not permanent or on-chain.** They are rows in Postgres, mutable by
 >    whoever controls the database. "Recorded permanently on-chain", "one-time payment for
 >    exposure for a single payment", and the trust model they imply are not what happens

@@ -62,8 +62,8 @@ export default function ListDomainPage() {
           <div className="space-y-6">
             <h2 className="text-3xl font-bold text-white">Listing Benefits</h2>
             <p className="text-gray-300 leading-relaxed">
-              Listing your domain is <span className="font-semibold text-yellow-400">free right now</span>.
-              No fee, no renewals, no subscriptions. You&apos;ll be asked to sign a message so we can
+              Listing your domain costs a one-time{' '}
+              <span className="font-semibold text-yellow-400">200 KAS</span>. No renewals, no subscriptions. You&apos;ll be asked to sign a message so we can
               check the request came from your wallet — signing is free and moves no funds.
             </p>
 
@@ -73,7 +73,7 @@ export default function ListDomainPage() {
                 <li>Ownership checked against KNS when you list</li>
                 <li>Dedicated profile with bio, links, image, and categories</li>
                 <li>Featured in categories, search, and premium drops</li>
-                <li>No fee and no renewals while listing is free</li>
+                <li>One-time 200 KAS fee — no renewals or subscriptions</li>
               </ul>
             </div>
 

@@ -20,21 +20,23 @@ Registered on KNS (Kaspa L1)
 Verified on KNS ──► the app reads the owner from KNS server-side; the client
         │           cannot assert who owns a name
         │
-        │  POST /api/domains — wallet signs the request (free, no transaction)
-        ▼
+        │  pay 200 KAS on L1 to the treasury, then sign with the L1 key
+        │  POST /api/domains — server verifies BOTH: owner == signer, and the
+        ▼  payment transaction actually paid the fee
 Listed in Postgres  ──► row in `domains`, owner = whatever KNS said,
-        │                submitted_by = the proven Kasplex address,
-        │                ownership_verified = FALSE (see below)
+        │                submitted_by = the proven L1 address,
+        │                ownership_verified = TRUE, payment_tx_id = the txid
+        │                (unique, so one payment can't buy two listings)
         │
         │  categories are written in the same request — a listing with none
         ▼  would be invisible to every browse page
 Categorized ──► rows in `domain_categories`
         │
-        │  PUT /api/domains/[name]/links — signed, bulk replace
+        │  PUT /api/domains/[name]/links — signed, owner-only, bulk replace
         ▼
 Resourced ──► rows in `domain_links` ──► public profile, JSON-LD, sitemap
         │
-        │  POST /api/domains/[name]/vote — signed, free, one per wallet
+        │  POST /api/domains/[name]/vote — 1 KAS, signed, one per wallet
         ▼
 Voted on ──► rows in `votes`; counts are a view, so they can't drift
 ```
@@ -50,9 +52,10 @@ The earlier design signed with the Kasplex EVM key, which is a different keypair
 one that owns the name, and so could not prove ownership at all. That is why
 `ownership_verified` exists; rows written under the new path set it true.
 
-**What is no longer true of a listing**: it is not permanent, not on-chain, and not paid
-for. Rows are mutable by whoever holds the database, and both the 420 KAS listing fee and
-the 6 KAS vote fee are uncollected because the contracts that charged them are gone.
+**Fees, as of 2026-09-05**: listing costs 200 KAS and each vote 1 KAS, paid on Kaspa L1
+to a treasury address and verified server-side from the transaction id. No contract is
+involved. **What is still not true of a listing**: it is not permanent and not on-chain —
+rows remain mutable by whoever holds the database.
 
 **Where this lifecycle is heading.** The intended end state moves the listing steps onto
 Kaspa L1 covenants, so "listed" becomes a covenant UTXO rather than a row, and ownership is

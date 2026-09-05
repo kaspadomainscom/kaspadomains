@@ -7,7 +7,8 @@ import { createKaswareEvmClient, getKaswareEvmProvider } from '@/lib/kaswareEvm'
 import { useToast } from '@/components/ToastProvider';
 import { useWalletContext } from '@/context/WalletContext';
 import { isSupabaseConfigured } from '@/lib/supabase';
-import { signedFetch, readError } from '@/lib/signedFetch';
+import { signedFetch, readError, payFee } from '@/lib/signedFetch';
+import { LISTING_FEE_SOMPI, formatKas } from '@/lib/fees';
 
 const RETRY_LIMIT = 3;
 const RETRY_DELAY_MS = 3000;
@@ -50,13 +51,20 @@ export function useListDomain() {
       // the domain on KNS), so it must not require a Kasplex EVM connection.
       // Demanding one here would lock out an owner who has only L1 connected.
       if (isSupabaseConfigured) {
-        addToast(`Listing "${domain}"...`);
+        addToast(`Confirm the ${formatKas(LISTING_FEE_SOMPI)} listing fee in Kasware...`);
+
+        // Pay first, then sign. The fee transaction is the slow, failure-prone
+        // step; getting a signature afterwards is cheap. Doing it the other way
+        // round risks a paid fee with no request behind it.
+        const paymentTxId = await payFee(LISTING_FEE_SOMPI);
+
+        addToast(`Payment sent. Listing "${domain}"...`);
 
         const response = await signedFetch({
           action: 'list-domain',
           domain,
           path: '/api/domains',
-          body: { categories },
+          body: { categories, paymentTxId },
         });
 
         if (!response.ok) {

@@ -14,8 +14,17 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
  */
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+
+// Supabase renamed the public key from "anon" to "publishable" (sb_publishable_…)
+// and the secret one from "service_role" to "secret" (sb_secret_…). Accept both
+// spellings so a project set up under either naming works without edits.
+const anonKey =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+
+const serviceRoleKey =
+  process.env.SUPABASE_SECRET_KEY?.trim() ||
+  process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
 /** True when public reads can be served from Supabase. */
 export const isSupabaseConfigured = Boolean(url && anonKey);

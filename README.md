@@ -52,8 +52,19 @@ falls back to reading the Kasplex contracts — which currently fail, since four
 have no deployed code (see [`docs/BUGS.md`](./docs/BUGS.md)).
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. Run [`supabase/schema.sql`](./supabase/schema.sql) in its SQL editor.
+2. Run [`supabase/schema.sql`](./supabase/schema.sql) in its SQL editor. **Leave Row Level
+   Security enabled** — the schema turns it on with public read and no write policy, which
+   is what stops the browser-visible key writing directly to the database and bypassing
+   the owner-only API.
 3. `cp .env.example .env.local` and fill in the values from Project Settings → API.
+4. Set `NEXT_PUBLIC_KASPADOMAINS_TREASURY_ADDRESS` to a Kaspa address you control — the
+   200 KAS listing and 1 KAS vote fees are paid to it. Paid actions stay disabled until
+   it is set, rather than silently becoming free.
+
+**Auth note:** the only login is Kasware. Supabase Auth is deliberately unused — no
+email, no social, no `@supabase/ssr` session cookies. Identity comes from a Kaspa L1
+signature verified server-side, so adding a second auth system would create a second,
+weaker way in.
 
 The `service_role` key is server-only and bypasses Row Level Security — never prefix it
 with `NEXT_PUBLIC_`. With no keys set, the app still builds and runs; it just reads from

@@ -2,6 +2,8 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
 import { verifySignedRequest, VerificationError } from '@/lib/server/verifyRequest';
+import { verifyPayment } from '@/lib/server/verifyPayment';
+import { VOTE_FEE_SOMPI } from '@/lib/fees';
 
 export const runtime = 'nodejs';
 
@@ -28,7 +30,7 @@ export async function POST(
 
   const { name } = await context.params;
 
-  let body: { publicKey?: string; issuedAt?: number; signature?: string };
+  let body: { publicKey?: string; issuedAt?: number; signature?: string; paymentTxId?: string };
   try {
     body = await request.json();
   } catch {
@@ -43,6 +45,19 @@ export async function POST(
       publicKey: String(body.publicKey ?? ''),
       issuedAt: Number(body.issuedAt ?? 0),
       signature: String(body.signature ?? ''),
+    });
+  } catch (error) {
+    if (error instanceof VerificationError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    throw error;
+  }
+
+  let payment;
+  try {
+    payment = await verifyPayment({
+      txId: String(body.paymentTxId ?? ''),
+      requiredSompi: VOTE_FEE_SOMPI,
     });
   } catch (error) {
     if (error instanceof VerificationError) {
@@ -69,10 +84,23 @@ export async function POST(
 
   const { error: voteError } = await supabase
     .from('votes')
-    .insert({ domain_id: domain.id, voter: verified.signerAddress });
+    .insert({
+      domain_id: domain.id,
+      voter: verified.signerAddress,
+      fee_paid: payment.paidSompi.toString(),
+      payment_tx_id: payment.txId,
+    });
 
   if (voteError) {
     if (voteError.code === '23505') {
+      // Two constraints, two very different meanings — see the listing route.
+      const detail = `${voteError.message} ${voteError.details ?? ''}`;
+      if (detail.includes('payment_tx_id')) {
+        return NextResponse.json(
+          { error: 'That payment has already been used for another vote.' },
+          { status: 409 }
+        );
+      }
       return NextResponse.json(
         { error: 'This wallet has already voted for that domain.' },
         { status: 409 }

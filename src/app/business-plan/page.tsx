@@ -38,11 +38,11 @@ export default function BusinessPlanPage() {
         <Section title="The Solution">
           <ol className="list-decimal list-inside space-y-2">
             <li><strong>Prove ownership</strong> — connect Kasware to verify the .kas name on KNS.</li>
-            <li><strong>List it</strong> — sign a message with Kasware to confirm the request is yours. Listing is <strong className="text-kaspaMint">free right now</strong>.</li>
+            <li><strong>List it</strong> — sign a message with Kasware to confirm the request is yours. The fee is a one-time <strong className="text-kaspaMint">200 KAS</strong>.</li>
             <li><strong>Categorize it</strong> — pick at least one category so it can actually be found.</li>
             <li><strong>Add resources</strong> — attach an X account and links to the domain&apos;s public profile.</li>
             <li><strong>Get discovered</strong> — the domain appears on its category page and in search.</li>
-            <li><strong>Community voting</strong> — anyone can support a domain, free right now, one vote per wallet, boosting its ranking.</li>
+            <li><strong>Community voting</strong> — anyone can support a domain for 1 KAS per vote, one per wallet, boosting its ranking.</li>
           </ol>
           <p className="text-gray-400 text-sm mt-4">
             Hard cap: <strong className="text-white">10,000 listings, ever.</strong> Scarcity is structural, not promotional.

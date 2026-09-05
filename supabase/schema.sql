@@ -38,6 +38,12 @@ create table if not exists public.domains (
   -- owner KNS reports. Rows written before 2026-09-05 predate that check and
   -- may be false; treat those as unverified claims.
   ownership_verified boolean not null default false,
+  -- The Kaspa L1 transaction that paid the listing fee. UNIQUE is what makes a
+  -- payment single-use: without it one 200 KAS transaction could be quoted for
+  -- any number of listings. This constraint, not the API, is the real
+  -- enforcement -- only the database can decide it atomically under concurrent
+  -- requests.
+  payment_tx_id text unique,
   -- Set once the same listing is confirmed on-chain, so an off-chain row and
   -- its eventual on-chain counterpart can be reconciled rather than duplicated.
   tx_hash       text,
@@ -76,6 +82,9 @@ create table if not exists public.votes (
   id         bigint generated always as identity primary key,
   domain_id  bigint      not null references public.domains (id) on delete cascade,
   voter      text        not null,
+  -- Same single-use rule as listings: one paid transaction, one vote.
+  payment_tx_id text unique,
+  fee_paid   text        not null default '0',
   tx_hash    text,
   created_at timestamptz not null default now(),
   unique (domain_id, voter)

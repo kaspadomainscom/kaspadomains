@@ -81,7 +81,7 @@ export default function Docs() {
           <Section id="what" title="What is KaspaDomains?">
             <p>
               KaspaDomains is a discovery registry for verified KNS (.kas) domains. Any domain
-              holder can list their domain — <strong>free right now</strong> — to get a public
+              holder can list their domain for a one-time <strong>200 KAS</strong> fee, to get a public
               profile, a category placement, and search visibility.
             </p>
             <p className="text-gray-400 text-sm">
@@ -92,7 +92,7 @@ export default function Docs() {
           <Section id="how" title="How It Works">
             <ul>
               <li>Own a verified KNS domain (e.g. <code>player456.kas</code>)</li>
-              <li>Listing is currently free — no fee and no renewals</li>
+              <li>A one-time <strong>200 KAS</strong> listing fee — no renewals</li>
               <li>Sign a message so we can confirm the request came from your wallet</li>
               <li>Your listing gets a public profile, category placement and search visibility</li>
               <li>You retain full ownership — we don&apos;t sell domains</li>
@@ -172,7 +172,7 @@ export default function Docs() {
 
           <Section id="voting" title="Community Voting">
             <p>
-              Anyone can support a listed domain — <strong>free right now</strong>, one vote per
+              Anyone can support a listed domain for <strong>1 KAS</strong> per vote, one per
               wallet. Votes raise a domain&apos;s ranking and visibility across the site.
             </p>
             <p className="text-gray-400 text-sm">Voting empowers domain owners and strengthens community engagement.</p>
@@ -187,8 +187,8 @@ export default function Docs() {
           <Section id="start" title="Get Started">
             <p>
               Ready to list your domain? Connect your wallet, verify your KNS domain, and sign a
-              message to confirm the request is yours. Listing is free right now — no fee, and
-              signing moves no funds.
+              message to confirm the request is yours, then pay the one-time 200 KAS fee from
+              your wallet. Signing itself is free and moves no funds.
             </p>
             <Link
               href="/list-domain"

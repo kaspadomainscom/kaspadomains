@@ -35,8 +35,8 @@ since a voter makes no ownership claim.
 
 | Endpoint | Method | Replaces | Notes |
 |---|---|---|---|
-| `/api/domains` | `POST` | `KaspaDomainsRegistry.listDomain` + `DomainCategoriesStorage.updateCategories` | Creates a listing and its categories in one request. At least one category is required. Rolls the listing back if categories fail, so an invisible listing can't be left behind. `409` if already listed. **Charges nothing.** |
-| `/api/domains/[name]/vote` | `POST` | `DomainVotesManager.voteDomainByHash` | One vote per wallet per domain, enforced by a unique constraint. `409` on a repeat vote. **Charges nothing.** |
+| `/api/domains` | `POST` | `KaspaDomainsRegistry.listDomain` + `DomainCategoriesStorage.updateCategories` | Creates a listing and its categories in one request. At least one category is required. Rolls the listing back if categories fail, so an invisible listing can't be left behind. `409` if already listed. **Owner-only. Fee: 200 KAS**, paid on L1 and verified from `paymentTxId`. |
+| `/api/domains/[name]/vote` | `POST` | `DomainVotesManager.voteDomainByHash` | One vote per wallet per domain, enforced by a unique constraint. `409` on a repeat vote. **Fee: 1 KAS**, same verification. Any wallet may vote. |
 | `/api/domains/[name]/links` | `PUT` | `DomainLinksStorage.updateLinks` | Bulk replace, same semantics as the contract call. Rejects non-`http(s)` URLs (a `javascript:` URL rendered on a public profile is stored XSS). **Owner-only**, checked against KNS live — so a transferred domain follows its new owner. |
 
 Reads go through [`src/data/supabaseSource.ts`](../src/data/supabaseSource.ts); the schema

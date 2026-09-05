@@ -1,5 +1,6 @@
 // src/lib/signedFetch.ts
 import { buildSignedMessage, type WriteAction } from './signedMessage';
+import { TREASURY_ADDRESS } from './fees';
 
 /**
  * Ask Kasware to sign a write request with the user's **Kaspa L1 key**, then
@@ -22,7 +23,39 @@ type KaswareL1 = {
   getPublicKey?: () => Promise<string>;
   signMessage?: (message: string) => Promise<string>;
   requestAccounts?: () => Promise<string[]>;
+  sendKaspa?: (toAddress: string, sompi: number) => Promise<string>;
 };
+
+/**
+ * Ask the wallet to pay a fee on Kaspa L1, returning the transaction id.
+ *
+ * This is the one place in the app that moves real funds, so it is deliberately
+ * small and does nothing clever: no retries (a retry could pay twice), and the
+ * amount and destination come from `lib/fees.ts` rather than being passed in
+ * from a call site that might get them wrong.
+ *
+ * The server re-checks the resulting transaction against the same treasury
+ * address and amount, so a tampered client here just produces a payment that
+ * fails verification -- it cannot mint a free listing.
+ */
+export async function payFee(sompi: bigint): Promise<string> {
+  const kasware = getKaswareL1();
+  if (!kasware?.sendKaspa) {
+    throw new Error('Kasware is not available, so the fee cannot be paid.');
+  }
+  if (!TREASURY_ADDRESS) {
+    throw new Error('No fee address is configured, so this action is unavailable.');
+  }
+
+  // Kasware takes sompi as a JS number. Guard the conversion rather than
+  // silently losing precision on an amount of money.
+  const amount = Number(sompi);
+  if (!Number.isSafeInteger(amount)) {
+    throw new Error('Fee amount is out of range.');
+  }
+
+  return kasware.sendKaspa(TREASURY_ADDRESS, amount);
+}
 
 function getKaswareL1(): KaswareL1 | null {
   if (typeof window === 'undefined') return null;

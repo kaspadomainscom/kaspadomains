@@ -11,7 +11,7 @@ const TRENDING_COUNT = 3;
 export const metadata = {
   title: "KaspaDomains — Premium .kas Domains, Organized by Category",
   description:
-    "List your .kas domain for free. Get placed in a category, add your X account and links, and build your Kaspa-native identity. Only 10,000 listings, ever.",
+    "List your .kas domain for 200 KAS. Get placed in a category, add your X account and links, and build your Kaspa-native identity. Only 10,000 listings, ever.",
   openGraph: {
     title: "KaspaDomains — Premium .kas Domains, Organized by Category",
     description:
@@ -68,7 +68,7 @@ export default async function Home() {
           Own the Future of <span className="text-yellow-400">.kas</span> Domains
         </h1>
         <p className="text-lg md:text-xl max-w-3xl mx-auto mb-8 text-white/90">
-          List your premium .kas domain — free right now. Get placed in a category,
+          Secure your premium .kas domain for a one-time 200 KAS fee. Get placed in a category,
           attach your X account and links, and showcase your Kaspa identity.
           Limited to only <strong>10,000 domains</strong>.
         </p>
@@ -96,7 +96,7 @@ export default async function Home() {
                 <p className="text-sm text-gray-400 mb-1">
                   🔥 {domain.votes.toLocaleString()} vote{domain.votes === 1 ? "" : "s"}
                 </p>
-                <p className="text-sm text-gray-500">Free to list</p>
+                <p className="text-sm text-gray-500">200 KAS to list</p>
                 <Link
                   href={`/domain/${domain.name}`}
                   className="text-yellow-400 underline text-sm mt-3 inline-block hover:text-yellow-300"
@@ -146,8 +146,8 @@ export default async function Home() {
         <div className="text-lg text-gray-300 leading-relaxed space-y-6 mb-12">
           <p>
             <strong>1. List your domain:</strong> Connect Kasware, prove you hold the name on
-            KNS, and add it to the KaspaDomains index. Listing is <strong>free right now</strong>,
-            and the index is capped at 10,000 domains.
+            KNS, and add it to the KaspaDomains index. Listing costs a one-time <strong>200 KAS</strong>, paid from your
+            Kasware wallet, and the index is capped at 10,000 domains.
           </p>
           <p>
             <strong>2. Pick a category:</strong> Every listing must belong to at least one category —
@@ -159,7 +159,7 @@ export default async function Home() {
           </p>
           <p>
             <strong>4. Get voted on:</strong> The community can support your domain to boost its
-            visibility and ranking. Voting is free, one vote per wallet.
+            visibility and ranking. Each vote costs <strong>1 KAS</strong>, one per wallet.
           </p>
           <p>
             <strong>5. You keep the name either way:</strong> your <span className="whitespace-nowrap">.kas</span> domain

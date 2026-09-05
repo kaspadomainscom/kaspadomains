@@ -32,12 +32,23 @@ Supabase became the primary store on 2026-09-05 by owner decision (see
 Postgres now, behind signed requests, with automatic fallback to the contracts when
 Supabase is unconfigured. What's genuinely outstanding:
 
-- [ ] **Nothing collects money any more.** The 420 KAS listing fee and 6 KAS vote fee
-      lived in the contracts. Listing and voting are now **free**, and no replacement
-      exists. This is a revenue question, not a technical one: it needs a redeployed
-      contract, an on-chain payment address checked server-side, or an off-chain
-      processor. Until it's answered, `domains.fee_paid` is always `'0'` and the
-      site's "one-time payment" copy is inaccurate.
+- [x] ~~**Nothing collects money any more**~~ — **fees restored 2026-09-05** at the
+      owner's chosen rates: **200 KAS to list, 1 KAS per vote**. Paid on Kaspa L1 to a
+      treasury address via `kasware.sendKaspa`, and verified server-side from the
+      transaction id ([`verifyPayment.ts`](../src/lib/server/verifyPayment.ts)): the
+      transaction must be accepted, and outputs to the treasury must total at least the
+      required amount. Design points worth keeping:
+      - **Payment is checked after ownership**, so a non-owner is never asked to pay for a
+        listing they could not have created.
+      - **The txid is consumed only if the row is written.** A failed insert leaves the
+        payment reusable rather than burning someone's 200 KAS.
+      - **Single-use is enforced by a unique constraint** on `payment_tx_id`, not by
+        application code — only the database can decide that atomically when two requests
+        quote the same payment at once.
+      - **Overpayment is accepted**, never rejected: refusing it would mean taking the
+        money and giving nothing back.
+      - **No treasury address configured means paid actions are disabled, not free.**
+      Still unproven: no payment has been made or verified against a real wallet.
 - [x] ~~**L1 ownership is not cryptographically proven**~~ — **closed 2026-09-05.** The
       write path now signs with the **Kaspa L1 key**, not the Kasplex EVM key, and the
       server verifies it with the rusty-kaspa WASM SDK (`kaspa-wasm`): the signature is

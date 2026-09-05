@@ -7,7 +7,8 @@ import { contracts } from "@/lib/contracts";
 import { JsonFragment } from "ethers";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { fetchVoteCount, fetchHasVoted, fetchVoters } from "@/data/supabaseSource";
-import { signedFetch, readError } from "@/lib/signedFetch";
+import { signedFetch, readError, payFee } from "@/lib/signedFetch";
+import { VOTE_FEE_SOMPI, formatKas } from "@/lib/fees";
 
 const DOMAIN_LIKES_PER_PAGE = 10;
 const VOTES_CONTRACT_ADDRESS = contracts.DomainVotesManager.address;
@@ -47,11 +48,9 @@ export function VotingSection({ domainName }: { domainName: string }) {
     );
 
     // Load the current on-chain vote fee (don't hardcode it -- it's owner-adjustable).
-    // Votes recorded in the database are free: the 6 KAS charge lived in
-    // DomainVotesManager, and nothing has replaced it (see docs/GAPS.md).
+    // The database path has a fixed fee from lib/fees.ts instead, paid on Kaspa
+    // L1, so there is nothing to fetch there.
     useEffect(() => {
-        // Nothing to fetch when the database is the store -- the fee is a
-        // constant zero, derived below rather than pushed into state.
         if (isSupabaseConfigured) return;
         if (!contract) return;
         contract
@@ -212,10 +211,14 @@ export function VotingSection({ domainName }: { domainName: string }) {
             setTxPending(true);
 
             if (isSupabaseConfigured) {
+                // Pay first, then sign — see the note in useListDomain.
+                const paymentTxId = await payFee(VOTE_FEE_SOMPI);
+
                 const response = await signedFetch({
                     action: 'vote',
                     domain: domainName,
                     path: `/api/domains/${encodeURIComponent(domainName)}/vote`,
+                    body: { paymentTxId },
                 });
 
                 if (!response.ok) {
@@ -261,11 +264,11 @@ export function VotingSection({ domainName }: { domainName: string }) {
 
     // Derived, not stored: with the database as the store there is no contract
     // to be unavailable and no fee to fetch -- votes are free (see docs/GAPS.md).
-    const effectiveFeeWei = isSupabaseConfigured ? BigInt(0) : voteFeeWei;
+    const effectiveFeeWei = isSupabaseConfigured ? VOTE_FEE_SOMPI : voteFeeWei;
     const votingUnavailable = isSupabaseConfigured ? false : contractUnavailable;
 
     const voteFeeLabel = isSupabaseConfigured
-        ? "free"
+        ? formatKas(VOTE_FEE_SOMPI)
         : effectiveFeeWei !== null
             ? `${formatEther(effectiveFeeWei)} KAS`
             : "…";
