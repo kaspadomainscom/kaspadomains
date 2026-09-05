@@ -4,6 +4,7 @@ import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
 import { verifySignedRequest, VerificationError, extractPayload } from '@/lib/server/verifyRequest';
 import { verifyPayment } from '@/lib/server/verifyPayment';
 import { claimReceipt, releaseReceipt } from '@/lib/server/claimReceipt';
+import { verifyPaymentIntent } from '@/lib/server/paymentIntent';
 import { VOTE_FEE_SOMPI } from '@/lib/fees';
 
 export const runtime = 'nodejs';
@@ -31,7 +32,13 @@ export async function POST(
 
   const { name } = await context.params;
 
-  let body: { publicKey?: string; issuedAt?: number; signature?: string; paymentTxId?: string };
+  let body: {
+    publicKey?: string;
+    issuedAt?: number;
+    signature?: string;
+    paymentTxId?: string;
+    intent?: string;
+  };
   try {
     body = await request.json();
   } catch {
@@ -47,6 +54,23 @@ export async function POST(
       issuedAt: Number(body.issuedAt ?? 0),
       signature: String(body.signature ?? ''),
       payload: extractPayload(body as Record<string, unknown>),
+    });
+  } catch (error) {
+    if (error instanceof VerificationError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    throw error;
+  }
+
+  // Required, not advisory: the preflight is what confirms the domain exists and
+  // that this wallet has not already voted, and both of those used to be
+  // discovered only after the 1 KAS had left the wallet.
+  try {
+    verifyPaymentIntent(String(body.intent ?? ''), {
+      action: 'vote',
+      domain: verified.domain,
+      signer: verified.signerAddress,
+      amountSompi: VOTE_FEE_SOMPI.toString(),
     });
   } catch (error) {
     if (error instanceof VerificationError) {

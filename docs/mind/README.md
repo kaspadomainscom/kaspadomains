@@ -3,7 +3,7 @@
 **Purpose**: turn [`../MIND.md`](../MIND.md)'s narrative principles into steps you can
 actually run, so "remember why this matters" becomes "here's what to do right now."
 
-Last updated: 2026-09-05
+Last updated: 2026-09-06
 
 `MIND.md` states the operating principles as narrative, each backed by a real incident,
 now with an explicit Purpose/Mechanic line per principle. This directory is the
@@ -17,6 +17,8 @@ about.
 | [`fallback-audit-checklist.md`](./fallback-audit-checklist.md) | Find fabricated-data fallbacks hiding in shared code, not just display components | #2 |
 | [`shared-function-change-checklist.md`](./shared-function-change-checklist.md) | Stop a fix to a widely-called function from silently breaking (or silently not helping) callers nobody checked | #12 |
 | [`testnet-mainnet-transitions.md`](./testnet-mainnet-transitions.md) | Judge how plausible "the testnet was reset" is, using real industry precedent | (context for `BUGS.md`) |
+| [`health-check-checklist.md`](./health-check-checklist.md) | Stop a monitor reporting OK when it could not actually see anything | #14 |
+| [`irreversible-action-checklist.md`](./irreversible-action-checklist.md) | Make sure every refusal is established before money moves, not after | #9, #16 |
 
 ## Related docs
 

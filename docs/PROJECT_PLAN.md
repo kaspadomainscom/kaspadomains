@@ -1,26 +1,38 @@
 # KaspaDomains — Project Plan
 
-Last updated: 2026-09-05
+Last updated: 2026-09-06
 
 ## 1. What this project is
 
 KaspaDomains is a directory/showcase dApp for `.kas` domain names (issued by KNS on the
-native Kaspa chain). It runs on **Kasplex**, an EVM-compatible Kaspa L2, and layers a
-listing + voting economy on top of domains that already exist on KNS:
+native Kaspa chain). It layers a listing + voting economy on top of domains that already
+exist on KNS:
 
-- A user proves they own a `.kas` name on KNS (via **Kasware**), then lists it into the
-  `KaspaDomainsRegistry` contract on Kasplex (Kasware also signs this, via its EIP-1193
-  EVM provider) for a one-time fee of **420 KAS — the real, on-chain-enforced amount**
-  (`DOMAIN_FEE` is a contract constant with no setter). The live site's marketing copy
-  displays "210 KAS" instead, by explicit request (2026-09-04); `useListDomain.ts` still
-  sends the real 420 KAS on-chain, so the two are intentionally out of sync — see
-  [`TODO.md`](./TODO.md) for the tracked risk. Cap: 10,000 listings, ever. Listing now
-  requires picking at least one category, and owners can attach resources (an X account,
-  links) to their domain's profile — see §3.
-- Other users can vote/support a listed domain for 6 KAS per vote, which boosts its
-  visibility/ranking.
-- Listed domains get a profile page, category placement, search visibility, and a public
-  "ecosystem fund" that the admin panel (`/EcosystemAdmin`) reports on.
+- A user proves they own a `.kas` name on KNS by **signing with their Kaspa L1 key** in
+  **Kasware** — the key that actually owns the name. The server derives the address from
+  that signature, reads the real owner from KNS, and requires them to match. Only then can
+  a listing be created. Listing costs **200 KAS**, paid on Kaspa L1 to a treasury address
+  and verified server-side from the transaction. Picking at least one category is required,
+  and owners can attach resources (an X account, links) to their profile — see §3.
+- Other users can vote for a listed domain at **1 KAS per vote**, one vote per wallet per
+  domain, which drives the top-voted ranking.
+- Listed domains get a profile page, category placement and search visibility.
+- Editing a listing you already paid for — its links, its categories — is **free**.
+
+**This changed on 2026-09-05.** The description below the fold still refers to the earlier
+design, which is worth understanding but is **not what runs**: listings lived in a
+`KaspaDomainsRegistry` contract on **Kasplex** (an EVM-compatible Kaspa L2) at 420 KAS,
+votes cost 6 KAS and minted `KDCToken`, and there was an ecosystem-fund panel at
+`/EcosystemAdmin`. Four of those six contracts turned out to have **no deployed code** and
+the other two fail every call (see [`BUGS.md`](./BUGS.md)), so the product could not
+function on-chain at all. Supabase became the store by owner decision; the contract path is
+still in the code as a fallback and takes over automatically if the database is
+unconfigured. See [`ARCHITECTURE.md`](./ARCHITECTURE.md#data-model) and
+[`LIFECYCLE.md`](./LIFECYCLE.md).
+
+The intent is not to stay off-chain — see §"Where this is heading" and
+[`Toccata-Dev.md`](./Toccata-Dev.md) for the move to L1 covenants with Postgres demoted to
+a rebuildable index.
 
 This is **not** a domain marketplace — KaspaDomains does not sell or transfer `.kas` names,
 it only indexes/showcases names a user already owns on KNS. See

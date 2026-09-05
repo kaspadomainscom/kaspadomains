@@ -1,6 +1,6 @@
 # Lifecycle
 
-Last updated: 2026-09-05
+Last updated: 2026-09-06
 
 How a `.kas` name actually moves through this system — from existing only on Kaspa L1 to
 being a fully-featured listing on KaspaDomains. For the underlying contracts and hooks
@@ -20,26 +20,45 @@ Registered on KNS (Kaspa L1)
 Verified on KNS ──► the app reads the owner from KNS server-side; the client
         │           cannot assert who owns a name
         │
-        │  pay 200 KAS on L1 to the treasury, then sign with the L1 key
-        │  POST /api/domains — server verifies BOTH: owner == signer, and the
-        ▼  payment transaction actually paid the fee
+        │  POST /api/domains/preflight — signed, FREE, no side effects.
+        │  Checks write-readiness, ownership, whether it's already listed, and
+        ▼  the categories. Nothing has been paid yet.
+Cleared to pay ──► a 10-minute payment intent bound to action + domain +
+        │           signer + amount, and the price to pay
+        │
+        │  pay the quoted amount on L1 to the treasury, then sign with the L1 key
+        │  POST /api/domains with paymentTxId + intent — the server re-verifies
+        ▼  everything from scratch: signature, KNS owner, payment, payer
 Listed in Postgres  ──► row in `domains`, owner = whatever KNS said,
         │                submitted_by = the proven L1 address,
-        │                ownership_verified = TRUE, payment_tx_id = the txid
-        │                (unique, so one payment can't buy two listings)
+        │                ownership_verified = TRUE, payment_tx_id = the txid,
+        │                and the receipt claimed in the global `payment_receipts`
+        │                ledger so it can never fund a second action
         │
         │  categories are written in the same request — a listing with none
         ▼  would be invisible to every browse page
 Categorized ──► rows in `domain_categories`
         │
+        │  PUT /api/domains/[name]/categories — signed, owner-only, free,
+        │  bulk replace, allow-list enforced. Recategorising later is possible.
+        │
         │  PUT /api/domains/[name]/links — signed, owner-only, bulk replace
         ▼
 Resourced ──► rows in `domain_links` ──► public profile, JSON-LD, sitemap
         │
-        │  POST /api/domains/[name]/vote — 1 KAS, signed, one per wallet
-        ▼
+        │  same preflight-then-pay order:
+        │  POST /api/domains/preflight (action: vote) — confirms the domain is
+        │  listed and this wallet hasn't voted — then 1 KAS, then
+        ▼  POST /api/domains/[name]/vote with paymentTxId + intent
 Voted on ──► rows in `votes`; counts are a view, so they can't drift
 ```
+
+**Money is the last uncertain step, never the first (since 2026-09-06).** The browser used
+to pay first and discover afterwards whether the server could act — and it decided to use
+this path from the *public* Supabase key while the server needs a *different*, server-only
+one. A deployment with the first and not the second took 200 KAS and answered 503. Kaspa
+transactions are irreversible, so that was simply lost. Everything that can fail now runs
+before the wallet is asked.
 
 **What is proven at each step (updated 2026-09-05).** The request is signed with the
 **Kaspa L1 key** — the same key that owns the name on KNS. The server verifies the
@@ -53,9 +72,15 @@ one that owns the name, and so could not prove ownership at all. That is why
 `ownership_verified` exists; rows written under the new path set it true.
 
 **Fees, as of 2026-09-05**: listing costs 200 KAS and each vote 1 KAS, paid on Kaspa L1
-to a treasury address and verified server-side from the transaction id. No contract is
-involved. **What is still not true of a listing**: it is not permanent and not on-chain —
-rows remain mutable by whoever holds the database.
+to a treasury address and verified server-side from the transaction id. The payment must
+come **from the signer's own address** — otherwise a txid lifted off the public ledger
+would spend a stranger's fee — and each one is claimed in a single global ledger, so a
+200 KAS listing receipt cannot also be spent on a 1 KAS vote. No contract is involved.
+
+**What is still not true of a listing**: it is not permanent and not on-chain — rows
+remain mutable by whoever holds the database. And the paid write is still not atomic: a
+payment can be made and the write fail if the network drops between them (see
+[`GAPS.md`](./GAPS.md), SA-08).
 
 **Where this lifecycle is heading.** The intended end state moves the listing steps onto
 Kaspa L1 covenants, so "listed" becomes a covenant UTXO rather than a row, and ownership is

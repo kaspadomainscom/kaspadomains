@@ -24,7 +24,14 @@
  * a signature now authorises one specific request and nothing else.
  */
 
-export type WriteAction = 'list-domain' | 'vote' | 'update-links' | 'update-categories';
+export type WriteAction =
+  | 'list-domain'
+  | 'vote'
+  | 'update-links'
+  | 'update-categories'
+  // A no-fee dry run of 'list-domain' or 'vote'. A distinct action so a
+  // preflight signature can never be replayed as the write it was previewing.
+  | 'preflight';
 
 /**
  * Deterministic JSON: object keys sorted, array order preserved. Both sides

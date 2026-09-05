@@ -1,6 +1,6 @@
 # Technical Spec
 
-Last updated: 2026-09-05
+Last updated: 2026-09-06
 
 The formal reference: contract addresses, verified function signatures, routes, and data
 types. This exists because most of the bugs in [`BUGS.md`](./BUGS.md) were exactly this —
@@ -35,8 +35,9 @@ since a voter makes no ownership claim.
 
 | Endpoint | Method | Replaces | Notes |
 |---|---|---|---|
-| `/api/domains` | `POST` | `KaspaDomainsRegistry.listDomain` + `DomainCategoriesStorage.updateCategories` | Creates a listing and its categories in one request. At least one category is required. Rolls the listing back if categories fail, so an invisible listing can't be left behind. `409` if already listed. **Owner-only. Fee: 200 KAS**, paid on L1 and verified from `paymentTxId`. |
-| `/api/domains/[name]/vote` | `POST` | `DomainVotesManager.voteDomainByHash` | One vote per wallet per domain, enforced by a unique constraint. `409` on a repeat vote. **Fee: 1 KAS**, same verification. Any wallet may vote. |
+| `/api/domains/preflight` | `POST` | — | **Call this before asking the wallet to pay.** Signed, free, no side effects. Checks write-readiness, KNS ownership, whether the domain is already listed or already voted for, and the category allow-list; returns a 10-minute HMAC **payment intent** bound to action + domain + signer + amount, plus the price to pay. Signed with a distinct `preflight` action so its signature can never be replayed as the write it previewed. |
+| `/api/domains` | `POST` | `KaspaDomainsRegistry.listDomain` + `DomainCategoriesStorage.updateCategories` | Creates a listing and its categories in one request. At least one category is required. Rolls the listing back if categories fail, so an invisible listing can't be left behind. `409` if already listed. **Owner-only. Fee: 200 KAS**, paid on L1 and verified from `paymentTxId`. **Requires a valid `intent`** from `/preflight`. |
+| `/api/domains/[name]/vote` | `POST` | `DomainVotesManager.voteDomainByHash` | One vote per wallet per domain, enforced by a unique constraint. `409` on a repeat vote. **Fee: 1 KAS**, same verification. **Requires a valid `intent`.** Any wallet may vote. |
 | `/api/domains/[name]/links` | `PUT` | `DomainLinksStorage.updateLinks` | Bulk replace, same semantics as the contract call. Rejects non-`http(s)` URLs (a `javascript:` URL rendered on a public profile is stored XSS). **Owner-only**, checked against KNS live — so a transferred domain follows its new owner. |
 | `/api/domains/[name]/categories` | `GET` / `PUT` | `DomainCategoriesStorage.updateCategories` | Bulk replace, max 6, every key checked against `is_allowed`. Refuses an empty set: categories are the only navigation, so a listing with none is invisible. Adds before removing, so a failure leaves it over-categorised rather than unfindable. **Owner-only. No fee** — the listing was already paid for, and charging to fix a category just leaves listings miscategorised. `GET` is public and reads through the anon key. |
 | `/api/status` | `GET` | — | Deployment health: Supabase reachable, schema present, RLS actually blocking public writes, treasury configured. `503` when a check fails, so it can drive an uptime monitor. Reports **unknown** rather than OK when a check couldn't run. |
@@ -57,6 +58,31 @@ is [`supabase/schema.sql`](../supabase/schema.sql), typed for the app in
 
 `/terms` and `/privacy` carry an explicit "not reviewed by a lawyer" notice. They describe
 the software accurately; they are not a substitute for legal review.
+
+### Paid write order
+
+Money is the last uncertain step, never the first:
+
+```
+preflight (signed, free)  ->  intent + price
+        |                          |
+        v                          v
+   all checks pass          payFee(amount the SERVER quoted)
+                                   |
+                                   v
+                       write request: signature + paymentTxId + intent
+                                   |
+                                   v
+              re-verify signature, KNS owner, payment, payer
+                                   |
+                                   v
+                    claim receipt in the global ledger, then write
+```
+
+The intent is **not** a capability and holding someone else's is worthless — every check is
+re-run at write time. Its only job is to prove the preflight ran, so a client cannot skip
+straight to paying. Delete it and nothing becomes forgeable; users just go back to paying
+before finding out whether it would work.
 
 **⚠ Live-chain status (verified 2026-09-05, see [`BUGS.md`](./BUGS.md) for full detail):**
 signatures below are correct per the ABI, but as of this writing most of them **cannot

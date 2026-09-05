@@ -1,6 +1,6 @@
 # Bugs
 
-Last updated: 2026-09-05
+Last updated: 2026-09-06
 
 Bug tracker: things that are broken relative to what the code/UI claims to do — as opposed
 to features that were never built (see [`GAPS.md`](./GAPS.md)). "Open" means still broken
@@ -130,6 +130,27 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **The wallet was asked to pay before the server had agreed to do anything.** Codex's
+  SA-04, and the most serious thing left open after the audit. The browser chose the
+  off-chain flow from the **public** Supabase key and called `payFee` immediately; the API
+  needs a **different**, server-only key, and could still refuse afterwards for ownership,
+  duplicate-listing, already-voted or category reasons. Deploy with a valid public key and
+  a missing `SUPABASE_SECRET_KEY` and a listing sent 200 KAS to a route that answered 503.
+  Kaspa transactions are irreversible, so that money was simply gone. Fixed by inverting
+  the order: `POST /api/domains/preflight` (signed, free) runs write-readiness, KNS
+  ownership, target existence, duplicate state and the category allow-list, and only then
+  issues a short-lived **payment intent** — HMAC-signed, bound to the action, domain,
+  signer and amount. Both paid routes now **require** it, so the flow cannot be skipped,
+  and the client pays the amount the *server* quoted rather than its own constant.
+  Deliberately not a security boundary: every write still verifies the signature, re-reads
+  the KNS owner, re-verifies the payment on-chain and consumes the receipt through the
+  global ledger. Removing the intent entirely would make nothing forgeable — it would only
+  put users back to paying before finding out. *Verified* in the real runtime, not by
+  inspection: an untampered intent is accepted, and a wrong domain, wrong signer, wrong
+  amount, wrong action, tampered signature, forged body (swapping a 200 KAS listing claim
+  for a 1 KAS vote), empty string and garbage are each rejected; TTL is 10 minutes, longer
+  than the 5-minute signature window because the payment happens between the two
+  signatures.
 - **"My Votes" was permanently empty, and could not have been anything else.** The hook
   read `getVotedDomainIds` from `DomainVotesManager` — a contract with no deployed code —
   and keyed it by the **Kasplex EVM address**, while votes are recorded against the

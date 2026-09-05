@@ -125,3 +125,42 @@ export async function readError(response: Response, fallback: string): Promise<s
     return fallback;
   }
 }
+
+/**
+ * Ask the server whether it can actually do this, before any money moves.
+ *
+ * Returns a short-lived intent that the write request must carry. Everything
+ * that can fail -- write-readiness, KNS ownership, whether the domain is already
+ * listed or already voted for, whether the categories are real -- is checked
+ * here, for free.
+ *
+ * Call this before `payFee`, always. The wallet prompt should be the *last*
+ * uncertain step, not the first: a fee paid into a request the server was always
+ * going to refuse is money the user does not get back.
+ */
+export async function preflight(input: {
+  action: 'list-domain' | 'vote';
+  domain: string;
+  categories?: string[];
+}): Promise<{ intent: string; amountSompi: bigint }> {
+  const response = await signedFetch({
+    action: 'preflight',
+    domain: input.domain,
+    path: '/api/domains/preflight',
+    body: input.categories
+      ? { action: input.action, categories: input.categories }
+      : { action: input.action },
+  });
+
+  if (!response.ok) {
+    throw new Error(await readError(response, 'This action is not available right now.'));
+  }
+
+  const body = (await response.json()) as { intent?: string; amountSompi?: string };
+  if (!body.intent || !body.amountSompi) {
+    // Never fall through to charging on a malformed answer.
+    throw new Error('The server did not confirm this action, so nothing was charged.');
+  }
+
+  return { intent: body.intent, amountSompi: BigInt(body.amountSompi) };
+}

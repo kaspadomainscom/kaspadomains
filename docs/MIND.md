@@ -1,6 +1,6 @@
 # Mind
 
-Last updated: 2026-09-05
+Last updated: 2026-09-06
 
 How to think about working on this codebase — principles earned the hard way, each
 backed by a real incident. Read this before making changes, especially anything that
@@ -62,6 +62,9 @@ of waiting for it to happen incidentally as a side effect of other work.
 | 11 | One catch can't report two failures | A shared error path silently picks the wrong story for at least one of them |
 | 12 | Audit every caller before shipping a shared fix | A safe-looking one-line change can break n other places that were never checked |
 | 13 | A linter going quiet proves nothing | A guard deleted and a guard satisfied look identical in a green lint run |
+| 14 | A check that can't see must not report OK | A monitor is most dangerous when it goes green precisely because it observed nothing |
+| 15 | A migration ends when the old paths are gone | The new store working proves nothing about the pages still reading the old one |
+| 16 | Irreversible steps go last | Once money has moved, every check you hadn't run yet is a check the user pays for |
 
 ## 1. Never trust a hardcoded value against a live contract — verify the ABI first
 
@@ -340,6 +343,81 @@ both directions — several fixes in that same sweep wrapped the identical synch
 the cascading-render behaviour the rule exists to prevent (see `GAPS.md`'s lint entry). A
 zero-error lint run can mean *fixed*, *silenced*, or *quietly broken*, and only reading the
 diff tells you which.
+
+## 14. A check that cannot see must report "unknown", never "OK"
+
+**Purpose**: a monitor's job is to distinguish *working* from *broken*; a monitor that
+cannot tell either from *couldn't look* is worse than none, because it converts an outage
+into a green tick.
+**Mechanic**: for every check, enumerate the outcomes as **three**, not two — pass, fail,
+and could-not-determine — and make the third its own reported state. Only positive evidence
+counts as a pass: a successful query proves a table exists; the absence of one specific
+error does not.
+
+**The incident (2026-09-06)**: `/api/status` reported "All 6 tables present" while every
+table was missing. The check counted a table as missing only on the specific `PGRST205`
+code, so *any other* error — a failed TLS handshake, in this case — fell through to
+"present". The RLS probe had the identical flaw in the opposite direction: it read any error
+at all as "the write was refused", so it would have reported RLS healthy while unable to
+reach the database. Both were written the same afternoon, by the same reasoning: "if it's
+not the failure I named, it must be fine."
+
+**Checklist**: [`mind/health-check-checklist.md`](./mind/health-check-checklist.md).
+
+**The rule**: never write `if (error.code === X) fail; else pass`. Write
+`if (!error) pass; else if (error.code === X) fail; else unknown`. And when two independent
+checks disagree — `db:check` said every table was missing, `/status` said all six were
+present — do not pick the more convenient one. The disagreement *is* the finding, and here
+it was the only reason the bug was caught at all.
+
+## 15. A migration is finished when the old paths are gone, not when the new store works
+
+**Purpose**: "we moved to X" describes an intention; what runs is whatever each individual
+call site still points at, and those do not move because a decision was made.
+**Mechanic**: after a store migration, go **page by page** and ask "which source actually
+answers this one?" — not "does the new store work?". Grep for the old client, the old
+address type, the old key. A path that still reads the old store compiles, renders, and
+looks completely normal.
+
+**The incident (2026-09-06)**: Supabase had been the primary store for a day, and three
+paths had never moved. "My Votes" still read a contract with no deployed code, keyed by the
+**Kasplex EVM** address while votes are stored against the **Kaspa L1** address — two
+independent reasons to return nothing — and then displayed "You haven't voted for any
+domains yet". "My Domains" answered "is this listed here?" with KNS's *marketplace* `listed`
+flag, which means something else entirely. Neither produced an error, a warning, or a
+failing build.
+
+**The rule**: when a migration changes the **identity key** as well as the store — here,
+EVM address to L1 address — every query keyed by the old identity silently returns empty
+rather than failing. Empty is not an error, so nothing surfaces. Audit by identity, not just
+by table name. This is principle #2 wearing a different hat: the pages weren't fabricating
+data, they were reporting a confident *absence* they had not established.
+
+## 16. Put the irreversible step last
+
+**Purpose**: every check that runs after money moves is a check the user pays for when it
+fails; ordering is a safety property, not an implementation detail.
+**Mechanic**: list every way a request can be refused, then ask which of them run *after*
+the irreversible step. Move all of them before it. Where that is impossible, say so
+explicitly in the user-facing copy rather than implying a guarantee that isn't there.
+
+**The incident (2026-09-06)**: the browser asked the wallet for 200 KAS and *then* posted
+the request — at which point the server could still refuse for ownership, duplicate
+listing, invalid category, or, worst of all, because it had no write key at all. The client
+decided to use that flow from the **public** Supabase key; the server needed a
+**different**, server-only one. A deployment with the first and not the second took real,
+irreversible KAS and answered 503. Every one of those checks was cheap and could have run
+first.
+
+**Checklist**:
+[`mind/irreversible-action-checklist.md`](./mind/irreversible-action-checklist.md).
+
+**The rule**: the wallet prompt is the last uncertain step, never the first. A free,
+authenticated preflight that runs every check and hands back a short-lived quote costs one
+extra signature; the alternative costs the user the fee. And note what the preflight is
+*not*: it is not a security boundary, and it must not become one — every check is re-run at
+write time, so it can be deleted without making anything forgeable. A convenience mechanism
+that quietly becomes load-bearing is principle #12's problem waiting to happen.
 
 ## Related docs
 

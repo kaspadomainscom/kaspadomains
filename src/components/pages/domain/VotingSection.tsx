@@ -7,7 +7,7 @@ import { contracts } from "@/lib/contracts";
 import { JsonFragment } from "ethers";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { fetchVoteCount, fetchHasVoted, fetchVoters } from "@/data/supabaseSource";
-import { signedFetch, readError, payFee } from "@/lib/signedFetch";
+import { signedFetch, readError, payFee, preflight } from "@/lib/signedFetch";
 import { VOTE_FEE_SOMPI, formatKas } from "@/lib/fees";
 
 const DOMAIN_LIKES_PER_PAGE = 10;
@@ -211,14 +211,23 @@ export function VotingSection({ domainName }: { domainName: string }) {
             setTxPending(true);
 
             if (isSupabaseConfigured) {
-                // Pay first, then sign — see the note in useListDomain.
-                const paymentTxId = await payFee(VOTE_FEE_SOMPI);
+                // Confirm the vote can be recorded *before* asking for money:
+                // that the domain is listed, that this wallet hasn't already
+                // voted, and that the server can write at all. All three used to
+                // be discovered only after the 1 KAS had gone.
+                const { intent, amountSompi } = await preflight({
+                    action: 'vote',
+                    domain: domainName,
+                });
+
+                // The server's quote, not our constant.
+                const paymentTxId = await payFee(amountSompi);
 
                 const response = await signedFetch({
                     action: 'vote',
                     domain: domainName,
                     path: `/api/domains/${encodeURIComponent(domainName)}/vote`,
-                    body: { paymentTxId },
+                    body: { paymentTxId, intent },
                 });
 
                 if (!response.ok) {

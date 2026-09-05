@@ -1,6 +1,6 @@
 # Architecture
 
-Last updated: 2026-09-05
+Last updated: 2026-09-06
 
 ## Stack
 
@@ -127,8 +127,14 @@ product could not function at all on-chain. The chain path was deliberately kept
 than deleted, so unsetting the env vars restores the previous behaviour exactly, and a
 future redeploy doesn't need this work reversed.
 
-**Writes** go through three signed HTTP endpoints rather than contract calls — see the API
-table in [`SPEC.md`](./SPEC.md). The client signs with the user's **Kaspa L1 key** through
+Every query is typed against [`src/lib/database.types.ts`](../src/lib/database.types.ts),
+so a column renamed in SQL is a compile error rather than an `undefined` that renders as a
+blank cell. It is hand-written rather than generated: generation needs a live project and
+the Supabase CLI, which CI and a fresh clone don't have. `npm run db:check` compares it
+against a real project and reports drift.
+
+**Writes** go through signed HTTP endpoints rather than contract calls — see the API table
+in [`SPEC.md`](./SPEC.md). The client signs with the user's **Kaspa L1 key** through
 Kasware (a wallet prompt, not a transaction, so it costs nothing);
 [`src/lib/server/verifyRequest.ts`](../src/lib/server/verifyRequest.ts) verifies the
 signature with the rusty-kaspa WASM SDK, derives the `kaspa:` address from the signing
@@ -136,7 +142,17 @@ public key, reads the authoritative owner from KNS, and **requires the two to ma
 before writing with the service-role key.
 
 That match is the whole authorisation model: the contract used to be what stopped someone
-listing a domain they don't own, and this is what replaces it. The L1 key is used
+listing a domain they don't own, and this is what replaces it.
+
+**Paid writes run in two phases (since 2026-09-06).** A free, signed `preflight` runs every
+check that can fail — write-readiness, ownership, duplicate state, categories — and returns
+a short-lived HMAC **payment intent** bound to the action, domain, signer and amount; only
+then is the wallet asked to pay, and the write request must carry that intent. The ordering
+is the point: money is irreversible, so every refusable condition has to be established
+before it moves. The intent is explicitly **not** part of the authorisation model — the
+write route re-verifies the signature, the KNS owner and the payment from scratch, and
+consumes the receipt through the global `payment_receipts` ledger. It exists so a client
+cannot skip straight to paying, and nothing else depends on it. The L1 key is used
 deliberately — it is the key that owns the domain on KNS, whereas the Kasplex EVM key is a
 different keypair entirely, which is why an earlier EVM-signature version could not prove
 ownership at all. `kaspa-wasm` is marked `serverExternalPackages` and must stay

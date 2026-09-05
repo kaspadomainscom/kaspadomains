@@ -7,8 +7,8 @@ import { createKaswareEvmClient, getKaswareEvmProvider } from '@/lib/kaswareEvm'
 import { useToast } from '@/components/ToastProvider';
 import { useWalletContext } from '@/context/WalletContext';
 import { isSupabaseConfigured } from '@/lib/supabase';
-import { signedFetch, readError, payFee } from '@/lib/signedFetch';
-import { LISTING_FEE_SOMPI, formatKas } from '@/lib/fees';
+import { signedFetch, readError, payFee, preflight } from '@/lib/signedFetch';
+import { formatKas } from '@/lib/fees';
 
 const RETRY_LIMIT = 3;
 const RETRY_DELAY_MS = 3000;
@@ -51,12 +51,25 @@ export function useListDomain() {
       // the domain on KNS), so it must not require a Kasplex EVM connection.
       // Demanding one here would lock out an owner who has only L1 connected.
       if (isSupabaseConfigured) {
-        addToast(`Confirm the ${formatKas(LISTING_FEE_SOMPI)} listing fee in Kasware...`);
+        // Ask the server first. This is free, and it is what stops a user
+        // paying 200 KAS into a request that was always going to be refused --
+        // for a domain they don't own, one that's already listed, a category
+        // that doesn't exist, or a deployment whose server key is missing.
+        //
+        // It costs one extra wallet signature prompt before the payment prompt.
+        // That is a fair trade against losing the fee.
+        addToast('Checking that this listing can go through...');
+        const { intent, amountSompi } = await preflight({
+          action: 'list-domain',
+          domain,
+          categories,
+        });
 
-        // Pay first, then sign. The fee transaction is the slow, failure-prone
-        // step; getting a signature afterwards is cheap. Doing it the other way
-        // round risks a paid fee with no request behind it.
-        const paymentTxId = await payFee(LISTING_FEE_SOMPI);
+        // Pay the amount the *server* just quoted, not our own constant. If the
+        // two ever disagree, the server's number is the one its verification
+        // will use.
+        addToast(`Confirm the ${formatKas(amountSompi)} listing fee in Kasware...`);
+        const paymentTxId = await payFee(amountSompi);
 
         addToast(`Payment sent. Listing "${domain}"...`);
 
@@ -64,7 +77,7 @@ export function useListDomain() {
           action: 'list-domain',
           domain,
           path: '/api/domains',
-          body: { categories, paymentTxId },
+          body: { categories, paymentTxId, intent },
         });
 
         if (!response.ok) {

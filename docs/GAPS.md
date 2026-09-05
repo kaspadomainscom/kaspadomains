@@ -1,6 +1,6 @@
 # Gaps
 
-Last updated: 2026-09-05
+Last updated: 2026-09-06
 
 Things that are **missing or incomplete** — as opposed to things that are broken (see
 [`BUGS.md`](./BUGS.md)). A gap is "never built" or "half-built and needs a decision";
@@ -49,19 +49,18 @@ live backlog the continuous audit loop appends to.
       mutation, plus a profile revision the request must match. Deliberately not built
       blind — it needs a table, an issuing endpoint and a decision about how long an
       unspent nonce lives.
-- [ ] **The user pays before the server has agreed to fulfil the action** (Codex SA-04 —
-      the most serious thing still open). The browser decides to use the off-chain flow
-      from the *public* Supabase credentials (`isSupabaseConfigured`) and calls `payFee`
-      before it signs and posts. The API separately requires the server-only secret key
-      (`isSupabaseWritable`) and can still refuse for duplicate, ownership, category or
-      already-voted reasons. Deploy with a valid public URL but a missing
-      `SUPABASE_SECRET_KEY` and the wallet sends 200 KAS to a route that answers 503.
-      Fixing this properly means restructuring the flow, not patching a check: an
-      authenticated, no-fee **preflight** that confirms write-readiness, KNS ownership,
-      target existence, duplicate state and categories, returns a short-lived signer-bound
-      payment intent, and only then lets the wallet be asked to pay. Until that exists,
-      treat paid listing and voting as **not production-ready** — the SA-02 receipt fix
-      stops a stranger stealing the payment, but it does not give it back.
+- [x] ~~**The user pays before the server has agreed to fulfil the action**~~ (Codex SA-04).
+      **Fixed 2026-09-06.** `POST /api/domains/preflight` — signed, free — now runs
+      write-readiness, KNS ownership, target existence, duplicate state and the category
+      allow-list, and issues a short-lived HMAC payment intent bound to the action, domain,
+      signer and amount. Both paid routes require it, so the order cannot be skipped, and
+      the client pays the server's quote rather than its own constant. See `BUGS.md` for
+      the verification evidence.
+      **What this does not fix:** a payment can still be made and the write still fail —
+      the network can drop between the two, or Postgres can fail mid-request. The window is
+      now small and the causes are genuine faults rather than predictable misconfiguration,
+      but it is not zero, and closing it entirely needs SA-08's transactional write.
+      **Refund policy remains an unmade owner decision** (see `/terms`).
 - [ ] **Listing and link replacement are multi-step, not transactional** (Codex SA-08).
       The listing route inserts the domain row, then the category rows, then rolls the
       domain back by hand if categories fail — and doesn't verify the rollback succeeded

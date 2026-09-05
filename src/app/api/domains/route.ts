@@ -5,6 +5,7 @@ import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
 import { requireDomainOwner, VerificationError, extractPayload } from '@/lib/server/verifyRequest';
 import { verifyPayment } from '@/lib/server/verifyPayment';
 import { claimReceipt, releaseReceipt } from '@/lib/server/claimReceipt';
+import { verifyPaymentIntent } from '@/lib/server/paymentIntent';
 import { LISTING_FEE_SOMPI } from '@/lib/fees';
 
 export const runtime = 'nodejs';
@@ -39,6 +40,7 @@ export async function POST(request: Request) {
     signature?: string;
     paymentTxId?: string;
     categories?: string[];
+    intent?: string;
   };
 
   try {
@@ -72,6 +74,28 @@ export async function POST(request: Request) {
       // must be covered by the signature, or a valid signature could be
       // replayed with a different body.
       payload: extractPayload(body as Record<string, unknown>),
+    });
+  } catch (error) {
+    if (error instanceof VerificationError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    throw error;
+  }
+
+  // The intent proves the preflight ran and passed for this exact signer,
+  // domain and price. Without it a client could go straight to paying, which is
+  // the failure mode the preflight exists to remove -- so this is required, not
+  // advisory.
+  //
+  // It is checked before the payment: an expired or missing intent means "start
+  // again", and there is no reason to spend a round trip to the Kaspa API to
+  // learn that.
+  try {
+    verifyPaymentIntent(String(body.intent ?? ''), {
+      action: 'list-domain',
+      domain: verified.domain,
+      signer: verified.signerAddress,
+      amountSompi: LISTING_FEE_SOMPI.toString(),
     });
   } catch (error) {
     if (error instanceof VerificationError) {

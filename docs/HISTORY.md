@@ -1,6 +1,6 @@
 # History
 
-Last updated: 2026-09-05
+Last updated: 2026-09-06
 
 A dated log of what actually happened during development, in narrative order. This is
 broader than [`BUGS.md`](./BUGS.md)'s "Fixed" changelog (which only tracks bug fixes) —
@@ -216,6 +216,51 @@ left the button enabled until the server rejected the duplicate.
 The residual risk is narrow and fails in the safe direction: Kasware's signing convention
 is assumed to match the SDK's and is untested against a real extension. A mismatch rejects
 legitimate owners rather than admitting impostors.
+
+## 2026-09-06 — Codex's audit, answered; and the parts of the migration that were never finished
+
+Codex ran a security audit of the paid flows and found nine issues. Six were fixed
+immediately: a signature that authorised any body, a fee receipt anyone could lift off the
+public ledger and spend as their own, one receipt funding two different actions, an
+unbounded CSP log sink, an unenforced category allow-list, and two vulnerable `ws` copies.
+The receipt findings were the interesting pair — not because the code was subtle, but
+because both were invisible from inside the code. `verifyPayment` checked *that* the
+treasury was paid and never *who* paid; and single-use was enforced by two separate unique
+constraints that knew nothing about each other, so the cheap action could consume the
+expensive receipt. Neither shows up unless you ask "what does an attacker control here?",
+which is exactly what an audit is for and what writing the code is not.
+
+Then a broader look at the Supabase migration, which turned out to have been declared done
+while three things were still half-moved. "My Votes" had never left the contracts: it read
+a dead contract, keyed by the *Kasplex EVM* address, while votes are recorded against the
+*Kaspa L1* address — two independent reasons to return nothing — and then told the user
+"You haven't voted for any domains yet", because the empty case and the failed case shared
+a branch. "My Domains" read KNS's marketplace `listed` flag and rendered it as *Listed
+here*. And every query was untyped, so a renamed column would have produced blanks rather
+than an error.
+
+The lesson that generalises: **a migration is not finished when the new store works, it is
+finished when the old paths are gone.** Each of these compiled, rendered, and looked fine.
+What gave them away was asking, of each page, "which store is actually answering this?"
+
+Two things caught during verification are worth recording because both were mine. The
+`/status` page I had just written reported "All 6 tables present" while every table was
+missing — it counted a table as missing only on one specific error code, so a failed
+connection fell through to "present". A health check that passes hardest when it can see
+least is worse than none, and it was caught only because `npm run db:check` disagreed with
+it. Second, the reason the connection was failing at all: TLS-intercepting antivirus, which
+Node rejects and the browser does not, surfacing as an opaque `TypeError: fetch failed`
+because supabase-js drops the cause. The split — browser fine, server broken — is a
+genuinely confusing signature, so both the status route and `db:check` now name it.
+
+Finally SA-04, the audit's most serious finding and the one that could actually cost
+someone money: the browser paid *before* the server had agreed to do anything, and chose
+that path from the public Supabase key while the server needs a different, server-only one.
+Fixed by inverting the order — a free, signed preflight runs every check and issues a
+short-lived HMAC payment intent, and the paid routes require it. Deliberately not a
+security boundary: every check is re-run at write time, so deleting the intent would make
+nothing forgeable. Its only job is that the wallet prompt is the *last* uncertain step
+rather than the first.
 
 ## Related docs
 

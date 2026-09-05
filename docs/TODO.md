@@ -1,6 +1,6 @@
 # TODO / Backlog
 
-Last updated: 2026-09-05
+Last updated: 2026-09-06
 
 This file is now a **live scratchpad and index**, not the full record. The detailed,
 organized content that used to live here has moved into focused files — this file just
@@ -102,8 +102,21 @@ and [`BUGS.md`](./BUGS.md):
       as an automatic fallback. See `ARCHITECTURE.md`, `SPEC.md`'s API table, and
       `GAPS.md` for the four gaps this opened.
 - [x] **Owner-only writes enforced** (2026-09-05): listing and editing require a Kaspa L1 signature from the address KNS reports as owner, verified server-side with kaspa-wasm and re-checked per request. Closes the ownership gap; see `GAPS.md`.
-- [ ] **Decide what replaces the listing/vote fees.** Both are free now — the contracts
-      that charged them are gone. Revenue question, needs an owner call.
+- [x] **Fees restored** (2026-09-05): 200 KAS to list, 1 KAS to vote, paid on Kaspa L1 to
+      the treasury and verified server-side — payer identity included, and each receipt
+      single-use across every action. Free to edit links or categories afterwards.
+- [x] **Security audit answered** (2026-09-06): seven of Codex's nine findings fixed
+      (SA-01/02/03/04/06/07/09). SA-05 (nonce + profile revision) and SA-08 (transactional
+      write) remain — see `GAPS.md`.
+- [ ] **SA-08: make the paid write atomic.** Listing inserts the domain row, then the
+      category rows, then hand-rolls a rollback; links delete-then-insert. All of it wants
+      one `security definer` Postgres function so validation, receipt consumption and the
+      writes are all-or-nothing. Worth agreeing first that we're happy moving rules into
+      SQL — that's a change in where this app's logic lives, not just a refactor.
+- [ ] **SA-05: one-time nonce and a profile revision.** Bites hardest on `update-links`,
+      which delete-and-reinserts, so replaying an older captured request rolls a newer
+      profile back. Needs a table, an issuing endpoint, and a decision on how long an
+      unspent nonce lives.
 - [ ] **L1 covenants as the source of truth** (decided in principle 2026-09-05, not
       started). Listings move to a Toccata covenant family; Postgres stays as a rebuildable
       index rather than the truth; votes stay off-chain until Based Apps ship. Resolve the
@@ -116,15 +129,25 @@ and [`BUGS.md`](./BUGS.md):
       message rather than a transaction, and — on `/docs` — where a listing is actually
       stored and what that means. `/business-plan`'s revenue section is marked as the
       intended model, not what the site charges.
-- [ ] **Exercise the Supabase work against a real project.** Schema, RLS policies and all
-      three endpoints are verified by type-check/lint/build only — no query or insert has
-      ever run.
-- [ ] Missing Terms/Privacy/About pages — flagged, not drafted without real input.
+- [ ] **Exercise the Supabase work against a real project.** ⚠ **This is the blocker.**
+      The connection, the keys and the treasury address are all live and verified, but
+      `supabase/schema.sql` has never been applied — `npm run db:check` and `/status` agree
+      independently that every table is missing. Until it runs, no listing, vote or edit
+      has ever been exercised end to end, and no RLS policy has been proven in practice.
+- [x] **Terms / Privacy / About pages** (2026-09-06): built at `/terms`, `/privacy` and
+      `/about`, written from the schema and routes rather than a template. Still marked
+      "not reviewed by a lawyer", and silent on **refunds**, the **operating entity** and
+      the **governing jurisdiction** — three owner decisions that are still open.
+- [ ] **Decide the refund policy.** Now the sharpest remaining product question: the
+      preflight makes a paid-but-unfulfilled action unlikely rather than impossible, and
+      `/terms` currently tells users not to assume a refund exists. That is honest but not
+      a policy.
 - [ ] Internal linking + breadcrumbs on domain profile pages (`/domain/[name]`) — has a
       Home/Domains breadcrumb; worth checking whether it should also link to the domain's
       category.
 - [ ] Mobile check remaining pages: `/domain/update/[name]`, `EcosystemAdmin`,
-      `/domains/my-domains`.
+      `/domains/my-domains`, and the four new ones (`/status`, `/about`, `/terms`,
+      `/privacy`).
 - [ ] Competitor/search-intent research for Kaspa/KNS domain discovery sites — not started.
 - [ ] Re-grep periodically for marketplace-adjacent language using entity-aware patterns.
 - [ ] Core Web Vitals — `next.config.ts` sets `images.unoptimized: true`; worth a decision.
