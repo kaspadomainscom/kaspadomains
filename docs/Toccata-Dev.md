@@ -19,7 +19,8 @@ and nothing binds the two. Every row is stored `ownership_verified = false` beca
 Toccata makes that gap disappear rather than shrinking it. On L1, the owner's key *is* the
 key that signs, so ownership becomes a native `checkSig` inside the covenant instead of a
 cross-chain inference. **That, not decentralisation in the abstract, is the strongest
-technical argument for this migration.**
+technical argument for this migration** — and as of 2026-09-05 it is confirmed workable
+rather than hoped for; see [how ownership would actually work](#how-ownership-would-actually-work-mostly-resolved-2026-09-05).
 
 ## What Toccata is
 
@@ -230,13 +231,67 @@ Ordered so each phase is useful alone and none of it requires trusting the next:
 Step 3 is the reason the current architecture was built the way it was — the read layer
 was deliberately kept source-agnostic.
 
+## How ownership would actually work (mostly resolved, 2026-09-05)
+
+This was the load-bearing unknown. Probing the live KNS API settles most of it.
+
+**KNS domains really are on-chain L1 assets.** `GET /{domain}/owner` returns an `assetId`
+of the form `<txid>i0` — an inscription ID — and `/assets` returns the `transactionId`
+outright. So the ownership record lives on Kaspa L1, not in someone's private database.
+That is the precondition the whole idea rests on, and it holds.
+
+**But a covenant still cannot look ownership up.** Script introspection (KIP-17) reads the
+*current transaction's* inputs, outputs and covenant groups. It is not a historical state
+query — a covenant cannot ask "who owns foo.kas" about an inscription made a year ago.
+Anyone planning this should not expect an on-chain KNS lookup to exist.
+
+**It doesn't need one.** The design that works:
+
+1. **At listing time**, verify off-chain against the KNS API that address `X` owns the
+   domain — exactly what `verifyRequest.ts` already does — *and* require a signature from
+   `X`. Bake `X`'s pubkey into the covenant's state.
+2. **Every transition afterwards** requires `checkSig` against that pubkey. Native, script
+   enforced, no lookup, no oracle.
+
+This is precisely what we cannot do today: on Kasplex the signer holds an EVM key while
+KNS ownership sits with an L1 key, so the two never meet. On L1 they are the same key, and
+the check collapses into an ordinary signature requirement. **That is the migration's real
+prize**, and it is available now rather than pending anything.
+
+**The residual gap is transfers, not listing.** A covenant pinned to `X`'s pubkey keeps
+trusting `X` even after the KNS domain is sold to `Y`. Nothing on-chain tells the covenant
+that happened. Options, none free: a re-verification flow where the new owner re-lists
+(simple, mildly annoying); an oracle attesting transfers (adds a trusted party, which
+undercuts the point); or periodic off-chain reconciliation that flags divergence and
+freezes the listing. **Pick one deliberately** — the naive version silently lets a previous
+owner keep editing a domain they no longer hold.
+
+## The KNS API surface we depend on
+
+There is no published API reference — the GitBook covers concepts only, and `/docs`,
+`/openapi.json` and `/swagger.json` all 404. Verified live on 2026-09-05 against
+`https://api.knsdomains.org/mainnet/api/v1`:
+
+| Endpoint | Method | Returns | Used by |
+|---|---|---|---|
+| `/{domain}/owner` | `GET` | `{success, data:{id, assetId, asset, owner}}` — `owner` is a `kaspa:` L1 address, `assetId` is `<txid>i0` | `verifyRequest.ts` (server-side ownership), `useDomainOwner` |
+| `/assets?owner=&type=domain&page=&pageSize=` | `GET` | Paged assets with `asset`, `owner`, `isDomain`, `isVerifiedDomain`, `creationBlockTime`, `transactionId` | `useOwnedDomains` — the listing flow's domain picker |
+| `/domains/check` | **`POST`** `{domainNames[], address}` | `{success, data:{domains:[{domain, available, isReservedDomain}]}}` | `useCheckDomainAvailability` |
+
+Note the method on the last one: it is POST-only and returns an HTML "Cannot GET" error
+page for a GET, which is easy to mistake for a dead endpoint. It is not — it works.
+
+Since none of this is documented publicly, treat the table as our own record and re-verify
+it rather than assuming stability; an undocumented API can change shape without notice, and
+`verifyRequest.ts` treats a KNS failure as "refuse to assume ownership" precisely because
+of that.
+
 ## What must be verified before committing to this
 
 Honest list of what we do not know:
 
-- [ ] Whether KNS ownership can be checked *inside* a covenant, or only alongside it. Our
-      entire ownership story depends on this and it is unconfirmed. KNS domains are L1
-      inscriptions; a covenant reading them is plausible but unverified.
+- [ ] Which transfer-handling option above to adopt — this is now the main open ownership
+      question, and it is a product decision as much as a technical one.
 - [ ] Real cost per listing transition once state size is realistic. The signature alone is
       100K SU; add state and it may or may not stay comfortable.
 - [ ] Whether "one vote per wallet" can be enforced without a global-absence proof — and

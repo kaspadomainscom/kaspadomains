@@ -48,8 +48,11 @@ Supabase is unconfigured. What's genuinely outstanding:
       that wrongly accepts is worse than an admitted gap. `@noble/curves` is already a
       dependency and is the right tool when someone can test against a real Kasware
       wallet. **Longer term this gap dissolves rather than shrinks**: on Kaspa L1 the
-      owner's key is the signing key, so ownership is a native check — see
-      [`Toccata-Dev.md`](./Toccata-Dev.md).
+      owner's key is the signing key, so ownership is a native `checkSig` with no
+      cross-chain inference needed. Confirmed workable 2026-09-05 (KNS domains are on-chain
+      inscriptions; ownership is proven by signature at listing time and pinned into
+      covenant state) — the remaining question there is how to handle a later KNS transfer.
+      See [`Toccata-Dev.md`](./Toccata-Dev.md).
 - [ ] **Site copy still describes the on-chain product.** `/docs`, the homepage's
       single-payment permanence claims and "210 KAS", and `/business-plan` all
       promise permanence, on-chain recording and a fee. None of that is what happens now.
