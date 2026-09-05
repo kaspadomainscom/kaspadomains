@@ -18,7 +18,10 @@ export function useUpdateDomainLinks() {
 
   const updateLinks = async (
     domain: string,
-    account: `0x${string}`,
+    // Only needed for the on-chain path. The database path signs with the
+    // Kaspa L1 key instead, so requiring an EVM account there would lock out
+    // an owner who has only L1 connected.
+    account: `0x${string}` | null,
     links: DomainLink[]
   ): Promise<boolean> => {
     if (isSubmitting.current) return false;
@@ -49,6 +52,10 @@ export function useUpdateDomainLinks() {
 
         addToast(`Resources saved for "${domain}".`, 'success');
         return true;
+      }
+
+      if (!account) {
+        throw new Error('Kasware (Kasplex) is not connected.');
       }
 
       const walletClient = createKaswareEvmClient(account);

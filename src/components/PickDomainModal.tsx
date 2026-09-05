@@ -36,7 +36,9 @@ export default function PickDomainModal({
   }
 
   // Require both wallets connected
-  if (!evmAccount || !kaspaAccount) {
+  // Same rule as the page above: the database path signs with the Kaspa L1
+  // key, so only `kaspaAccount` is universally required.
+  if (!kaspaAccount || (!isSupabaseConfigured && !evmAccount)) {
     return (
       <p className="text-center mt-10 text-white">
         Connect your Kasware wallet to continue.

@@ -4,6 +4,7 @@ import React from 'react';
 import PickDomainModal from '@/components/PickDomainModal';
 import { useOwnedDomains } from '@/hooks/kns/api/useOwnedDomains';
 import { useWalletContext } from '@/context/WalletContext';
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 export default function ListDomainPage() {
   const { kasware, kasplex } = useWalletContext();
@@ -22,7 +23,12 @@ export default function ListDomainPage() {
 
   const ownedDomains = domainData?.domains ?? [];
 
-  const shouldShowConnectPrompt = !isEvmConnected || !isKaspaConnected;
+  // Kasware (L1) is always required — it holds the key that owns the domain on
+  // KNS and signs the listing request. Kasplex is only needed on the on-chain
+  // fallback path, so demanding it when the database is the store would block
+  // an owner who has only L1 connected.
+  const shouldShowConnectPrompt =
+    !isKaspaConnected || (!isSupabaseConfigured && !isEvmConnected);
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-12 space-y-16">

@@ -7,6 +7,7 @@ import { useGetDomainLinks, type DomainLink } from '@/hooks/domain/useGetDomainL
 import { useUpdateDomainLinks } from '@/hooks/domain/useUpdateDomainLinks';
 import { contracts } from '@/lib/contracts';
 import { kasplexClient } from '@/lib/viemClient';
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 const DEFAULT_MAX_LINKS = 10;
 
@@ -81,8 +82,12 @@ export default function UpdateDomainPage() {
     loadOwner();
   }, [domainSlug, domainName]);
 
-  // Fetch the contract's link cap once
+  // Fetch the contract's link cap once. Skipped when the database is the
+  // store: the cap is enforced by the API (same value as DEFAULT_MAX_LINKS),
+  // so reading it from a contract that isn't in use would just be a failing
+  // request that always falls back to the same number.
   useEffect(() => {
+    if (isSupabaseConfigured) return;
     kasplexClient
       .readContract({
         address: contracts.DomainLinksStorage.address,
@@ -123,9 +128,19 @@ export default function UpdateDomainPage() {
     e.preventDefault();
     setMessage('');
 
-    if (!kasplex.account) return;
+    // Only the on-chain path needs a Kasplex account; the database path signs
+    // with the Kaspa L1 key. Fail loudly rather than returning silently, which
+    // previously made "Save" do nothing at all with no explanation.
+    if (!isSupabaseConfigured && !kasplex.account) {
+      setMessage('❌ Connect Kasware (Kasplex) before saving.');
+      return;
+    }
 
-    const ok = await updateLinks(domainName, kasplex.account as `0x${string}`, displayedLinks);
+    const ok = await updateLinks(
+      domainName,
+      (kasplex.account as `0x${string}` | null) ?? null,
+      displayedLinks
+    );
     if (ok) {
       setMessage(`✅ Resources for '${domainName}' updated successfully.`);
     }
@@ -147,7 +162,9 @@ export default function UpdateDomainPage() {
     );
   }
 
-  if (!isKaspaConnected || !isEvmConnected) {
+  // Kasware (L1) is always required: it holds the key that owns the domain and
+  // signs the edit. Kasplex is only needed on the on-chain fallback path.
+  if (!isKaspaConnected || (!isSupabaseConfigured && !isEvmConnected)) {
     return (
       <main className="max-w-xl mx-auto p-6 mt-10 text-center text-yellow-400">
         Connect your Kasware wallet to manage this domain.

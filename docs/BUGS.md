@@ -94,6 +94,22 @@ actively-updated backlog the continuous audit loop appends to.
 Most recent first. Each entry names the file(s), what was actually wrong, and how it was
 verified — not just "fixed X."
 
+- **Every write flow still demanded a Kasplex EVM connection it no longer uses, and the
+  resource editor's Save button did nothing at all without one.** Fallout from moving
+  signing to the Kaspa L1 key: `/list-domain`, `PickDomainModal` and
+  `/domain/update/[name]` all gated on `isEvmConnected`, so a domain owner with only
+  Kasware's L1 side connected — which is now the *only* wallet the database path needs —
+  was told to connect a wallet that has nothing to do with the request. Worst of the three
+  was `handleSubmit` in the resource editor: `if (!kasplex.account) return;` returned
+  **silently**, so clicking Save produced no save, no error and no explanation. Each gate
+  now requires Kasware (L1) always and Kasplex only on the on-chain fallback path, and the
+  silent return became a visible message. `useUpdateDomainLinks` accepts a null account
+  and only rejects it where the chain path actually needs one. Found by auditing every
+  caller after changing the auth model rather than assuming they still fit
+  (`MIND.md` principle #12); the type-checker had nothing to say, because the old code was
+  type-correct and merely wrong. Also stopped the editor reading `MAX_LINKS` from the dead
+  contract when the database is the store — a request that always failed and always fell
+  back to the same constant the API already enforces.
 - **`/search` reported an outage as "No matching domains found."** The page stored results
   as `Domain[] | null` and rendered `null` as "No matching domains found." — collapsing
   three different answers ("still searching", "searched, nothing matched", and "couldn't
