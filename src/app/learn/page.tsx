@@ -35,7 +35,7 @@ export default function Learn() {
             <li>Connect your Kasware wallet — it proves KNS ownership and signs the Kasplex transaction</li>
             <li>Pick a verified <code className="text-kaspaMint">.kas</code> domain you own</li>
             <li>Choose at least one category so your domain can be found</li>
-            <li>Pay a one-time <span className="text-kaspaMint font-semibold">210 KAS</span> listing fee — no renewals, ever</li>
+            <li>List for <span className="text-kaspaMint font-semibold">free right now</span> — no fee and no renewals</li>
             <li>Add your X account and other links to your domain&apos;s profile</li>
           </ul>
         </section>
@@ -69,8 +69,8 @@ export default function Learn() {
         <section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]">
           <h2 className="text-4xl font-bold text-white mb-4">Community Voting</h2>
           <p className="text-gray-300 leading-relaxed">
-            Anyone can support a listed domain for <span className="text-kaspaMint font-semibold">6 KAS</span> per
-            vote. Votes raise a domain&apos;s ranking and visibility across the site,
+            Anyone can support a listed domain — <span className="text-kaspaMint font-semibold">free right now</span>,
+            one vote per wallet. Votes raise a domain&apos;s ranking and visibility across the site,
             surfacing the domains the community values most — see who&apos;s currently
             leading on{" "}
             <Link href="/domains/top-voted" className="text-kaspaMint hover:underline">

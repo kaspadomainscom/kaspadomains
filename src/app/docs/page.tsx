@@ -80,7 +80,9 @@ export default function Docs() {
         <div className="space-y-8">
           <Section id="what" title="What is KaspaDomains?">
             <p>
-              KaspaDomains is an on-chain registry for verified KNS (.kas) domains. Any domain holder can permanently list their domain by paying a one-time fee of <strong>210 KAS</strong>.
+              KaspaDomains is a discovery registry for verified KNS (.kas) domains. Any domain
+              holder can list their domain — <strong>free right now</strong> — to get a public
+              profile, a category placement, and search visibility.
             </p>
             <p className="text-gray-400 text-sm">
               No marketplace, no intermediaries — only you control your domain.
@@ -90,11 +92,25 @@ export default function Docs() {
           <Section id="how" title="How It Works">
             <ul>
               <li>Own a verified KNS domain (e.g. <code>player456.kas</code>)</li>
-              <li>Pay a one-time <strong>210 KAS</strong> fee to list forever</li>
-              <li>Your domain is assigned a unique ID (0–9999)</li>
-              <li>Listings are immutable, secure, and on-chain</li>
+              <li>Listing is currently free — no fee and no renewals</li>
+              <li>Sign a message so we can confirm the request came from your wallet</li>
+              <li>Your listing gets a public profile, category placement and search visibility</li>
               <li>You retain full ownership — we don&apos;t sell domains</li>
             </ul>
+          </Section>
+
+          <Section id="where-data-lives" title="Where your listing is stored">
+            <p>
+              Your <code>.kas</code> name itself lives on KNS (Kaspa L1) and is yours regardless
+              of anything here. The <em>listing</em> — its category, profile and links — is
+              currently held in the KaspaDomains index, not written to a smart contract.
+            </p>
+            <p className="text-gray-400 text-sm">
+              That means a listing is a profile we maintain rather than an immutable on-chain
+              record: it can be corrected or removed, and it is not a claim on the name itself.
+              We say so plainly because earlier versions of this page promised permanence we do
+              not currently provide.
+            </p>
           </Section>
 
           <Section id="kns" title="KNS Verification">
@@ -119,10 +135,10 @@ export default function Docs() {
           <Section id="rules" title="Listing Rules">
             <ul>
               <li>Must be a verified KNS domain</li>
-              <li>You must be the on-chain owner</li>
+              <li>The owner is read from KNS when you list</li>
               <li>Each domain can only be listed once</li>
               <li>Must belong to at least one category</li>
-              <li>Listings are permanent — no edits or removals</li>
+              <li>Categories and resources can be updated by the wallet that listed it</li>
             </ul>
           </Section>
 
@@ -138,7 +154,7 @@ export default function Docs() {
           <Section id="benefits" title="Why List Your Domain?">
             <ul>
               <li>
-                Get permanently indexed on KaspaDomains, organized by{" "}
+                Get indexed on KaspaDomains, organized by{" "}
                 <Link href="/domains/categories" className="text-kaspaMint hover:underline">
                   category
                 </Link>
@@ -156,9 +172,8 @@ export default function Docs() {
 
           <Section id="voting" title="Community Voting">
             <p>
-              Users can support a domain for <strong>6 KAS</strong> per vote. Votes raise a
-              domain&apos;s ranking and visibility across the site — a portion goes to the
-              domain owner, the rest funds the ecosystem.
+              Anyone can support a listed domain — <strong>free right now</strong>, one vote per
+              wallet. Votes raise a domain&apos;s ranking and visibility across the site.
             </p>
             <p className="text-gray-400 text-sm">Voting empowers domain owners and strengthens community engagement.</p>
           </Section>
@@ -171,7 +186,9 @@ export default function Docs() {
 
           <Section id="start" title="Get Started">
             <p>
-              Ready to list your domain? Connect your wallet, verify your KNS domain, and pay the 210 KAS fee. Your domain will be recorded on-chain — forever.
+              Ready to list your domain? Connect your wallet, verify your KNS domain, and sign a
+              message to confirm the request is yours. Listing is free right now — no fee, and
+              signing moves no funds.
             </p>
             <Link
               href="/list-domain"

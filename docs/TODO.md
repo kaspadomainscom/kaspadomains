@@ -101,9 +101,12 @@ and [`BUGS.md`](./BUGS.md):
       `GAPS.md` for the four gaps this opened.
 - [ ] **Decide what replaces the listing/vote fees.** Both are free now — the contracts
       that charged them are gone. Revenue question, needs an owner call.
-- [ ] **Update site copy to match reality**: `/docs`, the homepage ("one-time payment for
-      lifetime exposure", "210 KAS") and `/business-plan` all still promise a permanent
-      on-chain listing that is paid for. None of that is true today.
+- [x] **Site copy updated to match reality** (2026-09-05): the homepage, `/list-domain`,
+      `/docs`, `/learn` and `/business-plan` no longer promise a paid, permanent, on-chain
+      listing. They now say listing and voting are free right now, that signing is a
+      message rather than a transaction, and — on `/docs` — where a listing is actually
+      stored and what that means. `/business-plan`'s revenue section is marked as the
+      intended model, not what the site charges.
 - [ ] **Exercise the Supabase work against a real project.** Schema, RLS policies and all
       three endpoints are verified by type-check/lint/build only — no query or insert has
       ever run.

@@ -38,11 +38,11 @@ export default function BusinessPlanPage() {
         <Section title="The Solution">
           <ol className="list-decimal list-inside space-y-2">
             <li><strong>Prove ownership</strong> — connect Kasware to verify the .kas name on KNS.</li>
-            <li><strong>List it</strong> — pay a one-time <strong className="text-kaspaMint">210 KAS</strong> fee via Kasware. No renewals, ever.</li>
+            <li><strong>List it</strong> — sign a message with Kasware to confirm the request is yours. Listing is <strong className="text-kaspaMint">free right now</strong>.</li>
             <li><strong>Categorize it</strong> — pick at least one category so it can actually be found.</li>
             <li><strong>Add resources</strong> — attach an X account and links to the domain&apos;s public profile.</li>
             <li><strong>Get discovered</strong> — the domain appears on its category page and in search.</li>
-            <li><strong>Community voting</strong> — anyone can support a domain for 6 KAS per vote, boosting its ranking.</li>
+            <li><strong>Community voting</strong> — anyone can support a domain, free right now, one vote per wallet, boosting its ranking.</li>
           </ol>
           <p className="text-gray-400 text-sm mt-4">
             Hard cap: <strong className="text-white">10,000 listings, ever.</strong> Scarcity is structural, not promotional.
@@ -50,15 +50,19 @@ export default function BusinessPlanPage() {
         </Section>
 
         <Section title="Revenue Model">
+          <p className="text-sm text-yellow-400 bg-yellow-400/10 border border-yellow-400/30 rounded px-3 py-2 mb-4">
+            Not currently in effect. Listing and voting are free today — the fees below describe
+            the intended model, not what the site charges.
+          </p>
           <ul className="space-y-2">
             <li>
-              <strong className="text-kaspaMint">Listing fees</strong> — 210 KAS per domain,
-              one-time, capped at 10,000 listings.
+              <strong className="text-kaspaMint">Listing fees</strong> — planned at a one-time
+              fee per domain, capped at 10,000 listings.
             </li>
             <li>
-              <strong className="text-kaspaMint">Voting fees</strong> — 6 KAS per vote,
-              uncapped and ongoing as long as the community keeps engaging. A portion goes to
-              the domain owner, the rest funds the ecosystem.
+              <strong className="text-kaspaMint">Voting fees</strong> — planned per vote,
+              uncapped and ongoing as long as the community keeps engaging. A portion would go
+              to the domain owner, the rest funding the ecosystem.
             </li>
           </ul>
         </Section>

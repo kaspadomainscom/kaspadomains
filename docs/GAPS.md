@@ -49,7 +49,7 @@ Supabase is unconfigured. What's genuinely outstanding:
       dependency and is the right tool when someone can test against a real Kasware
       wallet.
 - [ ] **Site copy still describes the on-chain product.** `/docs`, the homepage's
-      "one-time payment for lifetime exposure" and "210 KAS", and `/business-plan` all
+      single-payment permanence claims and "210 KAS", and `/business-plan` all
       promise permanence, on-chain recording and a fee. None of that is what happens now.
       This is user-facing and shouldn't sit unresolved — see the notice at the top of
       [`BUSINESS_PLAN.md`](./BUSINESS_PLAN.md).

@@ -32,7 +32,8 @@ require.
 >    server-side, or an off-chain processor); none is implemented.
 > 2. **Listings are not permanent or on-chain.** They are rows in Postgres, mutable by
 >    whoever controls the database. "Recorded permanently on-chain", "one-time payment for
->    lifetime exposure", and the trust model they imply are not what happens today.
+>    exposure for a single payment", and the trust model they imply are not what happens
+>    today.
 > 3. **Ownership is not enforced the way it was.** The contract used to be what stopped
 >    someone listing a name they don't own. Now a server-side signature check proves the
 >    submitter controls a Kasplex address, and KNS is read server-side for the true owner —
@@ -100,7 +101,7 @@ Hard cap: **10,000 listings, ever** — scarcity is structural, not promotional.
 ## 5. Revenue model
 
 - **Primary: listing fees.** 420 KAS per domain, one-time, capped at 10,000 listings.
-  Ceiling: 10,000 × 420 KAS = **4,200,000 KAS** in lifetime listing revenue (in KAS terms;
+  Ceiling: 10,000 × 420 KAS = **4,200,000 KAS** in total listing revenue (in KAS terms;
   USD value depends on KAS price at time of listing, which this plan does not project).
 - **Secondary: voting fees.** 6 KAS per vote, uncapped and recurring as long as the
   community keeps engaging — a portion goes to the domain owner (per §3 of
