@@ -136,6 +136,26 @@ service-role key. That file documents precisely what the check proves and what i
 which matters because the contract used to be the thing enforcing ownership and no longer
 is.
 
+### Where this is heading
+
+The current design has Postgres as the source of truth, which was forced rather than
+chosen. The intended end state is **authoritative chain, disposable index**:
+
+| Layer | Role |
+|---|---|
+| L1 covenants (Toccata) | Source of truth for listings — existence, owner pubkey, categories, resource hash |
+| Indexer → Postgres | Derived projection, rebuildable from the chain at any time |
+| Votes | Stay authoritative in Postgres until Based Apps ship |
+
+Covenants cannot replace the database outright, because a UTXO set answers no queries —
+no "all domains in a category", no ranking, no substring search. Every UTXO-chain app
+needs an indexer, and an indexer needs a database; KNS itself works this way. What changes
+is authority: today, losing Postgres means losing the listings; after the migration it
+would mean re-indexing. The read layer already picks a source per call, so an indexer slots
+in beside Supabase and the contracts **without page changes** — the write path is the real
+work. Full analysis, costs and the unresolved transfer-handling question in
+[`Toccata-Dev.md`](./Toccata-Dev.md).
+
 Schema lives in [`supabase/schema.sql`](../supabase/schema.sql). Two things about it are
 load-bearing rather than incidental: `domain_hash` is stored as `text` because a uint256
 overflows Postgres `bigint`, and it stays the canonical join key so off-chain rows can be

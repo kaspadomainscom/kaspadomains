@@ -3,6 +3,12 @@
 **Purpose**: everything needed to evaluate and eventually execute a move of KaspaDomains'
 user data from Supabase to Kaspa L1 covenants, plus the reference links to build from.
 
+**Answer up front**, for the question this doc exists to settle: covenants do not replace
+the database — they replace its *authority*. Listings become on-chain covenants; Postgres
+becomes a rebuildable index that answers queries a UTXO set cannot. Votes stay off-chain
+until Based Apps ship. See
+[the recommendation](#can-covenants-replace-the-database--the-recommendation).
+
 Last updated: 2026-09-05. Researched against [docs.kaspa.org/toccata](https://docs.kaspa.org/toccata)
 and its sub-pages on that date — this is a fast-moving stack, so re-check before acting.
 **Nothing here has been built or tested by us.** Treat every claim as sourced-but-unproven
@@ -207,6 +213,78 @@ has not voted before" is close to the second design alarm (correctness depending
 global absence of a UTXO). **Do not assume this is free — it is the first thing to
 prototype.**
 
+## Can covenants replace the database? — the recommendation
+
+**No, and that is not a limitation of covenants.** A UTXO set is not queryable by
+application semantics. There is no "every domain in the gaming category", no sort by vote
+count, no substring search for `/search`, no pagination, no aggregation. Covenants store
+and *constrain* state; they do not answer questions about it.
+
+Every UTXO-chain application resolves this the same way: an **indexer** reads the chain and
+materialises a queryable view — and that view is a database. Ordinals indexers, Ethereum
+subgraphs and KNS's own indexer (which is exactly what `api.knsdomains.org` serves) are all
+this pattern. KNS is the proof by example: `.kas` domains are fully on-chain assets, and
+yet the way anyone actually *reads* them is a REST API in front of an index.
+
+So the question is not "database or covenants". It is **which one is the source of truth**.
+
+### The recommended shape: authoritative chain, disposable index
+
+| Layer | Role | Property that matters |
+|---|---|---|
+| **L1 covenants** | Source of truth for listings — existence, owner pubkey, categories, resource hash | Ownership enforced by `checkSig`; nobody, including us, can forge or silently alter a listing |
+| **Indexer + Postgres** | Derived projection of the covenant family into query-shaped rows | **Rebuildable from the chain.** If it is lost, corrupted, or disagrees, delete it and re-index |
+| **Votes** | Stay in Postgres as truth, for now | Based Apps are not shipped; see below |
+
+The property that makes this a *good* hybrid rather than a muddle is that **the database is
+never authoritative and can always be thrown away**. If Postgres and the chain disagree,
+the chain wins by definition and the fix is a re-index, not a judgement call. That is a
+qualitatively different system from what we run today, where losing the database means
+losing the listings.
+
+### The hybrid to avoid
+
+Splitting *truth* across both — some listings authoritative on-chain, others authoritative
+in Postgres — gives two sources of truth with no reconciliation rule and no answer to
+"which is right?". Do not do this, even temporarily, except at a boundary that is explicit
+and visible.
+
+Votes are exactly such a boundary, and an acceptable one: they stay authoritative in
+Postgres because the model they belong to (Based Apps) does not exist yet. That is
+tolerable *because the boundary is stated* — the listing is on-chain, the vote tally is
+ours — rather than blurred. The site copy already says voting is free and the docs already
+say where data lives, so this stays honest.
+
+### What it costs, and why some things should stay off-chain
+
+Every covenant transition is a transaction: a wallet prompt, a fee, and a confirmation
+wait. A signature alone is 100,000 SU (`compute_budget ≈ 10`). Compare that to a database
+write, which is free and instant.
+
+That argues for anchoring rather than storing:
+
+- **On-chain**: the facts that must be unforgeable — the listing exists, who owns it, which
+  categories, and a *hash* of the resources.
+- **Off-chain**: the resource payload itself, profile text, images. Verifiable against the
+  on-chain hash, cheap to edit, and no wallet prompt to fix a typo in a link label.
+
+Storing full profile text on-chain is possible (~300 KB of headroom) but means every edit
+costs a transaction, which is a poor trade for content nobody needs to trustlessly verify.
+
+### Why this is unusually cheap for us to adopt
+
+The read layer already selects a source per call
+([`ARCHITECTURE.md`](./ARCHITECTURE.md#data-model)). An indexer becomes a third source
+beside Supabase and the Kasplex contracts, returning the same `Domain` and
+`CategoryManifest` shapes. **No page changes.** The write path is the real work: signing
+and broadcasting covenant transactions instead of POSTing to `/api/domains`.
+
+### Recommendation in one line
+
+Move listings to covenants, keep Postgres as a rebuildable index, leave votes off-chain and
+say so — and treat the transfer-handling question above as the blocker to resolve first,
+because it is the one that can silently misattribute a domain.
+
 ## A migration sketch (not a commitment)
 
 Ordered so each phase is useful alone and none of it requires trusting the next:
@@ -220,13 +298,18 @@ Ordered so each phase is useful alone and none of it requires trusting the next:
    become a requirement sooner. **A partial migration is fine**: listings on L1 with votes
    still in Postgres is a coherent system, not a half-finished one, because the read layer
    already picks a source per call.
-3. **Index it.** A reader that reconstructs listings and vote tallies from the DAG into the
-   same `Domain` / `CategoryManifest` shapes `src/data/supabaseSource.ts` already returns.
-   Our data layer picks a source at call time, so this slots in as a third source beside
-   Supabase and the Kasplex contracts without touching any page.
-4. **Dual-write, then cut over.** Write both for a period, compare, then flip the source of
-   truth. `domains.tx_hash` already exists in the schema for exactly this reconciliation.
-5. **Retire the Kasplex path** only once L1 is authoritative.
+3. **Build the indexer.** Watch the covenant family, materialise listings into the same
+   `Domain` / `CategoryManifest` shapes `src/data/supabaseSource.ts` already returns, and
+   make a full rebuild-from-genesis a routine operation rather than a recovery procedure —
+   if re-indexing is scary, the database has quietly become authoritative again.
+   It slots in as a third source beside Supabase and the Kasplex contracts, so no page
+   changes.
+4. **Dual-write, then flip the source of truth.** Write both for a period and compare;
+   divergence is a bug in the indexer, not a merge conflict. `domains.tx_hash` already
+   exists in the schema for this reconciliation. After the flip, Postgres keeps serving
+   every read — it just stops being believed.
+5. **Retire the Kasplex path** only once L1 is authoritative, and leave votes where they
+   are until Based Apps ship.
 
 Step 3 is the reason the current architecture was built the way it was — the read layer
 was deliberately kept source-agnostic.

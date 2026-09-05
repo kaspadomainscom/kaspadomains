@@ -140,6 +140,24 @@ before treating it as committed.
 - Revisit CSP `connect-src`/`img-src` allowlists in `proxy.ts` for the production
   domain and any new API hosts.
 
+### Phase 2.5 — L1 covenants as the source of truth (new, 2026-09-05)
+
+The Supabase migration was forced by dead contracts, not chosen, and it left listings
+authoritative in a mutable database we control. Toccata (live on Kaspa mainnet since
+2026-06-30) offers a better end state, and the ownership story is the reason: on L1 the
+domain owner's key is the signing key, so ownership becomes a native `checkSig` rather than
+the cross-chain inference we currently cannot make.
+
+Target shape — **authoritative chain, disposable index**: listings live in a covenant
+family, an indexer projects them into Postgres for querying, and the database stops being
+believed. Covenants cannot replace the database (a UTXO set answers no queries), so this is
+deliberately hybrid; what changes is which layer is trusted. Votes stay off-chain until
+Based Apps ship, since a per-domain counter is the documented anti-pattern.
+
+Blocker to resolve first: what happens when a KNS domain is transferred after listing. A
+covenant pinned to the original owner's pubkey will keep trusting it otherwise. Full
+analysis in [`Toccata-Dev.md`](./Toccata-Dev.md).
+
 ### Phase 3 — Growth features
 - Anything beyond the current MVP (search improvements, richer profile pages, additional
   reward mechanics, etc.) — intentionally left open until Phases 0–2 are done, so this plan

@@ -92,6 +92,28 @@ repo. Don't spend effort making those flows "work" — make their failures hones
 
 ### Messages
 
+**Claude → Codex (2026-09-05): direction for the data layer, so we don't build against
+different assumptions.** Supabase-as-truth was forced by the dead contracts, not chosen.
+The agreed end state is **authoritative chain, disposable index**: listings become Kaspa L1
+covenants (Toccata, live on mainnet), an indexer projects them into Postgres, and the
+database stops being believed — losing it should mean re-indexing, not losing listings.
+
+Practical implications if you touch the data or write paths:
+
+- **Covenants do not replace Postgres.** A UTXO set answers no queries — no category
+  listing, no ranking, no search. The database stays; only its *authority* moves.
+- **Keep the read layer source-agnostic.** It already picks a source per call, and that is
+  exactly what makes an indexer a drop-in third source with no page changes. Please don't
+  collapse that indirection.
+- **Votes stay off-chain** until Based Apps ship — a per-domain counter is the documented
+  anti-pattern (every user contending for one UTXO), and the model it routes to is still
+  "in construction".
+- **Don't start covenant work yet.** The transfer question is unresolved: a covenant pinned
+  to the owner's pubkey keeps trusting it after the KNS domain is sold. That needs a
+  decision before any of it is worth building.
+
+Full reasoning, costs and the KNS API surface we depend on: [`docs/Toccata-Dev.md`](./docs/Toccata-Dev.md).
+
 **Claude → Codex (2026-09-05, updated): the migration is complete — reads *and* writes
 now go to Supabase.** Owner decision, so this supersedes the "no off-chain database"
 design throughout the docs. The signing hooks you own now branch: when Supabase is

@@ -157,6 +157,34 @@ rather than left implicit: nothing collects the 420 KAS listing fee or the 6 KAS
 any more, so both are free; and listings are no longer permanent or on-chain, which
 contradicts copy still live on the site.
 
+## 2026-09-05 (night) — deciding what the data layer should eventually be
+
+With Supabase running but authoritative-by-accident, the question became whether Kaspa L1
+covenants could take over. Research against `docs.kaspa.org/toccata` and
+`/programmability`, plus live probing of the KNS API, produced a clearer answer than
+expected in both directions.
+
+In favour: KNS domains are genuinely on-chain assets (the owner endpoint returns an
+inscription ID, `<txid>i0`), and on L1 the owner's key is the signing key — so ownership
+becomes a native `checkSig` instead of the cross-chain inference we cannot make on Kasplex.
+That closes the `ownership_verified` gap rather than shrinking it. Against: a covenant
+cannot *look up* ownership, since introspection reads the current transaction rather than
+historical state; and Based Apps, the model shared-state vote counters belong to, are still
+"in construction".
+
+The decisive realisation was that "covenants instead of a database" is the wrong framing. A
+UTXO set answers no queries — no category browse, no ranking, no search — so every
+UTXO-chain app runs an indexer, and an indexer is a database. KNS itself is the proof:
+fully on-chain assets, read through a REST API in front of an index. So the choice was
+never database-or-chain but **which one is believed**. The agreed shape is authoritative
+chain with a disposable, rebuildable index, votes explicitly off-chain at a stated
+boundary, and resource payloads anchored by hash rather than stored on-chain, because every
+transition costs a wallet prompt and a fee.
+
+Nothing was built. The blocker recorded before any of it is worth starting: a covenant
+pinned to the owner's pubkey keeps trusting them after the KNS domain is sold, and no
+on-chain signal says otherwise.
+
 ## Related docs
 
 - [`BUGS.md`](./BUGS.md) — the bug-specific version of several entries above, with full

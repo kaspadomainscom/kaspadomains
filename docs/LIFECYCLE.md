@@ -51,6 +51,12 @@ authoritative has to check that flag.
 for. Rows are mutable by whoever holds the database, and both the 420 KAS listing fee and
 the 6 KAS vote fee are uncollected because the contracts that charged them are gone.
 
+**Where this lifecycle is heading.** The intended end state moves the listing steps onto
+Kaspa L1 covenants, so "listed" becomes a covenant UTXO rather than a row, and ownership is
+enforced by signature instead of inferred. Postgres stays — it becomes the index that
+answers the queries a UTXO set cannot — but stops being the source of truth. Voting keeps
+this shape until Based Apps ship. See [`Toccata-Dev.md`](./Toccata-Dev.md).
+
 ## 1. Domain lifecycle (on-chain — fallback path, not currently running)
 
 ```

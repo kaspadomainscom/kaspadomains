@@ -103,6 +103,12 @@ and [`BUGS.md`](./BUGS.md):
       `GAPS.md` for the four gaps this opened.
 - [ ] **Decide what replaces the listing/vote fees.** Both are free now — the contracts
       that charged them are gone. Revenue question, needs an owner call.
+- [ ] **L1 covenants as the source of truth** (decided in principle 2026-09-05, not
+      started). Listings move to a Toccata covenant family; Postgres stays as a rebuildable
+      index rather than the truth; votes stay off-chain until Based Apps ship. Resolve the
+      KNS-transfer question first — a covenant pinned to the original owner keeps trusting
+      them after a sale. See [`Toccata-Dev.md`](./Toccata-Dev.md) and `PROJECT_PLAN.md`
+      Phase 2.5.
 - [x] **Site copy updated to match reality** (2026-09-05): the homepage, `/list-domain`,
       `/docs`, `/learn` and `/business-plan` no longer promise a paid, permanent, on-chain
       listing. They now say listing and voting are free right now, that signing is a
