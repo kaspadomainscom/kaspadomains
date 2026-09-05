@@ -94,10 +94,11 @@ export function useKaswareEvmWallet(): WalletState {
     let mounted = true;
     const prov = getKaswareEvmProvider();
     if (!prov) return;
+    const installedProvider = prov;
 
     async function initializeProvider() {
       if (!mounted) return;
-      setProvider(prov);
+      setProvider(installedProvider);
 
       const handleAccountsChanged = (accounts: unknown) => {
         if (!Array.isArray(accounts)) return;
@@ -110,12 +111,12 @@ export function useKaswareEvmWallet(): WalletState {
         if (typeof cid === 'string') setChainId(cid);
       };
 
-      prov.on?.('accountsChanged', handleAccountsChanged);
-      prov.on?.('chainChanged', handleChainChanged);
+      installedProvider.on?.('accountsChanged', handleAccountsChanged);
+      installedProvider.on?.('chainChanged', handleChainChanged);
 
       return () => {
-        prov.removeListener?.('accountsChanged', handleAccountsChanged);
-        prov.removeListener?.('chainChanged', handleChainChanged);
+        installedProvider.removeListener?.('accountsChanged', handleAccountsChanged);
+        installedProvider.removeListener?.('chainChanged', handleChainChanged);
       };
     }
 

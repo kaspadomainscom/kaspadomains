@@ -9,19 +9,11 @@ import WalletFilterInput from "@/components/pages/EcosystemAdmin/WalletFilterInp
 import ReceivedEventsTable from "@/components/pages/EcosystemAdmin/ReceivedEventsTable";
 import DistributionEventsTable from "@/components/pages/EcosystemAdmin/DistributionEventsTable";
 import DistributionChart from "@/components/pages/EcosystemAdmin/DistributionChart";
+import { contracts } from "@/lib/contracts";
+import EcosystemFundAbi from "@/abis/KaspadomainsFund.json";
 
-const contractAddress = "0x428C2524445cefa875E5B8DCa25E58902dcF2eF8";
-const contractABI = [
-  "function totalReceived() view returns (uint256)",
-  "function totalDistributed() view returns (uint256)",
-  "function lastDistributedAt() view returns (uint256)",
-  "function getRecipients() view returns (tuple(address addr, uint8 percent, string label)[])",
-  "function setRecipients(tuple(address addr, uint8 percent, string label)[] calldata)",
-  "function distribute()",
-  "function owner() view returns (address)",
-  "event Received(address indexed from, uint256 amount)",
-  "event Distributed(uint256 total, uint256 count, uint256 timestamp)",
-];
+const contractAddress = contracts.EcosystemFund.address;
+const contractABI = EcosystemFundAbi;
 
 type Recipient = {
   addr: string;
@@ -71,7 +63,8 @@ function exportCSV(filename: string, rows: string[][]) {
 }
 
 export default function EcosystemAdmin() {
-  const { account, provider, kasplex, disconnectAll } = useWalletContext();
+  const { provider, kasplex, disconnectAll } = useWalletContext();
+  const account = kasplex.account;
 
   const rawProvider = useMemo<Eip1193Provider | null>(() => {
     if (provider) return provider as Eip1193Provider;
@@ -91,21 +84,35 @@ export default function EcosystemAdmin() {
   const [signer, setSigner] = useState<ethers.Signer | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function getSigner() {
-      if (!rawProvider) return;
+      if (!rawProvider) {
+        if (!cancelled) setSigner(null);
+        return;
+      }
+
       try {
         const ethersProvider = new ethers.BrowserProvider(rawProvider);
         const _signer = await ethersProvider.getSigner();
-        setSigner(_signer);
+        if (!cancelled) setSigner(_signer);
       } catch {
-        setSigner(null);
+        if (!cancelled) setSigner(null);
       }
     }
-    getSigner();
+
+    void getSigner();
+
+    return () => {
+      cancelled = true;
+    };
   }, [rawProvider]);
 
-  const [contract, setContract] = useState<Contract | null>(null);
   const [owner, setOwner] = useState<string | null>(null);
+  const contract = useMemo(
+    () => (signer ? new Contract(contractAddress, contractABI, signer) : null),
+    [signer]
+  );
 
   const [totalReceived, setTotalReceived] = useState("0");
   const [totalDistributed, setTotalDistributed] = useState("0");
@@ -128,23 +135,38 @@ export default function EcosystemAdmin() {
     account && owner ? account.toLowerCase() === owner.toLowerCase() : false;
 
   useEffect(() => {
-    if (!signer) {
-      setContract(null);
-      setOwner(null);
-      return;
-    }
-    const _contract = new Contract(contractAddress, contractABI, signer);
-    setContract(_contract);
-    setErrorMessage(null);
+    let cancelled = false;
 
-    _contract
-      .owner()
-      .then((contractOwner: string) => setOwner(contractOwner))
-      .catch((err: unknown) => {
+    async function loadOwner() {
+      if (!contract) {
+        if (!cancelled) {
+          setOwner(null);
+          setErrorMessage(null);
+        }
+        return;
+      }
+
+      try {
+        const contractOwner = await contract.owner();
+        if (!cancelled) {
+          setOwner(contractOwner);
+          setErrorMessage(null);
+        }
+      } catch (err: unknown) {
         console.error("Failed to fetch contract owner:", err);
-        setErrorMessage("Failed to fetch contract owner");
-      });
-  }, [signer]);
+        if (!cancelled) {
+          setOwner(null);
+          setErrorMessage("Failed to fetch contract owner");
+        }
+      }
+    }
+
+    void loadOwner();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [contract]);
 
   const loadContractData = useCallback(async () => {
     if (!contract) return;
@@ -197,15 +219,20 @@ export default function EcosystemAdmin() {
 
   useEffect(() => {
     if (!contract) return;
-    loadContractData();
-    loadEvents();
 
-    const intervalId = setInterval(() => {
-      loadContractData();
-      loadEvents();
-    }, 30000);
+    const refresh = () => {
+      void loadContractData();
+      void loadEvents();
+    };
 
-    return () => clearInterval(intervalId);
+    const initialLoadId = window.setTimeout(refresh, 0);
+
+    const intervalId = window.setInterval(refresh, 30000);
+
+    return () => {
+      window.clearTimeout(initialLoadId);
+      window.clearInterval(intervalId);
+    };
   }, [contract, loadContractData, loadEvents]);
 
   async function handleDistribute() {
