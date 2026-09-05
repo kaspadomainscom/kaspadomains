@@ -1,8 +1,9 @@
 // src/app/api/domains/[name]/vote/route.ts
 import { NextResponse } from 'next/server';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
-import { verifySignedRequest, VerificationError } from '@/lib/server/verifyRequest';
+import { verifySignedRequest, VerificationError, extractPayload } from '@/lib/server/verifyRequest';
 import { verifyPayment } from '@/lib/server/verifyPayment';
+import { claimReceipt, releaseReceipt } from '@/lib/server/claimReceipt';
 import { VOTE_FEE_SOMPI } from '@/lib/fees';
 
 export const runtime = 'nodejs';
@@ -45,6 +46,7 @@ export async function POST(
       publicKey: String(body.publicKey ?? ''),
       issuedAt: Number(body.issuedAt ?? 0),
       signature: String(body.signature ?? ''),
+      payload: extractPayload(body as Record<string, unknown>),
     });
   } catch (error) {
     if (error instanceof VerificationError) {
@@ -58,6 +60,7 @@ export async function POST(
     payment = await verifyPayment({
       txId: String(body.paymentTxId ?? ''),
       requiredSompi: VOTE_FEE_SOMPI,
+      payerAddress: verified.signerAddress,
     });
   } catch (error) {
     if (error instanceof VerificationError) {
@@ -82,6 +85,17 @@ export async function POST(
     return NextResponse.json({ error: 'That domain is not listed.' }, { status: 404 });
   }
 
+  // Global claim first: without it a 200 KAS listing receipt would also clear
+  // the 1 KAS vote threshold and could be spent a second time here.
+  try {
+    await claimReceipt(supabase, payment, 'vote', verified.signerAddress);
+  } catch (error) {
+    if (error instanceof VerificationError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    throw error;
+  }
+
   const { error: voteError } = await supabase
     .from('votes')
     .insert({
@@ -92,6 +106,9 @@ export async function POST(
     });
 
   if (voteError) {
+    // The vote was not recorded, so return the receipt for reuse.
+    await releaseReceipt(supabase, payment.txId);
+
     if (voteError.code === '23505') {
       // Two constraints, two very different meanings — see the listing route.
       const detail = `${voteError.message} ${voteError.details ?? ''}`;

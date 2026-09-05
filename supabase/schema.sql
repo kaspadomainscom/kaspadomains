@@ -16,6 +16,25 @@
 --     listing for a domain they do not own.
 
 -- ---------------------------------------------------------------------------
+-- Payment receipts
+-- ---------------------------------------------------------------------------
+-- One global ledger of spent fee transactions. The per-table payment_tx_id
+-- constraints are not enough on their own: they are separate uniques, so a
+-- single 200 KAS listing receipt also satisfies the 1 KAS vote threshold and
+-- could be spent a second time in `votes`. This table is the single place a
+-- receipt is claimed, so a transaction can fund exactly one action of any kind.
+--
+-- Claimed before the action is written and released if that write fails, so a
+-- failed listing does not burn the payment.
+create table if not exists public.payment_receipts (
+  tx_id       text primary key,
+  purpose     text        not null check (purpose in ('list-domain', 'vote')),
+  payer       text        not null,
+  amount_sompi text       not null,
+  created_at  timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------------
 -- Listings
 -- ---------------------------------------------------------------------------
 create table if not exists public.domains (
@@ -123,6 +142,7 @@ create index if not exists domain_links_domain_idx on public.domain_links (domai
 -- ---------------------------------------------------------------------------
 -- Row Level Security
 -- ---------------------------------------------------------------------------
+alter table public.payment_receipts  enable row level security;
 alter table public.domains           enable row level security;
 alter table public.categories        enable row level security;
 alter table public.domain_categories enable row level security;
@@ -145,6 +165,11 @@ create policy "public read" on public.votes for select using (true);
 
 drop policy if exists "public read" on public.domain_links;
 create policy "public read" on public.domain_links for select using (true);
+
+-- payment_receipts deliberately gets NO policy at all, not even read: the rows
+-- link a payer address to an action, which is nobody else's business. With RLS
+-- on and no policy, the publishable key can neither read nor write it; only the
+-- server's secret key, which bypasses RLS, can touch it.
 
 -- No insert/update/delete policies are defined on purpose. With RLS enabled and
 -- no write policy, the anon key cannot write at all; the service-role key

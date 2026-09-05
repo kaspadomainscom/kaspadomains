@@ -2,8 +2,9 @@
 import { NextResponse } from 'next/server';
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
-import { requireDomainOwner, VerificationError } from '@/lib/server/verifyRequest';
+import { requireDomainOwner, VerificationError, extractPayload } from '@/lib/server/verifyRequest';
 import { verifyPayment } from '@/lib/server/verifyPayment';
+import { claimReceipt, releaseReceipt } from '@/lib/server/claimReceipt';
 import { LISTING_FEE_SOMPI } from '@/lib/fees';
 
 export const runtime = 'nodejs';
@@ -67,6 +68,10 @@ export async function POST(request: Request) {
       publicKey: String(body.publicKey ?? ''),
       issuedAt: Number(body.issuedAt ?? 0),
       signature: String(body.signature ?? ''),
+      // Everything outside the envelope -- categories and paymentTxId here --
+      // must be covered by the signature, or a valid signature could be
+      // replayed with a different body.
+      payload: extractPayload(body as Record<string, unknown>),
     });
   } catch (error) {
     if (error instanceof VerificationError) {
@@ -82,6 +87,9 @@ export async function POST(request: Request) {
     payment = await verifyPayment({
       txId: String(body.paymentTxId ?? ''),
       requiredSompi: LISTING_FEE_SOMPI,
+      // The fee must come from the same wallet that signed, or receipts are
+      // bearer coupons anyone can lift off the public ledger.
+      payerAddress: verified.signerAddress,
     });
   } catch (error) {
     if (error instanceof VerificationError) {
@@ -91,6 +99,45 @@ export async function POST(request: Request) {
   }
 
   const supabase = getSupabaseAdminClient();
+
+  // The UI only offers allowed categories, but the UI is not the security
+  // boundary. The foreign key on domain_categories proves a key *exists*; it
+  // says nothing about whether it is currently published, so without this an
+  // owner could post a listing straight into a category we've withdrawn.
+  //
+  // Checked after ownership (so it isn't an open probe of our category table)
+  // and before the receipt is claimed (so a rejected listing doesn't consume
+  // the payment).
+  const { data: allowed, error: allowedError } = await supabase
+    .from('categories')
+    .select('key')
+    .eq('is_allowed', true)
+    .in('key', categories);
+
+  if (allowedError) {
+    console.error('Failed to check categories:', allowedError);
+    return NextResponse.json({ error: 'Could not create the listing.' }, { status: 500 });
+  }
+
+  const allowedKeys = new Set((allowed ?? []).map((row) => row.key as string));
+  const rejected = categories.filter((key) => !allowedKeys.has(key));
+  if (rejected.length > 0) {
+    return NextResponse.json(
+      { error: `Not a category you can list under: ${rejected.join(', ')}.` },
+      { status: 400 }
+    );
+  }
+
+  // Claim the receipt globally before writing anything, so it cannot also fund
+  // a vote. Released below if the listing does not get created.
+  try {
+    await claimReceipt(supabase, payment, 'list-domain', verified.signerAddress);
+  } catch (error) {
+    if (error instanceof VerificationError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    throw error;
+  }
 
   // Same hash the contracts derive, so these rows stay reconcilable with chain
   // data if listings are ever mirrored on-chain.
@@ -114,6 +161,10 @@ export async function POST(request: Request) {
     .single();
 
   if (insertError) {
+    // The listing did not happen, so give the receipt back rather than leaving
+    // the payer out 200 KAS with nothing to show and no way to retry.
+    await releaseReceipt(supabase, payment.txId);
+
     // 23505 = unique_violation. Two different constraints can raise it here and
     // they mean very different things to the user, so don't collapse them: one
     // is "you already did this", the other is "that payment is already spent".
@@ -141,6 +192,7 @@ export async function POST(request: Request) {
     // listing with none is invisible and looks like the request silently
     // failed.
     await supabase.from('domains').delete().eq('id', inserted.id);
+    await releaseReceipt(supabase, payment.txId);
     console.error('Failed to attach categories, listing rolled back:', categoryError);
     return NextResponse.json(
       { error: 'Could not attach categories, so the listing was not created.' },

@@ -94,6 +94,83 @@ actively-updated backlog the continuous audit loop appends to.
 Most recent first. Each entry names the file(s), what was actually wrong, and how it was
 verified — not just "fixed X."
 
+- **A fee transaction was a bearer coupon: anyone could spend a stranger's 200 KAS
+  payment on their own listing.** Found by Codex (SA-02). `verifyPayment` checked that a
+  transaction was accepted and that its outputs to the treasury cleared the required
+  amount — but never *who paid it*. Kaspa transactions are public, so anyone watching the
+  treasury address could lift a fresh txid and quote it as their own. Because a receipt is
+  single-use, that isn't merely freeloading: it **consumes the victim's payment**, leaving
+  them with an error and a 200 KAS hole. Fixed by passing the verified signer's
+  `kaspa:` address into `verifyPayment` and requiring at least one transaction input to
+  belong to it — "any input", not "all", because a wallet may pull from several UTXOs.
+  The payer is read from `?resolve_previous_outpoints=light`; if the API can't resolve it
+  the request is **refused (503), not waved through**, since an unresolvable payer is
+  exactly the case an attacker wants. *Verified* against a real treasury payment on
+  mainnet: the API returned
+  `inputs: [{ addr: 'kaspa:pzz87gs2…', amt: 200000000 }]`, so the check has something real
+  to match on rather than silently passing on an empty list.
+- **One payment could fund both a listing and a vote.** Found by Codex (SA-03). Single-use
+  was enforced by `unique (payment_tx_id)` on `domains` and, separately, on `votes` — two
+  constraints that know nothing about each other. A 200 KAS listing receipt therefore also
+  cleared the 1 KAS vote threshold and could be spent a second time. Fixed with
+  `payment_receipts`, one global ledger whose primary key is the txid, claimed *before* the
+  action is written and released if that write fails
+  ([`claimReceipt.ts`](../src/lib/server/claimReceipt.ts)). Claim-then-write, not
+  check-then-write: a "has this been used?" read would let two concurrent requests both
+  pass before either inserted. Release is best-effort and logs loudly on failure — the
+  failure direction is a stuck receipt needing manual clearing, never a double-spendable
+  one. The table gets RLS with **no policy at all**, not even read: it links a payer address
+  to an action, which is nobody else's business.
+- **The CSP report endpoint parsed and logged unbounded attacker input.** Found by Codex
+  (SA-06). `/api/csp-violation-report` is unauthenticated by necessity — browsers post to
+  it without credentials — and it was reading whatever arrived and `console.log`ing the raw
+  object. Anyone could write arbitrary volume into production logs, which costs money and
+  buries the real reports the endpoint exists to surface. Fixed by reading the body as text
+  with an 8 KB cap (real reports are well under 2 KB), keeping only the ten fields a CSP
+  report actually defines, truncating each to 512 chars, and stripping control characters
+  so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
+  logging them would move the same log flood into the catch block.
+- **Two vulnerable `ws` versions sat in the production dependency tree.** Found by Codex
+  (SA-09): `ws@8.17.1` under ethers and `ws@8.18.2` under viem, both below the `8.21.0`
+  that patches the high-severity memory-exhaustion advisory
+  [GHSA-96hv-2xvq-fx4p](https://github.com/advisories/GHSA-96hv-2xvq-fx4p) (8.18.2 also
+  predates the 8.20.1 fix for
+  [GHSA-58qx-3vcg-4xpx](https://github.com/advisories/GHSA-58qx-3vcg-4xpx)). Nothing in
+  this app currently opens a WebSocket — the Kasplex client is HTTP — so no reachable
+  exploit existed, which is exactly why it was worth fixing *before* something starts using
+  one. Fixed with an `overrides: { "ws": "^8.21.0" }` in `package.json`, which collapses
+  both copies to `8.21.3`; `npm audit fix` cleared the remaining dev-tooling advisories.
+  *Verified*: `npm audit --omit=dev` and plain `npm audit` both report **0
+  vulnerabilities**, and lint, `tsc --noEmit` and `npm run build` all pass on the updated
+  tree. (Codex's report noted `npm audit` couldn't run in their environment because npm
+  rejected the certificate chain; it ran here.)
+
+- **The API accepted any existing category, including ones we'd withdrawn.** Found by Codex
+  (SA-07). The listing route checked only that a category key was non-empty; the foreign key
+  did the rest. But a foreign key proves a row *exists* — it says nothing about
+  `is_allowed`. The UI offers only allowed categories, and the UI is not the security
+  boundary. Fixed by checking every submitted key against `is_allowed = true` in the route,
+  positioned after ownership (so it isn't an open probe of the category table) and before
+  the receipt is claimed (so a rejected listing doesn't consume the payment).
+- **Signed write requests didn't cover the request body, so a signature authorised any
+  body.** Found by Codex during an auth audit. `signedMessage.ts` signed only the action,
+  domain, public key and timestamp — the `links` array, `categories` and `paymentTxId`
+  travelled unsigned. The obvious reading is replay, but it was worse: **the message format
+  is public**, so any website could have prompted a visitor to sign that innocuous-looking
+  string ("KaspaDomains request / action: update-links / domain: theirs.kas") and then
+  posted it to our API with links of its own choosing. The victim's public profile would
+  display them. No interception or privileged position required. Fixed by hashing the body
+  into the signed message: `canonicalJson` (keys sorted, array order preserved) →
+  SHA-256 → a `payload:` line in the message. The server **recomputes** that digest from
+  what actually arrived rather than accepting one sent alongside, since a client-supplied
+  digest would prove nothing — an attacker substituting the body would substitute the
+  digest too. All three routes pass `extractPayload(body)`, so everything outside the
+  signed envelope is covered. *Verified*, rather than assumed: an untampered body agrees
+  across client and server, substituted links change the digest, an added field changes
+  it, key order does **not** affect it (it would otherwise fail honest requests at
+  random), and array order **does** (link order is meaningful). Remaining gap, logged in
+  `GAPS.md`: no one-time nonce, so a byte-identical replay inside the 5-minute window is
+  still possible — currently a no-op thanks to idempotency and the unique constraints.
 - **Every write flow still demanded a Kasplex EVM connection it no longer uses, and the
   resource editor's Save button did nothing at all without one.** Fallout from moving
   signing to the Kaspa L1 key: `/list-domain`, `PickDomainModal` and

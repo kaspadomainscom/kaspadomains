@@ -29,6 +29,9 @@ import { VerificationError } from './verifyRequest';
 type KaspaTransaction = {
   transaction_id?: string;
   is_accepted?: boolean;
+  inputs?: {
+    previous_outpoint_address?: string | null;
+  }[];
   outputs?: {
     amount?: number | string;
     script_public_key_address?: string;
@@ -45,6 +48,16 @@ const TX_ID_PATTERN = /^[0-9a-fA-F]{64}$/;
 export async function verifyPayment(input: {
   txId: string;
   requiredSompi: bigint;
+  /**
+   * The verified signer's `kaspa:` address. The payment must come *from* them.
+   *
+   * Without this the receipt is a bearer coupon: Kaspa transactions are public,
+   * so anyone watching the treasury address could take a stranger's txid and
+   * spend it on their own listing. Because a receipt is single-use, that is not
+   * merely freeloading -- it consumes the victim's payment and leaves them
+   * holding an error and a 200 KAS hole.
+   */
+  payerAddress: string;
 }): Promise<VerifiedPayment> {
   if (!isFeeCollectionConfigured) {
     throw new VerificationError(
@@ -60,8 +73,10 @@ export async function verifyPayment(input: {
 
   let response: Response;
   try {
+    // "light" resolves each input's previous outpoint address, which is what
+    // lets us check who actually paid.
     response = await fetch(
-      `https://api.kaspa.org/transactions/${txId}?resolve_previous_outpoints=no`,
+      `https://api.kaspa.org/transactions/${txId}?resolve_previous_outpoints=light`,
       { headers: { accept: 'application/json' } }
     );
   } catch (error) {
@@ -91,6 +106,30 @@ export async function verifyPayment(input: {
     throw new VerificationError(
       'That payment has not been accepted by the network yet. Wait for confirmation and try again.',
       409
+    );
+  }
+
+  // Who paid? At least one input must be funded by the signer's own address.
+  // Kaspa transactions can have several inputs, and a wallet may pull from more
+  // than one UTXO, so this is "any input belongs to them" rather than "all".
+  const payer = input.payerAddress.trim().toLowerCase();
+  const inputAddresses = (tx.inputs ?? [])
+    .map((i) => (i.previous_outpoint_address ?? '').trim().toLowerCase())
+    .filter(Boolean);
+
+  if (inputAddresses.length === 0) {
+    // The API could not resolve the payer. Refuse rather than skip the check --
+    // an unresolvable payer is exactly the case an attacker would want.
+    throw new VerificationError(
+      'Could not determine who paid that transaction; try again shortly.',
+      503
+    );
+  }
+
+  if (!inputAddresses.includes(payer)) {
+    throw new VerificationError(
+      'That payment was not sent from your wallet. Pay the fee from the address that owns the domain.',
+      403
     );
   }
 

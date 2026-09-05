@@ -1,7 +1,7 @@
 // src/app/api/domains/[name]/links/route.ts
 import { NextResponse } from 'next/server';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
-import { requireDomainOwner, VerificationError } from '@/lib/server/verifyRequest';
+import { requireDomainOwner, VerificationError, extractPayload } from '@/lib/server/verifyRequest';
 
 export const runtime = 'nodejs';
 
@@ -79,6 +79,10 @@ export async function PUT(
       publicKey: String(body.publicKey ?? ''),
       issuedAt: Number(body.issuedAt ?? 0),
       signature: String(body.signature ?? ''),
+      // The links array is the whole point of this request, and it used to be
+      // unsigned -- a captured signature could be replayed with someone else's
+      // links on the owner's public profile. It is covered now.
+      payload: extractPayload(body as Record<string, unknown>),
     });
   } catch (error) {
     if (error instanceof VerificationError) {

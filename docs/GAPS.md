@@ -24,6 +24,45 @@ live backlog the continuous audit loop appends to.
       `BUGS.md`'s CRITICAL entries), so wiring it up wouldn't work until that's fixed
       regardless of the product decision.
 
+## Supabase write-path gaps
+
+- [ ] **No category-update route.** Categories can only be set at listing time; an owner
+      cannot recategorise afterwards. The on-chain path had `updateCategories` for this.
+      Flagged by Codex during the auth audit. Not built because "may an owner change
+      categories after listing, and how often" is a product decision, not a technical one.
+- [ ] **No one-time nonce or profile revision on signed requests** (Codex SA-05). The
+      signature now covers the request body (see `BUGS.md`), but a byte-identical request
+      can still be replayed inside the 5-minute window. For listing, voting and payments
+      this is a no-op — the unique constraints on `name`, `(domain_id, voter)` and
+      `payment_tx_id` absorb it. For `update-links` it is **not** harmless: the route
+      deletes and reinserts the whole set, so replaying an older captured update rolls a
+      newer profile back, and concurrent replays can interleave the delete and insert and
+      leave a mixed link set. Needs a server-issued nonce consumed atomically before the
+      mutation, plus a profile revision the request must match. Deliberately not built
+      blind — it needs a table, an issuing endpoint and a decision about how long an
+      unspent nonce lives.
+- [ ] **The user pays before the server has agreed to fulfil the action** (Codex SA-04 —
+      the most serious thing still open). The browser decides to use the off-chain flow
+      from the *public* Supabase credentials (`isSupabaseConfigured`) and calls `payFee`
+      before it signs and posts. The API separately requires the server-only secret key
+      (`isSupabaseWritable`) and can still refuse for duplicate, ownership, category or
+      already-voted reasons. Deploy with a valid public URL but a missing
+      `SUPABASE_SECRET_KEY` and the wallet sends 200 KAS to a route that answers 503.
+      Fixing this properly means restructuring the flow, not patching a check: an
+      authenticated, no-fee **preflight** that confirms write-readiness, KNS ownership,
+      target existence, duplicate state and categories, returns a short-lived signer-bound
+      payment intent, and only then lets the wallet be asked to pay. Until that exists,
+      treat paid listing and voting as **not production-ready** — the SA-02 receipt fix
+      stops a stranger stealing the payment, but it does not give it back.
+- [ ] **Listing and link replacement are multi-step, not transactional** (Codex SA-08).
+      The listing route inserts the domain row, then the category rows, then rolls the
+      domain back by hand if categories fail — and doesn't verify the rollback succeeded
+      while telling the user nothing was created. The links route deletes and reinserts in
+      separate calls. Both want a single Postgres function so validation, receipt
+      consumption and the writes happen all-or-nothing. Not built yet because it means
+      moving real logic into SQL (`security definer` RPCs), which is a change in where this
+      app's rules live and worth doing deliberately.
+
 ## Supabase migration — reads and writes done, four real gaps left
 
 Supabase became the primary store on 2026-09-05 by owner decision (see

@@ -1,5 +1,5 @@
 // src/lib/signedFetch.ts
-import { buildSignedMessage, type WriteAction } from './signedMessage';
+import { buildSignedMessage, digestPayload, type WriteAction } from './signedMessage';
 import { TREASURY_ADDRESS, isFeeCollectionConfigured } from './fees';
 
 /**
@@ -86,11 +86,19 @@ export async function signedFetch(input: {
 
   const publicKey = (await kasware.getPublicKey()).trim();
   const issuedAt = Date.now();
+
+  // The signature covers the body, not just the envelope, so it authorises this
+  // exact request rather than any request of this shape. The server recomputes
+  // the same digest from what it receives.
+  const payload = input.body ?? {};
+  const payloadDigest = await digestPayload(payload);
+
   const message = buildSignedMessage({
     action: input.action,
     domain: input.domain,
     publicKey,
     issuedAt,
+    payloadDigest,
   });
 
   const signature = await kasware.signMessage(message);
@@ -99,7 +107,7 @@ export async function signedFetch(input: {
     method: input.method ?? 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      ...input.body,
+      ...payload,
       domain: input.domain,
       publicKey,
       issuedAt,

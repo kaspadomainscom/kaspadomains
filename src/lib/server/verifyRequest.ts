@@ -1,8 +1,13 @@
 // src/lib/server/verifyRequest.ts
 import { PublicKey, verifyMessage } from 'kaspa-wasm';
-import { buildSignedMessage, type WriteAction } from '../signedMessage';
+import {
+  buildSignedMessage,
+  digestPayload,
+  extractPayload,
+  type WriteAction,
+} from '../signedMessage';
 
-export { buildSignedMessage };
+export { buildSignedMessage, extractPayload };
 export type { WriteAction };
 
 /**
@@ -16,8 +21,11 @@ export type { WriteAction };
  *
  * The chain of reasoning, every link of which is checked here:
  *
- *   1. The caller supplies a Kaspa L1 public key, a signature, and a payload
- *      bound to the action, the domain and a timestamp.
+ *   1. The caller supplies a Kaspa L1 public key, a signature, and a message
+ *      bound to the action, the domain, a timestamp, **and a digest of the
+ *      request body**. The digest is recomputed here from what actually
+ *      arrived, so a signature authorises one specific request rather than any
+ *      request of that shape.
  *   2. `verifyMessage` proves the signature was produced by the private key
  *      behind that public key. (Schnorr, via the rusty-kaspa WASM SDK -- not
  *      hand-rolled.)
@@ -51,6 +59,12 @@ export type SignedRequest = {
   /** Millisecond epoch, signed, to bound replay. */
   issuedAt: number;
   signature: string;
+  /**
+   * The raw request body, minus the envelope fields. Its digest is part of the
+   * signed message, so a signature authorises this exact payload and cannot be
+   * reused to submit a different one.
+   */
+  payload: Record<string, unknown>;
 };
 
 export type VerifiedRequest = {
@@ -151,11 +165,15 @@ export async function verifySignedRequest(input: SignedRequest): Promise<Verifie
     throw new VerificationError('This request has expired. Please sign again.', 401);
   }
 
+  // Recompute the body digest here rather than trusting one sent alongside the
+  // request: a client-supplied digest would prove nothing, since an attacker
+  // substituting the body would simply substitute the digest too.
   const message = buildSignedMessage({
     action,
     domain,
     publicKey: publicKey.trim(),
     issuedAt: Number(input.issuedAt),
+    payloadDigest: await digestPayload(input.payload ?? {}),
   });
 
   let signatureValid = false;
