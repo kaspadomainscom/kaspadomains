@@ -11,6 +11,28 @@ JSON directly) before writing it — don't assume a name "sounds right."**
 Every signature below was read directly from `src/abis/*.json` this session, not assumed.
 No Solidity source exists in this repo — these ABIs are the only ground truth available.
 
+**⚠ These contracts are no longer the interface the app uses.** As of 2026-09-05, user
+data lives in Supabase and the app reads and writes Postgres, not the chain. This document
+is still the correct reference for the contracts themselves — and for the fallback path,
+which runs whenever Supabase is unconfigured — but the running write path is the HTTP API
+below.
+
+## HTTP API (the current write path)
+
+All three endpoints require a signed request; the payload format and what the signature
+does and does not prove are documented in
+[`src/lib/server/verifyRequest.ts`](../src/lib/server/verifyRequest.ts). Signing is a
+wallet prompt, not a transaction: it costs nothing.
+
+| Endpoint | Method | Replaces | Notes |
+|---|---|---|---|
+| `/api/domains` | `POST` | `KaspaDomainsRegistry.listDomain` + `DomainCategoriesStorage.updateCategories` | Creates a listing and its categories in one request. At least one category is required. Rolls the listing back if categories fail, so an invisible listing can't be left behind. `409` if already listed. **Charges nothing.** |
+| `/api/domains/[name]/vote` | `POST` | `DomainVotesManager.voteDomainByHash` | One vote per wallet per domain, enforced by a unique constraint. `409` on a repeat vote. **Charges nothing.** |
+| `/api/domains/[name]/links` | `PUT` | `DomainLinksStorage.updateLinks` | Bulk replace, same semantics as the contract call. Rejects non-`http(s)` URLs (a `javascript:` URL rendered on a public profile is stored XSS). Only the wallet that submitted the listing may edit it. |
+
+Reads go through [`src/data/supabaseSource.ts`](../src/data/supabaseSource.ts); the schema
+is [`supabase/schema.sql`](../supabase/schema.sql).
+
 **⚠ Live-chain status (verified 2026-09-05, see [`BUGS.md`](./BUGS.md) for full detail):**
 signatures below are correct per the ABI, but as of this writing most of them **cannot
 currently be called successfully** against the live RPC — `KaspaDomainsRegistry`,

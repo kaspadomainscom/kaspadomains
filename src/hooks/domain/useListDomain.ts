@@ -6,6 +6,8 @@ import { kasplexClient } from '@/lib/viemClient';
 import { createKaswareEvmClient, getKaswareEvmProvider } from '@/lib/kaswareEvm';
 import { useToast } from '@/components/ToastProvider';
 import { useWalletContext } from '@/context/WalletContext';
+import { isSupabaseConfigured } from '@/lib/supabase';
+import { signedFetch, readError } from '@/lib/signedFetch';
 
 const RETRY_LIMIT = 3;
 const RETRY_DELAY_MS = 3000;
@@ -23,7 +25,10 @@ export function useListDomain() {
   const { kasplex } = useWalletContext();
   const { addToast } = useToast();
 
-  const listDomain = async (domain: string): Promise<`0x${string}` | null> => {
+  const listDomain = async (
+    domain: string,
+    categories: string[] = []
+  ): Promise<string | null> => {
     if (isSubmitting.current) {
       addToast('Transaction already in progress. Please wait.');
       return null;
@@ -60,6 +65,28 @@ export function useListDomain() {
 
       if (!listingAccount || !/^0x[a-fA-F0-9]{40}$/.test(listingAccount)) {
         throw new Error('Kasware (Kasplex) is not connected.');
+      }
+
+      // Database path: sign the request and post it. Categories go in the same
+      // call, because a listing with no categories is invisible to every browse
+      // page -- the two-step on-chain flow below could leave one behind.
+      if (isSupabaseConfigured) {
+        addToast(`Listing "${domain}"...`);
+
+        const response = await signedFetch({
+          action: 'list-domain',
+          domain,
+          address: listingAccount,
+          path: '/api/domains',
+          body: { categories },
+        });
+
+        if (!response.ok) {
+          throw new Error(await readError(response, 'Could not create the listing.'));
+        }
+
+        addToast(`"${domain}" listed successfully!`, 'success');
+        return domain;
       }
 
       const walletClient = createKaswareEvmClient(listingAccount as `0x${string}`);

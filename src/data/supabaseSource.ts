@@ -166,6 +166,29 @@ export async function fetchHasVoted(domainName: string, voter: string): Promise<
   return Boolean(data);
 }
 
+/** A page of voter addresses, newest first. Replaces reading DomainVoted events. */
+export async function fetchVoters(
+  domainName: string,
+  page: number,
+  pageSize: number
+): Promise<string[]> {
+  const client = requireClient();
+
+  const domain = await fetchDomainByName(domainName);
+  if (!domain) return [];
+
+  const from = (page - 1) * pageSize;
+  const { data, error } = await client
+    .from('votes')
+    .select('voter')
+    .eq('domain_id', domain.id)
+    .order('created_at', { ascending: false })
+    .range(from, from + pageSize - 1);
+
+  if (error) throw new Error(`Supabase: failed to load voters — ${error.message}`);
+  return (data ?? []).map((row) => row.voter as string);
+}
+
 /** The resources attached to a domain (the off-chain DomainLinksStorage). */
 export async function fetchDomainLinks(
   domainName: string

@@ -131,6 +131,32 @@ Fixed alongside it: `/search` was rendering an outage as "No matching domains fo
 plus a stale-response race; and `useGetDomainLinks` could sit in `loading` forever.
 `CustomizeDomainForm.tsx` — 98 lines, entirely commented out — was deleted.
 
+## 2026-09-05 (evening) — user data moved off-chain to Supabase
+
+Owner decision, made because the on-chain product could not run: four of six contracts
+have no deployed code and the other two fail every call. Listings, votes, categories and
+resources now live in Postgres, read through `src/data/supabaseSource.ts` and written
+through three signed HTTP endpoints. The contract path was kept rather than deleted and
+takes over whenever Supabase is unconfigured, so unsetting two env vars restores the
+previous behaviour exactly.
+
+The interesting part was authorisation. On-chain, the registry contract was what stopped
+someone listing a name they don't own; a database row has no such property. Kasware's
+`verifyMessage` turned out to be wallet-side only, so proving control of a Kaspa L1
+address server-side would mean reimplementing Kaspa's personal-message hashing and address
+encoding — blind, with no wallet reachable from CI. A verifier that wrongly *accepts* is
+worse than an admitted gap, so that was not hand-rolled. Instead the server proves what it
+genuinely can (control of a Kasplex EVM address, via `ethers.verifyMessage`), reads the
+authoritative owner from KNS server-side so the client can't assert ownership, and stores
+every row with `ownership_verified = false`. The honest consequence — someone can occupy a
+listing row for a domain they don't own, though it will still display the true KNS owner —
+is written down rather than papered over.
+
+Two commercial facts fell out of the migration and are recorded in `BUSINESS_PLAN.md`
+rather than left implicit: nothing collects the 420 KAS listing fee or the 6 KAS vote fee
+any more, so both are free; and listings are no longer permanent or on-chain, which
+contradicts copy still live on the site.
+
 ## Related docs
 
 - [`BUGS.md`](./BUGS.md) — the bug-specific version of several entries above, with full

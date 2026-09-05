@@ -4,6 +4,7 @@ import { DomainAsset } from '@/hooks/kns/types';
 import { useListDomain } from '@/hooks/domain/useListDomain';
 import { useSetDomainCategories } from '@/hooks/domain/useSetDomainCategories';
 import { useGetAllowedCategories } from '@/hooks/domains/useGetAllowedCategories';
+import { isSupabaseConfigured } from '@/lib/supabase';
 import { useState } from 'react';
 
 type PickDomainModalProps = {
@@ -102,8 +103,11 @@ export default function PickDomainModal({
                 if (selectedCategories.length === 0) return;
                 setSelectedDomain(domain.asset);
                 try {
-                  const hash = await listDomain(domain.asset);
-                  if (hash) {
+                  const result = await listDomain(domain.asset, selectedCategories);
+                  // The database path writes the listing and its categories in
+                  // one request, so a second call here would be a duplicate.
+                  // The on-chain path still needs its separate write.
+                  if (result && !isSupabaseConfigured) {
                     await setCategories(domain.asset, evmAccount as `0x${string}`, selectedCategories);
                   }
                 } catch {

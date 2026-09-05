@@ -95,6 +95,18 @@ and [`BUGS.md`](./BUGS.md):
       Produced `MIND.md` principle #13.
 - [x] `/search` no longer reports a contract outage as "No matching domains found", and
       no longer lets a superseded query overwrite current results.
+- [x] **User data migrated off-chain to Supabase** (owner decision, 2026-09-05). Reads and
+      writes both go to Postgres now, behind signed requests, with the contract path kept
+      as an automatic fallback. See `ARCHITECTURE.md`, `SPEC.md`'s API table, and
+      `GAPS.md` for the four gaps this opened.
+- [ ] **Decide what replaces the listing/vote fees.** Both are free now — the contracts
+      that charged them are gone. Revenue question, needs an owner call.
+- [ ] **Update site copy to match reality**: `/docs`, the homepage ("one-time payment for
+      lifetime exposure", "210 KAS") and `/business-plan` all still promise a permanent
+      on-chain listing that is paid for. None of that is true today.
+- [ ] **Exercise the Supabase work against a real project.** Schema, RLS policies and all
+      three endpoints are verified by type-check/lint/build only — no query or insert has
+      ever run.
 - [ ] Missing Terms/Privacy/About pages — flagged, not drafted without real input.
 - [ ] Internal linking + breadcrumbs on domain profile pages (`/domain/[name]`) — has a
       Home/Domains breadcrumb; worth checking whether it should also link to the domain's

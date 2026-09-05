@@ -5,6 +5,9 @@ import { Contract, keccak256, toUtf8Bytes, formatEther, EventLog, Log } from "et
 import { useWalletContext } from "@/context/WalletContext";
 import { contracts } from "@/lib/contracts";
 import { JsonFragment } from "ethers";
+import { isSupabaseConfigured } from "@/lib/supabase";
+import { fetchVoteCount, fetchHasVoted, fetchVoters } from "@/data/supabaseSource";
+import { signedFetch, readError } from "@/lib/signedFetch";
 
 const DOMAIN_LIKES_PER_PAGE = 10;
 const VOTES_CONTRACT_ADDRESS = contracts.DomainVotesManager.address;
@@ -29,6 +32,8 @@ export function VotingSection({ domainName }: { domainName: string }) {
     const [txPending, setTxPending] = useState(false);
     const [voteFeeWei, setVoteFeeWei] = useState<bigint | null>(null);
     const [contractUnavailable, setContractUnavailable] = useState(false);
+    // Bumped after a successful vote to re-run the read effects.
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const domainHash = keccak256(toUtf8Bytes(domainName));
     const contract = useMemo(
@@ -36,8 +41,13 @@ export function VotingSection({ domainName }: { domainName: string }) {
         [signer]
     );
 
-    // Load the current on-chain vote fee (don't hardcode it -- it's owner-adjustable)
+    // Load the current on-chain vote fee (don't hardcode it -- it's owner-adjustable).
+    // Votes recorded in the database are free: the 6 KAS charge lived in
+    // DomainVotesManager, and nothing has replaced it (see docs/GAPS.md).
     useEffect(() => {
+        // Nothing to fetch when the database is the store -- the fee is a
+        // constant zero, derived below rather than pushed into state.
+        if (isSupabaseConfigured) return;
         if (!contract) return;
         contract
             .voteFee()
@@ -56,24 +66,54 @@ export function VotingSection({ domainName }: { domainName: string }) {
 
     // Load total vote count
     useEffect(() => {
+        let cancelled = false;
+
+        if (isSupabaseConfigured) {
+            fetchVoteCount(domainName)
+                .then((count) => {
+                    if (!cancelled) setLikesCount(count);
+                })
+                .catch(console.error);
+            return () => {
+                cancelled = true;
+            };
+        }
+
         if (!contract) return;
         contract
             .getDomainVoteCount(domainName)
-            .then((count: bigint) => setLikesCount(Number(count)))
+            .then((count: bigint) => {
+                if (!cancelled) setLikesCount(Number(count));
+            })
             .catch(console.error);
-    }, [contract, domainName]);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [contract, domainName, refreshKey]);
 
     // Check if current user has voted for this domain
     useEffect(() => {
         let cancelled = false;
 
         async function loadUserVoteStatus() {
-            if (!contract || !account) {
+            if (!account) {
                 if (!cancelled) setUserHasLiked(false);
                 return;
             }
 
             try {
+                if (isSupabaseConfigured) {
+                    const hasVoted = await fetchHasVoted(domainName, account);
+                    if (!cancelled) setUserHasLiked(hasVoted);
+                    return;
+                }
+
+                if (!contract) {
+                    if (!cancelled) setUserHasLiked(false);
+                    return;
+                }
+
                 const hasVoted = await contract.hasUserVotedDomain(account, domainName);
                 if (!cancelled) setUserHasLiked(hasVoted);
             } catch (error) {
@@ -86,16 +126,30 @@ export function VotingSection({ domainName }: { domainName: string }) {
         return () => {
             cancelled = true;
         };
-    }, [contract, account, domainName]);
+    }, [contract, account, domainName, refreshKey]);
 
-    // Fetch voters list paginated via events
+    // Fetch voters list, paginated
     useEffect(() => {
-        if (!contract) return;
+        let cancelled = false;
 
-        async function fetchVoters() {
-            if (!contract) return;
+        if (!isSupabaseConfigured && !contract) return;
 
+        async function loadVoters() {
             setLoadingVoters(true);
+
+            if (isSupabaseConfigured) {
+                try {
+                    const addresses = await fetchVoters(domainName, page, DOMAIN_LIKES_PER_PAGE);
+                    if (!cancelled) setVoters(addresses);
+                } catch (error) {
+                    console.error(error);
+                    if (!cancelled) setVoters([]);
+                }
+                if (!cancelled) setLoadingVoters(false);
+                return;
+            }
+
+            if (!contract) return;
 
             try {
                 const filter = contract.filters.DomainVoted(null, domainHash);
@@ -115,34 +169,70 @@ export function VotingSection({ domainName }: { domainName: string }) {
                     .map((e) => (e.args.user && typeof e.args.user === "string" ? e.args.user : null))
                     .filter((addr): addr is string => addr !== null);
 
-                setVoters(voterAddresses);
+                if (!cancelled) setVoters(voterAddresses);
             } catch (error) {
                 console.error(error);
-                setVoters([]);
+                if (!cancelled) setVoters([]);
             }
-            setLoadingVoters(false);
+            if (!cancelled) setLoadingVoters(false);
         }
 
-        fetchVoters();
-    }, [contract, domainHash, page]);
+        void loadVoters();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [contract, domainHash, domainName, page, refreshKey]);
 
     async function onVote() {
-        if (!contract || !account) {
+        if (!account) {
             alert("Please connect your wallet");
             return;
         }
-        if (contractUnavailable) {
+        // A contract is only needed on the chain path; the database path signs
+        // a request instead, so requiring one here would block voting outright.
+        if (!isSupabaseConfigured && !contract) {
+            alert("Please connect your wallet");
+            return;
+        }
+        if (votingUnavailable) {
             alert("Voting is temporarily unavailable. Please try again later.");
             return;
         }
-        if (voteFeeWei === null) {
+        if (effectiveFeeWei === null) {
             alert("Vote fee not loaded yet, please try again in a moment.");
             return;
         }
         try {
             setTxPending(true);
+
+            if (isSupabaseConfigured) {
+                const response = await signedFetch({
+                    action: 'vote',
+                    domain: domainName,
+                    address: account,
+                    path: `/api/domains/${encodeURIComponent(domainName)}/vote`,
+                });
+
+                if (!response.ok) {
+                    alert(await readError(response, 'Could not record your vote.'));
+                    return;
+                }
+
+                setUserHasLiked(true);
+                setPage(1);
+                // Re-read counts and voters from the server rather than
+                // guessing them locally, so the UI shows what was stored.
+                setRefreshKey((key) => key + 1);
+                return;
+            }
+
+            // Chain path only: the early return above covers the database
+            // path, and the guards established a contract exists here.
+            if (!contract) return;
+
             const tx = await contract.voteDomainByHash(domainHash, {
-                value: voteFeeWei,
+                value: effectiveFeeWei,
             });
             await tx.wait();
 
@@ -160,13 +250,23 @@ export function VotingSection({ domainName }: { domainName: string }) {
     }
 
     const isConnected = kasplex.status === "connected" && !!account;
-    const voteFeeLabel = voteFeeWei !== null ? `${formatEther(voteFeeWei)} KAS` : "…";
+
+    // Derived, not stored: with the database as the store there is no contract
+    // to be unavailable and no fee to fetch -- votes are free (see docs/GAPS.md).
+    const effectiveFeeWei = isSupabaseConfigured ? BigInt(0) : voteFeeWei;
+    const votingUnavailable = isSupabaseConfigured ? false : contractUnavailable;
+
+    const voteFeeLabel = isSupabaseConfigured
+        ? "free"
+        : effectiveFeeWei !== null
+            ? `${formatEther(effectiveFeeWei)} KAS`
+            : "…";
 
     return (
         <section className="mt-10 bg-[#122c2a] border border-[#1d3b39] rounded-xl p-6 shadow-md text-gray-100">
             <h2 className="text-xl font-semibold mb-4 text-white">Support this Domain</h2>
 
-            {contractUnavailable && (
+            {votingUnavailable && (
                 <p className="mb-4 text-sm text-yellow-400 bg-yellow-400/10 border border-yellow-400/30 rounded px-3 py-2">
                     Voting is temporarily unavailable — we&apos;re aware and working on it.
                 </p>
@@ -175,13 +275,13 @@ export function VotingSection({ domainName }: { domainName: string }) {
             <div className="flex items-center gap-4 mb-4">
                 <button
                     onClick={onVote}
-                    disabled={!isConnected || userHasLiked || txPending || contractUnavailable}
-                    className={`px-4 py-2 rounded font-semibold ${userHasLiked || contractUnavailable
+                    disabled={!isConnected || userHasLiked || txPending || votingUnavailable}
+                    className={`px-4 py-2 rounded font-semibold ${userHasLiked || votingUnavailable
                             ? "bg-gray-600 text-gray-300 cursor-not-allowed"
                             : "bg-kaspaMint text-[#0F2F2E] hover:bg-[#3DFDAD]/90"
                         }`}
                 >
-                    {contractUnavailable
+                    {votingUnavailable
                         ? "Unavailable"
                         : userHasLiked
                         ? "You have voted"

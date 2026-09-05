@@ -18,18 +18,35 @@ require.
 
 ## 1. Executive summary
 
-> **⚠ Positioning changed 2026-09-05 and this section has not been re-argued yet.**
-> Supabase (Postgres) is now the primary store for listings, votes and categories, because
-> four of six contracts have no deployed code and the other two fail every call (see
-> [`BUGS.md`](./BUGS.md)) — the product could not function on-chain at all. The on-chain
-> path still exists and takes over when Supabase is unconfigured, but **while the database
-> is the source of truth, "recorded permanently on-chain" below is not what actually
-> happens**, and neither is the trust model it implies: a database row is mutable by
-> whoever controls the database. This is a real marketing and trust claim, not just a
-> technical detail, so the copy on the live site and the framing in this plan both need a
-> decision from the owner — either the claim is softened to match, or listings are
-> mirrored on-chain once contracts are redeployed so the claim becomes true again.
-> Tracked in [`GAPS.md`](./GAPS.md).
+> **⚠ The economics below no longer describe the running product. Owner decision,
+> 2026-09-05: user data moved to Supabase instead of smart contracts.**
+>
+> Three things in this plan are now false as written, and they are the three that matter
+> most commercially:
+>
+> 1. **No fee is being collected.** The 420 KAS charge lived in
+>    `KaspaDomainsRegistry.listDomain`, which has no deployed code. Listings and votes now
+>    go through the database and are **free**. §5's revenue model — 10,000 × 420 KAS —
+>    describes a mechanism that currently does not exist. Restoring revenue needs a
+>    deliberate choice (a redeployed contract, a plain on-chain payment address checked
+>    server-side, or an off-chain processor); none is implemented.
+> 2. **Listings are not permanent or on-chain.** They are rows in Postgres, mutable by
+>    whoever controls the database. "Recorded permanently on-chain", "one-time payment for
+>    lifetime exposure", and the trust model they imply are not what happens today.
+> 3. **Ownership is not enforced the way it was.** The contract used to be what stopped
+>    someone listing a name they don't own. Now a server-side signature check proves the
+>    submitter controls a Kasplex address, and KNS is read server-side for the true owner —
+>    but the two are different keypairs and nothing yet binds them. Listings are stored
+>    with `ownership_verified = false` for exactly this reason.
+>
+> The site's own copy still says otherwise in places (`/docs`, the homepage's "one-time
+> payment", the 210 KAS figure). **That copy needs to change or the claims need to become
+> true again** — it is a promise shown to users, not an internal detail. Tracked in
+> [`GAPS.md`](./GAPS.md); the technical picture is in
+> [`ARCHITECTURE.md`](./ARCHITECTURE.md#data-model).
+>
+> The rest of this document is kept as the pre-migration record, because it still
+> describes the intended economics if listings return on-chain.
 
 The core logic is simple: a domain owner pays a one-time **420 KAS** fee, and that listing —
 plus its category and any resources attached to it — is recorded permanently on-chain

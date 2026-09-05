@@ -7,7 +7,51 @@ being a fully-featured listing on KaspaDomains. For the underlying contracts and
 behind each step, see [`SPEC.md`](./SPEC.md); for what's still unverified, see
 [`GAPS.md`](./GAPS.md#unverified-not-gaps-or-bugs--genuinely-unknown-needs-testing).
 
-## 1. Domain lifecycle
+## 0. The current lifecycle (Supabase, since 2026-09-05)
+
+This is what actually happens today. Sections 1–4 below describe the on-chain lifecycle,
+which is still in the code as a fallback but is not the running path.
+
+```
+Registered on KNS (Kaspa L1)
+        │
+        │  owner connects Kasware
+        ▼
+Verified on KNS ──► the app reads the owner from KNS server-side; the client
+        │           cannot assert who owns a name
+        │
+        │  POST /api/domains — wallet signs the request (free, no transaction)
+        ▼
+Listed in Postgres  ──► row in `domains`, owner = whatever KNS said,
+        │                submitted_by = the proven Kasplex address,
+        │                ownership_verified = FALSE (see below)
+        │
+        │  categories are written in the same request — a listing with none
+        ▼  would be invisible to every browse page
+Categorized ──► rows in `domain_categories`
+        │
+        │  PUT /api/domains/[name]/links — signed, bulk replace
+        ▼
+Resourced ──► rows in `domain_links` ──► public profile, JSON-LD, sitemap
+        │
+        │  POST /api/domains/[name]/vote — signed, free, one per wallet
+        ▼
+Voted on ──► rows in `votes`; counts are a view, so they can't drift
+```
+
+**What is and isn't proven at each step.** The signature proves the requester controls the
+Kasplex (EVM) address it names, and the KNS lookup happens server-side so ownership can't
+be asserted by the client. What is *not* proven is that those are the same person — the
+Kaspa L1 key that owns the name and the EVM key that signed are different keypairs. So a
+row records a true owner (from KNS) but an unverified claim to it, which is why
+`ownership_verified` exists and defaults to false. Anything that treats a listing as
+authoritative has to check that flag.
+
+**What is no longer true of a listing**: it is not permanent, not on-chain, and not paid
+for. Rows are mutable by whoever holds the database, and both the 420 KAS listing fee and
+the 6 KAS vote fee are uncollected because the contracts that charged them are gone.
+
+## 1. Domain lifecycle (on-chain — fallback path, not currently running)
 
 ```
 Registered on KNS (Kaspa L1)
@@ -111,14 +155,13 @@ history, recipient tracking. It's an internal tool, not customer-facing (see
 | Resources (X account, links) | `DomainLinksStorage` (Kasplex) | `useGetDomainLinks.ts` |
 | "Trending" domains ticker (header) | `trending` category via `categoriesManifest` | `Header.tsx` |
 
-> **Changed 2026-09-05.** The paragraph below described the app before Supabase was
-> introduced as the primary store. It is kept because it still describes the *on-chain*
-> path exactly, and that path is still in the code and takes over whenever Supabase isn't
-> configured. What's no longer true is the "no off-chain database" claim itself: with
-> `NEXT_PUBLIC_SUPABASE_URL` set, listings, votes, categories and resources are read from
-> Postgres, and the contracts are not consulted. See
-> [`ARCHITECTURE.md`](./ARCHITECTURE.md#data-model) for the current picture and why the
-> switch was made.
+> **Changed 2026-09-05.** The paragraph below described the app before Supabase became
+> the primary store. It is kept because it still describes the *on-chain* path exactly,
+> and that path remains in the code and takes over whenever Supabase isn't configured.
+> What is no longer true is the "no off-chain database" claim itself: with
+> `NEXT_PUBLIC_SUPABASE_URL` set, listings, votes, categories and resources are both read
+> from and written to Postgres, and the contracts are not consulted at all. See
+> [`ARCHITECTURE.md`](./ARCHITECTURE.md#data-model) for the current picture.
 
 There is **no off-chain database** anywhere in this app — every piece of domain data
 either comes from a live contract read or is static site content (docs, business plan

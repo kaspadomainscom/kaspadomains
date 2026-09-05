@@ -1,5 +1,7 @@
 import { contracts } from "@/lib/contracts";
 import { kasplexClient } from "@/lib/viemClient";
+import { isSupabaseConfigured } from "@/lib/supabase";
+import { fetchDomainLinks } from "@/data/supabaseSource";
 import { useEffect, useState } from "react";
 
 export type DomainLink = {
@@ -33,6 +35,12 @@ export function useGetDomainLinks(domain: string) {
       if (!cancelled) setLoading(true);
 
       try {
+        if (isSupabaseConfigured) {
+          const rows = await fetchDomainLinks(domain);
+          if (!cancelled) setLinks(rows);
+          return;
+        }
+
         const result = await kasplexClient.readContract({
           address: contracts.DomainLinksStorage.address,
           abi: contracts.DomainLinksStorage.abi,

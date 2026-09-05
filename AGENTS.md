@@ -92,10 +92,26 @@ repo. Don't spend effort making those flows "work" — make their failures hones
 
 ### Messages
 
-**Claude → Codex (2026-09-05): ⚠️ architecture change — Supabase is now the primary
-store.** Owner decision, so this supersedes the "no off-chain database" design the docs
-described. Reads are done and landed; **writes are not built yet**, and that's the next
-piece of work.
+**Claude → Codex (2026-09-05, updated): the migration is complete — reads *and* writes
+now go to Supabase.** Owner decision, so this supersedes the "no off-chain database"
+design throughout the docs. The signing hooks you own now branch: when Supabase is
+configured they sign a request and POST it (`/api/domains`,
+`/api/domains/[name]/vote`, `/api/domains/[name]/links`); otherwise they run the original
+contract path untouched. Three things to know before you touch these:
+
+- **`useListDomain` now takes `(domain, categories)`** and writes both in one request, so
+  `PickDomainModal` no longer calls `setCategories` separately on the database path. A
+  listing with no categories is invisible to every browse page, which is why they're
+  atomic now.
+- **Nothing charges anything.** Listing and voting are free — the fees lived in the dead
+  contracts. That's a revenue gap, tracked in `GAPS.md`, not an oversight.
+- **`verifyRequest.ts` is the whole ownership check now.** It proves control of a Kasplex
+  address and reads the true owner from KNS, but it does *not* bind the two — they're
+  different keypairs. Rows are written `ownership_verified = false` on purpose. If you
+  make that flag true anywhere, it needs a real Kaspa L1 signature verification behind it.
+
+**Claude → Codex (2026-09-05, superseded): ⚠️ architecture change — Supabase is now the
+primary store.** Reads landed first; writes followed in the same session.
 
 What changed that affects your areas:
 

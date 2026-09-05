@@ -127,6 +127,15 @@ product could not function at all on-chain. The chain path was deliberately kept
 than deleted, so unsetting the env vars restores the previous behaviour exactly, and a
 future redeploy doesn't need this work reversed.
 
+**Writes** go through three signed HTTP endpoints rather than contract calls — see the API
+table in [`SPEC.md`](./SPEC.md). The client signs a message naming the action, domain,
+address and a timestamp (a wallet prompt, not a transaction, so it costs nothing);
+[`src/lib/server/verifyRequest.ts`](../src/lib/server/verifyRequest.ts) verifies it
+server-side, reads the authoritative owner from KNS, and only then writes with the
+service-role key. That file documents precisely what the check proves and what it doesn't,
+which matters because the contract used to be the thing enforcing ownership and no longer
+is.
+
 Schema lives in [`supabase/schema.sql`](../supabase/schema.sql). Two things about it are
 load-bearing rather than incidental: `domain_hash` is stored as `text` because a uint256
 overflows Postgres `bigint`, and it stays the canonical join key so off-chain rows can be

@@ -5,6 +5,8 @@ import { contracts } from '@/lib/contracts';
 import { kasplexClient } from '@/lib/viemClient';
 import { createKaswareEvmClient } from '@/lib/kaswareEvm';
 import { useToast } from '@/components/ToastProvider';
+import { isSupabaseConfigured } from '@/lib/supabase';
+import { signedFetch, readError } from '@/lib/signedFetch';
 import type { DomainLink } from './useGetDomainLinks';
 
 export function useUpdateDomainLinks() {
@@ -30,6 +32,26 @@ export function useUpdateDomainLinks() {
     setIsLoading(true);
 
     try {
+      if (isSupabaseConfigured) {
+        addToast(`Saving resources for "${domain}"...`);
+
+        const response = await signedFetch({
+          action: 'update-links',
+          domain,
+          address: account,
+          path: `/api/domains/${encodeURIComponent(domain)}/links`,
+          method: 'PUT',
+          body: { links: cleanLinks },
+        });
+
+        if (!response.ok) {
+          throw new Error(await readError(response, 'Failed to save resources.'));
+        }
+
+        addToast(`Resources saved for "${domain}".`, 'success');
+        return true;
+      }
+
       const walletClient = createKaswareEvmClient(account);
 
       addToast(`Saving resources for "${domain}"...`);
