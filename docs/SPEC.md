@@ -84,6 +84,26 @@ re-run at write time. Its only job is to prove the preflight ran, so a client ca
 straight to paying. Delete it and nothing becomes forgeable; users just go back to paying
 before finding out whether it would work.
 
+The final step is a **single transactional Postgres function**, not a sequence of inserts:
+
+| Function | Does, atomically |
+|---|---|
+| `create_listing` | validate categories → claim receipt → insert listing → attach categories |
+| `record_vote` | claim receipt → insert vote → return the new count |
+| `replace_domain_categories` | validate → remove stale → add new |
+| `replace_domain_links` | delete all → insert the new set in order |
+| `kaspadomains_schema_version` | returns the applied migration number |
+
+Two HTTP requests to PostgREST cannot be made atomic, so this is the only place the
+guarantee can live. All four write functions are `security definer` and therefore **bypass
+RLS by design** — the migration revokes `EXECUTE` from `public`, `anon` and `authenticated`
+and grants it only to `service_role`, and pins `search_path`. `npm run db:check` proves the
+publishable key cannot call them; treat a failure there as a live vulnerability, not a
+config nit.
+
+`kaspadomains_schema_version()` is called by the preflight before any payment, so a
+deployment whose code is ahead of its database refuses rather than failing at the write.
+
 **⚠ Live-chain status (verified 2026-09-05, see [`BUGS.md`](./BUGS.md) for full detail):**
 signatures below are correct per the ABI, but as of this writing most of them **cannot
 currently be called successfully** against the live RPC — `KaspaDomainsRegistry`,

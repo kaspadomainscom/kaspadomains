@@ -152,7 +152,17 @@ is the point: money is irreversible, so every refusable condition has to be esta
 before it moves. The intent is explicitly **not** part of the authorisation model — the
 write route re-verifies the signature, the KNS owner and the payment from scratch, and
 consumes the receipt through the global `payment_receipts` ledger. It exists so a client
-cannot skip straight to paying, and nothing else depends on it. The L1 key is used
+cannot skip straight to paying, and nothing else depends on it.
+
+**The write itself is one transactional Postgres function** (`create_listing`,
+`record_vote`, `replace_domain_categories`, `replace_domain_links`), because two HTTP
+requests to PostgREST cannot be made atomic and a paid write that half-succeeds costs the
+user real money. This is the one place application rules deliberately live in SQL, and it is
+narrow on purpose: allow-list membership, receipt uniqueness and insert ordering moved;
+authorisation did not. These functions are `security definer` and bypass RLS, so
+`EXECUTE` is revoked from every public role and granted only to `service_role` — see the
+permissions block in [`0003_atomic_writes.sql`](../supabase/migrations/0003_atomic_writes.sql),
+and the check that proves it in `npm run db:check`. The L1 key is used
 deliberately — it is the key that owns the domain on KNS, whereas the Kasplex EVM key is a
 different keypair entirely, which is why an earlier EVM-signature version could not prove
 ownership at all. `kaspa-wasm` is marked `serverExternalPackages` and must stay

@@ -4,7 +4,7 @@
 // same client library the app uses -- so the sb_publishable_/sb_secret_ key
 // formats are exercised exactly as production will exercise them.
 //
-// Four things get checked, in order of how badly you want to know about them:
+// Five things get checked, in order of how badly you want to know about them:
 //
 //   1. **Config.** Are the keys present and the right shape? A DB password
 //      pasted into SUPABASE_SECRET_KEY looks fine in an .env file and fails
@@ -20,12 +20,23 @@
 //      is worth re-running after any schema or policy change -- RLS is easy to
 //      switch off by accident from the dashboard, and nothing else would
 //      notice.
-//   4. **Writes.** The secret key can write, using a probe row that is deleted
+//   4. **Functions.** The atomic write functions exist and are at the version
+//      this build needs -- and, critically, that the publishable key *cannot*
+//      call them. They are `security definer`, so they bypass RLS by design;
+//      Postgres grants EXECUTE to PUBLIC by default and PostgREST exposes every
+//      public-schema function as an RPC. Without the explicit revokes in
+//      migration 3 they would be a hole straight through the authorisation
+//      model, opened by the migration meant to make writes safer.
+//   5. **Writes.** The secret key can write, using a probe row that is deleted
 //      again.
 //
 // Exits non-zero if anything required failed, so it can gate a deploy.
 import { readFileSync } from 'fs';
 import { createClient } from '@supabase/supabase-js';
+
+// Kept in step with src/lib/database.types.ts, which cannot be imported here
+// (it is TypeScript, and this script runs under plain node).
+const REQUIRED_SCHEMA_VERSION = 3;
 
 // ---------------------------------------------------------------------------
 // What the app expects. Keep in step with src/lib/database.types.ts.
@@ -202,6 +213,73 @@ for (const [table, row] of anonProbes) {
     // Refused for another reason (a foreign key, say). Still refused, but it
     // does not prove RLS did it -- say so rather than claiming a clean pass.
     warn(`anon insert into ${table}`, `refused, but by ${error.code}: ${error.message}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Atomic write functions
+// ---------------------------------------------------------------------------
+console.log('\n--- FUNCTIONS ---');
+// Whether the functions exist at all. The permission checks below are only
+// meaningful if they do -- see the note there.
+let functionsExist = false;
+{
+  const { data, error } = await admin.rpc('kaspadomains_schema_version');
+  if (error) {
+    line(
+      'schema version',
+      false,
+      error.code === 'PGRST202'
+        ? 'missing — apply supabase/migrations/0003_atomic_writes.sql'
+        : `${error.code}: ${error.message}${explainTransport(error.message)}`
+    );
+  } else {
+    const found = Number(data ?? 0);
+    functionsExist = found >= REQUIRED_SCHEMA_VERSION;
+    line(`schema version ${found}`, functionsExist, `need >= ${REQUIRED_SCHEMA_VERSION}`);
+  }
+}
+
+// The write functions are `security definer`: they run with the owner's rights
+// and bypass RLS. Postgres grants EXECUTE to PUBLIC by default and PostgREST
+// exposes every public-schema function as an RPC endpoint, so without the
+// explicit revokes in migration 3 the browser-visible key could call
+// create_listing directly -- a hole straight through the authorisation model,
+// opened by the migration that was supposed to make writes safer. This is the
+// check that proves the revokes landed.
+console.log('\n--- FUNCTION PERMISSIONS (anon) — every one MUST fail ---');
+for (const [fn, args] of [
+  ['create_listing', {
+    p_domain_hash: '1', p_name: 'rpc-probe-never-persists.kas', p_owner: 'kaspa:probe',
+    p_submitted_by: 'kaspa:probe', p_fee_paid: '0', p_payment_tx_id: 'rpc-probe',
+    p_payer: 'kaspa:probe', p_categories: ['other'],
+  }],
+  ['record_vote', {
+    p_name: 'rpc-probe-never-persists.kas', p_voter: 'kaspa:probe',
+    p_fee_paid: '0', p_payment_tx_id: 'rpc-probe-2',
+  }],
+  ['replace_domain_categories', { p_name: 'rpc-probe-never-persists.kas', p_categories: ['other'] }],
+  ['replace_domain_links', { p_name: 'rpc-probe-never-persists.kas', p_links: [] }],
+]) {
+  const { error } = await anon.rpc(fn, args);
+  if (!error) {
+    line(`anon rpc ${fn} blocked`, false, 'CALL SUCCEEDED — THE PUBLIC KEY CAN BYPASS RLS');
+  } else if (error.code === 'PGRST202') {
+    // "Not found" is what a correctly revoked function looks like -- PostgREST
+    // hides functions the calling role cannot execute -- but it is also what a
+    // function that was never created looks like. Those are not the same
+    // result, and calling the second one a pass would mean this check goes
+    // green precisely when nothing has been set up. Only treat it as a pass if
+    // the admin probe above proved the functions actually exist.
+    if (functionsExist) {
+      line(`anon rpc ${fn} blocked`, true, 'exists, but not exposed to the anon role');
+    } else {
+      line(`anon rpc ${fn} blocked`, false, 'inconclusive — the function does not exist yet');
+    }
+  } else if (error.code === '42501' || /permission denied/i.test(error.message)) {
+    line(`anon rpc ${fn} blocked`, true, `permission denied (${error.code})`);
+  } else {
+    warn(`anon rpc ${fn}`, `refused, but by ${error.code}: ${error.message}`);
   }
 }
 

@@ -61,8 +61,9 @@ have no deployed code (see [`docs/BUGS.md`](./docs/BUGS.md)).
    200 KAS listing and 1 KAS vote fees are paid to it. Paid actions stay disabled until
    it is set, rather than silently becoming free.
 5. `npm run db:check` — verifies the connection, every table and column the app expects,
-   and (most importantly) that the browser-visible key **cannot** write. Exits non-zero if
-   anything fails, so it can gate a deploy.
+   that the atomic write functions are at the version this build needs, and (most
+   importantly) that the browser-visible key **cannot** write or call those functions. Exits
+   non-zero if anything fails, so it can gate a deploy.
 
 Already have a project from before 2026-09-05? Re-running `schema.sql` is safe but not
 sufficient: `create table if not exists` skips an existing table *including columns added

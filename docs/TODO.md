@@ -108,11 +108,16 @@ and [`BUGS.md`](./BUGS.md):
 - [x] **Security audit answered** (2026-09-06): seven of Codex's nine findings fixed
       (SA-01/02/03/04/06/07/09). SA-05 (nonce + profile revision) and SA-08 (transactional
       write) remain — see `GAPS.md`.
-- [ ] **SA-08: make the paid write atomic.** Listing inserts the domain row, then the
-      category rows, then hand-rolls a rollback; links delete-then-insert. All of it wants
-      one `security definer` Postgres function so validation, receipt consumption and the
-      writes are all-or-nothing. Worth agreeing first that we're happy moving rules into
-      SQL — that's a change in where this app's logic lives, not just a refactor.
+- [x] **SA-08: paid writes are atomic** (2026-09-06). Four `security definer` Postgres
+      functions, one transaction each. I made the SQL call rather than waiting on it, since
+      the schema had not been applied yet and adding the functions now costs nothing;
+      say if you'd rather it were done differently. Only mechanical rules moved into SQL —
+      authorisation stayed in the routes.
+- [ ] **Dependency majors, deliberately not taken** (2026-09-06). In-range updates applied
+      (React 19.2.8, viem 2.56.3, Tailwind 4.3.3, ethers 6.17, TypeScript 5.9.3), 0
+      vulnerabilities. Left alone because each is a breaking jump needing its own pass:
+      **eslint 10**, **TypeScript 7**, **@noble/curves 2**, **lucide-react 1**,
+      **@types/node 26**.
 - [ ] **SA-05: one-time nonce and a profile revision.** Bites hardest on `update-links`,
       which delete-and-reinserts, so replaying an older captured request rolls a newer
       profile back. Needs a table, an issuing endpoint, and a decision on how long an

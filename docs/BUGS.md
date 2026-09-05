@@ -130,6 +130,39 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **A paid write was four round trips with a hand-rolled rollback.** Codex's SA-08, and the
+  last of the nine. Listing was: validate categories, claim the receipt, insert the domain,
+  insert the categories — four separate requests, with a manual `delete` if the last one
+  failed, whose own success was never checked while the response told the user nothing had
+  been created. Voting was four more. Links were a delete followed by an insert, so a failed
+  insert left a profile wiped. Between any two of those the network can drop, and the user
+  has already paid. **No amount of application-side sequencing fixes this** — two HTTP
+  requests to PostgREST cannot be made atomic. Fixed by moving each into a single Postgres
+  function (`create_listing`, `record_vote`, `replace_domain_categories`,
+  `replace_domain_links`), which runs in one transaction: either the receipt is consumed and
+  the rows exist, or nothing happened. The category allow-list check moved inside too, so it
+  is evaluated against the same snapshot as the insert rather than a few milliseconds
+  earlier. `claimReceipt.ts` is deleted — with the write atomic there is nothing left to
+  release.
+  **The dangerous part of this fix, and what guards it:** those functions are
+  `security definer`, so they bypass the RLS that makes anonymous writes impossible. Postgres
+  grants `EXECUTE` to `PUBLIC` by default and PostgREST exposes every `public`-schema
+  function as an RPC endpoint — so left alone, this migration would have handed the
+  browser-visible key a way to call `create_listing` directly. The migration revokes from
+  `public`/`anon`/`authenticated` and grants only to `service_role`, pins `search_path`, and
+  `npm run db:check` now proves the publishable key cannot call any of them.
+  Also added: `kaspadomains_schema_version()`, checked by the preflight *before* payment, so
+  a deployment whose code is ahead of its database refuses instead of failing at the write —
+  which is after the money has gone.
+- **My own `db:check` reported the security-critical permission check as OK when it had
+  proved nothing.** Caught immediately after writing it, and a straight recurrence of
+  `MIND.md` #14 — the same mistake as the `/status` bug from the day before, made while
+  writing the checklist about it. PostgREST hides functions the calling role cannot execute,
+  so a correctly-revoked function and a function that was never created both come back as
+  `PGRST202`. The check read that as "blocked" and printed four green lines against a
+  database with no functions at all. Fixed by gating it on the admin-side existence probe:
+  if the functions don't exist, the permission result is reported as **inconclusive**, not a
+  pass.
 - **The wallet was asked to pay before the server had agreed to do anything.** Codex's
   SA-04, and the most serious thing left open after the audit. The browser chose the
   off-chain flow from the **public** Supabase key and called `payFee` immediately; the API

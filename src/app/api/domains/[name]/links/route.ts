@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
 import { requireDomainOwner, VerificationError, extractPayload } from '@/lib/server/verifyRequest';
+import { rpcError } from '@/lib/server/rpcError';
 
 export const runtime = 'nodejs';
 
@@ -125,37 +126,21 @@ export async function PUT(
     }
   }
 
-  // Replace wholesale, in a delete-then-insert. Postgres runs each statement
-  // atomically but these are two round trips: if the insert fails the links
-  // are left empty, which is visible and recoverable by saving again, rather
-  // than silently merging old and new rows.
-  const { error: deleteError } = await supabase
-    .from('domain_links')
-    .delete()
-    .eq('domain_id', domain.id);
+  // Replace wholesale, in one transaction.
+  //
+  // This was a delete followed by a separate insert, so an insert that failed
+  // left the profile empty -- visible and recoverable by saving again, but still
+  // a destroyed profile, and the user had no way to know their links were gone
+  // rather than merely unsaved. `replace_domain_links` does both inside one
+  // Postgres transaction, so a failure changes nothing at all.
+  const { error: rpcFailure } = await supabase.rpc('replace_domain_links', {
+    p_name: verified.domain,
+    p_links: links,
+  });
 
-  if (deleteError) {
-    console.error('Failed to clear existing links:', deleteError);
-    return NextResponse.json({ error: 'Could not update resources.' }, { status: 500 });
-  }
-
-  if (links.length > 0) {
-    const { error: insertError } = await supabase.from('domain_links').insert(
-      links.map((link, position) => ({
-        domain_id: domain.id,
-        name: link.name,
-        url: link.url,
-        position,
-      }))
-    );
-
-    if (insertError) {
-      console.error('Failed to insert links:', insertError);
-      return NextResponse.json(
-        { error: 'Resources were cleared but not saved. Please try again.' },
-        { status: 500 }
-      );
-    }
+  if (rpcFailure) {
+    const mapped = rpcError(rpcFailure, 'Could not update resources.');
+    return NextResponse.json({ error: mapped.message }, { status: mapped.status });
   }
 
   return NextResponse.json({ links }, { status: 200 });

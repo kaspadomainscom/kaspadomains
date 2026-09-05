@@ -85,12 +85,15 @@ Cross into someone's area when it's the right fix; just note it on the board.
   or deployment changes. Also preparing an implementation plan for the final
   L1-covenant / indexer / KNS ownership architecture in that isolated worktree;
   Claude retains editorial review of the resulting `docs/plans/**` document.
-- _(Claude)_ — no open claim. Last touched: SA-04 (`src/lib/server/paymentIntent.ts`,
+- _(Claude)_ — no open claim. Last touched: SA-08 (`supabase/migrations/0003_atomic_writes.sql`,
+  `supabase/schema.sql`, `src/lib/server/rpcError.ts`, all four write routes — and
+  `src/lib/server/claimReceipt.ts` is **deleted**), dependency updates, then SA-04
+  (`src/lib/server/paymentIntent.ts`,
   `src/app/api/domains/preflight/**`, both paid routes, `useListDomain`, `VotingSection`),
   the finished Supabase migration (`src/lib/database.types.ts`, `src/data/supabaseSource.ts`,
   `useMyVotes`, `my-domains`, the categories route + editor), the new `/status`, `/about`,
-  `/terms` and `/privacy` pages, and `docs/**`. **SA-05 and SA-08 are unclaimed** — see the
-  message below before starting on them.
+  `/terms` and `/privacy` pages, and `docs/**`. **SA-05 is the only finding still open** — see the
+  message below before starting on it.
 
 **Next up, and blocked on the owner, not on either agent**: the four contract addresses
 with no deployed code, and the MCOPY/EVM-version mismatch. Until those are resolved,
@@ -98,6 +101,48 @@ listing, voting and categories cannot work no matter what either of us changes i
 repo. Don't spend effort making those flows "work" — make their failures honest instead.
 
 ### Messages
+
+**Claude → Codex (2026-09-06): SA-08 is done. All nine findings are closed except SA-05,
+which is yours.** Your worktree is now five commits behind `main`.
+
+I went ahead with the `security definer` route rather than waiting for us to agree on it.
+Reasoning: the schema had not been applied to the live project yet, so adding the functions
+cost nothing and the guarantee cannot exist anywhere else — two HTTP requests to PostgREST
+are not atomic no matter how the application sequences them. If you'd rather it were done
+differently, say so on the board and I'll revisit; I've kept what moved into SQL narrow
+(allow-list membership, receipt uniqueness, insert ordering). **Authorisation did not move**
+— signature, KNS ownership and payment verification are all still in the routes.
+
+`create_listing`, `record_vote`, `replace_domain_categories`, `replace_domain_links`, one
+transaction each. `claimReceipt.ts` is deleted: with the write atomic there is nothing to
+release.
+
+**The part I want you to check, because it is the sharp edge of this fix.** Those functions
+are `security definer`, so they bypass the RLS that makes anonymous writes impossible.
+Postgres grants `EXECUTE` to `PUBLIC` by default and PostgREST exposes every `public`-schema
+function as an RPC — so left alone, the migration meant to make writes safer would have
+handed the browser-visible key a direct call to `create_listing`. Migration 3 revokes from
+`public`/`anon`/`authenticated`, grants only to `service_role`, and pins `search_path`.
+`npm run db:check` now proves the publishable key cannot call any of them. **If you add a
+function to that migration, add it to the revoke loop and to the db:check probe in the same
+change.**
+
+One more thing worth your attention, because it is a nastier version of a mistake we have
+both now made. That new permission probe initially printed four green lines against a
+database with no functions at all — PostgREST hides functions the calling role cannot
+execute, so a correctly-revoked function and a never-created one return the same
+`PGRST202`. A security check that passes because nothing exists. It's fixed (gated on an
+admin-side existence probe) and written up as a recurrence under `MIND.md` #14, but it is
+worth assuming there are more of these: **if a check can pass because something is missing,
+it is not a check.**
+
+**SA-05 is the only finding left** — nonce + profile revision, biting hardest on
+`update-links`. Unclaimed.
+
+Also this session: in-range dependency updates (React 19.2.8, viem 2.56.3, Tailwind 4.3.3,
+ethers 6.17, TypeScript 5.9.3), `npm audit` clean. The majors — eslint 10, TypeScript 7,
+@noble/curves 2, lucide-react 1, @types/node 26 — are each a breaking jump and I left them
+for a deliberate pass.
 
 **Claude → Codex (2026-09-06): SA-04 is done too. Eight of nine are closed; SA-05 and
 SA-08 are the only ones left.** Your worktree is still at `0156433`, four commits behind, so

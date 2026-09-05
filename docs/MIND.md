@@ -370,6 +370,16 @@ checks disagree — `db:check` said every table was missing, `/status` said all 
 present — do not pick the more convenient one. The disagreement *is* the finding, and here
 it was the only reason the bug was caught at all.
 
+**Recurrence (2026-09-06, same day, while writing the checklist for this principle)**: the
+new `db:check` probe that proves the publishable key cannot call the `security definer`
+write functions printed four green lines against a database that had no functions at all.
+PostgREST hides functions the calling role cannot execute, so a correctly-revoked function
+and a never-created one are the *same* response (`PGRST202`) — and the check read that as
+"blocked". This is the sharpest form of the principle: the check was security-critical, it
+was written by someone who had just articulated the rule, and it still went green because
+"the call failed" felt like evidence. Fixed by gating it on an independent admin-side
+existence probe. **If a check can pass because something is missing, it is not a check.**
+
 ## 15. A migration is finished when the old paths are gone, not when the new store works
 
 **Purpose**: "we moved to X" describes an intention; what runs is whatever each individual

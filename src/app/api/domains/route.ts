@@ -4,7 +4,7 @@ import { keccak256, toUtf8Bytes } from 'ethers';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
 import { requireDomainOwner, VerificationError, extractPayload } from '@/lib/server/verifyRequest';
 import { verifyPayment } from '@/lib/server/verifyPayment';
-import { claimReceipt, releaseReceipt } from '@/lib/server/claimReceipt';
+import { rpcError } from '@/lib/server/rpcError';
 import { verifyPaymentIntent } from '@/lib/server/paymentIntent';
 import { LISTING_FEE_SOMPI } from '@/lib/fees';
 
@@ -49,9 +49,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Expected a JSON body.' }, { status: 400 });
   }
 
-  const categories = Array.isArray(body.categories)
-    ? body.categories.filter((c): c is string => typeof c === 'string' && c.length > 0)
-    : [];
+  // Deduplicated, and by the same rule the preflight uses. If the two disagree,
+  // a body that passes the free check can still fail inside the paid write --
+  // ["tech", "tech"] would clear the preflight and then hit a primary-key
+  // violation after the fee had been paid.
+  const categories = Array.from(
+    new Set(
+      (Array.isArray(body.categories) ? body.categories : [])
+        .map((c) => (typeof c === 'string' ? c.trim() : ''))
+        .filter(Boolean)
+    )
+  );
 
   // Mandatory at listing time, matching the on-chain flow it replaces.
   if (categories.length === 0) {
@@ -124,108 +132,47 @@ export async function POST(request: Request) {
 
   const supabase = getSupabaseAdminClient();
 
-  // The UI only offers allowed categories, but the UI is not the security
-  // boundary. The foreign key on domain_categories proves a key *exists*; it
-  // says nothing about whether it is currently published, so without this an
-  // owner could post a listing straight into a category we've withdrawn.
-  //
-  // Checked after ownership (so it isn't an open probe of our category table)
-  // and before the receipt is claimed (so a rejected listing doesn't consume
-  // the payment).
-  const { data: allowed, error: allowedError } = await supabase
-    .from('categories')
-    .select('key')
-    .eq('is_allowed', true)
-    .in('key', categories);
-
-  if (allowedError) {
-    console.error('Failed to check categories:', allowedError);
-    return NextResponse.json({ error: 'Could not create the listing.' }, { status: 500 });
-  }
-
-  const allowedKeys = new Set((allowed ?? []).map((row) => row.key as string));
-  const rejected = categories.filter((key) => !allowedKeys.has(key));
-  if (rejected.length > 0) {
-    return NextResponse.json(
-      { error: `Not a category you can list under: ${rejected.join(', ')}.` },
-      { status: 400 }
-    );
-  }
-
-  // Claim the receipt globally before writing anything, so it cannot also fund
-  // a vote. Released below if the listing does not get created.
-  try {
-    await claimReceipt(supabase, payment, 'list-domain', verified.signerAddress);
-  } catch (error) {
-    if (error instanceof VerificationError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    throw error;
-  }
-
   // Same hash the contracts derive, so these rows stay reconcilable with chain
   // data if listings are ever mirrored on-chain.
   const domainHash = BigInt(keccak256(toUtf8Bytes(verified.domain))).toString();
 
-  const { data: inserted, error: insertError } = await supabase
-    .from('domains')
-    .insert({
-      domain_hash: domainHash,
-      name: verified.domain,
-      owner: verified.knsOwner,
-      // The signer proved control of the key behind this address, and it
-      // equals the KNS owner -- so submitter and owner are the same party.
-      submitted_by: verified.signerAddress,
-      ownership_verified: true,
-      fee_paid: payment.paidSompi.toString(),
-      payment_tx_id: payment.txId,
-      is_active: true,
-    })
-    .select('id, name')
-    .single();
+  // One transactional call, not four round trips.
+  //
+  // This used to validate categories, claim the receipt, insert the listing and
+  // insert the categories as separate requests, with a hand-rolled rollback if
+  // the last one failed -- and the rollback's own success was never checked
+  // while the response told the user nothing had been created. Between any two
+  // of those the network can drop, and the user has already paid 200 KAS.
+  //
+  // `create_listing` does all of it inside one Postgres transaction: either the
+  // receipt is consumed and the listing exists with its categories, or nothing
+  // happened at all. That guarantee cannot be built in application code, because
+  // two HTTP requests to PostgREST are not atomic no matter how they are
+  // sequenced.
+  //
+  // The category allow-list check moved in there too, so it is evaluated against
+  // the same snapshot as the insert -- a category withdrawn between the check
+  // and the write can no longer slip through.
+  const { data: listingId, error: rpcFailure } = await supabase.rpc('create_listing', {
+    p_domain_hash: domainHash,
+    p_name: verified.domain,
+    p_owner: verified.knsOwner,
+    // The signer proved control of the key behind this address, and it equals
+    // the KNS owner -- so submitter and owner are the same party.
+    p_submitted_by: verified.signerAddress,
+    p_fee_paid: payment.paidSompi.toString(),
+    p_payment_tx_id: payment.txId,
+    p_payer: verified.signerAddress,
+    p_categories: categories,
+  });
 
-  if (insertError) {
-    // The listing did not happen, so give the receipt back rather than leaving
-    // the payer out 200 KAS with nothing to show and no way to retry.
-    await releaseReceipt(supabase, payment.txId);
-
-    // 23505 = unique_violation. Two different constraints can raise it here and
-    // they mean very different things to the user, so don't collapse them: one
-    // is "you already did this", the other is "that payment is already spent".
-    if (insertError.code === '23505') {
-      const detail = `${insertError.message} ${insertError.details ?? ''}`;
-      if (detail.includes('payment_tx_id')) {
-        return NextResponse.json(
-          { error: 'That payment has already been used for another listing.' },
-          { status: 409 }
-        );
-      }
-      return NextResponse.json({ error: 'That domain is already listed.' }, { status: 409 });
-    }
-    console.error('Failed to insert listing:', insertError);
-    return NextResponse.json({ error: 'Could not create the listing.' }, { status: 500 });
-  }
-
-  const { error: categoryError } = await supabase.from('domain_categories').insert(
-    categories.map((category_key) => ({ domain_id: inserted.id, category_key }))
-  );
-
-  if (categoryError) {
-    // Roll the listing back rather than leaving an uncategorised row behind:
-    // the browse pages are driven entirely by category membership, so a
-    // listing with none is invisible and looks like the request silently
-    // failed.
-    await supabase.from('domains').delete().eq('id', inserted.id);
-    await releaseReceipt(supabase, payment.txId);
-    console.error('Failed to attach categories, listing rolled back:', categoryError);
-    return NextResponse.json(
-      { error: 'Could not attach categories, so the listing was not created.' },
-      { status: 500 }
-    );
+  if (rpcFailure) {
+    const mapped = rpcError(rpcFailure, 'Could not create the listing.');
+    return NextResponse.json({ error: mapped.message }, { status: mapped.status });
   }
 
   return NextResponse.json(
-    { domain: inserted.name, ownershipVerified: true },
+    { domain: verified.domain, id: listingId, ownershipVerified: true },
     { status: 201 }
   );
 }

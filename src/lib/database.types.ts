@@ -201,7 +201,50 @@ export type Database = {
         Relationships: [];
       };
     };
-    Functions: Record<never, never>;
+    Functions: {
+      /**
+       * Which migration has been applied. Called before a payment is requested
+       * so a database that predates the atomic write functions is refused
+       * *before* the wallet is asked, rather than at the write -- which is
+       * after the money has gone.
+       */
+      kaspadomains_schema_version: {
+        Args: Record<PropertyKey, never>;
+        Returns: number;
+      };
+      /** Receipt + listing + categories, all-or-nothing. Returns the new id. */
+      create_listing: {
+        Args: {
+          p_domain_hash: string;
+          p_name: string;
+          p_owner: string;
+          p_submitted_by: string;
+          p_fee_paid: string;
+          p_payment_tx_id: string;
+          p_payer: string;
+          p_categories: string[];
+        };
+        Returns: number;
+      };
+      /** Receipt + vote, all-or-nothing. Returns the new vote count. */
+      record_vote: {
+        Args: {
+          p_name: string;
+          p_voter: string;
+          p_fee_paid: string;
+          p_payment_tx_id: string;
+        };
+        Returns: number;
+      };
+      replace_domain_categories: {
+        Args: { p_name: string; p_categories: string[] };
+        Returns: undefined;
+      };
+      replace_domain_links: {
+        Args: { p_name: string; p_links: { name: string; url: string }[] };
+        Returns: undefined;
+      };
+    };
     Enums: Record<never, never>;
     CompositeTypes: Record<never, never>;
   };
@@ -213,6 +256,15 @@ export type Tables<T extends keyof Database['public']['Tables']> =
 
 export type Views<T extends keyof Database['public']['Views']> =
   Database['public']['Views'][T]['Row'];
+
+/**
+ * The migration this code requires.
+ *
+ * Compared against `kaspadomains_schema_version()` before any payment is taken.
+ * Bump it in the same commit as the migration that raises it, or the check
+ * passes against a database that is missing what the code needs.
+ */
+export const REQUIRED_SCHEMA_VERSION = 3;
 
 /** Every table name, for the schema-drift check in `scripts/db-check.mjs`. */
 export const TABLE_NAMES = [

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
 import { verifySignedRequest, VerificationError, extractPayload } from '@/lib/server/verifyRequest';
 import { verifyPayment } from '@/lib/server/verifyPayment';
-import { claimReceipt, releaseReceipt } from '@/lib/server/claimReceipt';
+import { rpcError } from '@/lib/server/rpcError';
 import { verifyPaymentIntent } from '@/lib/server/paymentIntent';
 import { VOTE_FEE_SOMPI } from '@/lib/fees';
 
@@ -95,66 +95,22 @@ export async function POST(
 
   const supabase = getSupabaseAdminClient();
 
-  const { data: domain, error: lookupError } = await supabase
-    .from('domains')
-    .select('id')
-    .eq('name', verified.domain)
-    .maybeSingle();
+  // One transactional call. Previously this looked the domain up, claimed the
+  // receipt, inserted the vote and counted the votes as four separate requests,
+  // releasing the receipt by hand if the insert failed. `record_vote` does the
+  // claim, the insert and the count inside one Postgres transaction, so the
+  // 1 KAS is consumed if and only if the vote exists.
+  const { data: votes, error: rpcFailure } = await supabase.rpc('record_vote', {
+    p_name: verified.domain,
+    p_voter: verified.signerAddress,
+    p_fee_paid: payment.paidSompi.toString(),
+    p_payment_tx_id: payment.txId,
+  });
 
-  if (lookupError) {
-    console.error('Vote lookup failed:', lookupError);
-    return NextResponse.json({ error: 'Could not record the vote.' }, { status: 500 });
-  }
-  if (!domain) {
-    return NextResponse.json({ error: 'That domain is not listed.' }, { status: 404 });
-  }
-
-  // Global claim first: without it a 200 KAS listing receipt would also clear
-  // the 1 KAS vote threshold and could be spent a second time here.
-  try {
-    await claimReceipt(supabase, payment, 'vote', verified.signerAddress);
-  } catch (error) {
-    if (error instanceof VerificationError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    throw error;
+  if (rpcFailure) {
+    const mapped = rpcError(rpcFailure, 'Could not record the vote.');
+    return NextResponse.json({ error: mapped.message }, { status: mapped.status });
   }
 
-  const { error: voteError } = await supabase
-    .from('votes')
-    .insert({
-      domain_id: domain.id,
-      voter: verified.signerAddress,
-      fee_paid: payment.paidSompi.toString(),
-      payment_tx_id: payment.txId,
-    });
-
-  if (voteError) {
-    // The vote was not recorded, so return the receipt for reuse.
-    await releaseReceipt(supabase, payment.txId);
-
-    if (voteError.code === '23505') {
-      // Two constraints, two very different meanings — see the listing route.
-      const detail = `${voteError.message} ${voteError.details ?? ''}`;
-      if (detail.includes('payment_tx_id')) {
-        return NextResponse.json(
-          { error: 'That payment has already been used for another vote.' },
-          { status: 409 }
-        );
-      }
-      return NextResponse.json(
-        { error: 'This wallet has already voted for that domain.' },
-        { status: 409 }
-      );
-    }
-    console.error('Failed to insert vote:', voteError);
-    return NextResponse.json({ error: 'Could not record the vote.' }, { status: 500 });
-  }
-
-  const { count } = await supabase
-    .from('votes')
-    .select('id', { count: 'exact', head: true })
-    .eq('domain_id', domain.id);
-
-  return NextResponse.json({ votes: count ?? 0 }, { status: 201 });
+  return NextResponse.json({ votes: Number(votes ?? 0) }, { status: 201 });
 }

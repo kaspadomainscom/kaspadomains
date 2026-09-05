@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
 import { requireDomainOwner, VerificationError, extractPayload } from '@/lib/server/verifyRequest';
+import { rpcError } from '@/lib/server/rpcError';
 
 export const runtime = 'nodejs';
 
@@ -114,95 +115,18 @@ export async function PUT(
     return NextResponse.json({ error: 'That domain is not listed.' }, { status: 404 });
   }
 
-  // Same allow-list check the listing route does. The foreign key proves a
-  // category exists; it says nothing about whether it is currently published,
-  // so without this an owner could move a listing into a withdrawn category.
-  const { data: allowed, error: allowedError } = await supabase
-    .from('categories')
-    .select('key')
-    .eq('is_allowed', true)
-    .in('key', categories);
+  // One transactional call. The allow-list check lives inside it, so it is
+  // evaluated against the same snapshot as the write -- and the add and the
+  // remove can no longer be separated by a failure, which previously left a
+  // listing in categories its owner had just removed.
+  const { error: rpcFailure } = await supabase.rpc('replace_domain_categories', {
+    p_name: verified.domain,
+    p_categories: categories,
+  });
 
-  if (allowedError) {
-    console.error('Failed to check categories:', allowedError);
-    return NextResponse.json({ error: 'Could not update categories.' }, { status: 500 });
-  }
-
-  const allowedKeys = new Set((allowed ?? []).map((row) => row.key));
-  const rejected = categories.filter((key) => !allowedKeys.has(key));
-  if (rejected.length > 0) {
-    return NextResponse.json(
-      { error: `Not a category you can list under: ${rejected.join(', ')}.` },
-      { status: 400 }
-    );
-  }
-
-  // KNS is the authority on ownership; this row caches it. If they have drifted
-  // apart, the row is what is wrong.
-  if ((domain.owner ?? '') !== verified.knsOwner) {
-    const { error: ownerSyncError } = await supabase
-      .from('domains')
-      .update({ owner: verified.knsOwner, submitted_by: verified.signerAddress })
-      .eq('id', domain.id);
-
-    if (ownerSyncError) {
-      console.error('Failed to sync owner from KNS:', ownerSyncError);
-    }
-  }
-
-  // Add before removing, so a failure between the two leaves the listing
-  // over-categorised rather than uncategorised. Over-categorised is visible and
-  // fixed by saving again; uncategorised is invisible, and the owner would have
-  // no page left to fix it from. `ignoreDuplicates` makes the add idempotent,
-  // so a retry after a partial failure is safe.
-  const { error: insertError } = await supabase
-    .from('domain_categories')
-    .upsert(
-      categories.map((category_key) => ({ domain_id: domain.id, category_key })),
-      { onConflict: 'domain_id,category_key', ignoreDuplicates: true }
-    );
-
-  if (insertError) {
-    console.error('Failed to insert categories:', insertError);
-    return NextResponse.json({ error: 'Could not update categories.' }, { status: 500 });
-  }
-
-  const { data: existing, error: existingError } = await supabase
-    .from('domain_categories')
-    .select('category_key')
-    .eq('domain_id', domain.id);
-
-  if (existingError) {
-    console.error('Failed to read current categories:', existingError);
-    return NextResponse.json(
-      { error: 'The new categories were saved, but the old ones may remain. Save again.' },
-      { status: 500 }
-    );
-  }
-
-  // Delete by an explicit list of keys rather than a negated filter, so nothing
-  // has to be spliced into a PostgREST filter string by hand.
-  const stale = (existing ?? [])
-    .map((row) => row.category_key)
-    .filter((key) => !categories.includes(key));
-
-  if (stale.length > 0) {
-    const { error: deleteError } = await supabase
-      .from('domain_categories')
-      .delete()
-      .eq('domain_id', domain.id)
-      .in('category_key', stale);
-
-    if (deleteError) {
-      console.error('Failed to remove old categories:', deleteError);
-      return NextResponse.json(
-        {
-          error:
-            'The new categories were saved, but the old ones could not be removed. Save again to finish.',
-        },
-        { status: 500 }
-      );
-    }
+  if (rpcFailure) {
+    const mapped = rpcError(rpcFailure, 'Could not update categories.');
+    return NextResponse.json({ error: mapped.message }, { status: mapped.status });
   }
 
   return NextResponse.json({ categories }, { status: 200 });

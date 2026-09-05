@@ -6,7 +6,7 @@ import {
   getSupabaseAdminClient,
   getSupabaseReadClient,
 } from '@/lib/supabase';
-import { TABLE_NAMES } from '@/lib/database.types';
+import { TABLE_NAMES, REQUIRED_SCHEMA_VERSION } from '@/lib/database.types';
 import {
   isFeeCollectionConfigured,
   TREASURY_ADDRESS,
@@ -150,6 +150,62 @@ async function checkSchema(): Promise<Check[]> {
   ];
 }
 
+/**
+ * Are the atomic write functions present?
+ *
+ * Separate from the table check because a database can have every table and
+ * still be missing migration 3, in which case reads work perfectly and every
+ * paid write fails -- after payment. The preflight refuses in that state; this
+ * says why.
+ */
+async function checkSchemaVersion(): Promise<Check> {
+  if (!isSupabaseWritable) {
+    return {
+      id: 'schema-version',
+      label: 'Atomic write functions',
+      state: 'unknown',
+      detail: 'Cannot be checked without a server key.',
+    };
+  }
+
+  const { data, error } = await getSupabaseAdminClient().rpc('kaspadomains_schema_version');
+
+  if (error) {
+    // PGRST202 is "no such function": the migration has not been applied.
+    return {
+      id: 'schema-version',
+      label: 'Atomic write functions',
+      state: error.code === 'PGRST202' ? 'fail' : 'unknown',
+      detail:
+        error.code === 'PGRST202'
+          ? 'Missing. Paid writes are disabled until they exist.'
+          : `Could not check: ${error.message || error.code}`,
+      action:
+        error.code === 'PGRST202'
+          ? 'Apply supabase/migrations/0003_atomic_writes.sql.'
+          : undefined,
+    };
+  }
+
+  const found = Number(data ?? 0);
+  if (found < REQUIRED_SCHEMA_VERSION) {
+    return {
+      id: 'schema-version',
+      label: 'Atomic write functions',
+      state: 'fail',
+      detail: `Database is at version ${found}; this build needs ${REQUIRED_SCHEMA_VERSION}.`,
+      action: 'Apply the remaining files in supabase/migrations/, in filename order.',
+    };
+  }
+
+  return {
+    id: 'schema-version',
+    label: 'Atomic write functions',
+    state: 'ok',
+    detail: `Database schema version ${found}.`,
+  };
+}
+
 async function checkPublicRead(): Promise<Check> {
   const client = getSupabaseReadClient();
   if (!client) {
@@ -287,12 +343,13 @@ export async function GET() {
   });
 
   if (isSupabaseConfigured || isSupabaseWritable) {
-    const [schema, read, rls] = await Promise.all([
+    const [schema, version, read, rls] = await Promise.all([
       checkSchema(),
+      checkSchemaVersion(),
       checkPublicRead(),
       checkRls(),
     ]);
-    checks.push(...schema, read, rls);
+    checks.push(...schema, version, read, rls);
   }
 
   const failing = checks.filter((c) => c.state === 'fail');

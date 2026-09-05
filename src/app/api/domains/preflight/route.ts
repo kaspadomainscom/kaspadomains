@@ -8,6 +8,7 @@ import {
   extractPayload,
 } from '@/lib/server/verifyRequest';
 import { issuePaymentIntent, type IntentAction } from '@/lib/server/paymentIntent';
+import { REQUIRED_SCHEMA_VERSION } from '@/lib/database.types';
 import {
   LISTING_FEE_SOMPI,
   VOTE_FEE_SOMPI,
@@ -110,6 +111,27 @@ export async function POST(request: Request) {
   }
 
   const supabase = getSupabaseAdminClient();
+
+  // Is the database actually new enough for the code that will do the write?
+  //
+  // The paid write goes through `create_listing` / `record_vote`, which arrived
+  // in migration 3. A database that predates them fails at the *write* -- which
+  // is after the money has gone. Checking here costs one cheap call and turns a
+  // paid failure into a refusal.
+  const { data: schemaVersion, error: versionError } = await supabase.rpc(
+    'kaspadomains_schema_version'
+  );
+
+  if (versionError || Number(schemaVersion ?? 0) < REQUIRED_SCHEMA_VERSION) {
+    console.error(
+      'Schema version check failed:',
+      versionError ?? `found ${schemaVersion}, need ${REQUIRED_SCHEMA_VERSION}`
+    );
+    return NextResponse.json(
+      { error: 'This deployment is not finished setting up, so this action is unavailable.' },
+      { status: 503 }
+    );
+  }
 
   const { data: existing, error: lookupError } = await supabase
     .from('domains')

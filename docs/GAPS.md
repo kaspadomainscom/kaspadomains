@@ -56,19 +56,18 @@ live backlog the continuous audit loop appends to.
       signer and amount. Both paid routes require it, so the order cannot be skipped, and
       the client pays the server's quote rather than its own constant. See `BUGS.md` for
       the verification evidence.
-      **What this does not fix:** a payment can still be made and the write still fail —
-      the network can drop between the two, or Postgres can fail mid-request. The window is
-      now small and the causes are genuine faults rather than predictable misconfiguration,
-      but it is not zero, and closing it entirely needs SA-08's transactional write.
+      **Since SA-08 also landed**, the remaining window is genuinely small: the payment and
+      the write are separate operations, so a client that pays and then loses its connection
+      before posting still ends up paid-but-unlisted. The receipt is unclaimed in that case,
+      so **retrying with the same transaction id works** — but only if the user comes back.
       **Refund policy remains an unmade owner decision** (see `/terms`).
-- [ ] **Listing and link replacement are multi-step, not transactional** (Codex SA-08).
-      The listing route inserts the domain row, then the category rows, then rolls the
-      domain back by hand if categories fail — and doesn't verify the rollback succeeded
-      while telling the user nothing was created. The links route deletes and reinserts in
-      separate calls. Both want a single Postgres function so validation, receipt
-      consumption and the writes happen all-or-nothing. Not built yet because it means
-      moving real logic into SQL (`security definer` RPCs), which is a change in where this
-      app's rules live and worth doing deliberately.
+- [x] ~~**Listing and link replacement are multi-step, not transactional**~~ (Codex SA-08).
+      **Fixed 2026-09-06** via `security definer` Postgres functions — see `BUGS.md` for the
+      detail and for the permission trap the fix had to avoid. This does move real logic
+      into SQL, which is a change in where the app's rules live; it was done because there
+      is nowhere else the guarantee can exist, not because SQL was preferred. The rules that
+      moved are narrow and mechanical (allow-list membership, receipt uniqueness, insert
+      ordering); authorisation stayed in the routes.
 
 ## Supabase migration — reads and writes done, four real gaps left
 

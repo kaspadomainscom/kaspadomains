@@ -20,7 +20,13 @@ Paste the file into the Supabase SQL Editor, or:
 
 ```bash
 psql "$DATABASE_URL" -f supabase/migrations/0002_payment_receipts.sql
+psql "$DATABASE_URL" -f supabase/migrations/0003_atomic_writes.sql
 ```
+
+`0003` adds the `security definer` functions that make paid writes atomic. **Read its
+permissions block before editing anything in it** — Postgres grants `EXECUTE` to `PUBLIC`
+by default and PostgREST exposes every `public`-schema function as an RPC, so a function
+added there without the revokes is callable by the browser-visible key and bypasses RLS.
 
 Then confirm what actually landed:
 
