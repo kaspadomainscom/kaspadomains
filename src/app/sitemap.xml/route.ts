@@ -29,7 +29,12 @@ export async function GET() {
     "/domains/categories",
     "/docs",
     "/learn",
+    "/about",
     "/business-plan",
+    "/terms",
+    "/privacy",
+    // /status is deliberately absent: it is operational, changes constantly,
+    // and its metadata already tells crawlers not to index it.
     ...Object.keys(categoriesData).map((cat) => `/domains/categories/category/${cat}`),
   ];
 

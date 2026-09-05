@@ -38,9 +38,25 @@ since a voter makes no ownership claim.
 | `/api/domains` | `POST` | `KaspaDomainsRegistry.listDomain` + `DomainCategoriesStorage.updateCategories` | Creates a listing and its categories in one request. At least one category is required. Rolls the listing back if categories fail, so an invisible listing can't be left behind. `409` if already listed. **Owner-only. Fee: 200 KAS**, paid on L1 and verified from `paymentTxId`. |
 | `/api/domains/[name]/vote` | `POST` | `DomainVotesManager.voteDomainByHash` | One vote per wallet per domain, enforced by a unique constraint. `409` on a repeat vote. **Fee: 1 KAS**, same verification. Any wallet may vote. |
 | `/api/domains/[name]/links` | `PUT` | `DomainLinksStorage.updateLinks` | Bulk replace, same semantics as the contract call. Rejects non-`http(s)` URLs (a `javascript:` URL rendered on a public profile is stored XSS). **Owner-only**, checked against KNS live — so a transferred domain follows its new owner. |
+| `/api/domains/[name]/categories` | `GET` / `PUT` | `DomainCategoriesStorage.updateCategories` | Bulk replace, max 6, every key checked against `is_allowed`. Refuses an empty set: categories are the only navigation, so a listing with none is invisible. Adds before removing, so a failure leaves it over-categorised rather than unfindable. **Owner-only. No fee** — the listing was already paid for, and charging to fix a category just leaves listings miscategorised. `GET` is public and reads through the anon key. |
+| `/api/status` | `GET` | — | Deployment health: Supabase reachable, schema present, RLS actually blocking public writes, treasury configured. `503` when a check fails, so it can drive an uptime monitor. Reports **unknown** rather than OK when a check couldn't run. |
 
 Reads go through [`src/data/supabaseSource.ts`](../src/data/supabaseSource.ts); the schema
-is [`supabase/schema.sql`](../supabase/schema.sql).
+is [`supabase/schema.sql`](../supabase/schema.sql), typed for the app in
+[`src/lib/database.types.ts`](../src/lib/database.types.ts) and upgraded incrementally via
+[`supabase/migrations/`](../supabase/migrations/).
+
+### Pages
+
+| Page | What it is |
+|---|---|
+| `/status` | Live health of the deployment, human-readable. `noindex`, and excluded from the sitemap and robots.txt. |
+| `/about` | What the site is, how listing and ownership work, where the data lives. |
+| `/terms` | Fees, finality of payments, owner-only edits, moderation. Deliberately silent on refunds, operating entity and jurisdiction — those are unmade decisions, not oversights. |
+| `/privacy` | What is stored and what is not, written from the schema and the CSP rather than from a template. |
+
+`/terms` and `/privacy` carry an explicit "not reviewed by a lawyer" notice. They describe
+the software accurately; they are not a substitute for legal review.
 
 **⚠ Live-chain status (verified 2026-09-05, see [`BUGS.md`](./BUGS.md) for full detail):**
 signatures below are correct per the ABI, but as of this writing most of them **cannot

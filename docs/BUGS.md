@@ -130,6 +130,48 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **"My Votes" was permanently empty, and could not have been anything else.** The hook
+  read `getVotedDomainIds` from `DomainVotesManager` — a contract with no deployed code —
+  and keyed it by the **Kasplex EVM address**, while votes are recorded against the
+  **Kaspa L1 address**. Two independent reasons to return nothing. The page then fanned
+  out one `useDomainByHash` per result, each of which also hit a dead contract and
+  rendered `null` on failure, so even a successful read would have displayed nothing. And
+  because the empty case and the failed case shared a branch, the page said "You haven't
+  voted for any domains yet" — a confident false statement. Fixed by reading votes from
+  Supabase keyed by `kasware.account`, returning whole `Domain` records so no second
+  lookup is needed, and separating "no wallet", "loading", "failed" and "genuinely none"
+  into four distinct states.
+- **"My Domains" showed KNS's marketplace flag and labelled it Listed.**
+  `mapDomainAssetToDomain` set `isActive: asset.listed !== undefined` — but KNS's `listed`
+  means "for sale on the KNS marketplace", which has nothing to do with being listed on
+  KaspaDomains. A domain listed for sale elsewhere appeared as listed here; a domain
+  genuinely listed here appeared unlisted. Fixed by asking the two questions separately:
+  KNS answers what the wallet owns, Supabase answers what is listed. Unknown is rendered
+  as unknown rather than as "not listed" — collapsing them would invite an owner to pay
+  200 KAS to list something twice during a database outage.
+- **Every Supabase query was untyped, so a renamed column would have failed silently.**
+  `getSupabaseReadClient()` returned an untyped `SupabaseClient`, so `row.voter as string`
+  compiled whatever the column was actually called and produced `undefined` at runtime —
+  a blank cell rather than an error. Fixed by typing both clients against a hand-written
+  `Database` in [`database.types.ts`](../src/lib/database.types.ts). Hand-written rather
+  than generated because generation needs a live project and the CLI, which CI and a fresh
+  clone don't have; `npm run db:check` compares it against a real project and reports drift.
+- **`/status` reported "All 6 tables present" while every table was missing.** Found
+  immediately after writing it, by disagreeing with `npm run db:check`. The check only
+  counted a table as missing on the specific `PGRST205` code — so any *other* error, a
+  failed connection included, fell through to "present". A health check that passes when it
+  can see nothing is worse than no health check. Fixed so only a successful query proves a
+  table exists; anything else reports **unknown**, never OK. The same fix was needed for the
+  RLS probe, which was reading any error at all as "writes are blocked".
+- **`TypeError: fetch failed` on the server while the browser worked fine.** Not an app
+  bug, but it cost real time and will cost it again: Avast (or any TLS-intercepting
+  antivirus or corporate proxy) makes Node reject the intercepted certificate chain with
+  `UNABLE_TO_VERIFY_LEAF_SIGNATURE`, while the browser trusts it from the OS store. The
+  machine had `NODE_EXTRA_CA_CERTS` set, so a shell-launched dev server worked and one
+  launched by a tool that didn't inherit the shell environment did not. supabase-js
+  flattens the cause away, leaving only `TypeError: fetch failed`. Both `/api/status` and
+  `npm run db:check` now name this specific cause when they see that message, and the
+  README documents the fix.
 - **Two vulnerable `ws` versions sat in the production dependency tree.** Found by Codex
   (SA-09): `ws@8.17.1` under ethers and `ws@8.18.2` under viem, both below the `8.21.0`
   that patches the high-severity memory-exhaustion advisory

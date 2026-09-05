@@ -8,6 +8,7 @@ import { useUpdateDomainLinks } from '@/hooks/domain/useUpdateDomainLinks';
 import { contracts } from '@/lib/contracts';
 import { kasplexClient } from '@/lib/viemClient';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { CategoryEditor } from '@/components/pages/domain/CategoryEditor';
 
 const DEFAULT_MAX_LINKS = 10;
 
@@ -255,6 +256,11 @@ export default function UpdateDomainPage() {
 
       {message && <p className="mt-4 text-sm text-green-600">{message}</p>}
       {saveError && <p className="mt-4 text-sm text-red-500">{saveError}</p>}
+
+      {/* Categories save on their own request, not with the links form: they
+          are a separate signed action, and bundling them would mean one failure
+          rolled back an edit the user had already seen succeed. */}
+      <CategoryEditor domainName={domainName} />
     </main>
   );
 }

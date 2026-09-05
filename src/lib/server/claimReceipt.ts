@@ -1,5 +1,5 @@
 // src/lib/server/claimReceipt.ts
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { TypedSupabaseClient } from '../supabase';
 import { VerificationError } from './verifyRequest';
 import type { VerifiedPayment } from './verifyPayment';
 
@@ -18,7 +18,7 @@ import type { VerifiedPayment } from './verifyPayment';
  * inserted.
  */
 export async function claimReceipt(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   payment: VerifiedPayment,
   purpose: 'list-domain' | 'vote',
   payer: string
@@ -53,7 +53,7 @@ export async function claimReceipt(
  * stuck receipt. Log loudly so it can be released by hand.
  */
 export async function releaseReceipt(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   txId: string
 ): Promise<void> {
   const { error } = await supabase.from('payment_receipts').delete().eq('tx_id', txId);

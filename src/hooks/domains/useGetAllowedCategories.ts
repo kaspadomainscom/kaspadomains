@@ -14,8 +14,14 @@ import { isSupabaseConfigured, getSupabaseReadClient } from '@/lib/supabase';
  * — which is why the failure is surfaced instead of being swallowed into an
  * empty array that looks like "no categories exist".
  */
+export type CategoryOption = { key: string; title: string };
+
 export function useGetAllowedCategories() {
   const [categories, setCategories] = useState<string[]>([]);
+  // Keys are what the API needs; titles are what a person should be shown. The
+  // key-only shape meant every picker in the app rendered raw slugs like
+  // "realWords".
+  const [options, setOptions] = useState<CategoryOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,24 +41,35 @@ export function useGetAllowedCategories() {
 
           const { data, error: queryError } = await client
             .from('categories')
-            .select('key')
+            .select('key, title')
             .eq('is_allowed', true)
             .order('sort_order', { ascending: true });
 
           if (queryError) throw new Error(queryError.message);
-          if (!cancelled) setCategories((data ?? []).map((row) => row.key as string));
+          if (!cancelled) {
+            const rows = data ?? [];
+            setCategories(rows.map((row) => row.key));
+            setOptions(rows.map((row) => ({ key: row.key, title: row.title })));
+          }
         } else {
           const result = await kasplexClient.readContract({
             address: contracts.DomainCategoriesStorage.address,
             abi: contracts.DomainCategoriesStorage.abi,
             functionName: 'getAllowedCategories',
           });
-          if (!cancelled) setCategories((result as `0x${string}`[]).map(bytes32ToString));
+          if (!cancelled) {
+            // The contract stores no titles, so the key is the best label
+            // available on this path.
+            const keys = (result as `0x${string}`[]).map(bytes32ToString);
+            setCategories(keys);
+            setOptions(keys.map((key) => ({ key, title: key })));
+          }
         }
       } catch (err) {
         console.error('Error fetching allowed categories', err);
         if (!cancelled) {
           setCategories([]);
+          setOptions([]);
           setError('Could not load categories.');
         }
       } finally {
@@ -67,5 +84,5 @@ export function useGetAllowedCategories() {
     };
   }, []);
 
-  return { categories, loading, error };
+  return { categories, options, loading, error };
 }

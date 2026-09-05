@@ -8,6 +8,10 @@ export async function GET() {
     "/EcosystemAdmin",
     "/domain/update/",
     "/search",
+    // Operational, uncacheable, and different on every request. The page also
+    // carries robots: noindex, but a crawler should not spend a request
+    // discovering that.
+    "/status",
   ];
 
   const content = `

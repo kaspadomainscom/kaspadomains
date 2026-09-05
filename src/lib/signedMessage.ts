@@ -24,7 +24,7 @@
  * a signature now authorises one specific request and nothing else.
  */
 
-export type WriteAction = 'list-domain' | 'vote' | 'update-links';
+export type WriteAction = 'list-domain' | 'vote' | 'update-links' | 'update-categories';
 
 /**
  * Deterministic JSON: object keys sorted, array order preserved. Both sides

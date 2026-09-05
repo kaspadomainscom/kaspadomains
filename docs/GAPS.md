@@ -9,10 +9,15 @@ live backlog the continuous audit loop appends to.
 
 ## Missing pages / content
 
-- [ ] **No Terms of Service, Privacy Policy, or About/Team page anywhere in `src/app/`.**
-      For a dApp handling real KAS payments this is a real trust/legal gap, not a
-      nice-to-have. **Not drafted** — legal content shouldn't be invented without input
-      from whoever owns that decision. This is a decision to make, then a page to build.
+- [x] ~~**No Terms of Service, Privacy Policy, or About page.**~~ **Built 2026-09-05**, at
+      `/terms`, `/privacy` and `/about`, and linked from the footer and sitemap. Written
+      from the source — the schema, the API routes, the CSP — rather than from a template,
+      so every claim is checkable against the repo; fees are read from `lib/fees.ts` rather
+      than typed in, so the page cannot state a price the software does not charge.
+      **Still open, and deliberately so:** they are marked "not reviewed by a lawyer", and
+      are silent on **refunds**, the **operating entity** and the **governing
+      jurisdiction**. Those are owner decisions; inventing a position on refunds for a
+      site taking 200 KAS would be worse than admitting none exists yet.
 - [ ] **No proper Open Graph banner image.** `public/og-image.png` is the square logo
       renamed (1024×1024), not a real 1200×630 branded banner — every social share (X,
       Discord, etc.) shows a squished/cropped logo. Needs an actual design asset; not
@@ -26,10 +31,13 @@ live backlog the continuous audit loop appends to.
 
 ## Supabase write-path gaps
 
-- [ ] **No category-update route.** Categories can only be set at listing time; an owner
-      cannot recategorise afterwards. The on-chain path had `updateCategories` for this.
-      Flagged by Codex during the auth audit. Not built because "may an owner change
-      categories after listing, and how often" is a product decision, not a technical one.
+- [x] ~~**No category-update route.**~~ **Built 2026-09-05.**
+      `PUT /api/domains/[name]/categories`, owner-only, no fee, max 6, every key checked
+      against `is_allowed`. Two decisions that were the reason it stayed unbuilt, now made:
+      it **refuses an empty set** (categories are the only navigation, so a listing with
+      none is invisible while still having been paid for), and it is **free** (the listing
+      was already paid for; charging to fix a category just leaves listings
+      miscategorised). Editable from the domain's update page.
 - [ ] **No one-time nonce or profile revision on signed requests** (Codex SA-05). The
       signature now covers the request body (see `BUGS.md`), but a byte-identical request
       can still be replayed inside the 5-minute window. For listing, voting and payments

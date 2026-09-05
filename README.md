@@ -60,6 +60,36 @@ have no deployed code (see [`docs/BUGS.md`](./docs/BUGS.md)).
 4. Set `NEXT_PUBLIC_KASPADOMAINS_TREASURY_ADDRESS` to a Kaspa address you control — the
    200 KAS listing and 1 KAS vote fees are paid to it. Paid actions stay disabled until
    it is set, rather than silently becoming free.
+5. `npm run db:check` — verifies the connection, every table and column the app expects,
+   and (most importantly) that the browser-visible key **cannot** write. Exits non-zero if
+   anything fails, so it can gate a deploy.
+
+Already have a project from before 2026-09-05? Re-running `schema.sql` is safe but not
+sufficient: `create table if not exists` skips an existing table *including columns added
+since*. Apply [`supabase/migrations/`](./supabase/migrations/) in filename order — `db:check`
+names exactly what is missing.
+
+Once it's running, [`/status`](http://localhost:3000/status) reports the same checks in the
+browser, and `/api/status` returns them as JSON with a 503 when something is failing.
+
+<details>
+<summary><strong>If the browser reaches Supabase but the server doesn't</strong></summary>
+
+Server-side queries failing with `TypeError: fetch failed` while the browser works fine is
+almost always TLS-intercepting antivirus (Avast, Kaspersky) or a corporate proxy: Node
+rejects the intercepted certificate chain (`UNABLE_TO_VERIFY_LEAF_SIGNATURE`) while the
+browser trusts it from the OS certificate store. supabase-js drops the underlying cause, so
+the message tells you nothing.
+
+Point Node at the interceptor's root certificate before starting the dev server:
+
+```bash
+export NODE_EXTRA_CA_CERTS="/c/ProgramData/Avast Software/Avast/wscert.pem"
+```
+
+or run Node with `--use-system-ca` (Node 22.15+). Note this is per-process — a dev server
+launched by an IDE or tool that doesn't inherit your shell environment will still fail.
+</details>
 
 **Auth note:** the only login is Kasware. Supabase Auth is deliberately unused — no
 email, no social, no `@supabase/ssr` session cookies. Identity comes from a Kaspa L1

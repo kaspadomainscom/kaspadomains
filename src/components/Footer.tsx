@@ -8,7 +8,11 @@ const FOOTER_LINKS = [
   { label: 'Categories', href: '/domains/categories' },
   { label: 'Learn', href: '/learn' },
   { label: 'Docs', href: '/docs' },
+  { label: 'About', href: '/about' },
   { label: 'Business Plan', href: '/business-plan' },
+  { label: 'Terms', href: '/terms' },
+  { label: 'Privacy', href: '/privacy' },
+  { label: 'Status', href: '/status' },
 ];
 
 export default function Footer() {

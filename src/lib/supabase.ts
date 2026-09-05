@@ -1,5 +1,6 @@
 // src/lib/supabase.ts
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from './database.types';
 
 /**
  * Supabase is the primary store for listings, votes and categories while the
@@ -12,6 +13,13 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
  * module evaluation -- that would take down pages that never touch the
  * database.
  */
+
+/**
+ * Every client is typed against the schema in `database.types.ts`, so a column
+ * that gets renamed in SQL without being renamed here is a compile error rather
+ * than an `undefined` that renders as a blank cell.
+ */
+export type TypedSupabaseClient = SupabaseClient<Database>;
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
 
@@ -32,17 +40,17 @@ export const isSupabaseConfigured = Boolean(url && anonKey);
 /** True when the server is able to write (listings, votes, resources). */
 export const isSupabaseWritable = Boolean(url && serviceRoleKey);
 
-let readClient: SupabaseClient | null = null;
+let readClient: TypedSupabaseClient | null = null;
 
 /**
  * Read-only client, safe to use from the browser and from server components.
  * Uses the anon key, which under this schema's RLS can select but never write.
  * Returns null when unconfigured so callers fall back to the chain.
  */
-export function getSupabaseReadClient(): SupabaseClient | null {
+export function getSupabaseReadClient(): TypedSupabaseClient | null {
   if (!url || !anonKey) return null;
   if (!readClient) {
-    readClient = createClient(url, anonKey, {
+    readClient = createClient<Database>(url, anonKey, {
       auth: { persistSession: false },
     });
   }
@@ -59,7 +67,7 @@ export function getSupabaseReadClient(): SupabaseClient | null {
  * could capture, and it throws rather than returning null: a write path that
  * silently no-ops is worse than one that fails loudly.
  */
-export function getSupabaseAdminClient(): SupabaseClient {
+export function getSupabaseAdminClient(): TypedSupabaseClient {
   if (typeof window !== 'undefined') {
     throw new Error(
       'getSupabaseAdminClient() was called in the browser. The service-role key must stay server-side.'
@@ -70,7 +78,7 @@ export function getSupabaseAdminClient(): SupabaseClient {
       'Supabase is not configured for writes. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.'
     );
   }
-  return createClient(url, serviceRoleKey, {
+  return createClient<Database>(url, serviceRoleKey, {
     auth: { persistSession: false },
   });
 }

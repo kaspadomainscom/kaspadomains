@@ -207,3 +207,106 @@ export async function fetchDomainLinks(
   if (error) throw new Error(`Supabase: failed to load links — ${error.message}`);
   return (data ?? []).map((row) => ({ name: row.name, url: row.url }));
 }
+
+/**
+ * The domains a wallet has voted for.
+ *
+ * Keyed by the **Kaspa L1 address**, because that is what the vote route
+ * records (`verified.signerAddress`). The on-chain predecessor keyed votes by
+ * the Kasplex EVM address, which is a different address belonging to the same
+ * person -- so passing the wrong one here silently returns an empty list rather
+ * than failing, which is exactly how "My Votes" came to look permanently empty.
+ */
+export async function fetchVotedDomains(voter: string): Promise<Domain[]> {
+  const address = voter.trim();
+  if (!address) return [];
+
+  const { data, error } = await requireClient()
+    .from('votes')
+    .select(`created_at, domains!inner (${DOMAIN_COLUMNS})`)
+    .eq('voter', address)
+    .order('created_at', { ascending: false });
+
+  if (error) throw new Error(`Supabase: failed to load your votes — ${error.message}`);
+
+  const domains: Domain[] = [];
+  for (const row of data ?? []) {
+    // The !inner join guarantees one row; PostgREST still types it loosely.
+    const domainRow = row.domains as unknown as DomainRow | null;
+    if (domainRow) domains.push(rowToDomain(domainRow));
+  }
+  return domains;
+}
+
+/**
+ * Which of these domain names are listed here, and with how many votes.
+ *
+ * Used by "My Domains", where the names come from KNS (what the wallet owns)
+ * and the listing state comes from us (what has actually been listed on
+ * KaspaDomains). Those are genuinely different questions and the page used to
+ * conflate them -- it read KNS's *marketplace* `listed` field and labelled it
+ * active, so a domain listed for sale elsewhere appeared as listed here.
+ *
+ * Names not present in the result are simply not listed. Returns a map rather
+ * than an array so the caller can look up by name without a nested scan.
+ */
+export async function fetchListingStatuses(
+  names: string[]
+): Promise<Map<string, { domain: Domain; votes: number }>> {
+  const wanted = Array.from(
+    new Set(names.map((n) => n.trim().toLowerCase()).filter(Boolean))
+  );
+  const statuses = new Map<string, { domain: Domain; votes: number }>();
+  if (wanted.length === 0) return statuses;
+
+  const client = requireClient();
+
+  const { data, error } = await client
+    .from('domains')
+    .select(DOMAIN_COLUMNS)
+    .in('name', wanted);
+
+  if (error) throw new Error(`Supabase: failed to load listing status — ${error.message}`);
+
+  const rows = (data ?? []) as DomainRow[];
+  if (rows.length === 0) return statuses;
+
+  const { data: countRows, error: countError } = await client
+    .from('domain_vote_counts')
+    .select('name, votes')
+    .in('name', rows.map((row) => row.name));
+
+  if (countError) {
+    throw new Error(`Supabase: failed to load vote counts — ${countError.message}`);
+  }
+
+  const counts = new Map<string, number>();
+  for (const row of countRows ?? []) {
+    if (row.name) counts.set(row.name, Number(row.votes) || 0);
+  }
+
+  for (const row of rows) {
+    statuses.set(row.name, {
+      domain: rowToDomain(row),
+      votes: counts.get(row.name) ?? 0,
+    });
+  }
+
+  return statuses;
+}
+
+/** The categories a listing currently belongs to. */
+export async function fetchDomainCategories(domainName: string): Promise<string[]> {
+  const client = requireClient();
+
+  const domain = await fetchDomainByName(domainName);
+  if (!domain) return [];
+
+  const { data, error } = await client
+    .from('domain_categories')
+    .select('category_key')
+    .eq('domain_id', domain.id);
+
+  if (error) throw new Error(`Supabase: failed to load categories — ${error.message}`);
+  return (data ?? []).map((row) => row.category_key);
+}
