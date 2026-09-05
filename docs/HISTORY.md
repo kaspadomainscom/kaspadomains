@@ -185,6 +185,38 @@ Nothing was built. The blocker recorded before any of it is worth starting: a co
 pinned to the owner's pubkey keeps trusting them after the KNS domain is sold, and no
 on-chain signal says otherwise.
 
+## 2026-09-05 (late night) — owner-only writes, enforced rather than documented
+
+The owner's requirement was blunt: only a domain's owner may log in or change anything.
+What existed did not satisfy it — the links route authorised whoever *created* the listing,
+and anyone could create one — so the gap that had been carefully written up in `GAPS.md`
+had to actually be closed.
+
+The earlier decision not to hand-roll Kaspa signature verification still held; what changed
+was checking whether it needed hand-rolling at all. It did not: `kaspa-wasm`, the official
+rusty-kaspa WASM bindings, publishes both `verifyMessage` and `PublicKey.toAddress`. Those
+were probed empirically before being adopted — sign/verify round-trip, address derivation
+matching the keypair's own address, tampered message rejected, wrong key rejected — rather
+than trusted from documentation.
+
+That made the real fix available: sign with the **Kaspa L1 key** instead of the Kasplex EVM
+key. The L1 key is the one that owns the domain on KNS, so deriving its address and
+comparing against KNS closes the loop that two different keypairs had made impossible.
+Ownership is re-checked per request rather than stored, so a transferred domain follows its
+new owner and the previous one loses access — the `submitted_by` check was removed for
+exactly that reason.
+
+Two consequences worth noting. The verifier pulled the WASM module into the client bundle
+and broke the build, because a client file imported the message builder from the server
+module; the format now lives in its own dependency-free module, which is also the right
+shape — verification code has no business in the browser. And switching identities meant
+the vote-status check was comparing against the wrong address entirely, which would have
+left the button enabled until the server rejected the duplicate.
+
+The residual risk is narrow and fails in the safe direction: Kasware's signing convention
+is assumed to match the SDK's and is untested against a real extension. A mismatch rejects
+legitimate owners rather than admitting impostors.
+
 ## Related docs
 
 - [`BUGS.md`](./BUGS.md) — the bug-specific version of several entries above, with full

@@ -128,13 +128,19 @@ than deleted, so unsetting the env vars restores the previous behaviour exactly,
 future redeploy doesn't need this work reversed.
 
 **Writes** go through three signed HTTP endpoints rather than contract calls — see the API
-table in [`SPEC.md`](./SPEC.md). The client signs a message naming the action, domain,
-address and a timestamp (a wallet prompt, not a transaction, so it costs nothing);
-[`src/lib/server/verifyRequest.ts`](../src/lib/server/verifyRequest.ts) verifies it
-server-side, reads the authoritative owner from KNS, and only then writes with the
-service-role key. That file documents precisely what the check proves and what it doesn't,
-which matters because the contract used to be the thing enforcing ownership and no longer
-is.
+table in [`SPEC.md`](./SPEC.md). The client signs with the user's **Kaspa L1 key** through
+Kasware (a wallet prompt, not a transaction, so it costs nothing);
+[`src/lib/server/verifyRequest.ts`](../src/lib/server/verifyRequest.ts) verifies the
+signature with the rusty-kaspa WASM SDK, derives the `kaspa:` address from the signing
+public key, reads the authoritative owner from KNS, and **requires the two to match**
+before writing with the service-role key.
+
+That match is the whole authorisation model: the contract used to be what stopped someone
+listing a domain they don't own, and this is what replaces it. The L1 key is used
+deliberately — it is the key that owns the domain on KNS, whereas the Kasplex EVM key is a
+different keypair entirely, which is why an earlier EVM-signature version could not prove
+ownership at all. `kaspa-wasm` is marked `serverExternalPackages` and must stay
+server-only: verification that runs in the browser proves nothing.
 
 ### Where this is heading
 

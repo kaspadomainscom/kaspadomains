@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
-import { verifySignedRequest, VerificationError } from '@/lib/server/verifyRequest';
+import { requireDomainOwner, VerificationError } from '@/lib/server/verifyRequest';
 
 export const runtime = 'nodejs';
 
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
   let body: {
     domain?: string;
-    address?: string;
+    publicKey?: string;
     issuedAt?: number;
     signature?: string;
     categories?: string[];
@@ -55,10 +55,11 @@ export async function POST(request: Request) {
 
   let verified;
   try {
-    verified = await verifySignedRequest({
+    // Owner-only: the signer must hold the key that owns this domain on KNS.
+    verified = await requireDomainOwner({
       action: 'list-domain',
       domain: String(body.domain ?? ''),
-      address: String(body.address ?? ''),
+      publicKey: String(body.publicKey ?? ''),
       issuedAt: Number(body.issuedAt ?? 0),
       signature: String(body.signature ?? ''),
     });
@@ -81,10 +82,10 @@ export async function POST(request: Request) {
       domain_hash: domainHash,
       name: verified.domain,
       owner: verified.knsOwner,
-      submitted_by: verified.submittedBy,
-      // Never true from this path: the submitter's control of the L1 owner
-      // address is not proven. See src/lib/server/verifyRequest.ts.
-      ownership_verified: false,
+      // The signer proved control of the key behind this address, and it
+      // equals the KNS owner -- so submitter and owner are the same party.
+      submitted_by: verified.signerAddress,
+      ownership_verified: true,
       fee_paid: '0',
       is_active: true,
     })
@@ -118,7 +119,7 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json(
-    { domain: inserted.name, ownershipVerified: false },
+    { domain: inserted.name, ownershipVerified: true },
     { status: 201 }
   );
 }

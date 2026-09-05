@@ -19,16 +19,25 @@ below.
 
 ## HTTP API (the current write path)
 
-All three endpoints require a signed request; the payload format and what the signature
-does and does not prove are documented in
-[`src/lib/server/verifyRequest.ts`](../src/lib/server/verifyRequest.ts). Signing is a
-wallet prompt, not a transaction: it costs nothing.
+All three endpoints require a request signed with the caller's **Kaspa L1 key** via
+Kasware. Signing is a wallet prompt, not a transaction: it costs nothing and moves no
+funds. Body: `{ domain, publicKey, issuedAt, signature, … }`, where the signed string is
+built by [`src/lib/signedMessage.ts`](../src/lib/signedMessage.ts) — shared by client and
+server so the two cannot drift.
+
+Verification lives in
+[`src/lib/server/verifyRequest.ts`](../src/lib/server/verifyRequest.ts): the signature is
+checked with the rusty-kaspa WASM SDK, the `kaspa:` address is derived from the signing
+public key, and KNS is queried server-side for the real owner. **Listing and editing
+require those to match** (`requireDomainOwner`) — only the domain's owner can create or
+change its listing, re-checked on every request. Voting only requires a valid signature,
+since a voter makes no ownership claim.
 
 | Endpoint | Method | Replaces | Notes |
 |---|---|---|---|
 | `/api/domains` | `POST` | `KaspaDomainsRegistry.listDomain` + `DomainCategoriesStorage.updateCategories` | Creates a listing and its categories in one request. At least one category is required. Rolls the listing back if categories fail, so an invisible listing can't be left behind. `409` if already listed. **Charges nothing.** |
 | `/api/domains/[name]/vote` | `POST` | `DomainVotesManager.voteDomainByHash` | One vote per wallet per domain, enforced by a unique constraint. `409` on a repeat vote. **Charges nothing.** |
-| `/api/domains/[name]/links` | `PUT` | `DomainLinksStorage.updateLinks` | Bulk replace, same semantics as the contract call. Rejects non-`http(s)` URLs (a `javascript:` URL rendered on a public profile is stored XSS). Only the wallet that submitted the listing may edit it. |
+| `/api/domains/[name]/links` | `PUT` | `DomainLinksStorage.updateLinks` | Bulk replace, same semantics as the contract call. Rejects non-`http(s)` URLs (a `javascript:` URL rendered on a public profile is stored XSS). **Owner-only**, checked against KNS live — so a transferred domain follows its new owner. |
 
 Reads go through [`src/data/supabaseSource.ts`](../src/data/supabaseSource.ts); the schema
 is [`supabase/schema.sql`](../supabase/schema.sql).

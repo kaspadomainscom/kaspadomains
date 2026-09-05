@@ -1,7 +1,7 @@
 // src/app/api/domains/[name]/links/route.ts
 import { NextResponse } from 'next/server';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
-import { verifySignedRequest, VerificationError } from '@/lib/server/verifyRequest';
+import { requireDomainOwner, VerificationError } from '@/lib/server/verifyRequest';
 
 export const runtime = 'nodejs';
 
@@ -17,10 +17,11 @@ const MAX_LINKS = 10;
  * links before submitting; see the data-loss race in docs/BUGS.md for what
  * happens when it doesn't.
  *
- * Only the wallet that submitted the listing may edit it. That is a weaker
- * rule than "only the owner", and deliberately so: the submitter is the only
- * party this system can actually prove anything about (see
- * src/lib/server/verifyRequest.ts).
+ * **Only the domain's current KNS owner may edit it.** This is checked afresh
+ * on every request rather than against whoever created the listing, so a
+ * domain that changes hands on KNS immediately becomes editable by its new
+ * owner and stops being editable by the old one -- no re-listing, no stale
+ * permission. See src/lib/server/verifyRequest.ts.
  */
 export async function PUT(
   request: Request,
@@ -36,7 +37,7 @@ export async function PUT(
   const { name } = await context.params;
 
   let body: {
-    address?: string;
+    publicKey?: string;
     issuedAt?: number;
     signature?: string;
     links?: { name?: string; url?: string }[];
@@ -71,10 +72,11 @@ export async function PUT(
 
   let verified;
   try {
-    verified = await verifySignedRequest({
+    // Owner-only, re-checked against KNS on every edit.
+    verified = await requireDomainOwner({
       action: 'update-links',
       domain: decodeURIComponent(name),
-      address: String(body.address ?? ''),
+      publicKey: String(body.publicKey ?? ''),
       issuedAt: Number(body.issuedAt ?? 0),
       signature: String(body.signature ?? ''),
     });
@@ -89,7 +91,7 @@ export async function PUT(
 
   const { data: domain, error: lookupError } = await supabase
     .from('domains')
-    .select('id, submitted_by')
+    .select('id, owner')
     .ilike('name', verified.domain)
     .maybeSingle();
 
@@ -101,11 +103,22 @@ export async function PUT(
     return NextResponse.json({ error: 'That domain is not listed.' }, { status: 404 });
   }
 
-  if ((domain.submitted_by ?? '').toLowerCase() !== verified.submittedBy) {
-    return NextResponse.json(
-      { error: 'Only the wallet that created this listing can edit its resources.' },
-      { status: 403 }
-    );
+  // Authorisation already happened in requireDomainOwner, against KNS live
+  // rather than against this row. Deliberately no `submitted_by` check here:
+  // that would keep permission with whoever listed the domain first and lock
+  // out a new owner after a KNS transfer, which is the opposite of the rule.
+  //
+  // If the stored owner has drifted from KNS, KNS wins -- it is the authority,
+  // and this row is a cache of it.
+  if ((domain.owner ?? '') !== verified.knsOwner) {
+    const { error: ownerSyncError } = await supabase
+      .from('domains')
+      .update({ owner: verified.knsOwner, submitted_by: verified.signerAddress })
+      .eq('id', domain.id);
+
+    if (ownerSyncError) {
+      console.error('Failed to sync owner from KNS:', ownerSyncError);
+    }
   }
 
   // Replace wholesale, in a delete-then-insert. Postgres runs each statement

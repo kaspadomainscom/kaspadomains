@@ -38,7 +38,6 @@ export function useUpdateDomainLinks() {
         const response = await signedFetch({
           action: 'update-links',
           domain,
-          address: account,
           path: `/api/domains/${encodeURIComponent(domain)}/links`,
           method: 'PUT',
           body: { links: cleanLinks },

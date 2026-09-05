@@ -28,7 +28,7 @@ export async function POST(
 
   const { name } = await context.params;
 
-  let body: { address?: string; issuedAt?: number; signature?: string };
+  let body: { publicKey?: string; issuedAt?: number; signature?: string };
   try {
     body = await request.json();
   } catch {
@@ -40,7 +40,7 @@ export async function POST(
     verified = await verifySignedRequest({
       action: 'vote',
       domain: decodeURIComponent(name),
-      address: String(body.address ?? ''),
+      publicKey: String(body.publicKey ?? ''),
       issuedAt: Number(body.issuedAt ?? 0),
       signature: String(body.signature ?? ''),
     });
@@ -69,7 +69,7 @@ export async function POST(
 
   const { error: voteError } = await supabase
     .from('votes')
-    .insert({ domain_id: domain.id, voter: verified.submittedBy });
+    .insert({ domain_id: domain.id, voter: verified.signerAddress });
 
   if (voteError) {
     if (voteError.code === '23505') {

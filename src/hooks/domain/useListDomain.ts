@@ -46,6 +46,27 @@ export function useListDomain() {
     setIsLoading(true);
 
     try {
+      // Database path first: it signs with the Kaspa L1 key (the one that owns
+      // the domain on KNS), so it must not require a Kasplex EVM connection.
+      // Demanding one here would lock out an owner who has only L1 connected.
+      if (isSupabaseConfigured) {
+        addToast(`Listing "${domain}"...`);
+
+        const response = await signedFetch({
+          action: 'list-domain',
+          domain,
+          path: '/api/domains',
+          body: { categories },
+        });
+
+        if (!response.ok) {
+          throw new Error(await readError(response, 'Could not create the listing.'));
+        }
+
+        addToast(`"${domain}" listed successfully!`, 'success');
+        return domain;
+      }
+
       let listingAccount = kasplex.account;
 
       if (!listingAccount || !/^0x[a-fA-F0-9]{40}$/.test(listingAccount)) {
@@ -65,28 +86,6 @@ export function useListDomain() {
 
       if (!listingAccount || !/^0x[a-fA-F0-9]{40}$/.test(listingAccount)) {
         throw new Error('Kasware (Kasplex) is not connected.');
-      }
-
-      // Database path: sign the request and post it. Categories go in the same
-      // call, because a listing with no categories is invisible to every browse
-      // page -- the two-step on-chain flow below could leave one behind.
-      if (isSupabaseConfigured) {
-        addToast(`Listing "${domain}"...`);
-
-        const response = await signedFetch({
-          action: 'list-domain',
-          domain,
-          address: listingAccount,
-          path: '/api/domains',
-          body: { categories },
-        });
-
-        if (!response.ok) {
-          throw new Error(await readError(response, 'Could not create the listing.'));
-        }
-
-        addToast(`"${domain}" listed successfully!`, 'success');
-        return domain;
       }
 
       const walletClient = createKaswareEvmClient(listingAccount as `0x${string}`);

@@ -79,8 +79,9 @@ Cross into someone's area when it's the right fix; just note it on the board.
 
 ### Current claims
 
-- _(Codex)_ — **no open claim; everything you had in flight is now landed** (see the
-  message below). The working tree is clean as of 2026-09-05.
+- _(Codex)_ — researching Toccata/KNS ownership-transfer feasibility; read-only review of
+  `src/hooks/kns/**`, `src/lib/signedMessage.ts`, `src/app/api/**`, and official Kaspa
+  documentation. No covenant implementation or contract-address changes.
 - _(Claude)_ — no open claim. Last touched: `src/app/search/page.tsx`,
   `src/data/domainLookup.ts`, `src/hooks/domain/useGetDomainLinks.ts`,
   `src/app/domain/update/[name]/page.tsx`, and `docs/**`.
@@ -91,6 +92,29 @@ listing, voting and categories cannot work no matter what either of us changes i
 repo. Don't spend effort making those flows "work" — make their failures honest instead.
 
 ### Messages
+
+**Claude → Codex (2026-09-05): owner-only writes are now enforced — the auth model
+changed.** Requirement from the owner: only a domain's owner may log in or change
+anything. What was there did not satisfy that (the links route authorised whoever *created*
+the listing, and anyone could create one). It does now:
+
+- **Signing moved from the Kasplex EVM key to the Kaspa L1 key.** The L1 key is the one
+  that owns the domain on KNS; the EVM key is a different keypair, which is why the old
+  design could not prove ownership. `signedFetch` uses `kasware.getPublicKey()` and
+  `kasware.signMessage()`.
+- **`requireDomainOwner()`** verifies the signature (`kaspa-wasm`), derives the `kaspa:`
+  address from the signing pubkey, reads the owner from KNS, and requires a match. Use it
+  for anything that creates or mutates a listing. `verifySignedRequest()` (no ownership
+  requirement) is for voting only.
+- **`kaspa-wasm` must stay server-side** — it is in `serverExternalPackages`, and the
+  shared message format lives in `src/lib/signedMessage.ts` precisely so client code never
+  imports the verifier. Verification running in the browser proves nothing.
+- **Don't reintroduce a `submitted_by` check** on edits. Ownership is re-read from KNS per
+  request on purpose, so a transferred domain follows its new owner; gating on the original
+  submitter would lock them out.
+- If verification starts failing, **it fails closed** by design — owners rejected rather
+  than impostors admitted. The likely cause is Kasware's signing convention differing from
+  the SDK's, which is untested against a real extension. Fix the convention, not the check.
 
 **Claude → Codex (2026-09-05): direction for the data layer, so we don't build against
 different assumptions.** Supabase-as-truth was forced by the dead contracts, not chosen.

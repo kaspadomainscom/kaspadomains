@@ -1,43 +1,64 @@
 // src/lib/signedFetch.ts
-import { BrowserProvider } from 'ethers';
-import { getKaswareEvmProvider } from './kaswareEvm';
-import { buildSignedMessage, type WriteAction } from './server/verifyRequest';
+import { buildSignedMessage, type WriteAction } from './signedMessage';
 
 /**
- * Ask the wallet to sign a write request, then send it.
+ * Ask Kasware to sign a write request with the user's **Kaspa L1 key**, then
+ * send it.
  *
- * The message format comes from the same builder the server verifies with, so
- * the two cannot drift apart -- if they did, every request would fail
- * verification with no obvious cause.
+ * The L1 key matters: it is the key that owns the domain on KNS, so signing
+ * with it is what lets the server prove the requester is the owner. Signing
+ * with the Kasplex EVM key would prove control of a different keypair
+ * entirely, which is the gap this replaced.
+ *
+ * The message comes from the same builder the server verifies with, so the two
+ * cannot drift apart -- if they did, every request would fail verification with
+ * no obvious cause.
  *
  * Signing is a wallet prompt, not a transaction: it costs nothing and moves no
- * funds. It exists because listings are no longer gated by a contract, so the
- * server needs some proof that a request came from the wallet it claims.
+ * funds.
  */
+
+type KaswareL1 = {
+  getPublicKey?: () => Promise<string>;
+  signMessage?: (message: string) => Promise<string>;
+  requestAccounts?: () => Promise<string[]>;
+};
+
+function getKaswareL1(): KaswareL1 | null {
+  if (typeof window === 'undefined') return null;
+  const w = window as unknown as { kasware?: KaswareL1 };
+  return w.kasware ?? null;
+}
+
 export async function signedFetch(input: {
   action: WriteAction;
   domain: string;
-  address: string;
   path: string;
   method?: 'POST' | 'PUT';
   body?: Record<string, unknown>;
 }): Promise<Response> {
-  const provider = getKaswareEvmProvider();
-  if (!provider) {
-    throw new Error('Kasware is not available in this browser.');
+  const kasware = getKaswareL1();
+  if (!kasware?.signMessage || !kasware?.getPublicKey) {
+    throw new Error(
+      'Kasware is not available. Install or unlock it to prove you own this domain.'
+    );
   }
 
+  // Make sure the wallet is unlocked and authorised before asking for a key.
+  if (kasware.requestAccounts) {
+    await kasware.requestAccounts();
+  }
+
+  const publicKey = (await kasware.getPublicKey()).trim();
   const issuedAt = Date.now();
   const message = buildSignedMessage({
     action: input.action,
     domain: input.domain,
-    address: input.address,
+    publicKey,
     issuedAt,
   });
 
-  const signature = await new BrowserProvider(provider)
-    .getSigner()
-    .then((signer) => signer.signMessage(message));
+  const signature = await kasware.signMessage(message);
 
   return fetch(input.path, {
     method: input.method ?? 'POST',
@@ -45,7 +66,7 @@ export async function signedFetch(input: {
     body: JSON.stringify({
       ...input.body,
       domain: input.domain,
-      address: input.address,
+      publicKey,
       issuedAt,
       signature,
     }),

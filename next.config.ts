@@ -3,6 +3,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   trailingSlash: true,
   poweredByHeader: false,
+  // kaspa-wasm loads its .wasm from disk at require time, which the bundler
+  // cannot trace. Leave it external so it is required at runtime instead.
+  // It must stay server-only: it is how write requests are verified, and
+  // verification that runs in the browser proves nothing.
+  serverExternalPackages: ['kaspa-wasm'],
   images: {
     unoptimized: true,
   },

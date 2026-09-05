@@ -101,6 +101,7 @@ and [`BUGS.md`](./BUGS.md):
       writes both go to Postgres now, behind signed requests, with the contract path kept
       as an automatic fallback. See `ARCHITECTURE.md`, `SPEC.md`'s API table, and
       `GAPS.md` for the four gaps this opened.
+- [x] **Owner-only writes enforced** (2026-09-05): listing and editing require a Kaspa L1 signature from the address KNS reports as owner, verified server-side with kaspa-wasm and re-checked per request. Closes the ownership gap; see `GAPS.md`.
 - [ ] **Decide what replaces the listing/vote fees.** Both are free now — the contracts
       that charged them are gone. Revenue question, needs an owner call.
 - [ ] **L1 covenants as the source of truth** (decided in principle 2026-09-05, not

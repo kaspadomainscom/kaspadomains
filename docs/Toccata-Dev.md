@@ -17,10 +17,16 @@ and its sub-pages on that date — this is a fast-moving stack, so re-check befo
 ## Why this matters for us specifically
 
 The database migration ([`ARCHITECTURE.md`](./ARCHITECTURE.md#data-model)) was forced: the
-Kasplex contracts died and the product could not run. It left one gap we could not close —
-**we cannot prove a listing request comes from the domain's real owner**, because the KNS
-owner holds a Kaspa L1 key while our signature check proves control of a Kasplex EVM key,
-and nothing binds the two. Every row is stored `ownership_verified = false` because of it.
+Kasplex contracts died and the product could not run.
+
+**Update 2026-09-05 — the ownership gap this section was written around is now closed off
+chain.** Requests are signed with the Kaspa L1 key and verified server-side against KNS
+using the rusty-kaspa WASM SDK, so only a domain's owner can list or edit it today,
+without any covenant. That weakens the *urgency* of this migration but not its case: the
+off-chain check is enforced by our server, so it is only as trustworthy as we are, whereas
+a covenant's `checkSig` is enforced by consensus. The argument below now reads as
+"consensus-enforced rather than operator-enforced ownership", which is a real difference
+but a smaller one than "possible rather than impossible".
 
 Toccata makes that gap disappear rather than shrinking it. On L1, the owner's key *is* the
 key that signs, so ownership becomes a native `checkSig` inside the covenant instead of a

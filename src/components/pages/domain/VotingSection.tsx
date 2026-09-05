@@ -21,8 +21,13 @@ const VOTES_CONTRACT_ABI = contracts.DomainVotesManager.abi as JsonFragment[];
 // this component previously called functions/events that don't exist on the
 // deployed contract, so voting has never actually worked.
 export function VotingSection({ domainName }: { domainName: string }) {
-    const { kasplex, signer } = useWalletContext();
-    const account = kasplex.account;
+    const { kasplex, kasware, signer } = useWalletContext();
+    // Which identity counts depends on the store. Votes in the database are
+    // recorded against the Kaspa L1 address that signed them, so the
+    // "already voted?" check must use the same address -- comparing against the
+    // Kasplex EVM account would never match and the button would stay enabled
+    // until the server rejected the duplicate.
+    const account = isSupabaseConfigured ? kasware.account : kasplex.account;
 
     const [likesCount, setLikesCount] = useState<number>(0);
     const [userHasLiked, setUserHasLiked] = useState(false);
@@ -210,7 +215,6 @@ export function VotingSection({ domainName }: { domainName: string }) {
                 const response = await signedFetch({
                     action: 'vote',
                     domain: domainName,
-                    address: account,
                     path: `/api/domains/${encodeURIComponent(domainName)}/vote`,
                 });
 
@@ -249,7 +253,11 @@ export function VotingSection({ domainName }: { domainName: string }) {
         }
     }
 
-    const isConnected = kasplex.status === "connected" && !!account;
+    // Gate on whichever wallet actually signs the vote: L1 for the database
+    // path, Kasplex for the on-chain one.
+    const isConnected = isSupabaseConfigured
+        ? kasware.status === "connected" && !!account
+        : kasplex.status === "connected" && !!account;
 
     // Derived, not stored: with the database as the store there is no contract
     // to be unavailable and no fee to fetch -- votes are free (see docs/GAPS.md).

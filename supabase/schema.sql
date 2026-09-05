@@ -28,15 +28,15 @@ create table if not exists public.domains (
   owner         text        not null,
   fee_paid      text        not null default '0',
   is_active     boolean     not null default true,
-  -- The EVM address that submitted this listing, proven by signature. This is
-  -- NOT the same key as `owner` above: one is a Kasplex EVM key, the other a
-  -- Kaspa L1 key, and nothing yet proves the same person holds both.
+  -- The Kaspa L1 address that submitted this listing, proven by signature.
+  -- Equal to `owner` for anything written through the API, because the write
+  -- path refuses requests from anyone but the owner.
   submitted_by  text,
-  -- False until the submitter has cryptographically proven control of the L1
-  -- address in `owner`. Currently always false: verifying a Kaspa L1 message
-  -- signature server-side needs Kaspa's personal-message hashing and address
-  -- encoding reimplemented, which is not something to hand-roll untested.
-  -- Anything that treats a listing as authoritative must check this flag.
+  -- True once the submitter cryptographically proved control of the key behind
+  -- the `owner` address: the signature is verified with the rusty-kaspa WASM
+  -- SDK and the address derived from the signing public key must equal the
+  -- owner KNS reports. Rows written before 2026-09-05 predate that check and
+  -- may be false; treat those as unverified claims.
   ownership_verified boolean not null default false,
   -- Set once the same listing is confirmed on-chain, so an off-chain row and
   -- its eventual on-chain counterpart can be reconciled rather than duplicated.

@@ -39,13 +39,16 @@ Resourced ──► rows in `domain_links` ──► public profile, JSON-LD, si
 Voted on ──► rows in `votes`; counts are a view, so they can't drift
 ```
 
-**What is and isn't proven at each step.** The signature proves the requester controls the
-Kasplex (EVM) address it names, and the KNS lookup happens server-side so ownership can't
-be asserted by the client. What is *not* proven is that those are the same person — the
-Kaspa L1 key that owns the name and the EVM key that signed are different keypairs. So a
-row records a true owner (from KNS) but an unverified claim to it, which is why
-`ownership_verified` exists and defaults to false. Anything that treats a listing as
-authoritative has to check that flag.
+**What is proven at each step (updated 2026-09-05).** The request is signed with the
+**Kaspa L1 key** — the same key that owns the name on KNS. The server verifies the
+signature, derives the `kaspa:` address from the signing public key, reads the real owner
+from KNS, and requires them to match. So **only the owner can list a domain or change its
+listing**, and because the check runs against KNS on every request rather than against
+whoever listed it first, a domain that changes hands immediately follows its new owner.
+
+The earlier design signed with the Kasplex EVM key, which is a different keypair from the
+one that owns the name, and so could not prove ownership at all. That is why
+`ownership_verified` exists; rows written under the new path set it true.
 
 **What is no longer true of a listing**: it is not permanent, not on-chain, and not paid
 for. Rows are mutable by whoever holds the database, and both the 420 KAS listing fee and

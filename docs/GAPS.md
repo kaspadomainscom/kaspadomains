@@ -38,21 +38,20 @@ Supabase is unconfigured. What's genuinely outstanding:
       contract, an on-chain payment address checked server-side, or an off-chain
       processor. Until it's answered, `domains.fee_paid` is always `'0'` and the
       site's "one-time payment" copy is inaccurate.
-- [ ] **L1 ownership is not cryptographically proven.** The write path proves the caller
-      controls a *Kasplex EVM* address, and reads the true owner from KNS server-side —
-      but those are different keypairs, so someone who knows a domain's KNS owner can
-      still occupy its listing row. Rows carry `ownership_verified = false` to be honest
-      about this, and the UI should show it. Closing it means verifying a Kaspa L1 message
-      signature server-side, which needs Kaspa's personal-message hashing and address
-      encoding reimplemented — deliberately not hand-rolled untested, because a verifier
-      that wrongly accepts is worse than an admitted gap. `@noble/curves` is already a
-      dependency and is the right tool when someone can test against a real Kasware
-      wallet. **Longer term this gap dissolves rather than shrinks**: on Kaspa L1 the
-      owner's key is the signing key, so ownership is a native `checkSig` with no
-      cross-chain inference needed. Confirmed workable 2026-09-05 (KNS domains are on-chain
-      inscriptions; ownership is proven by signature at listing time and pinned into
-      covenant state) — the remaining question there is how to handle a later KNS transfer.
-      See [`Toccata-Dev.md`](./Toccata-Dev.md).
+- [x] ~~**L1 ownership is not cryptographically proven**~~ — **closed 2026-09-05.** The
+      write path now signs with the **Kaspa L1 key**, not the Kasplex EVM key, and the
+      server verifies it with the rusty-kaspa WASM SDK (`kaspa-wasm`): the signature is
+      checked, the `kaspa:` address is derived from the signing public key, and that
+      address must equal the owner KNS reports. Only the domain's owner can list it or
+      edit it, re-checked against KNS on every request rather than trusting whoever listed
+      it first — so a domain that changes hands becomes editable by its new owner and stops
+      being editable by the old one. Rows now carry `ownership_verified = true`.
+      Verified empirically before adopting the library (sign/verify round-trip, address
+      derivation, tampered message and wrong key both rejected) rather than assumed.
+      **Residual risk**: Kasware's message-signing convention is assumed to match the
+      SDK's and is untested against a real extension. If it differs, verification **fails
+      closed** — owners are rejected rather than impostors admitted. Do not "fix" such a
+      failure by relaxing the check.
 - [ ] **Site copy still describes the on-chain product.** `/docs`, the homepage's
       single-payment permanence claims and "210 KAS", and `/business-plan` all
       promise permanence, on-chain recording and a fee. None of that is what happens now.

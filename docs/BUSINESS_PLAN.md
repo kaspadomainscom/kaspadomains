@@ -34,11 +34,10 @@ require.
 >    whoever controls the database. "Recorded permanently on-chain", "one-time payment for
 >    exposure for a single payment", and the trust model they imply are not what happens
 >    today.
-> 3. **Ownership is not enforced the way it was.** The contract used to be what stopped
->    someone listing a name they don't own. Now a server-side signature check proves the
->    submitter controls a Kasplex address, and KNS is read server-side for the true owner —
->    but the two are different keypairs and nothing yet binds them. Listings are stored
->    with `ownership_verified = false` for exactly this reason.
+> 3. **Ownership *is* enforced, as of 2026-09-05** — this line previously said it wasn't.
+>    Listing and editing now require a signature from the **Kaspa L1 key that owns the
+>    domain on KNS**, verified server-side, and re-checked on every request. Only the owner
+>    can list or change a listing.
 >
 > The site's own copy still says otherwise in places (`/docs`, the homepage's "one-time
 > payment", the 210 KAS figure). **That copy needs to change or the claims need to become
