@@ -29,8 +29,26 @@ export const VOTE_FEE_SOMPI = VOTE_FEE_KAS * SOMPI_PER_KAS;
 export const TREASURY_ADDRESS =
   process.env.NEXT_PUBLIC_KASPADOMAINS_TREASURY_ADDRESS?.trim() || '';
 
-/** Fees can only be charged when there is somewhere to send them. */
-export const isFeeCollectionConfigured = TREASURY_ADDRESS.length > 0;
+/**
+ * Shape check on the configured address: `kaspa:` followed by bech32 characters
+ * (no 1, b, i or o). This cannot catch a valid-but-wrong address -- nothing
+ * can, which is why the value is verified against the SDK before being set --
+ * but it does stop a truncated or mangled env var from being handed to a wallet
+ * as a payment destination.
+ *
+ * Deliberately a regex rather than the Kaspa SDK: this module is imported by
+ * client code, and the SDK is server-only.
+ */
+const KASPA_ADDRESS_PATTERN = /^kaspa:[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{50,}$/;
+
+export const isTreasuryAddressValid = KASPA_ADDRESS_PATTERN.test(TREASURY_ADDRESS);
+
+/**
+ * Fees can only be charged when there is somewhere real to send them. A
+ * misconfigured address disables paid actions rather than pointing a wallet at
+ * a destination nobody controls.
+ */
+export const isFeeCollectionConfigured = isTreasuryAddressValid;
 
 export function formatKas(sompi: bigint): string {
   const whole = sompi / SOMPI_PER_KAS;

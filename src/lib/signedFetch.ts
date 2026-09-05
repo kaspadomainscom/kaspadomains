@@ -1,6 +1,6 @@
 // src/lib/signedFetch.ts
 import { buildSignedMessage, type WriteAction } from './signedMessage';
-import { TREASURY_ADDRESS } from './fees';
+import { TREASURY_ADDRESS, isFeeCollectionConfigured } from './fees';
 
 /**
  * Ask Kasware to sign a write request with the user's **Kaspa L1 key**, then
@@ -43,8 +43,10 @@ export async function payFee(sompi: bigint): Promise<string> {
   if (!kasware?.sendKaspa) {
     throw new Error('Kasware is not available, so the fee cannot be paid.');
   }
-  if (!TREASURY_ADDRESS) {
-    throw new Error('No fee address is configured, so this action is unavailable.');
+  if (!isFeeCollectionConfigured) {
+    // Covers both "unset" and "set to something malformed". Never fall through
+    // to sending funds at an address that failed its shape check.
+    throw new Error('No valid fee address is configured, so this action is unavailable.');
   }
 
   // Kasware takes sompi as a JS number. Guard the conversion rather than
