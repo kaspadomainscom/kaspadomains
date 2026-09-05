@@ -93,8 +93,8 @@ a grep.
 
 - [x] ~~No CI workflow~~ — added 2026-09-05 (`.github/workflows/ci.yml`): runs
       `npm ci`, `npm run lint`, and `npm run build` on every push and pull request.
-      **Still uncommitted at time of writing** — GitHub won't run any of this until the
-      workflow file itself is committed and pushed.
+      Committed and pushed 2026-09-05, after the type/lint errors on `main` were fixed, so
+      its first run starts green rather than immediately red.
       Coverage is better than it looks: `next.config.ts` sets no
       `typescript.ignoreBuildErrors` override, so `next build` type-checks too — lint,
       types, and build are all gated. Still not covered: there are no tests to run (see

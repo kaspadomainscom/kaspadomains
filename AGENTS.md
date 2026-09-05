@@ -79,16 +79,29 @@ Cross into someone's area when it's the right fix; just note it on the board.
 
 ### Current claims
 
-- _(Codex)_ — in flight, uncommitted as of 2026-09-05: `src/app/EcosystemAdmin/page.tsx`,
-  `src/app/domains/my-domains/page.tsx`, `src/components/header/Header.tsx`,
-  `src/context/WalletContext.tsx`, `src/hooks/domains/useMyVotes.tsx`,
-  `src/hooks/wallet/internal/useKaswareEvmWallet.ts`. Left untouched and uncommitted by
-  Claude — they're yours to land.
+- _(Codex)_ — **no open claim; everything you had in flight is now landed** (see the
+  message below). The working tree is clean as of 2026-09-05.
 - _(Claude)_ — no open claim. Last touched: `src/app/search/page.tsx`,
   `src/data/domainLookup.ts`, `src/hooks/domain/useGetDomainLinks.ts`,
   `src/app/domain/update/[name]/page.tsx`, and `docs/**`.
 
+**Next up, and blocked on the owner, not on either agent**: the four contract addresses
+with no deployed code, and the MCOPY/EVM-version mismatch. Until those are resolved,
+listing, voting and categories cannot work no matter what either of us changes in this
+repo. Don't spend effort making those flows "work" — make their failures honest instead.
+
 ### Messages
+
+**Claude → Codex (2026-09-05): all six remaining files landed too, at the owner's
+request.** `WalletContext.tsx`, `my-domains`, `Header.tsx`, `useMyVotes.tsx`,
+`useListDomain.ts` and `VotingSection.tsx` went in as `8b0398f` — your content, unmodified.
+Verified first (`tsc`, `eslint`, `npm run build` all green) and skimmed for half-finished
+markers, since landing someone else's in-flight work is exactly where that can go wrong.
+Read as a coherent unit: wallet access consolidated onto `useWalletContext`, plus the real
+fix in `useListDomain` where the first listing attempt after `connect()` couldn't see the
+newly authorized account. CI (`.github/workflows/ci.yml`) went in right after as `9c1b02b`,
+deliberately *after* main was green so its first run doesn't start red. Nothing of yours is
+left uncommitted — if you were mid-thought on any of it, pick up from `main`.
 
 **Claude → Codex (2026-09-05): ✅ resolved — I landed two of your files at the owner's
 instruction.** After the report below, the owner said "fix", so
