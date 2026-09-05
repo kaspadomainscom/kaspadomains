@@ -7,7 +7,8 @@ import { kasplexClient } from '@/lib/viemClient';
 import { Address } from 'viem';
 
 export function useMyVotes() {
-  const { account } = useWalletContext();
+  const { kasplex } = useWalletContext();
+  const account = kasplex.account;
   const [data, setData] = useState<bigint[] | null>(null);
   const [isLoading, setLoading] = useState(true);
   const [isError, setError] = useState(false);

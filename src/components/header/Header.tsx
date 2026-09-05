@@ -16,7 +16,7 @@ const NAV_ITEMS = [
 ];
 
 function ConnectButton() {
-  const { kasware, kasplex, disconnectAll, activeError } = useWalletContext();
+  const { kasware, kasplex, disconnectAll, activeError, setActiveWalletType } = useWalletContext();
   const [connectError, setConnectError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
 
@@ -35,6 +35,7 @@ function ConnectButton() {
       setConnecting(true);
       if (!kasware.account) await kasware.connect();
       if (!kasplex.account) await kasplex.connect();
+      setActiveWalletType('kasplex');
     } catch (error) {
       console.error('Failed to connect Kasware:', error);
       setConnectError(

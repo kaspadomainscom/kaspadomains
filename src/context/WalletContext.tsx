@@ -166,6 +166,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const disconnectAll = useCallback(() => {
     disconnectKasplex();
     disconnectKas();
+    setActiveWalletType(null);
     if (typeof window !== 'undefined') {
       localStorage.setItem('wallet-kasplex', 'false');
       localStorage.setItem('wallet-kasware', 'false');

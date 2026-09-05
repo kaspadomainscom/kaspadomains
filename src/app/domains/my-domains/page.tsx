@@ -44,7 +44,9 @@ function mapDomainAssetToDomain(asset: DomainAsset): Domain {
 }
 
 export default function MyDomainsPage() {
-  const { account, status } = useWalletContext();
+  const { kasware } = useWalletContext();
+  const account = kasware.account;
+  const status = kasware.status;
   const [page, setPage] = useState(1);
   const pageSize = 12;
 

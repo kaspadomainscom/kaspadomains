@@ -3,9 +3,9 @@
 import { useState, useRef } from 'react';
 import { contracts } from '@/lib/contracts';
 import { kasplexClient } from '@/lib/viemClient';
-import { useKaswareEvmWallet } from '@/hooks/wallet/internal/useKaswareEvmWallet';
-import { createKaswareEvmClient } from '@/lib/kaswareEvm';
+import { createKaswareEvmClient, getKaswareEvmProvider } from '@/lib/kaswareEvm';
 import { useToast } from '@/components/ToastProvider';
+import { useWalletContext } from '@/context/WalletContext';
 
 const RETRY_LIMIT = 3;
 const RETRY_DELAY_MS = 3000;
@@ -20,7 +20,7 @@ export function useListDomain() {
   const [error, setError] = useState<string | null>(null);
   const isSubmitting = useRef(false);
 
-  const { account, connect } = useKaswareEvmWallet();
+  const { kasplex } = useWalletContext();
   const { addToast } = useToast();
 
   const listDomain = async (domain: string): Promise<`0x${string}` | null> => {
@@ -41,12 +41,28 @@ export function useListDomain() {
     setIsLoading(true);
 
     try {
-      if (!account || !/^0x[a-fA-F0-9]{40}$/.test(account)) {
-        await connect();
+      let listingAccount = kasplex.account;
+
+      if (!listingAccount || !/^0x[a-fA-F0-9]{40}$/.test(listingAccount)) {
+        await kasplex.connect();
+
+        // React state updates from connect are visible on the next render, but
+        // this invocation still needs the newly authorized account in order to
+        // submit the user's first listing attempt.
+        const provider = getKaswareEvmProvider();
+        const accounts = provider
+          ? await provider.request({ method: 'eth_accounts' })
+          : [];
+        const connectedAccount = Array.isArray(accounts) ? accounts[0] : null;
+
+        if (typeof connectedAccount === 'string') listingAccount = connectedAccount;
+      }
+
+      if (!listingAccount || !/^0x[a-fA-F0-9]{40}$/.test(listingAccount)) {
         throw new Error('Kasware (Kasplex) is not connected.');
       }
 
-      const walletClient = createKaswareEvmClient(account as `0x${string}`);
+      const walletClient = createKaswareEvmClient(listingAccount as `0x${string}`);
 
       addToast(`Preparing to list "${domain}"...`);
 
@@ -83,8 +99,8 @@ export function useListDomain() {
             address: contracts.KaspaDomainsRegistry.address,
             abi: contracts.KaspaDomainsRegistry.abi,
             functionName: 'listDomain',
-            args: [domain, account],
-            account: account as `0x${string}`,
+            args: [domain, listingAccount as `0x${string}`],
+            account: listingAccount as `0x${string}`,
             value: domainFee,
           });
 

@@ -18,7 +18,8 @@ const VOTES_CONTRACT_ABI = contracts.DomainVotesManager.abi as JsonFragment[];
 // this component previously called functions/events that don't exist on the
 // deployed contract, so voting has never actually worked.
 export function VotingSection({ domainName }: { domainName: string }) {
-    const { account, signer, status } = useWalletContext();
+    const { kasplex, signer } = useWalletContext();
+    const account = kasplex.account;
 
     const [likesCount, setLikesCount] = useState<number>(0);
     const [userHasLiked, setUserHasLiked] = useState(false);
@@ -158,7 +159,7 @@ export function VotingSection({ domainName }: { domainName: string }) {
         }
     }
 
-    const isConnected = status === "connected" && !!account;
+    const isConnected = kasplex.status === "connected" && !!account;
     const voteFeeLabel = voteFeeWei !== null ? `${formatEther(voteFeeWei)} KAS` : "…";
 
     return (
