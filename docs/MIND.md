@@ -61,6 +61,7 @@ of waiting for it to happen incidentally as a side effect of other work.
 | 10 | ABI-correct isn't chain-correct | A passing type-check proves shapes match, never that a call succeeds |
 | 11 | One catch can't report two failures | A shared error path silently picks the wrong story for at least one of them |
 | 12 | Audit every caller before shipping a shared fix | A safe-looking one-line change can break n other places that were never checked |
+| 13 | A linter going quiet proves nothing | A guard deleted and a guard satisfied look identical in a green lint run |
 
 ## 1. Never trust a hardcoded value against a live contract — verify the ABI first
 
@@ -314,6 +315,31 @@ depends on — the caller list is part of the fix's actual scope, not an afterth
 check if something breaks later. See
 [`mind/shared-function-change-checklist.md`](./mind/shared-function-change-checklist.md)
 for the concrete search-and-check steps this mechanic runs.
+
+## 13. A refactor that satisfies a linter can silently delete a guard
+
+**Purpose**: a lint rule going quiet proves the flagged *pattern* is gone — never that the
+behaviour that pattern was protecting is still intact.
+**Mechanic**: after any refactor made to satisfy a linter or type-checker, diff it
+specifically for **removed conditions**, not just for the rule disappearing — a guard
+deleted and a guard satisfied look identical in a green lint run.
+
+**The incident (2026-09-05)**: clearing two `react-hooks/set-state-in-effect` errors from
+`app/domain/update/[name]/page.tsx` meant replacing the effect that seeded the resource
+editor from existing on-chain links with a derived value. The refactor was right about the
+lint rule, and dropped the `linksLoading` guard the old effect had. Because
+`DomainLinksStorage.updateLinks` is a bulk replace, that opened a data-loss window: a user
+typing before the read resolved would flip the "seeded" flag, never see the links that
+arrived afterwards, and wipe them from the contract on save. Lint was green throughout,
+and the type-checker had nothing to say either.
+
+**The rule**: when one sweep touches many files (that one covered ~11), audit the rest for
+the same class of loss instead of trusting the clean result. Note that the failure runs in
+both directions — several fixes in that same sweep wrapped the identical synchronous
+`setState` inside an `async function` so the rule simply stopped matching, without changing
+the cascading-render behaviour the rule exists to prevent (see `GAPS.md`'s lint entry). A
+zero-error lint run can mean *fixed*, *silenced*, or *quietly broken*, and only reading the
+diff tells you which.
 
 ## Related docs
 

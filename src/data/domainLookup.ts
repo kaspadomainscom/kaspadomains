@@ -32,13 +32,14 @@ export async function findDomainByName(name: string): Promise<Domain | undefined
 
 /**
  * Returns all domains from all categories as a flat list.
+ *
+ * Rejects if the manifest can't be loaded, rather than returning an empty
+ * list: its only caller is the search page, which needs to tell "we loaded
+ * the list and nothing matched" apart from "we couldn't load the list at
+ * all" -- collapsing those two into `[]` renders an outage as a confident
+ * "No matching domains found" (see docs/MIND.md principles #2 and #3).
  */
 export async function getAllDomains(): Promise<Domain[]> {
-  try {
-    const categoriesData = await loadCategoriesManifest();
-    return Object.values(categoriesData).flatMap((category) => category.domains);
-  } catch (error) {
-    console.error("Failed to load categories manifest for getAllDomains:", error);
-    return [];
-  }
+  const categoriesData = await loadCategoriesManifest();
+  return Object.values(categoriesData).flatMap((category) => category.domains);
 }

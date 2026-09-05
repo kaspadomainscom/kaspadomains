@@ -113,6 +113,24 @@ error messages being logged instead of silent fake success, and the generated
 have actually prerendered a `/domain/example.kaspa.kas` page, confirming this was a real,
 live-traffic-facing bug, not a theoretical one. Full detail in `BUGS.md`'s Fixed section.
 
+## 2026-09-05 (late) — Lint debt cleared, and auditing what that actually bought
+
+A separate commit (`0a2ae00`) hardened the listing flows and swept the `react-hooks` lint
+debt across ~11 files; `npx eslint .` now reports 0 problems over 110 files. That sweep
+also resolved the long-standing decide-or-delete calls: `domains/new-listings/page.tsx`
+became a redirect to `/list-domain`, and `DomainForm.tsx` a deprecated stub — both chosen
+so a placeholder flow can never look real. `useListDomain.ts` also stopped retrying after
+a transaction hash exists, which had risked charging the listing fee twice.
+
+Rather than take the green lint run at face value, each refactor in that sweep was read
+for **removed conditions** — which turned up one real regression (the resource editor's
+dropped `linksLoading` guard, a latent data-loss bug that would have wiped a domain's
+links on save once the contract is redeployed) and a handful of cosmetic "fixes" that
+silence the rule without changing behaviour. That produced `MIND.md` principle #13.
+Fixed alongside it: `/search` was rendering an outage as "No matching domains found",
+plus a stale-response race; and `useGetDomainLinks` could sit in `loading` forever.
+`CustomizeDomainForm.tsx` — 98 lines, entirely commented out — was deleted.
+
 ## Related docs
 
 - [`BUGS.md`](./BUGS.md) — the bug-specific version of several entries above, with full

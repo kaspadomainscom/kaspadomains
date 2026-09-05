@@ -12,23 +12,50 @@ export default function SearchPage() {
 
   // Strip `.kas` suffix if present
   const query = rawQuery.endsWith('.kas') ? rawQuery.slice(0, -4) : rawQuery;
-  const [results, setResults] = useState<Domain[] | null>(null);
+
+  // Four distinct states, deliberately not collapsed into one nullable list:
+  // "still searching", "searched and found nothing", and "couldn't load the
+  // domain list at all" are different answers and must not look alike.
+  type SearchState =
+    | { status: 'idle' }
+    | { status: 'loading' }
+    | { status: 'ready'; results: Domain[] }
+    | { status: 'error' };
+
+  const [state, setState] = useState<SearchState>({ status: 'idle' });
 
   useEffect(() => {
-    async function fetchAndFilterDomains() {
+    let cancelled = false;
+
+    async function runSearch() {
       if (!query) {
-        setResults(null);
+        if (!cancelled) setState({ status: 'idle' });
         return;
       }
 
-      const allDomains = await getAllDomains(); // await here
-      const filtered = allDomains.filter((d) =>
-        d.name.toLowerCase().includes(query)
-      );
-      setResults(filtered.length > 0 ? filtered : null);
+      if (!cancelled) setState({ status: 'loading' });
+
+      try {
+        const allDomains = await getAllDomains();
+        if (cancelled) return;
+        const filtered = allDomains.filter((d) =>
+          d.name.toLowerCase().includes(query)
+        );
+        setState({ status: 'ready', results: filtered });
+      } catch (err) {
+        // getAllDomains rejects when the on-chain manifest can't be read.
+        console.error('Failed to load domains for search:', err);
+        if (!cancelled) setState({ status: 'error' });
+      }
     }
 
-    fetchAndFilterDomains();
+    void runSearch();
+
+    // Without this, a slower fetch for an earlier query can resolve last and
+    // overwrite the results with ones for a query the user has moved on from.
+    return () => {
+      cancelled = true;
+    };
   }, [query]);
 
   if (!query) {
@@ -49,9 +76,20 @@ export default function SearchPage() {
           <span className="text-kaspaMint">&quot;{query}.kas&quot;</span>
         </h1>
 
-        {results ? (
+        {state.status === 'loading' ? (
+          <div className="text-center text-gray-400 mt-10">
+            <p className="text-lg">Searching…</p>
+          </div>
+        ) : state.status === 'error' ? (
+          <div className="text-center text-yellow-400 mt-10">
+            <p className="text-lg mb-2">Couldn&apos;t load the domain list.</p>
+            <p className="text-sm text-gray-400">
+              This is a problem on our side, not with your search — please try again later.
+            </p>
+          </div>
+        ) : state.status === 'ready' && state.results.length > 0 ? (
           <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {results.map((domain) => {
+            {state.results.map((domain) => {
               const baseName = domain.name.replace(/\.kas$/, '');
 
               return (

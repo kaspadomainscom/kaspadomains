@@ -26,19 +26,25 @@ live backlog the continuous audit loop appends to.
 
 ## Incomplete / half-built code
 
-- [ ] [`src/components/DomainForm.tsx`](../src/components/DomainForm.tsx) — disconnected
-      from the real listing flow (`alert('Form submitted...')` stub). The real flow
-      (`list-domain` → `PickDomainModal` → `useListDomain`) already works correctly, so
-      this is legacy scaffolding. Delete it, or finish wiring it — pick one.
-- [ ] [`src/components/CustomizeDomainForm.tsx`](../src/components/CustomizeDomainForm.tsx)
-      — large blocks of commented-out JSX (tagline/bio fields). Half-finished.
-- [ ] [`src/app/domains/new-listings/page.tsx`](../src/app/domains/new-listings/page.tsx)
-      is completely non-functional: `CONTRACT_ADDRESS` is the literal string
-      `'0xYourContractAddressHere'`, the fee is hardcoded to 999 KAS, and it calls
-      `contract.listDomain(domainInput, {...})` with a whole object as the first
-      argument — the real signature is `(string domain, address to)`, so even a real
-      address wouldn't save it. Not linked anywhere in the app (no nav, not in
-      `sitemap.xml`), so low urgency, but needs a decide-or-delete call.
+All three items previously tracked here were resolved on 2026-09-05 — the decide-or-delete
+calls were made, consistently, in favour of never letting a placeholder flow look real:
+
+- **`src/components/DomainForm.tsx`** — was disconnected from the real listing flow
+  (`alert('Form submitted...')` over placeholder wallet/contract data). Now a small
+  deprecated compatibility component that collects nothing, submits nothing, and links to
+  `/list-domain` instead.
+- **`src/app/domains/new-listings/page.tsx`** — was completely non-functional
+  (`CONTRACT_ADDRESS` was the literal string `'0xYourContractAddressHere'`, a hardcoded
+  999 KAS fee, and a `listDomain` call whose argument shape didn't match the real
+  signature). Now a 12-line redirect to `/list-domain`, deliberately *not* forwarding a
+  `name` query parameter, since the real flow derives available domains from the connected
+  wallet rather than accepting arbitrary input.
+- **`src/components/CustomizeDomainForm.tsx`** — deleted. The entire 98-line file was
+  commented out, so it exported nothing and was imported nowhere (unlike `DomainForm.tsx`,
+  there was no reachable entry point needing a compatibility shim). It also described an
+  off-chain `/api/domains/[domain]/customize` endpoint that has never existed and which
+  contradicts the on-chain-only data model — the on-chain home for tagline/bio is
+  `DomainDataStorage`, still unwired and still blocked by the MCOPY bug (see `BUGS.md`).
 
 ## Dead code (confirmed unused, safe to delete)
 
@@ -85,7 +91,14 @@ a grep.
 
 ## Infrastructure / process
 
-- [ ] No CI workflow — nothing runs `npm run lint`/`npm run build` on push/PR.
+- [x] ~~No CI workflow~~ — added 2026-09-05 (`.github/workflows/ci.yml`): runs
+      `npm ci`, `npm run lint`, and `npm run build` on every push and pull request.
+      **Still uncommitted at time of writing** — GitHub won't run any of this until the
+      workflow file itself is committed and pushed.
+      Coverage is better than it looks: `next.config.ts` sets no
+      `typescript.ignoreBuildErrors` override, so `next build` type-checks too — lint,
+      types, and build are all gated. Still not covered: there are no tests to run (see
+      the next item), so CI can prove the app compiles and lints, not that it behaves.
 - [ ] No real test coverage. `src/test/a.tsx` is an empty placeholder. At minimum, the
       contract-interaction hooks (`useListDomain`, wallet hooks) move real KAS value and
       are the highest-risk code paths to leave untested.
@@ -97,24 +110,34 @@ a grep.
 - [ ] No production contract addresses in `contracts.ts` (testnet-only).
 - [ ] No contract security audit — and no Solidity source in this repo to audit. Hard
       blocker before any mainnet deployment, regardless of frontend readiness.
-- [ ] <a id="lint-debt"></a>**Lint debt**: exactly 21 errors + 2 unrelated config-file
-      warnings, per a full `npx eslint .` run (2026-09-05, not a `tail`-truncated one —
-      the previous "~20 problems" estimate here had also miscategorized one file, see
-      `MIND.md` principle #6). None build-blocking (`next build` doesn't run ESLint in
-      v16) but real if `npm run lint` ever joins CI:
-      - `react-hooks/set-state-in-effect` (calling `setState` synchronously inside
-        `useEffect`) — 16 instances across 12 files: `Sidebar.tsx` (1),
-        `VotingSection.tsx` (2), `WalletContext.tsx` (1), `useKasware.ts` (1),
-        `useKaswareEvmWallet.ts` (1), `EcosystemAdmin/page.tsx` (2),
-        `domain/update/[name]/page.tsx` (2), `domains/my-votes/page.tsx` (1),
-        `domains/page.tsx` (1), `search/page.tsx` (1), `DomainForm.tsx` (1) — previously
-        miscategorized here as `static-components`, it's actually this rule — and
-        `contracts/DomainVotesManager/DomainLikeCount.tsx` (1), which was missing from
-        this list entirely before.
-      - `react-hooks/static-components` (a component defined inside another component's
-        render body) — 5 instances, all in `domains/new-listings/page.tsx` (`InputField`
-        used 4 times, `DynamicListInput` once) — already flagged as dead/non-functional
-        above, so fixing its dead-code status matters more than fixing its lint.
+- [x] <a id="lint-debt"></a>**Lint debt — cleared 2026-09-05.** `npx eslint .` now reports
+      **0 problems across 110 linted files** (verified via `--format json` and a file
+      count, not just a clean-looking summary — a suspiciously empty result is exactly
+      what `MIND.md` principle #6 says to check rather than celebrate). Previously 21
+      errors + 2 config-file warnings. Resolved in two parts: the
+      `react-hooks/set-state-in-effect` instances were refactored out across
+      `Sidebar.tsx`, `VotingSection.tsx`, `WalletContext.tsx`, `useKasware.ts`,
+      `useKaswareEvmWallet.ts`, `EcosystemAdmin/page.tsx`, `domains/my-votes/page.tsx`,
+      `domains/page.tsx`, `search/page.tsx`, `DomainLikeCount.tsx`, and
+      `domain/update/[name]/page.tsx` (derived `useMemo` values and cancellation-flag
+      effects instead of `setState` in an effect body), and all 5
+      `react-hooks/static-components` instances disappeared with the rewrite of
+      `domains/new-listings/page.tsx` into a redirect. Now enforced: the CI workflow added
+      the same day runs `npm run lint` on every push and PR, so this can't silently drift
+      back.
+
+      **What the zero does and doesn't mean** (checked by reading the diffs, not just the
+      count — see `MIND.md` principle #13): some of those refactors are real
+      (`my-votes/page.tsx` derives `data ?? []` instead of mirroring it into state;
+      `search/page.tsx` and `DomainLikeCount.tsx` relocated their guards intact). Others
+      are cosmetic: `useKaswareEvmWallet.ts` and `WalletContext.tsx` wrap the same
+      synchronous `setState` in an `async function` so the rule stops matching, while the
+      cascading-render behaviour the rule warns about is unchanged — `useKaswareEvmWallet`
+      in particular now carries noticeably more async-cleanup machinery for no behavioural
+      gain. And one was an outright regression, caught and fixed separately (the resource
+      editor's dropped `linksLoading` guard, see `BUGS.md`). Two smaller deltas were left
+      alone as cosmetic: `Sidebar.tsx` now clears its search box only when the toggle
+      button collapses it, rather than on any collapse.
 - [ ] Confirm whether `ethers` is still needed alongside `viem`, or fully migrated.
 - [ ] Confirm whether `https://supabase.com` in the CSP `connect-src`
       ([`src/proxy.ts`](../src/proxy.ts)) reflects real/planned infra or can be removed.

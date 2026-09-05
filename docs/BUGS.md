@@ -94,6 +94,46 @@ actively-updated backlog the continuous audit loop appends to.
 Most recent first. Each entry names the file(s), what was actually wrong, and how it was
 verified — not just "fixed X."
 
+- **`/search` reported an outage as "No matching domains found."** The page stored results
+  as `Domain[] | null` and rendered `null` as "No matching domains found." — collapsing
+  three different answers ("still searching", "searched, nothing matched", and "couldn't
+  load the domain list at all") into one confident negative. With the registry contract
+  currently unreachable, that meant every search told the user their term didn't exist,
+  when the truth was the app never loaded a single domain — the exact
+  failure-dressed-as-real-content problem in `MIND.md` principles #2 and #3. It also had a
+  stale-response race: a slower fetch for an earlier query could resolve last and
+  overwrite the results for the query the user had moved on to. Fixed by modelling the
+  four states explicitly (`idle` / `loading` / `ready` / `error`) with a distinct message
+  each — including "Couldn't load the domain list … this is a problem on our side, not
+  with your search" — and adding a cancellation flag so superseded queries can't overwrite
+  current results. [`getAllDomains`](../src/data/domainLookup.ts) now propagates the
+  failure instead of swallowing it into `[]`, which is what made the distinction
+  expressible at all; it has exactly one caller (this page), checked per `MIND.md`
+  principle #12, and `findDomainByName`'s existing swallow-and-return-undefined behaviour
+  was deliberately left as-is since its callers genuinely treat "not found" and "couldn't
+  check" the same way.
+- **A data-loss race in the resource editor, caught before it shipped.** While removing
+  `domain/update/[name]/page.tsx`'s two `set-state-in-effect` lint errors, the effect that
+  seeded the editor with existing on-chain links was replaced by a derived value
+  (`!linksSeeded && existingLinks.length > 0 ? existingLinks : links`) — but the
+  `linksLoading` guard the old effect had was dropped along with it. That opened a real
+  window: if the user typed before the `getLinks` read resolved, `linksSeeded` flipped to
+  `true`, the links arriving afterwards were never displayed, and because
+  `DomainLinksStorage.updateLinks` is a **bulk replace** (see `SPEC.md`), saving would
+  have silently wiped every existing link from the contract. Not currently reachable in
+  production only because `getLinks` fails 100% of the time right now (the MCOPY bug
+  above) and always returns an empty list — it would have become live the moment the
+  contract was redeployed and fixed. Fixed by keeping the lint-clean derived-value
+  approach but gating the whole editor on the load (`editorLocked = linksLoading`):
+  inputs, the remove/add-row buttons, and submit are all disabled, and the counter shows
+  "Loading your current links…" until the read resolves, so `linksSeeded` cannot flip
+  early. Also hardened [`useGetDomainLinks.ts`](../src/hooks/domain/useGetDomainLinks.ts),
+  which the gate now depends on: it previously left `loading` stuck `true` forever when
+  handed an empty domain (which would have locked the editor permanently) and never reset
+  `loading` when the domain changed (so a previous domain's finished fetch reported "not
+  loading" while the new one was still in flight). It now uses a cancellation flag,
+  re-enters the loading state per domain, and clears links on error rather than leaving
+  a previous domain's data visible.
 - **The same catch-block conflation as the `loadCategoriesManifest()` fix, found in a
   second file.** `app/domains/categories/category/[category]/page.tsx`'s page body
   caught a genuine manifest-load failure and called the generic `notFound()` — the same

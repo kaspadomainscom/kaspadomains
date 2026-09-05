@@ -12,7 +12,13 @@ Currently live on **Kasplex testnet** only.
 ## Documentation
 
 Full project documentation lives in [`docs/`](./docs). Start at [`docs/TODO.md`](./docs/TODO.md),
-which is the live index — it currently points to:
+which is the live index.
+
+> **Working on this repo with an AI agent?** Read [`AGENTS.md`](./AGENTS.md) first — Codex
+> and Claude both work here in parallel, and it holds the work split, ground rules, and the
+> board they use to coordinate.
+
+The index currently points to:
 
 - [`docs/PROJECT_PLAN.md`](./docs/PROJECT_PLAN.md) — current state and roadmap
 - [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — technical architecture (stack, contracts, routing)

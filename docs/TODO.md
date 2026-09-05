@@ -23,6 +23,9 @@ points to them and holds the actively-updated loop backlog below.
 - [`../README.md`](../README.md) — repo root entry point; now describes the actual
   project and links back into this folder (was still generic `create-next-app`
   boilerplate until this pass)
+- [`../AGENTS.md`](../AGENTS.md) — **Codex and Claude both work on this repo.** Work
+  split, ground rules, and the live board they use to hand off and flag things to each
+  other. Read/update it before starting non-trivial work.
 
 When recording new work: a broken thing goes in `BUGS.md`, a missing thing goes in
 `GAPS.md`, a new operating lesson goes in `MIND.md`. Use this file for short-lived,
@@ -84,6 +87,14 @@ and [`BUGS.md`](./BUGS.md):
       `GAPS.md` had flagged — `src/data/categories/*.ts` (16 files), and `src/types/db.ts`)
       after re-verifying each with precise import-statement greps and checking for barrel
       exports. Verified with a real `npm run build` (exit 0), not just the grep.
+- [x] Lint debt cleared (0 problems / 110 files) and the three decide-or-delete items
+      resolved — `new-listings` → redirect, `DomainForm` → deprecated stub,
+      `CustomizeDomainForm` → deleted. Audited that sweep's refactors for dropped guards
+      rather than trusting the green run: found one real data-loss regression (fixed) and
+      several cosmetic rule-silencing fixes (documented, not "fixed" — see `GAPS.md`).
+      Produced `MIND.md` principle #13.
+- [x] `/search` no longer reports a contract outage as "No matching domains found", and
+      no longer lets a superseded query overwrite current results.
 - [ ] Missing Terms/Privacy/About pages — flagged, not drafted without real input.
 - [ ] Internal linking + breadcrumbs on domain profile pages (`/domain/[name]`) — has a
       Home/Domains breadcrumb; worth checking whether it should also link to the domain's

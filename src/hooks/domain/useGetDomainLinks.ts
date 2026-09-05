@@ -13,9 +13,25 @@ export function useGetDomainLinks(domain: string) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!domain) return;
+    let cancelled = false;
 
-    async function fetch() {
+    async function fetchLinks() {
+      // No domain to look up: report "done, nothing found" rather than
+      // staying in a loading state forever. Callers gate their editors on
+      // this flag, so a stuck `true` would lock the UI permanently.
+      if (!domain) {
+        if (!cancelled) {
+          setLinks([]);
+          setLoading(false);
+        }
+        return;
+      }
+
+      // Re-enter the loading state on every domain change, otherwise a
+      // previous domain's completed fetch leaves `loading` false while the
+      // new one is still in flight.
+      if (!cancelled) setLoading(true);
+
       try {
         const result = await kasplexClient.readContract({
           address: contracts.DomainLinksStorage.address,
@@ -23,15 +39,20 @@ export function useGetDomainLinks(domain: string) {
           functionName: 'getLinks',
           args: [domain],
         });
-        setLinks(result as DomainLink[]);
+        if (!cancelled) setLinks(result as DomainLink[]);
       } catch (err) {
         console.error('Failed to fetch domain links:', err);
+        if (!cancelled) setLinks([]);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
-    fetch();
+    void fetchLinks();
+
+    return () => {
+      cancelled = true;
+    };
   }, [domain]);
 
   return { links, loading };
