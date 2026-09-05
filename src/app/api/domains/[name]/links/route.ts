@@ -92,7 +92,7 @@ export async function PUT(
   const { data: domain, error: lookupError } = await supabase
     .from('domains')
     .select('id, owner')
-    .ilike('name', verified.domain)
+    .eq('name', verified.domain)
     .maybeSingle();
 
   if (lookupError) {

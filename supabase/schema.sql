@@ -93,7 +93,14 @@ create table if not exists public.votes (
 create index if not exists votes_domain_idx on public.votes (domain_id);
 
 -- Vote counts are derived, never stored, so they cannot drift from the rows.
-create or replace view public.domain_vote_counts as
+--
+-- security_invoker makes the view run with the *caller's* permissions rather
+-- than the owner's. Without it a view silently bypasses RLS on the tables it
+-- reads, which happens to be harmless here (both are public-read) but is the
+-- wrong default to establish. Requires Postgres 15+, which Supabase projects
+-- created any time recently will be on.
+create or replace view public.domain_vote_counts
+  with (security_invoker = true) as
   select d.id as domain_id, d.domain_hash, d.name, count(v.id) as votes
   from public.domains d
   left join public.votes v on v.domain_id = d.id

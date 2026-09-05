@@ -67,7 +67,7 @@ export async function fetchDomainByName(name: string): Promise<Domain | undefine
   const { data, error } = await requireClient()
     .from('domains')
     .select(DOMAIN_COLUMNS)
-    .ilike('name', name)
+    .eq('name', name.trim().toLowerCase())
     .maybeSingle();
 
   if (error) throw new Error(`Supabase: failed to look up "${name}" — ${error.message}`);
@@ -141,7 +141,7 @@ export async function fetchVoteCount(domainName: string): Promise<number> {
   const { data, error } = await requireClient()
     .from('domain_vote_counts')
     .select('votes')
-    .ilike('name', domainName)
+    .eq('name', domainName.trim().toLowerCase())
     .maybeSingle();
 
   if (error) throw new Error(`Supabase: failed to load votes — ${error.message}`);
@@ -159,7 +159,7 @@ export async function fetchHasVoted(domainName: string, voter: string): Promise<
     .from('votes')
     .select('id')
     .eq('domain_id', domain.id)
-    .ilike('voter', voter)
+    .eq('voter', voter)
     .maybeSingle();
 
   if (error) throw new Error(`Supabase: failed to check vote — ${error.message}`);

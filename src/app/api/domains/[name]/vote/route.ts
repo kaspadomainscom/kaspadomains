@@ -71,7 +71,7 @@ export async function POST(
   const { data: domain, error: lookupError } = await supabase
     .from('domains')
     .select('id')
-    .ilike('name', verified.domain)
+    .eq('name', verified.domain)
     .maybeSingle();
 
   if (lookupError) {
