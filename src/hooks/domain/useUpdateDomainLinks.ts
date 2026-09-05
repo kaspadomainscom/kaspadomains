@@ -43,7 +43,11 @@ export function useUpdateDomainLinks() {
       });
 
       addToast('Waiting for confirmation...');
-      await kasplexClient.waitForTransactionReceipt({ hash });
+      const receipt = await kasplexClient.waitForTransactionReceipt({ hash });
+
+      if (receipt.status !== 'success') {
+        throw new Error(`Saving resources for "${domain}" was reverted on-chain.`);
+      }
 
       addToast(`Resources saved for "${domain}".`, 'success');
       return true;

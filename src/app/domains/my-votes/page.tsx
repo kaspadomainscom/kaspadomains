@@ -4,7 +4,6 @@
 import { DomainCard } from "@/components/DomainCard";
 import Loader from "@/components/Loader";
 import { useMyVotes } from "@/hooks/domains/useMyVotes";
-import { useEffect, useState } from "react";
 import { useDomainByHash } from "@/hooks/domain/useDomainByHash";
 
 function DomainFetcher({ domainHash }: { domainHash: bigint }) {
@@ -18,13 +17,7 @@ function DomainFetcher({ domainHash }: { domainHash: bigint }) {
 
 export default function MyVotesPage() {
   const { data, isLoading, isError, error } = useMyVotes();
-  const [hashes, setHashes] = useState<bigint[]>([]);
-
-  useEffect(() => {
-    if (data) {
-      setHashes(data);
-    }
-  }, [data]);
+  const hashes = data ?? [];
 
   return (
     <div className="max-w-5xl mx-auto py-12 px-4 text-white">

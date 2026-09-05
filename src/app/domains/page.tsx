@@ -39,10 +39,6 @@ export default function DomainsPage() {
     fetchManifest();
   }, []);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedCategory, searchTerm]);
-
   // Flatten domains (all categories, or just the selected one), deduped by name
   const allDomains: DomainWithCategory[] = useMemo(() => {
     const seen = new Set<string>();
@@ -98,7 +94,10 @@ export default function DomainsPage() {
           <h2 className="text-2xl font-semibold text-white mb-6 text-center">Browse by Category</h2>
           <nav className="flex flex-wrap justify-center gap-3">
             <button
-              onClick={() => setSelectedCategory('all')}
+              onClick={() => {
+                setSelectedCategory('all');
+                setCurrentPage(1);
+              }}
               className={`px-5 py-2 rounded-full font-medium transition ${
                 selectedCategory === 'all'
                   ? 'bg-kaspaMint text-[#0F2F2E] shadow-lg'
@@ -110,7 +109,10 @@ export default function DomainsPage() {
             {allCategories.map(({ key, title }) => (
               <button
                 key={key}
-                onClick={() => setSelectedCategory(key)}
+                onClick={() => {
+                  setSelectedCategory(key);
+                  setCurrentPage(1);
+                }}
                 className={`px-5 py-2 rounded-full font-medium transition ${
                   selectedCategory === key
                     ? 'bg-kaspaMint text-[#0F2F2E] shadow-lg'
@@ -132,7 +134,10 @@ export default function DomainsPage() {
             type="text"
             placeholder="e.g. cooldomain"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
             className="w-full border border-[#1d3b39] bg-[#122c2a] text-gray-100 placeholder-gray-500 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-kaspaMint"
           />
         </div>

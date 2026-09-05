@@ -50,7 +50,18 @@ export function proxy(request: NextRequest) {
     `report-to csp-endpoint`,
   ].join("; ");
 
-  const response = NextResponse.next();
+  // Next.js reads the nonce from the CSP on the *request* while rendering.
+  // Forward both headers upstream so framework scripts and server components
+  // receive the same nonce that is sent in the response CSP.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("Content-Security-Policy", csp);
+  requestHeaders.set("x-csp-nonce", nonce);
+
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
   response.headers.set("Content-Security-Policy", csp);
   response.headers.set("x-csp-nonce", nonce);

@@ -69,12 +69,6 @@ export default function Sidebar() {
   }, [isCollapsed, isMobile]);
 
   useEffect(() => {
-    if (isCollapsed && !isMobile) {
-      setSearch('');
-    }
-  }, [isCollapsed, isMobile]);
-
-  useEffect(() => {
     if (!isMobile) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && mobileOpen) {
@@ -91,9 +85,10 @@ export default function Sidebar() {
     if (isMobile) {
       setMobileOpen((prev) => !prev);
     } else {
+      if (!isCollapsed) setSearch('');
       setIsCollapsed((prev) => !prev);
     }
-  }, [isMobile]);
+  }, [isCollapsed, isMobile]);
 
   const filteredLinks = useMemo(() => {
     return categoryLinks.filter(({ label }) =>

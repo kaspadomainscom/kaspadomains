@@ -73,7 +73,7 @@ export function useListDomain() {
       }
 
       let lastError: unknown = null;
-      let confirmedHash: `0x${string}` | null = null;
+      let broadcastHash: `0x${string}` | null = null;
 
       for (let attempt = 1; attempt <= RETRY_LIMIT; attempt++) {
         try {
@@ -88,15 +88,12 @@ export function useListDomain() {
             value: domainFee,
           });
 
+          // Only retry errors that occur before the wallet returns a hash. Once
+          // a hash exists, the transaction may already be pending on-chain and
+          // submitting it again could charge the listing fee twice.
+          broadcastHash = hash;
           setTxHash(hash);
           console.log(`[Kasplex] Transaction hash (attempt ${attempt}):`, hash);
-
-          addToast(`Waiting for confirmation...`);
-          await kasplexClient.waitForTransactionReceipt({ hash });
-
-          addToast(`"${domain}" listed successfully!`, 'success');
-          lastError = null;
-          confirmedHash = hash;
           break;
 
         } catch (err) {
@@ -112,11 +109,19 @@ export function useListDomain() {
         }
       }
 
-      if (lastError) {
-        throw lastError;
+      if (!broadcastHash) {
+        throw lastError ?? new Error('Failed to submit the listing transaction.');
       }
 
-      return confirmedHash;
+      addToast('Waiting for confirmation...');
+      const receipt = await kasplexClient.waitForTransactionReceipt({ hash: broadcastHash });
+
+      if (receipt.status !== 'success') {
+        throw new Error(`Listing "${domain}" was reverted on-chain.`);
+      }
+
+      addToast(`"${domain}" listed successfully!`, 'success');
+      return broadcastHash;
 
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong.';

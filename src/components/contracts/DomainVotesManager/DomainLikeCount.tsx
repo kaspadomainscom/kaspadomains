@@ -18,9 +18,9 @@ export function DomainLikeCount({ domain }: Props) {
     if (!domain) return;
 
     let isMounted = true;
-    setStatus('loading');
 
     (async () => {
+      setStatus('loading');
       try {
         const count = await getDomainLikeCount(domain);
         if (!isMounted) return;

@@ -95,27 +95,40 @@ export function useKaswareEvmWallet(): WalletState {
     const prov = getKaswareEvmProvider();
     if (!prov) return;
 
-    setProvider(prov);
+    async function initializeProvider() {
+      if (!mounted) return;
+      setProvider(prov);
 
-    const handleAccountsChanged = (accounts: unknown) => {
-      if (!Array.isArray(accounts)) return;
-      const acc = accounts[0] || null;
-      setAccount(acc);
-      setStatus(acc ? 'connected' : 'idle');
-    };
+      const handleAccountsChanged = (accounts: unknown) => {
+        if (!Array.isArray(accounts)) return;
+        const acc = accounts[0] || null;
+        setAccount(acc);
+        setStatus(acc ? 'connected' : 'idle');
+      };
 
-    const handleChainChanged = (cid: unknown) => {
-      if (typeof cid === 'string') setChainId(cid);
-    };
+      const handleChainChanged = (cid: unknown) => {
+        if (typeof cid === 'string') setChainId(cid);
+      };
 
-    prov.on?.('accountsChanged', handleAccountsChanged);
-    prov.on?.('chainChanged', handleChainChanged);
+      prov.on?.('accountsChanged', handleAccountsChanged);
+      prov.on?.('chainChanged', handleChainChanged);
+
+      return () => {
+        prov.removeListener?.('accountsChanged', handleAccountsChanged);
+        prov.removeListener?.('chainChanged', handleChainChanged);
+      };
+    }
+
+    let removeListeners: (() => void) | undefined;
+    void initializeProvider().then((cleanup) => {
+      if (!cleanup) return;
+      if (mounted) removeListeners = cleanup;
+      else cleanup();
+    });
 
     return () => {
-      if (!mounted) return;
       mounted = false;
-      prov.removeListener?.('accountsChanged', handleAccountsChanged);
-      prov.removeListener?.('chainChanged', handleChainChanged);
+      removeListeners?.();
     };
   }, []);
 

@@ -87,39 +87,46 @@ export function useKasware(options?: UseKaswareOptions) {
 
   useEffect(() => {
     isMounted.current = true;
-    if (!isInstalled) {
+    let removeAccountsListener: (() => void) | undefined;
+
+    async function initializeWallet() {
+      if (!isInstalled) {
+        setReady(false);
+        return;
+      }
+
       setReady(false);
-      return;
-    }
 
-    setReady(false);
-
-    // Fetch accounts initially
-    const fetchAccounts = async () => {
       try {
         const accounts = await window.kasware!.getAccounts();
+        if (!isMounted.current) return;
         updateAddress(accounts[0] || null);
         setReady(true);
       } catch (err) {
+        if (!isMounted.current) return;
         handleError('KasWare getAccounts error:', err, false);
         setReady(true); // Even if error, wallet is ready but no accounts
       }
-    };
 
-    fetchAccounts();
+      // Listen for account changes only after the initial asynchronous check
+      // completes, so cleanup also covers a component that unmounts mid-request.
+      const handleAccountsChanged = (payload: unknown) => {
+        const accounts = Array.isArray(payload) ? (payload as string[]) : [];
+        updateAddress(accounts[0] || null);
+      };
 
-    // Listen for account changes
-    const handleAccountsChanged = (payload: unknown) => {
-      const accounts = Array.isArray(payload) ? (payload as string[]) : [];
-      updateAddress(accounts[0] || null);
-    };
+      window.kasware!.on('accountsChanged', handleAccountsChanged);
+      removeAccountsListener = () => {
+        window.kasware?.removeListener('accountsChanged', handleAccountsChanged);
+      };
+    }
 
-    window.kasware!.on('accountsChanged', handleAccountsChanged);
+    void initializeWallet();
 
     // Cleanup listener on unmount
     return () => {
       isMounted.current = false;
-      window.kasware?.removeListener('accountsChanged', handleAccountsChanged);
+      removeAccountsListener?.();
     };
   }, [isInstalled, updateAddress, handleError]);
 

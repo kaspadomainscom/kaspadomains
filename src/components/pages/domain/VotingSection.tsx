@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Contract, keccak256, toUtf8Bytes, formatEther, EventLog, Log } from "ethers";
 import { useWalletContext } from "@/context/WalletContext";
 import { contracts } from "@/lib/contracts";
 import { JsonFragment } from "ethers";
 
 const DOMAIN_LIKES_PER_PAGE = 10;
+const VOTES_CONTRACT_ADDRESS = contracts.DomainVotesManager.address;
+const VOTES_CONTRACT_ABI = contracts.DomainVotesManager.abi as JsonFragment[];
 
 // Contract calls here must match DomainVotesManager's real ABI exactly:
 // getDomainVoteCount (not getDomainLikeCount), hasUserVotedDomain (not
@@ -18,7 +20,6 @@ const DOMAIN_LIKES_PER_PAGE = 10;
 export function VotingSection({ domainName }: { domainName: string }) {
     const { account, signer, status } = useWalletContext();
 
-    const [contract, setContract] = useState<Contract | null>(null);
     const [likesCount, setLikesCount] = useState<number>(0);
     const [userHasLiked, setUserHasLiked] = useState(false);
     const [voters, setVoters] = useState<string[]>([]);
@@ -28,19 +29,11 @@ export function VotingSection({ domainName }: { domainName: string }) {
     const [voteFeeWei, setVoteFeeWei] = useState<bigint | null>(null);
     const [contractUnavailable, setContractUnavailable] = useState(false);
 
-    const YOUR_CONTRACT_ADDRESS = contracts.DomainVotesManager.address;
-    const YOUR_CONTRACT_ABI = contracts.DomainVotesManager.abi as JsonFragment[];
     const domainHash = keccak256(toUtf8Bytes(domainName));
-
-    // Initialize contract when signer changes
-    useEffect(() => {
-        if (!signer) {
-            setContract(null);
-            return;
-        }
-        const c = new Contract(YOUR_CONTRACT_ADDRESS, YOUR_CONTRACT_ABI, signer);
-        setContract(c);
-    }, [signer, YOUR_CONTRACT_ABI, YOUR_CONTRACT_ADDRESS]);
+    const contract = useMemo(
+        () => signer ? new Contract(VOTES_CONTRACT_ADDRESS, VOTES_CONTRACT_ABI, signer) : null,
+        [signer]
+    );
 
     // Load the current on-chain vote fee (don't hardcode it -- it's owner-adjustable)
     useEffect(() => {
@@ -71,14 +64,27 @@ export function VotingSection({ domainName }: { domainName: string }) {
 
     // Check if current user has voted for this domain
     useEffect(() => {
-        if (!contract || !account) {
-            setUserHasLiked(false);
-            return;
+        let cancelled = false;
+
+        async function loadUserVoteStatus() {
+            if (!contract || !account) {
+                if (!cancelled) setUserHasLiked(false);
+                return;
+            }
+
+            try {
+                const hasVoted = await contract.hasUserVotedDomain(account, domainName);
+                if (!cancelled) setUserHasLiked(hasVoted);
+            } catch (error) {
+                console.error(error);
+            }
         }
-        contract
-            .hasUserVotedDomain(account, domainName)
-            .then(setUserHasLiked)
-            .catch(console.error);
+
+        void loadUserVoteStatus();
+
+        return () => {
+            cancelled = true;
+        };
     }, [contract, account, domainName]);
 
     // Fetch voters list paginated via events

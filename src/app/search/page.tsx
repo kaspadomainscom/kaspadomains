@@ -15,12 +15,12 @@ export default function SearchPage() {
   const [results, setResults] = useState<Domain[] | null>(null);
 
   useEffect(() => {
-    if (!query) {
-      setResults(null);
-      return;
-    }
-
     async function fetchAndFilterDomains() {
+      if (!query) {
+        setResults(null);
+        return;
+      }
+
       const allDomains = await getAllDomains(); // await here
       const filtered = allDomains.filter((d) =>
         d.name.toLowerCase().includes(query)

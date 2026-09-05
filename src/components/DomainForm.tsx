@@ -1,188 +1,31 @@
-'use client';
+import Link from 'next/link';
 
-import { useCheckDomainAvailability } from '@/hooks/kns/api/useCheckDomainAvailability';
-import { useEffect, useState } from 'react';
-import Image from 'next/image';
-
-const DomainForm = () => {
-  const [domain, setDomain] = useState('');
-  const [address] = useState('kaspa:your-address'); // Replace with actual connected wallet address
-  const [isAvailable, setIsAvailable] = useState<null | boolean>(null);
-
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [previewMode, setPreviewMode] = useState(false);
-
-  const { mutateAsync: checkAvailability, isPending } = useCheckDomainAvailability();
-
-  // Live domain availability check with debounce
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (domain) {
-        checkAvailability({ domainNames: [domain], address })
-          .then((res) => {
-            setIsAvailable(res[0]?.available ?? null);
-          })
-          .catch(() => setIsAvailable(null));
-      } else {
-        setIsAvailable(null);
-      }
-    }, 600);
-
-    return () => clearTimeout(timeout);
-  }, [domain, address, checkAvailability]);
-
-  // Load draft on mount
-  useEffect(() => {
-    const draft = localStorage.getItem('domainFormDraft');
-    if (draft) {
-      const parsed = JSON.parse(draft);
-      setDomain(parsed.domain || '');
-      setImagePreview(parsed.imagePreview || null);
-    }
-  }, []);
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const previewUrl = URL.createObjectURL(file);
-      setImagePreview(previewUrl);
-    }
-  };
-
-  const saveDraft = () => {
-    localStorage.setItem(
-      'domainFormDraft',
-      JSON.stringify({ domain, imagePreview })
-    );
-    alert('Draft saved');
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert('Form submitted (implement actual logic)');
-    // TODO: Add smart contract interaction here
-  };
-
-  if (previewMode) {
-    return (
-      <div className="p-4 border rounded-lg max-w-xl mx-auto bg-white dark:bg-zinc-900">
-        <h2 className="text-xl font-bold mb-4">Preview</h2>
-        <p><strong>Domain:</strong> {domain}.kas</p>
-        <p>
-          <strong>Status:</strong>{' '}
-          {isAvailable === null
-            ? 'Unknown'
-            : isAvailable
-              ? '✅ Available'
-              : '❌ Taken'}
-        </p>
-        {imagePreview && (
-          <div className="mt-4 w-48">
-            <Image
-              src={imagePreview}
-              alt="Domain image preview"
-              width={192}
-              height={192}
-              className="rounded-lg border"
-              unoptimized // allow dynamic previews
-            />
-          </div>
-        )}
-        <button
-          onClick={() => setPreviewMode(false)}
-          className="mt-6 btn btn-secondary"
-          type="button"
-        >
-          Back to Edit
-        </button>
-      </div>
-    );
-  }
-
+/**
+ * @deprecated Use the wallet-verified listing flow at /list-domain.
+ *
+ * This compatibility component deliberately does not collect data or submit a
+ * transaction. The former form used placeholder wallet/contract data and could
+ * make an unsuccessful listing look real.
+ */
+export default function DomainForm() {
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-6 max-w-xl mx-auto p-4 border rounded-lg bg-white dark:bg-zinc-900"
+    <section
+      aria-labelledby="legacy-domain-form-title"
+      className="mx-auto max-w-xl rounded-lg border bg-white p-6 dark:bg-zinc-900"
     >
-      <h2 className="text-2xl font-semibold">Create Your .kas Domain</h2>
-
-      {/* Domain Input */}
-      <div>
-        <label htmlFor="domain-input" className="block mb-1 font-medium">Domain</label>
-        <input
-          id="domain-input"
-          name="domain"
-          type="text"
-          value={domain}
-          onChange={(e) => setDomain(e.target.value)}
-          placeholder="e.g. yourname"
-          className="w-full p-2 border rounded"
-          autoComplete="off"
-          aria-describedby="domain-status"
-        />
-        {domain && (
-          <p id="domain-status" className="text-sm mt-1">
-            {isPending
-              ? 'Checking availability...'
-              : isAvailable === null
-                ? ''
-                : isAvailable
-                  ? '✅ Domain is available'
-                  : '❌ Domain is taken'}
-          </p>
-        )}
-      </div>
-
-      {/* Image Upload */}
-      <div>
-        <label htmlFor="image-upload" className="block mb-1 font-medium">Upload Image</label>
-        <input
-          id="image-upload"
-          name="image-upload"
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          aria-describedby={imagePreview ? 'image-preview' : undefined}
-        />
-        {imagePreview && (
-          <div id="image-preview" className="mt-2 w-48">
-            <Image
-              src={imagePreview}
-              alt="Preview"
-              width={192}
-              height={192}
-              className="rounded-xl border"
-              unoptimized
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Actions */}
-      <div className="flex flex-wrap gap-3 mt-4">
-        <button
-          type="button"
-          onClick={saveDraft}
-          className="btn border px-4 py-2 rounded"
-        >
-          💾 Save Draft
-        </button>
-        <button
-          type="button"
-          onClick={() => setPreviewMode(true)}
-          className="btn border px-4 py-2 rounded"
-        >
-          👁 Preview
-        </button>
-        <button
-          type="submit"
-          className="btn bg-kaspaGreen text-white px-4 py-2 rounded"
-        >
-          🚀 Submit
-        </button>
-      </div>
-    </form>
+      <h2 id="legacy-domain-form-title" className="text-2xl font-semibold">
+        Domain listing has moved
+      </h2>
+      <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+        To protect ownership verification, listings can only be created from a
+        connected wallet in the current listing flow.
+      </p>
+      <Link
+        href="/list-domain"
+        className="mt-5 inline-flex rounded bg-kaspaGreen px-4 py-2 text-white"
+      >
+        Go to domain listing
+      </Link>
+    </section>
   );
-};
-
-export default DomainForm;
+}

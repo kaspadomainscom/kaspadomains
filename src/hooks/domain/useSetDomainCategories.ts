@@ -58,7 +58,12 @@ export function useSetDomainCategories() {
         account,
       });
 
-      await kasplexClient.waitForTransactionReceipt({ hash });
+      const receipt = await kasplexClient.waitForTransactionReceipt({ hash });
+
+      if (receipt.status !== 'success') {
+        throw new Error(`Assigning categories to "${domain}" was reverted on-chain.`);
+      }
+
       addToast(`Categories assigned to "${domain}".`, 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to assign categories.';

@@ -13,6 +13,38 @@ context. If you only have time to read one line per principle, read the Purpose 
 below; if you're about to do the thing a principle is about, its Mechanic line (or the
 matching file in [`mind/`](./mind/)) is the actual step to run.
 
+## Standing command: "expand your mind"
+
+**Purpose**: keep this file growing with the codebase instead of going stale the moment
+a session ends.
+**Mechanic**: when told "expand your mind" (or a clear variant of it), treat it as an
+explicit instruction to upgrade this file right now — not just re-read or summarize it.
+
+This phrase is a standing command tied specifically to this file. When given it, actually
+do the following, in order:
+
+1. Check this file's "Last updated" date against [`HISTORY.md`](./HISTORY.md) and
+   [`BUGS.md`](./BUGS.md)'s Fixed section for anything that happened since — a fix, a bug,
+   a docs session, a live-chain finding — that isn't distilled into a principle here yet.
+2. For each genuinely new, generalizable lesson found (not just a detail an existing
+   principle already covers), add a new numbered principle in the established
+   Purpose/Mechanic/incident/rule format, and add it to the Quick reference table below.
+3. If an existing principle gained a real new instance (a recurrence, a second file with
+   the same bug class), append it to that principle under its own dated sub-heading
+   rather than creating a near-duplicate principle.
+4. If a principle's mechanic is concrete enough to run as a repeatable checklist, add or
+   update the matching file in [`mind/`](./mind/) and cross-link it both ways; update
+   [`mind/README.md`](./mind/README.md)'s index table too.
+5. Bump the "Last updated" date at the top of this file (and of any `mind/` file you
+   touched).
+
+This isn't only for the literal phrase — this file is meant to be upgraded continuously,
+as a natural byproduct of any session that surfaces a real, generalizable lesson (see
+`HISTORY.md` for examples of this already happening without being asked, e.g. principles
+#10, #11, and #12 all came from a single 2026-09-05 session, not a separate request).
+"Expand your mind" just means: do that pass explicitly and thoroughly, right now, instead
+of waiting for it to happen incidentally as a side effect of other work.
+
 ## Quick reference
 
 | # | Principle | Purpose |

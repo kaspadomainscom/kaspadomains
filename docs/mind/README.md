@@ -28,3 +28,8 @@ about.
 - [`../HISTORY.md`](../HISTORY.md) — the dated narrative these principles were extracted
   from.
 - [`../TODO.md`](../TODO.md) — live index and backlog.
+
+Told to **"expand your mind"**? That's a standing command on `MIND.md` itself, not this
+index — see
+[`../MIND.md`](../MIND.md#standing-command-expand-your-mind) for exactly what it means
+and the steps it triggers.

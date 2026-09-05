@@ -110,6 +110,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let mounted = true;
 
+    async function initializeSigner() {
     if (!provider) {
       setSigner(null);
       return;
@@ -134,6 +135,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       .catch(() => {
         if (mounted) setSigner(null);
       });
+
+    }
+
+    void initializeSigner();
 
     return () => {
       mounted = false;
