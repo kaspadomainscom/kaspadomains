@@ -2,6 +2,8 @@
 import { loadCategoriesManifest } from "@/data/categoriesManifest";
 import { contracts } from "@/lib/contracts";
 import { kasplexClient } from "@/lib/viemClient";
+import { isSupabaseConfigured } from "@/lib/supabase";
+import { fetchVoteCounts } from "@/data/supabaseSource";
 import type { Domain } from "@/data/types";
 
 export type DomainWithVotes = Domain & { votes: number };
@@ -23,6 +25,21 @@ export async function loadTopVotedDomains(limit?: number): Promise<DomainWithVot
   }
 
   if (domains.length === 0) return [];
+
+  // Vote counts come from the same store as the listings, so ranking can't mix
+  // database listings with on-chain vote counts (or vice versa) and produce a
+  // ranking that reflects neither.
+  if (isSupabaseConfigured) {
+    const counts = await fetchVoteCounts();
+    const ranked = domains
+      .map((domain) => ({
+        ...domain,
+        votes: counts.get(domain.domainHash.toString()) ?? 0,
+      }))
+      .sort((a, b) => b.votes - a.votes);
+
+    return limit ? ranked.slice(0, limit) : ranked;
+  }
 
   const votes = (await kasplexClient.readContract({
     address: contracts.DomainVotesManager.address,

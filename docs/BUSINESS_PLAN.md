@@ -18,6 +18,19 @@ require.
 
 ## 1. Executive summary
 
+> **⚠ Positioning changed 2026-09-05 and this section has not been re-argued yet.**
+> Supabase (Postgres) is now the primary store for listings, votes and categories, because
+> four of six contracts have no deployed code and the other two fail every call (see
+> [`BUGS.md`](./BUGS.md)) — the product could not function on-chain at all. The on-chain
+> path still exists and takes over when Supabase is unconfigured, but **while the database
+> is the source of truth, "recorded permanently on-chain" below is not what actually
+> happens**, and neither is the trust model it implies: a database row is mutable by
+> whoever controls the database. This is a real marketing and trust claim, not just a
+> technical detail, so the copy on the live site and the framing in this plan both need a
+> decision from the owner — either the claim is softened to match, or listings are
+> mirrored on-chain once contracts are redeployed so the claim becomes true again.
+> Tracked in [`GAPS.md`](./GAPS.md).
+
 The core logic is simple: a domain owner pays a one-time **420 KAS** fee, and that listing —
 plus its category and any resources attached to it — is recorded permanently on-chain
 (Kasplex). That on-chain record is the foundation, not the product. **KaspaDomains' actual

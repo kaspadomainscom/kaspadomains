@@ -45,6 +45,20 @@ npm install
 npm run dev
 ```
 
+### Database (optional, but it's what makes the app work today)
+
+Supabase is the primary store for listings, votes and categories. Without it the app
+falls back to reading the Kasplex contracts — which currently fail, since four of them
+have no deployed code (see [`docs/BUGS.md`](./docs/BUGS.md)).
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. Run [`supabase/schema.sql`](./supabase/schema.sql) in its SQL editor.
+3. `cp .env.example .env.local` and fill in the values from Project Settings → API.
+
+The `service_role` key is server-only and bypasses Row Level Security — never prefix it
+with `NEXT_PUBLIC_`. With no keys set, the app still builds and runs; it just reads from
+the chain instead.
+
 Open [http://localhost:3000](http://localhost:3000). You'll need the
 [Kasware](https://www.kasware.xyz/) browser extension to exercise wallet-gated flows
 (listing, voting, editing resources) against Kasplex testnet.

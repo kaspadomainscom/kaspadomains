@@ -24,6 +24,39 @@ live backlog the continuous audit loop appends to.
       `BUGS.md`'s CRITICAL entries), so wiring it up wouldn't work until that's fixed
       regardless of the product decision.
 
+## Supabase migration — reads done, writes not
+
+Supabase became the primary store on 2026-09-05 (see
+[`ARCHITECTURE.md`](./ARCHITECTURE.md#data-model)). What exists is the **read** half:
+schema, client, a source module returning the same shapes as the chain path, and
+automatic fallback to contracts when unconfigured. Outstanding:
+
+- [ ] **Nothing can be written yet.** Listing, voting and resource editing still call the
+      dead contracts, so the database has no way to gain rows through the UI. Until the
+      write paths land, a configured deployment reads an empty database and honestly says
+      so — better than the previous behaviour, but not yet a working product.
+- [ ] **Write authorisation has to be designed before it's built, not after.** On-chain,
+      the contract enforced that only a domain's owner could list or edit it. A database
+      has no such guarantee: the check has to be "verify a wallet signature server-side,
+      confirm KNS ownership via the KNS API, then write with the service-role key". The
+      schema is already set up for this — RLS on, public read, **no write policy** — so
+      the anon key can't write even if client code tried. Do not "fix" a failing write by
+      adding a permissive RLS policy; that would let anyone list a domain they don't own.
+      (`@noble/curves` is already a dependency and may have been added with exactly this
+      signature-verification job in mind.)
+- [ ] **Owner decision: what happens to the "permanent, on-chain" claim** while a mutable
+      database is the source of truth. See the notice at the top of
+      [`BUSINESS_PLAN.md`](./BUSINESS_PLAN.md) — either the site copy softens to match
+      reality, or listings get mirrored on-chain once contracts are redeployed so the
+      claim becomes true again. This is a trust claim shown to users, so it shouldn't sit
+      unresolved.
+- [ ] **Reconciliation plan for when the contracts come back.** `domains.tx_hash` and
+      `votes.tx_hash` exist for this, but nothing populates or reads them yet. Decide
+      whether the database becomes a cache of chain state, stays authoritative, or the two
+      are merged — before there's enough data for the answer to be painful.
+- [ ] **No backups or migration tooling.** The schema is a single `schema.sql` applied by
+      hand. Fine for now; not fine once real listings exist.
+
 ## Incomplete / half-built code
 
 All three items previously tracked here were resolved on 2026-09-05 — the decide-or-delete
@@ -139,8 +172,12 @@ a grep.
       alone as cosmetic: `Sidebar.tsx` now clears its search box only when the toggle
       button collapses it, rather than on any collapse.
 - [ ] Confirm whether `ethers` is still needed alongside `viem`, or fully migrated.
-- [ ] Confirm whether `https://supabase.com` in the CSP `connect-src`
-      ([`src/proxy.ts`](../src/proxy.ts)) reflects real/planned infra or can be removed.
+- [x] ~~Confirm whether `https://supabase.com` in the CSP `connect-src` reflects
+      real/planned infra or can be removed~~ — answered 2026-09-05: it was a leftover
+      *and* it was the wrong host (clients call `https://<ref>.supabase.co`, never the
+      marketing site). Supabase is now genuinely used as the primary store, and the
+      allowlist entry is derived from `NEXT_PUBLIC_SUPABASE_URL` — correct when
+      configured, absent when not. See [`ARCHITECTURE.md`](./ARCHITECTURE.md#data-model).
 
 ## Unverified (not gaps or bugs — genuinely unknown, needs testing)
 

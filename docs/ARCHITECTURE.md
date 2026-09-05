@@ -111,10 +111,35 @@ RPC `https://rpc.kasplextest.xyz`, explorer `https://frontend.kasplextest.xyz`).
 
 ## Data model
 
-- **On-chain**: domain registration, votes, KDC balances, fund flows — all read through
-  the `src/hooks/domain/*` and `src/hooks/domains/*` hooks using the contracts above.
-  (`src/hooks/solidity/*` was a parallel, entirely unused implementation — deleted
-  2026-09-05, see `GAPS.md`.)
+**Two sources, one interface (as of 2026-09-05).** Listings, votes, categories and
+resources are read through `src/data/categoriesManifest.ts`, `src/data/domainLookup.ts`
+and `src/lib/topVotedDomains.ts`, and those decide at call time where to read from:
+
+| Condition | Source of truth | Path |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` + anon key set | **Supabase (Postgres)** | [`src/data/supabaseSource.ts`](../src/data/supabaseSource.ts) |
+| Otherwise | Kasplex contracts | the original on-chain reads, unchanged |
+
+Callers never learn which answered — `supabaseSource` returns the same `Domain` and
+`CategoryManifest` shapes the chain path returns. **Why**: four of six contracts have no
+deployed code and the other two fail every call (see [`BUGS.md`](./BUGS.md)), so the
+product could not function at all on-chain. The chain path was deliberately kept rather
+than deleted, so unsetting the env vars restores the previous behaviour exactly, and a
+future redeploy doesn't need this work reversed.
+
+Schema lives in [`supabase/schema.sql`](../supabase/schema.sql). Two things about it are
+load-bearing rather than incidental: `domain_hash` is stored as `text` because a uint256
+overflows Postgres `bigint`, and it stays the canonical join key so off-chain rows can be
+reconciled against chain data later. Row Level Security is on for every table with
+**public read and no write policy at all** — the anon key physically cannot write. Writes
+go through the server with the service-role key, only after the caller is verified.
+Adding a permissive write policy would let anyone list a domain they don't own, since the
+contract is no longer the thing enforcing that.
+
+- **On-chain (fallback path)**: domain registration, votes, KDC balances, fund flows —
+  read through the `src/hooks/domain/*` and `src/hooks/domains/*` hooks using the
+  contracts above. (`src/hooks/solidity/*` was a parallel, entirely unused implementation
+  — deleted 2026-09-05, see `GAPS.md`.)
 - **KNS (external API)**: ownership/availability of the underlying `.kas` name —
   `src/hooks/kns/api/*`.
 - `src/data/types.ts` defines the shared `Domain` interface used by the real,
@@ -132,10 +157,16 @@ RPC, Supabase, and KNS domains), plus HSTS, COOP, and CORP. `next.config.ts` add
 before mainnet is whether the allowlisted hosts (especially `connect-src`) still match
 production infrastructure.
 
-Note: `connect-src` currently allowlists `https://supabase.com` even though no live Supabase
-usage was found elsewhere in `src/` during this audit. The likely origin: a fully
-commented-out earlier draft of this middleware in `src/types/db.ts` (dead code, never
-imported, deleted 2026-09-05 — see `GAPS.md`) already had the same Supabase entry, alongside a marketplace-
+**Resolved 2026-09-05.** `connect-src` used to allowlist `https://supabase.com` with no
+Supabase code anywhere — traced to a commented-out earlier draft of this middleware in
+`src/types/db.ts` (deleted). That entry was also simply *wrong* for real use: a Supabase
+client never calls the marketing site, it calls the per-project API origin
+(`https://<ref>.supabase.co`). Now that Supabase is the primary store, the allowlist entry
+is derived from `NEXT_PUBLIC_SUPABASE_URL` and omitted entirely when unset — so it's
+correct when configured and absent when not, instead of permanently allowlisting a host
+nothing talks to.
+
+Historical note on where that draft came from: it sat alongside a marketplace-
 shaped `Domain` interface (`price`, `seller_telegram`, etc.) predating the on-chain-only
 data model described above. Still worth confirming with whoever owns infra whether it's
 planned or safe to drop from the live CSP.

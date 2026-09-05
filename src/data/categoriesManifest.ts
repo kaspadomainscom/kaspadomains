@@ -4,6 +4,8 @@ import { contracts } from "@/lib/contracts";
 import { kasplexClient } from "@/lib/viemClient";
 import { getContract } from "viem";
 import { Domain } from "./types";
+import { isSupabaseConfigured } from "@/lib/supabase";
+import { fetchCategoryManifest } from "./supabaseSource";
 
 // Type for the manifest object:
 // Keys are category names (string),
@@ -59,6 +61,15 @@ async function asyncPool<T, R>(
 export async function loadCategoriesManifest(
   pageSize: number = 50
 ): Promise<CategoryManifest> {
+  // Supabase is the primary store while the Kasplex contracts are unreachable
+  // (see docs/BUGS.md). When it isn't configured this falls through to the
+  // on-chain path below unchanged, so a deployment without a database behaves
+  // exactly as it did before -- and so the chain becomes the source of truth
+  // again simply by unsetting the Supabase env vars.
+  if (isSupabaseConfigured) {
+    return fetchCategoryManifest();
+  }
+
   // Create contract instances
   const registry = getContract({
     address: contracts.KaspaDomainsRegistry.address,

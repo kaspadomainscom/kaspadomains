@@ -111,6 +111,15 @@ history, recipient tracking. It's an internal tool, not customer-facing (see
 | Resources (X account, links) | `DomainLinksStorage` (Kasplex) | `useGetDomainLinks.ts` |
 | "Trending" domains ticker (header) | `trending` category via `categoriesManifest` | `Header.tsx` |
 
+> **Changed 2026-09-05.** The paragraph below described the app before Supabase was
+> introduced as the primary store. It is kept because it still describes the *on-chain*
+> path exactly, and that path is still in the code and takes over whenever Supabase isn't
+> configured. What's no longer true is the "no off-chain database" claim itself: with
+> `NEXT_PUBLIC_SUPABASE_URL` set, listings, votes, categories and resources are read from
+> Postgres, and the contracts are not consulted. See
+> [`ARCHITECTURE.md`](./ARCHITECTURE.md#data-model) for the current picture and why the
+> switch was made.
+
 There is **no off-chain database** anywhere in this app — every piece of domain data
 either comes from a live contract read or is static site content (docs, business plan
 copy). This matters for the "gaps" tracked elsewhere: when a contract read fails (RPC

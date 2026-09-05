@@ -1,6 +1,11 @@
 // src/proxy.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getSupabaseOrigin } from "@/lib/supabase";
+
+// Resolved once at module scope: the value comes from the environment and
+// cannot change between requests.
+const supabaseOrigin = getSupabaseOrigin();
 
 // Helper: Generate base64url nonce
 function base64url(bytes: Uint8Array): string {
@@ -38,7 +43,21 @@ export function proxy(request: NextRequest) {
     `style-src 'self' 'nonce-${nonce}' 'unsafe-hashes' https://fonts.googleapis.com`, // 🔄 updated
     `style-src-attr 'self' 'unsafe-hashes' 'nonce-${nonce}'`,
     `img-src 'self' data: https://kaspadomains.com`,
-    `connect-src 'self' https://kaspadomains.com https://rpc.kasplextest.xyz https://supabase.com https://knsdomains.org https://api.knsdomains.org`,
+    // The old entry here was `https://supabase.com` -- the marketing site, which
+    // a Supabase client never calls. Requests go to the per-project API origin
+    // (https://<ref>.supabase.co), so it's derived from the configured URL and
+    // omitted entirely when Supabase isn't set up, rather than allowlisting a
+    // host for no reason.
+    [
+      `connect-src 'self'`,
+      `https://kaspadomains.com`,
+      `https://rpc.kasplextest.xyz`,
+      `https://knsdomains.org`,
+      `https://api.knsdomains.org`,
+      supabaseOrigin,
+    ]
+      .filter(Boolean)
+      .join(' '),
     // `font-src 'self'`,
     `font-src 'self' https://fonts.gstatic.com`,                                      // ✅ if using Google Fonts
     `object-src 'none'`,

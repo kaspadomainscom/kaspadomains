@@ -1,4 +1,6 @@
 import { loadCategoriesManifest } from "./categoriesManifest";
+import { isSupabaseConfigured } from "@/lib/supabase";
+import { fetchAllDomains, fetchDomainByName } from "./supabaseSource";
 import type { Domain } from "./types";
 
 /**
@@ -7,6 +9,17 @@ import type { Domain } from "./types";
 export async function findDomainByName(name: string): Promise<Domain | undefined> {
   if (!name) return undefined;
   const searchName = name.toLowerCase();
+
+  // Indexed single-row lookup when the database is the source of truth,
+  // instead of loading every category to scan for one name.
+  if (isSupabaseConfigured) {
+    try {
+      return await fetchDomainByName(searchName);
+    } catch (error) {
+      console.error("Supabase lookup failed for", searchName, error);
+      return undefined;
+    }
+  }
 
   let categoriesData;
   try {
@@ -40,6 +53,12 @@ export async function findDomainByName(name: string): Promise<Domain | undefined
  * "No matching domains found" (see docs/MIND.md principles #2 and #3).
  */
 export async function getAllDomains(): Promise<Domain[]> {
+  // Straight table read when Supabase is the source of truth; the manifest
+  // path would otherwise return the same domain once per category it's in.
+  if (isSupabaseConfigured) {
+    return fetchAllDomains();
+  }
+
   const categoriesData = await loadCategoriesManifest();
   return Object.values(categoriesData).flatMap((category) => category.domains);
 }
