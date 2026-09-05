@@ -120,6 +120,45 @@ to stack, then hashed). Storing profile text, descriptions or many links directl
 covenant state gets expensive fast. Expect to store *hashes* on-chain with the payload
 off-chain, or accept a hard cap on profile size.
 
+## The wider programmability picture
+
+Toccata sits inside a broader framework at
+[docs.kaspa.org/programmability](https://docs.kaspa.org/programmability), which is explicit
+that Kaspa is **not** offering one universal smart-contract model the way EVM or Solana do.
+It offers specialised building blocks, and you pick by architecture. Its decision tree is a
+single question:
+
+> **Do I need concurrent state mutation?** Yes → Based Apps. No → Covenants.
+> (Hybrid: covenants still work if the app splits into independent sub-apps.)
+
+| Model | For | Status |
+|---|---|---|
+| **Covenants** | Asset rules and stateful outputs — vaults, treasury controls, escrow, time-locks, issuance policies | **Live** (Toccata). Tooling early; expect manual work around deployment and transaction construction. |
+| **Based Apps** | One app in Rust with built-in accounts, balances and shared-state execution; many users touching the same state concurrently | **"In construction"** |
+| **Full vProgs** | App-to-app composition — built into L1 semantics rather than run as a separate L2 chain | **Future roadmap** |
+| **Inline ZK** | Per-action proofs: privacy, custom validity, independent settlement | Live, but the **highest builder effort** — you own proof design, prover architecture and operations |
+
+Two facts here change the analysis below, and both cut in useful directions:
+
+**1. Covenant state has real headroom — roughly 300 KB.** The covenants page gives that as
+the practical ceiling before state and transitions become impractical to manage in script.
+That is far more than a domain listing needs, so size is not the binding constraint;
+*metering cost* is (see the pricing table above). Storing a modest profile on-chain is
+plausible after all — but every byte is still charged on push and again on hash, so the
+hash-on-chain/payload-off-chain pattern remains the cheaper default.
+
+**2. Based Apps are "in construction", so the shared-state escape hatch is not available
+yet.** This matters directly: by Kaspa's own decision tree, our vote counters are a
+concurrent-state-mutation problem, which routes to Based Apps — which are not ready. So
+**voting has no good L1 home today**, and the realistic near-term answer is that voting
+stays off-chain (or becomes per-vote UTXOs with indexed tallies) even if listings move.
+That is a conclusion about sequencing, not a reason to abandon the migration: listings are
+the part that benefits most and the part that is ready.
+
+Inline ZK is worth knowing about but is not our problem — nothing about a public domain
+registry needs privacy or per-action custom validity, and the docs are clear it is the most
+demanding path. Skip it.
+
 ## Two paths, and the criterion for choosing
 
 The decision guide is refreshingly blunt: complexity is **not** the deciding factor.
@@ -149,8 +188,8 @@ Applying their own criterion to our four data types:
 |---|---|---|
 | **Listings** | One per domain, independent, mutated only by its owner | ✅ **Ideal.** A fanout covenant family, one lineage per domain. This is the textbook case. |
 | **Categories** | Membership of a listing | ✅ Fits as part of that listing's state — a small bitmap or ID set, cheap to meter. |
-| **Resources / links** | Per-domain, owner-edited | ⚠️ Fits structurally, but see the metering note — store a hash on-chain, payload off-chain, or cap it hard. |
-| **Votes** | **Many users mutating one domain's counter** | 🚩 **This is the design alarm, verbatim.** A single vote-count UTXO per domain is exactly "every user competing for the same live UTXO". |
+| **Resources / links** | Per-domain, owner-edited | ✅ Fits — the ~300 KB ceiling is not the constraint. Metering is: store a hash on-chain with the payload off-chain unless the profile is small. |
+| **Votes** | **Many users mutating one domain's counter** | 🚩 **The design alarm, verbatim** — a single vote-count UTXO per domain is exactly "every user competing for the same live UTXO". And the model this routes to (Based Apps) is *not shipped yet*. |
 
 **Voting is the only genuinely hard part**, and it has a known shape of answer: don't keep
 a counter. Make each vote its own UTXO in the domain's covenant family — one lineage per
@@ -174,9 +213,12 @@ Ordered so each phase is useful alone and none of it requires trusting the next:
 1. **Prototype the listing covenant.** One domain, one lineage: create, transfer nothing,
    update categories, update a resource hash. Get it running on testnet with `silverc` and
    the CLI debugger. This alone answers most feasibility questions.
-2. **Prototype voting as fanout.** The hard part — specifically the one-vote-per-wallet
-   property. If this doesn't work cleanly, voting may stay off-chain permanently, and that
-   is an acceptable outcome.
+2. **Leave voting where it is, for now.** By Kaspa's own decision tree it is a
+   concurrent-state problem, which routes to Based Apps — still "in construction". Revisit
+   when those ship, or prototype per-vote UTXOs with indexed tallies if on-chain votes
+   become a requirement sooner. **A partial migration is fine**: listings on L1 with votes
+   still in Postgres is a coherent system, not a half-finished one, because the read layer
+   already picks a source per call.
 3. **Index it.** A reader that reconstructs listings and vote tallies from the DAG into the
    same `Domain` / `CategoryManifest` shapes `src/data/supabaseSource.ts` already returns.
    Our data layer picks a source at call time, so this slots in as a third source beside
@@ -197,7 +239,8 @@ Honest list of what we do not know:
       inscriptions; a covenant reading them is plausible but unverified.
 - [ ] Real cost per listing transition once state size is realistic. The signature alone is
       100K SU; add state and it may or may not stay comfortable.
-- [ ] Whether "one vote per wallet" can be enforced without a global-absence proof.
+- [ ] Whether "one vote per wallet" can be enforced without a global-absence proof — and
+      separately, when Based Apps actually ship, since that is the model votes belong to.
 - [ ] SilverScript's stability in practice — the docs say "approaching stable".
 - [ ] Whether a 10,000-listing cap is expressible, or becomes an indexer-level rule.
 - [ ] Who runs the indexer, and what the trust story is when tallies come from it.
@@ -205,6 +248,11 @@ Honest list of what we do not know:
 ## Links
 
 Primary (start here):
+- [Programmability overview](https://docs.kaspa.org/programmability) — the model-selection
+  layer above Toccata; read this first to confirm covenants are the right building block
+  - [Covenants](https://docs.kaspa.org/programmability/covenants) — asset rules and stateful outputs; the ~300 KB ceiling
+  - [Based Apps](https://docs.kaspa.org/programmability/based-apps) — Rust apps with accounts and shared state ("in construction")
+  - [Inline ZK](https://docs.kaspa.org/programmability/inline-zk) — per-action proofs; highest builder effort
 - [Toccata Dev Guide](https://docs.kaspa.org/toccata) — the hub; progresses Covenant State → Transaction V1 → Script Pricing → SilverScript → Inline ZK → Based Apps
 - [Covenant State](https://docs.kaspa.org/toccata/covenant-state) — the P2SH state pattern and covenant IDs
 - [SilverScript](https://docs.kaspa.org/toccata/silverscript) — language guide, macros, patterns
@@ -218,7 +266,9 @@ Specifications and background:
 - [Kaspa developer resources](https://kaspa.org/build) — WASM SDK, Python SDK, Rust crates, node access
 
 Tooling and ecosystem:
-- [vProgs](https://vprogs.xyz/build/silverscript-reference/) — SilverScript reference and the Rust runtime for based computation
+- [vProgs](https://vprogs.xyz/build/silverscript-reference/) — SilverScript reference and the Rust runtime for based computation. vProgs are apps running *next to* L1 with ZK verification and shared-state standards, built into L1 semantics rather than as a separate L2 chain; **KIP-21 partitioned sequencing** ("user lanes") is what makes them practical, letting a ZK app prove work proportional only to its own activity rather than the whole DAG. Full app-to-app composition is later-stage roadmap.
+- [Build on Kaspa: Toccata app ideas and builder paths](https://kaspaexplained.com/build-on-kaspa)
+- [Toccata activation record and evidence](https://kaspaexplained.com/toccata-status) — independent confirmation of the mainnet activation
 - [kascov.io](https://kascov.io/) — live covenant explorer, useful for seeing real covenant families in the wild
 - [Kaspa FAQ: smart contracts](https://kaspafaq.com/faq/smart-contracts/)
 
