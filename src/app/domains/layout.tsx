@@ -23,7 +23,9 @@ export default async function DomainsLayout({
 
   return (
     <>
-      <JsonLd json={jsonLd} nonce={nonce} />
+      {/* Nothing at all when the list could not be read: an empty ItemList
+          would tell crawlers the directory is empty. */}
+      {jsonLd && <JsonLd json={jsonLd} nonce={nonce} />}
       {children}
     </>
   );

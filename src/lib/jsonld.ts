@@ -70,24 +70,33 @@ export function getDomainJsonLd({ name, owner, category }: DomainJsonLdInput) {
 
 import { loadCategoriesManifest } from "@/data/categoriesManifest"; // import the async loader
 
-export async function getItemListJsonLd(limit = 6): Promise<ItemListJsonLd> {
-  const emptyList: ItemListJsonLd = {
+/**
+ * Structured data for the recent-domains list, or `null` if we could not read
+ * the list at all.
+ *
+ * `null` rather than an empty `ItemList`, and the difference matters more here
+ * than on screen. Markup is a **claim made to search engines**: publishing
+ * `itemListElement: []` during a database outage asserts that the directory has
+ * no domains, and that assertion can be crawled and cached. Emitting nothing
+ * says nothing, which is the truth when the read failed.
+ *
+ * An empty list is still emitted when the read *succeeds* and there genuinely
+ * are no active domains -- that claim is true.
+ */
+export async function getItemListJsonLd(limit = 6): Promise<ItemListJsonLd | null> {
+  const listShell: Omit<ItemListJsonLd, "itemListElement"> = {
     "@context": "https://schema.org",
     "@type": "ItemList",
     "@id": "https://kaspadomains.com/#recent-domains",
     name: "Recent Premium Kaspa Domains",
-    itemListElement: [],
   };
 
   let categoriesData;
   try {
     categoriesData = await loadCategoriesManifest();
   } catch (error) {
-    // Degrade to an empty (but honest) item list rather than crashing the
-    // page that renders this JSON-LD -- see docs/BUGS.md for why this
-    // function's data source no longer fabricates a fallback domain.
     console.error("Failed to load categories for ItemList JSON-LD:", error);
-    return emptyList;
+    return null;
   }
 
   const recentDomains = Object.values(categoriesData)
@@ -96,7 +105,7 @@ export async function getItemListJsonLd(limit = 6): Promise<ItemListJsonLd> {
     .slice(0, limit);
 
   return {
-    ...emptyList,
+    ...listShell,
     itemListElement: recentDomains.map((domain, index) => ({
       "@type": "ListItem",
       position: index + 1,

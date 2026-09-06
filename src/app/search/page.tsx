@@ -18,12 +18,26 @@ export default function SearchPage() {
   // "still searching", "searched and found nothing", and "couldn't load the
   // domain list at all" are different answers and must not look alike.
   type SearchState =
+    /** Mounted, but the effect that searches has not run yet. */
     | { status: 'idle' }
     | { status: 'loading' }
     | { status: 'ready'; results: Domain[] }
     | { status: 'error' };
 
   const [state, setState] = useState<SearchState>({ status: 'idle' });
+
+  /**
+   * `idle` is not an answer, and must never render as one.
+   *
+   * Effects do not run during server rendering, so every `/search?q=…` page was
+   * served as HTML reading **"No matching domains found."** -- a definitive claim
+   * about a search that had not been performed. Users saw it flash before
+   * hydration, and a crawler that does not execute JavaScript saw only that.
+   *
+   * The `!query` case returns earlier, so past this point `idle` always means
+   * "about to search", which is what "loading" means.
+   */
+  const searching = state.status === 'loading' || state.status === 'idle';
 
   useEffect(() => {
     let cancelled = false;
@@ -77,7 +91,7 @@ export default function SearchPage() {
           <span className="text-kaspaMint">&quot;{query}.kas&quot;</span>
         </h1>
 
-        {state.status === 'loading' ? (
+        {searching ? (
           <div className="text-center text-gray-400 mt-10">
             <p className="text-lg">Searching…</p>
           </div>

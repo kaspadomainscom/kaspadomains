@@ -39,16 +39,22 @@ export const metadata = {
 };
 
 export default async function Home() {
-  // Load categories manifest asynchronously
-  let categoriesData: CategoryManifest = {};
+  // Both of these are loaded as "the answer, or the fact that there isn't one".
+  //
+  // They used to fall back to an empty value on failure, and because this is the
+  // homepage, that made an outage look like an empty directory: an unreachable
+  // database rendered "No domains listed yet -- be the first" to every visitor,
+  // and a failed manifest rendered "Categories are loading..." forever, on a
+  // server-rendered page where nothing was ever going to load. See MIND.md #2
+  // and #3.
+  let categoriesData: CategoryManifest | null = null;
   try {
     categoriesData = await loadCategoriesManifest();
   } catch (e) {
     console.error("Failed to load categories manifest", e);
-    // fallback to empty object so UI still renders
   }
 
-  let trendingDomains: DomainWithVotes[] = [];
+  let trendingDomains: DomainWithVotes[] | null = null;
   try {
     trendingDomains = await loadTopVotedDomains(TRENDING_COUNT);
   } catch (e) {
@@ -57,7 +63,9 @@ export default async function Home() {
 
   const nonce = (await headers()).get("x-csp-nonce") || undefined;
   const itemListJsonLd = await getItemListJsonLd();
-  const jsonLd = [getWebsiteJsonLd(), itemListJsonLd];
+  // Dropped entirely when the list could not be read -- an empty ItemList is a
+  // claim that the directory is empty, and this is markup search engines cache.
+  const jsonLd = [getWebsiteJsonLd(), ...(itemListJsonLd ? [itemListJsonLd] : [])];
 
   return (
     <main className="space-y-28 bg-[#0E1E25] text-gray-100 min-h-screen">
@@ -84,7 +92,12 @@ export default async function Home() {
         <h2 className="text-3xl font-bold mb-10 text-center text-white">
           Trending .kas Domains
         </h2>
-        {trendingDomains.length > 0 ? (
+        {trendingDomains === null ? (
+          <p className="text-center text-amber-200">
+            We couldn&apos;t load trending domains just now &mdash; this is a problem on our
+            side, not an empty directory. Please try again shortly.
+          </p>
+        ) : trendingDomains.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {trendingDomains.map((domain) => (
               <article
@@ -121,7 +134,11 @@ export default async function Home() {
         <h2 className="text-3xl font-bold mb-12 text-center text-white">
           Explore by Category
         </h2>
-        {Object.keys(categoriesData).length > 0 ? (
+        {categoriesData === null ? (
+          <p className="text-center text-amber-200">
+            We couldn&apos;t load the categories just now. Please try again shortly.
+          </p>
+        ) : Object.keys(categoriesData).length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {Object.entries(categoriesData).map(([key, { title, domains }]) => (
               <Link
@@ -135,7 +152,7 @@ export default async function Home() {
             ))}
           </div>
         ) : (
-          <p className="text-center text-gray-400">Categories are loading...</p>
+          <p className="text-center text-gray-400">No categories yet.</p>
         )}
       </section>
 
