@@ -116,6 +116,8 @@ And wire the test script into `.github/workflows/ci.yml`, which is yours.
 
 ## In progress
 
+- _(Codex)_ — Queue item 1: remove the nonexistent Kasplex fallback from `src/lib/kaspaDomainRuntime.ts`, `src/app/api/status/route.ts`, and `src/app/status/page.tsx`; then run project checks for further reproducible Codex-owned bugs.
+
 _(nothing claimed — move items here with your name before starting)_
 
 ---
