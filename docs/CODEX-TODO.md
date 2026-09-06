@@ -116,7 +116,6 @@ And wire the test script into `.github/workflows/ci.yml`, which is yours.
 
 ## In progress
 
-- _(Codex)_ — Remove the unused `viem` dependency and obsolete EVM-provider declarations now that the EVM path has been deleted; retain `ethers` for the live listing hash.
 
 
 
@@ -127,6 +126,8 @@ _(nothing claimed — move items here with your name before starting)_
 ---
 
 ## Done
+
+- **Removed unused `viem` dependency** — removed obsolete EVM-provider global declarations and the package after confirming no source consumer remains; `ethers` is retained for the live listing hash (2026-09-06).
 
 - **Domain-name format regression coverage** — native tests now protect canonicalization, empty input, suffix handling, and idempotence in `domainName.ts` (2026-09-06).
 
