@@ -2,29 +2,23 @@
 
 import { DomainAsset } from '@/hooks/kns/types';
 import { useListDomain } from '@/hooks/domain/useListDomain';
-import { useSetDomainCategories } from '@/hooks/domain/useSetDomainCategories';
 import { useGetAllowedCategories } from '@/hooks/domains/useGetAllowedCategories';
-import { isSupabaseConfigured } from '@/lib/supabase';
-import { LEGACY_KASPLEX_TESTNET } from '@/lib/kaspaDomainRuntime';
 import { LISTING_FEE_SOMPI, formatKas } from '@/lib/fees';
 import { useState } from 'react';
 
 type PickDomainModalProps = {
   domains?: DomainAsset[];
-  evmAccount: string | null;
   kaspaAccount: string | null;
 };
 
 export default function PickDomainModal({
   domains = [],
-  evmAccount,
   kaspaAccount,
 }: PickDomainModalProps) {
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
   const [listedDomain, setListedDomain] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const { listDomain, txHash, isLoading: listing, error: listError } = useListDomain();
-  const { setCategories, isLoading: assigningCategories } = useSetDomainCategories();
+  const { listDomain, isLoading: listing, error: listError } = useListDomain();
   // `options` carries titles; `categories` is keys only. Rendering the keys
   // showed people raw slugs -- "realWords", "999club" -- as if they were labels.
   const {
@@ -34,7 +28,7 @@ export default function PickDomainModal({
   } = useGetAllowedCategories();
 
   const verifiedDomains = domains.filter((domain) => domain.isVerifiedDomain === true);
-  const busy = listing || assigningCategories;
+  const busy = listing;
 
   function toggleCategory(category: string) {
     setSelectedCategories((prev) =>
@@ -44,10 +38,8 @@ export default function PickDomainModal({
     );
   }
 
-  // Require both wallets connected
-  // Same rule as the page above: the database path signs with the Kaspa L1
-  // key, so only `kaspaAccount` is universally required.
-  if (!kaspaAccount || (!isSupabaseConfigured && !evmAccount)) {
+  // Kasware (L1) is the only wallet involved: it signs the listing request.
+  if (!kaspaAccount) {
     return (
       <p className="text-center mt-10 text-white">
         Connect your Kasware wallet to continue.
@@ -124,13 +116,9 @@ export default function PickDomainModal({
                 if (selectedCategories.length === 0) return;
                 setSelectedDomain(domain.asset);
                 try {
+                  // The listing and its categories are written in one
+                  // transactional request.
                   const result = await listDomain(domain.asset, selectedCategories);
-                  // The database path writes the listing and its categories in
-                  // one request, so a second call here would be a duplicate.
-                  // The on-chain path still needs its separate write.
-                  if (result && !isSupabaseConfigured) {
-                    await setCategories(domain.asset, evmAccount as `0x${string}`, selectedCategories);
-                  }
                   if (result) setListedDomain(domain.asset);
                 } catch {
                   // errors are surfaced via toasts inside the hooks
@@ -168,25 +156,11 @@ export default function PickDomainModal({
       {/* The database path returns a domain name, not a transaction hash, so
           the block below never fired for it -- a paid listing produced no
           confirmation in the modal at all, only a toast. */}
-      {listedDomain && !txHash && (
+      {listedDomain && (
         <p className="text-green-400 text-sm mt-4">
           <strong>{listedDomain}</strong> is listed.{' '}
           <a href={`/domain/${encodeURIComponent(listedDomain)}`} className="underline">
             View its page
-          </a>
-        </p>
-      )}
-
-      {txHash && (
-        <p className="text-green-400 text-sm mt-4 break-all">
-          Domain listed! Tx:{' '}
-          <a
-            href={`${LEGACY_KASPLEX_TESTNET.explorerUrl}/tx/${txHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline"
-          >
-            {txHash.slice(0, 12)}…
           </a>
         </p>
       )}

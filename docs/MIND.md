@@ -100,6 +100,8 @@ touch the codebase, you own the part of the map you moved. See
 | 16 | Irreversible steps go last | Once money has moved, every check you hadn't run yet is a check the user pays for |
 | 17 | One owner per shared format | Two sides agreeing informally on a format fail silently, because a wrong form still parses |
 | 18 | Enumerate from the source of record | An audit is only as complete as the list it started from, and usage is never that list |
+| 19 | A repeated violation needs a mechanism | Documentation is a request; only a check is a constraint, and the recurrence count tells you which one you need |
+| 20 | A dead fallback is not free | An untaken branch is never exercised, so it stops being a safety net and becomes the place bugs hide |
 
 ## 1. Never trust a hardcoded value against a live contract — verify the ABI first
 
@@ -571,6 +573,72 @@ unverified claims accumulate. When a count matters enough to write into a docume
 from the declaration.
 
 **Checklist**: [`mind/verification-checklist.md`](./mind/verification-checklist.md), step 0.
+
+## 19. When a principle keeps being violated, it has to become a mechanism
+
+**Purpose**: writing a rule down is a request to remember it. Past some number of
+recurrences, the evidence says remembering does not work, and continuing to rely on it is a
+choice.
+**Mechanic**: **count the recurrences.** The first is a mistake. The second is a pattern.
+By the third, stop writing prose and make the build enforce it -- a lint rule, a type, a
+constraint, a check that exits non-zero. If it cannot be enforced, say so explicitly and put
+the check in a runnable checklist instead.
+
+**The incident (2026-09-06)**: principle #2 -- don't fabricate data, an empty state and an
+error state are different answers -- has been in this file since the beginning. It was then
+violated **eight times**: the vote count, the voter list, the resources editor (where it let
+a save delete every link an owner had), the categories index, the browse page, the profile
+lookup, the admin owner check, and the listing page's category picker. All eight were
+written or reviewed by someone who had read the principle. Several were written *in the same
+session* as a fix for another instance of it.
+
+So it became `eslint.config.mjs`: `return []` or `return {}` from a `catch` is an error in
+`src/data` and `src/lib`. Scoped rather than global, because pages legitimately degrade --
+`generateStaticParams` returning `[]` is correct. Verified in both directions, since a rule
+that never fires proves nothing (#14): a probe file trips it, and the real tree is clean.
+
+**The rule**: a recurring bug class is a **missing constraint**, not a missing reminder. The
+same reasoning produced `npm run dead:check` after a hand-counted number was wrong twice, and
+`domainName.ts` after five copies of one normalisation disagreed. When you catch yourself
+writing "remember to..." for the third time, you are describing a lint rule, a type, or a
+script -- write that instead.
+
+## 20. A dead fallback is not free -- it is where bugs hide
+
+**Purpose**: an alternative path that never runs is not a safety net. It is untested code
+that doubles the shape of everything it touches, and the doubling is what causes bugs in the
+path that *does* run.
+**Mechanic**: for any fallback, ask **when it last succeeded**. If the answer is "never" or
+"nobody knows", delete it. Keeping it needs a positive reason -- a scenario in which it
+demonstrably works -- not merely the absence of a reason to remove it.
+
+**The incident (2026-09-06)**: the Kasplex contract path sat behind every read and write as
+"the fallback, in case the contracts come back". **Six of its eight configured addresses had
+no deployed code**, and the two that did failed every call with `invalid opcode: MCOPY`. It
+could not answer a single query and had not been able to for the life of the project.
+
+It was not inert. Because every path carried two branches, and one was never exercised:
+
+- **`Domain.feePaid` meant sompi on one branch and wei on the other**, so every card showed
+  the fee off by 10^10 (#17).
+- **Votes were keyed by the L1 address on one branch and the EVM address on the other**, so
+  "My Votes" was permanently empty and the "already voted?" check compared the wrong address.
+- **A vote counter read the dead contract** and rendered "Unavailable" on every domain,
+  directly above a working count from the database.
+- **The admin page told its own administrator "Access Denied"**, because an owner that could
+  not be *loaded* was indistinguishable from one that did not *match*.
+- **Two wallets had to be connected**, so users who connected the one that mattered were told
+  they were not connected.
+
+Every one of those is a bug in the *live* path, caused by the shape the dead path forced on
+it. Removing the fallback deleted 34 files and around a fifth of `src/`, and none of the
+remaining code had to grow a branch to compensate.
+
+**The rule**: "we'll keep it in case we need it later" is a bet that the cost of carrying it
+is zero. It is not: it is every `if (a) { ... } else { ... }` that the live path now has to
+be written around, and every reviewer-hour spent reading a branch that cannot execute. If it
+does not work now, and nobody can say when it last did, it is not a fallback -- it is a
+liability with a reassuring name.
 
 ## Related docs
 

@@ -45,7 +45,6 @@ export default function BusinessPlanPage() {
             <li><strong>Community voting</strong> — anyone can support a domain for 1 KAS per vote, one per wallet, boosting its ranking.</li>
           </ol>
           <p className="text-gray-400 text-sm mt-4">
-            Hard cap: <strong className="text-white">10,000 listings, ever.</strong> Scarcity is structural, not promotional.
           </p>
         </Section>
 
@@ -57,7 +56,7 @@ export default function BusinessPlanPage() {
           <ul className="space-y-2">
             <li>
               <strong className="text-kaspaMint">Listing fees</strong> — planned at a one-time
-              fee per domain, capped at 10,000 listings.
+              fee per domain.
             </li>
             <li>
               <strong className="text-kaspaMint">Voting fees</strong> — planned per vote,
@@ -97,8 +96,8 @@ export default function BusinessPlanPage() {
             and every write is gated on a Kaspa L1 signature checked against KNS. It is{" "}
             <strong>not yet running against a live database</strong>: the schema has not been
             applied, so no listing or vote has been created end to end. The earlier Kasplex
-            contract path is still in the code as a fallback but does not work — most of
-            those contracts have no deployed code. See the{" "}
+            contract path has been removed: most of those contracts had no deployed code and
+            the rest failed every call. See the{" "}
             <Link href="/docs" className="text-kaspaMint hover:underline">
               docs
             </Link>{" "}

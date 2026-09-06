@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import KaspaDomainsLogo from '../KaspaDomainsLogo';
 import { findDomainByName, normalizeDomainName } from '@/data/domainLookup';
 import { useTrendingDomains } from '@/hooks/domains/useTrendingDomains';
-import { isSupabaseConfigured } from '@/lib/supabase';
 import { useWalletContext } from '@/context/WalletContext';
 import TrendingDomainsComponent from './trendingDomains';
 
@@ -17,49 +16,23 @@ const NAV_ITEMS = [
 ];
 
 function ConnectButton() {
-  const { kasware, kasplex, disconnectAll, activeError, setActiveWalletType } = useWalletContext();
+  const { kasware, account, error, isConnected, disconnect } = useWalletContext();
   const [connectError, setConnectError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
 
-  const shortKasware = useMemo(
-    () => (kasware.account ? `${kasware.account.slice(0, 6)}…${kasware.account.slice(-4)}` : ''),
-    [kasware.account]
-  );
+  const shortAccount = account ? `${account.slice(0, 6)}…${account.slice(-4)}` : '';
 
-  // "Connected" means connected *for what this deployment actually needs*.
-  //
-  // This used to require both accounts. Since listings moved to Supabase the
-  // Kaspa L1 wallet is the only one that matters -- it holds the key that owns
-  // the domain and signs every write -- so a user who connected Kasware and
-  // then declined or failed the second, EVM prompt saw a button still reading
-  // "Connect Kasware" and no Logout, while being perfectly able to list and
-  // vote. The app looked broken to exactly the users it now serves.
-  const isConnected = isSupabaseConfigured
-    ? !!kasware.account
-    : !!kasware.account && !!kasplex.account;
-
-  // One wallet, two capabilities: the Kaspa L1 address (KNS ownership) and the
-  // Kasplex EVM signer both come from Kasware.
+  // One wallet. The Kasplex EVM signer was removed with the contract path on
+  // 2026-09-06 -- it was a second prompt for a capability nothing used.
   const handleConnect = async () => {
     try {
       setConnectError(null);
       setConnecting(true);
-      if (!kasware.account) await kasware.connect();
-
-      // The EVM signer is only used on the contract fallback path. Asking for
-      // it when the database is the store is a second wallet prompt for a
-      // capability nothing will use.
-      if (!isSupabaseConfigured && !kasplex.account) await kasplex.connect();
-
-      // The active wallet must be the one the app actually reads. Setting this
-      // to 'kasplex' on the database path pointed `activeAccount`,
-      // `activeStatus` and `activeError` at the wrong identity -- and made the
-      // next page load try to reconnect the wallet nothing needs.
-      setActiveWalletType(isSupabaseConfigured ? 'kasware' : 'kasplex');
-    } catch (error) {
-      console.error('Failed to connect Kasware:', error);
+      await kasware.connect();
+    } catch (err) {
+      console.error('Failed to connect Kasware:', err);
       setConnectError(
-        `Failed to connect Kasware: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to connect Kasware: ${err instanceof Error ? err.message : String(err)}`
       );
     } finally {
       setConnecting(false);
@@ -71,19 +44,18 @@ function ConnectButton() {
       <div className="flex items-center space-x-2">
         <button
           onClick={handleConnect}
-          disabled={connecting}
+          disabled={connecting || isConnected}
           className="bg-kaspaMint hover:bg-[#3DFDAD]/90 text-[#0F2F2E] font-semibold py-1.5 px-4 rounded-lg transition disabled:opacity-50 flex items-center gap-1"
         >
           {connecting ? 'Connecting…' : isConnected ? 'Kasware' : 'Connect Kasware'}
           {isConnected && <span className="text-green-700 text-xs">●</span>}
         </button>
-        {kasware.account && <span className="text-white text-sm font-mono">{shortKasware}</span>}
+        {account && <span className="text-white text-sm font-mono">{shortAccount}</span>}
       </div>
 
-      {/* Logout button once connected */}
       {isConnected && (
         <button
-          onClick={disconnectAll}
+          onClick={disconnect}
           className="bg-red-600 hover:bg-red-700 text-white font-semibold py-1.5 px-3 rounded-lg transition mt-1"
           aria-label="Logout from wallet"
         >
@@ -91,20 +63,13 @@ function ConnectButton() {
         </button>
       )}
 
-      {/* Errors */}
-      {/* Don't surface an EVM error on a deployment that never uses the EVM
-          signer -- it is noise the user can do nothing about. */}
-      {(connectError || activeError || kasware.error || (!isSupabaseConfigured && kasplex.error)) && (
-        <p className="text-red-500 text-xs mt-1">
-          {connectError || activeError || kasware.error ||
-            (!isSupabaseConfigured ? kasplex.error : null)}
-        </p>
+      {(connectError || error) && (
+        <p className="text-red-500 text-xs mt-1">{connectError || error}</p>
       )}
     </div>
   );
 }
 
-// ----- DesktopNav and MobileMenu remain mostly unchanged -----
 interface NavProps {
   onSearch: (term: string) => void;
   searchTerm: string;

@@ -7,197 +7,109 @@ import React, {
   useMemo,
   useCallback,
   useEffect,
-  useState,
+  useRef,
 } from 'react';
-import { ethers, Eip1193Provider } from 'ethers';
 
-import { useKaswareEvmWallet, WalletState as KaswareEvmWalletState } from '@/hooks/wallet/internal/useKaswareEvmWallet';
 import { useKaswareWallet, WalletState as KaswareWalletState } from '@/hooks/wallet/internal/useKaswareWallet';
-import { kasplexTestnet } from '@/lib/viemChains';
 
-/* ---------------- Wallet Types ---------------- */
-// Both "kasware" and "kasplex" come from the same Kasware wallet extension --
-// "kasware" is the Kaspa L1 address (KNS ownership proof), "kasplex" is the
-// EVM address/signer for Kasplex (Kaspa's EVM L2) transactions.
-export type WalletType = 'kasplex' | 'kasware' | null;
+/**
+ * Wallet state.
+ *
+ * One wallet, one identity: the **Kaspa L1 address** from Kasware, which holds
+ * the key that owns a domain on KNS and signs every write.
+ *
+ * The Kasplex EVM signer was removed on 2026-09-06 along with the rest of the
+ * contract path. It was a second identity for the same person, used only by
+ * contracts that have no deployed code -- and it was a live source of bugs,
+ * because "which address is this keyed by?" had two answers. Votes recorded
+ * against the L1 address were being looked up by the EVM one, so "My Votes" was
+ * permanently empty.
+ */
 export type WalletStatus = 'idle' | 'connecting' | 'connected' | 'error' | 'unavailable' | null;
 
 export interface CombinedWalletState {
   kasware: KaswareWalletState;
-  kasplex: KaswareEvmWalletState;
-
-  activeWalletType: WalletType;
-  setActiveWalletType: (walletType: WalletType) => void;
-
-  activeAccount: string | null;
-  activeStatus: WalletStatus;
-  activeError: string | null;
-
-  isFullyConnected: boolean;
-
-  connect: () => Promise<void>;
-  disconnect: () => void;
-  disconnectAll: () => void;
 
   account: string | null;
   status: WalletStatus;
-  provider: Eip1193Provider | null;
-  signer: ethers.Signer | null;
+  error: string | null;
+  isConnected: boolean;
+
+  connect: () => Promise<void>;
+  disconnect: () => void;
+  /** Kept for callers that used to drop both wallets at once. */
+  disconnectAll: () => void;
 }
 
-/* ---------------- Context ---------------- */
 const WalletContext = createContext<CombinedWalletState | undefined>(undefined);
 
-/* ---------------- Provider ---------------- */
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
-  const kasplex = useKaswareEvmWallet();
   const kasware = useKaswareWallet();
+  const { account, connect: connectKas, disconnect: disconnectKas, status, error } = kasware;
 
-  const {
-    account: kasplexAccount,
-    connect: connectKasplex,
-    disconnect: disconnectKasplex,
-    status: kasplexStatus,
-    error: kasplexError,
-    provider: kasplexProvider,
-  } = kasplex;
-
-  const {
-    account: kasAccount,
-    connect: connectKas,
-    disconnect: disconnectKas,
-    status: kasStatus,
-    error: kasError,
-  } = kasware;
-
-  const [activeWalletType, setActiveWalletType] = useState<WalletType>(() => {
-    if (typeof window === 'undefined') return null;
-    if (localStorage.getItem('wallet-kasplex') === 'true') return 'kasplex';
-    if (localStorage.getItem('wallet-kasware') === 'true') return 'kasware';
-    return null;
-  });
-
-  /* Auto-reconnect active wallet on mount */
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    if (activeWalletType === 'kasplex' && !kasplexAccount) connectKasplex().catch(() => {});
-    else if (activeWalletType === 'kasware' && !kasAccount) connectKas().catch(() => {});
-  }, [activeWalletType, kasplexAccount, kasAccount, connectKasplex, connectKas]);
-
-  /* Persist wallet connection status */
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem('wallet-kasplex', kasplexAccount ? 'true' : 'false');
-  }, [kasplexAccount]);
+  // Reconnect at most once per mount, and hold that in a ref rather than state.
+  //
+  // Reading localStorage in a `useState` initialiser makes the first client
+  // render disagree with the server one; reading it into state from an effect
+  // is a synchronous setState in an effect body. Neither is needed -- nothing
+  // renders this value, so it does not belong in state at all.
+  const reconnectAttempted = useRef(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem('wallet-kasware', kasAccount ? 'true' : 'false');
-  }, [kasAccount]);
+    if (reconnectAttempted.current) return;
+    reconnectAttempted.current = true;
 
-  /* Compute active wallet details */
-  const activeAccount = useMemo(() => (activeWalletType === 'kasplex' ? kasplexAccount : activeWalletType === 'kasware' ? kasAccount : null), [activeWalletType, kasplexAccount, kasAccount]);
-  const activeStatus = useMemo(() => (activeWalletType === 'kasplex' ? kasplexStatus : activeWalletType === 'kasware' ? kasStatus : null), [activeWalletType, kasplexStatus, kasStatus]);
-  const activeError = useMemo(() => (activeWalletType === 'kasplex' ? kasplexError : activeWalletType === 'kasware' ? kasError : null), [activeWalletType, kasplexError, kasError]);
-  const isFullyConnected = useMemo(() => !!(kasplexAccount && kasAccount), [kasplexAccount, kasAccount]);
-
-  const provider: Eip1193Provider | null = useMemo(() => (kasplexProvider as unknown as Eip1193Provider) ?? null, [kasplexProvider]);
-
-  /* Create ethers signer */
-  const [signer, setSigner] = useState<ethers.Signer | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function initializeSigner() {
-    if (!provider) {
-      setSigner(null);
-      return;
+    try {
+      if (localStorage.getItem('wallet-kasware') === 'true') {
+        // Failure here is expected and silent: the wallet may be locked, or the
+        // user may decline. An unhandled rejection on page load is not a useful
+        // way to find that out.
+        connectKas().catch(() => {});
+      }
+    } catch {
+      // Private mode, or storage disabled. Not being able to remember a
+      // connection is not an error worth surfacing.
     }
+  }, [connectKas]);
 
-    const ethersProvider = new ethers.BrowserProvider(provider);
-    ethersProvider.getSigner()
-      .then(async (sig) => {
-        if (!mounted) return;
-
-        try {
-          const network = await sig.provider.getNetwork();
-          if (Number(network.chainId) !== kasplexTestnet.id) {
-            console.warn(`⚠️ Signer connected to wrong network (chainId: ${network.chainId})`);
-          }
-        } catch (err) {
-          console.warn('⚠️ Could not verify signer network:', err);
-        }
-
-        setSigner(sig);
-      })
-      .catch(() => {
-        if (mounted) setSigner(null);
-      });
-
+  // Only ever record a *successful* connection. Writing 'false' whenever there
+  // is no account meant one page load without approving made the app forget the
+  // wallet entirely.
+  useEffect(() => {
+    if (!account) return;
+    try {
+      localStorage.setItem('wallet-kasware', 'true');
+    } catch {
+      // See above.
     }
+  }, [account]);
 
-    void initializeSigner();
-
-    return () => {
-      mounted = false;
-    };
-  }, [provider]);
-
-  /* Connect active wallet */
-  const connect = useCallback(async () => {
-    if (activeWalletType === 'kasplex') await connectKasplex();
-    else if (activeWalletType === 'kasware') await connectKas();
-  }, [activeWalletType, connectKasplex, connectKas]);
-
-  /* Disconnect active wallet */
   const disconnect = useCallback(() => {
-    if (activeWalletType === 'kasplex') {
-      disconnectKasplex();
-      if (typeof window !== 'undefined') localStorage.setItem('wallet-kasplex', 'false');
-    } else if (activeWalletType === 'kasware') {
-      disconnectKas();
-      if (typeof window !== 'undefined') localStorage.setItem('wallet-kasware', 'false');
-    }
-  }, [activeWalletType, disconnectKasplex, disconnectKas]);
-
-  /* Disconnect all wallets */
-  const disconnectAll = useCallback(() => {
-    disconnectKasplex();
     disconnectKas();
-    setActiveWalletType(null);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('wallet-kasplex', 'false');
+    try {
       localStorage.setItem('wallet-kasware', 'false');
+    } catch {
+      // See above.
     }
-  }, [disconnectKasplex, disconnectKas]);
+  }, [disconnectKas]);
 
-  const value: CombinedWalletState = useMemo(() => ({
-    kasware,
-    kasplex,
-    activeWalletType,
-    setActiveWalletType,
-    activeAccount,
-    activeStatus,
-    activeError,
-    isFullyConnected,
-    connect,
-    disconnect,
-    disconnectAll,
-    account: activeAccount,
-    status: activeStatus,
-    provider,
-    signer,
-  }), [
-    kasware, kasplex, activeWalletType, activeAccount, activeStatus, activeError,
-    isFullyConnected, connect, disconnect, disconnectAll, provider, signer
-  ]);
+  const value: CombinedWalletState = useMemo(
+    () => ({
+      kasware,
+      account,
+      status,
+      error,
+      isConnected: Boolean(account),
+      connect: connectKas,
+      disconnect,
+      disconnectAll: disconnect,
+    }),
+    [kasware, account, status, error, connectKas, disconnect]
+  );
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 };
 
-/* ---------------- Hook ---------------- */
 export function useWalletContext(): CombinedWalletState {
   const context = useContext(WalletContext);
   if (!context) throw new Error('useWalletContext must be used within WalletProvider');

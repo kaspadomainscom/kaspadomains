@@ -121,10 +121,6 @@ export default function PrivacyPage() {
             confirm a fee transaction and who paid it.
           </li>
           <li>
-            <strong>Kasplex RPC</strong> — used only when the database is unavailable and
-            the site falls back to reading its old smart contracts.
-          </li>
-          <li>
             <strong>Google Fonts</strong> — serves the site&apos;s typeface.
           </li>
         </ul>

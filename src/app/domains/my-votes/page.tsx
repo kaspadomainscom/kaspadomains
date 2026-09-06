@@ -6,48 +6,13 @@ import { DomainCard } from "@/components/DomainCard";
 import Loader from "@/components/Loader";
 import { useMyVotes } from "@/hooks/domains/useMyVotes";
 import { useWalletContext } from "@/context/WalletContext";
-import { useDomainByHash } from "@/hooks/domain/useDomainByHash";
 import type { Domain } from "@/data/types";
 
-/**
- * On the chain fallback the hook can only produce a domain hash, so each row
- * still has to be resolved individually. On the Supabase path every field
- * arrives with the vote and this component is never used.
- */
-function DomainByHash({ domainHash }: { domainHash: bigint }) {
-  const { data, isLoading, isError } = useDomainByHash(domainHash);
-
-  if (isLoading) {
-    return (
-      <div className="rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-gray-400">
-        Loading {domainHash.toString().slice(0, 10)}…
-      </div>
-    );
-  }
-
-  // Say so rather than rendering nothing. A row that vanishes reads as "this
-  // vote didn't exist", when the truth is that we couldn't load it.
-  if (isError || !data) {
-    return (
-      <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-200">
-        A vote is recorded on-chain for domain{" "}
-        <span className="font-mono">{domainHash.toString().slice(0, 12)}…</span>, but its
-        details could not be loaded.
-      </div>
-    );
-  }
-
-  return <DomainCard domain={data} />;
-}
-
 export default function MyVotesPage() {
-  const { kasware, kasplex } = useWalletContext();
-  const { data, isLoading, isError, error, source } = useMyVotes();
+  const { kasware } = useWalletContext();
+  const { data, isLoading, isError, error } = useMyVotes();
 
-  // Each source keys votes by a different address, so the prompt has to name
-  // the right wallet or the user connects one and still sees nothing.
-  const connected = source === "chain" ? kasplex.account : kasware.account;
-  const walletName = source === "chain" ? "Kasplex (EVM)" : "Kasware";
+  const connected = kasware.account;
 
   return (
     <div className="max-w-5xl mx-auto py-12 px-4 text-white">
@@ -59,7 +24,7 @@ export default function MyVotesPage() {
       {!connected && (
         <div className="rounded-lg border border-white/10 bg-white/5 p-6 text-center">
           <p className="text-gray-300">
-            Connect your {walletName} wallet to see the domains you have voted for.
+            Connect your Kasware wallet to see the domains you have voted for.
           </p>
         </div>
       )}
@@ -90,16 +55,9 @@ export default function MyVotesPage() {
 
       {connected && !isLoading && !isError && data && data.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {data.map((domain: Domain) =>
-            domain.name ? (
-              <DomainCard key={domain.name} domain={domain} />
-            ) : (
-              <DomainByHash
-                key={domain.domainHash.toString()}
-                domainHash={domain.domainHash}
-              />
-            )
-          )}
+          {data.map((domain: Domain) => (
+            <DomainCard key={domain.name} domain={domain} />
+          ))}
         </div>
       )}
     </div>

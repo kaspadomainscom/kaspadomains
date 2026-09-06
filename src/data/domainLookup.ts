@@ -1,5 +1,3 @@
-import { loadCategoriesManifest } from "./categoriesManifest";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import { fetchAllDomains, fetchDomainByName, fetchDomainCategories } from "./supabaseSource";
 import type { Domain } from "./types";
 import { normalizeDomainName } from "@/lib/domainName";
@@ -42,34 +40,16 @@ export async function lookupDomain(name: string): Promise<DomainLookup> {
   // just typed the exact name of. No error, just a feature that never worked.
   const searchName = normalizeDomainName(name);
 
-  // Indexed single-row lookup when the database is the source of truth,
-  // instead of loading every category to scan for one name.
-  if (isSupabaseConfigured) {
-    try {
-      const domain = await fetchDomainByName(searchName);
-      return domain ? { status: "found", domain } : { status: "not-listed" };
-    } catch (error) {
-      console.error("Supabase lookup failed for", searchName, error);
-      return { status: "unavailable", error: error as Error };
-    }
-  }
-
-  let categoriesData;
+  // An indexed single-row read. This used to fall back to scanning every
+  // category from the contracts when Supabase was unconfigured; that path was
+  // removed on 2026-09-06 because the contracts have no deployed code.
   try {
-    categoriesData = await loadCategoriesManifest();
+    const domain = await fetchDomainByName(searchName);
+    return domain ? { status: "found", domain } : { status: "not-listed" };
   } catch (error) {
-    console.error("Failed to load categories manifest for domain lookup:", error);
+    console.error("Supabase lookup failed for", searchName, error);
     return { status: "unavailable", error: error as Error };
   }
-
-  for (const category of Object.values(categoriesData)) {
-    const domain = category.domains.find(
-      (d) => d.name.toLowerCase() === searchName
-    );
-    if (domain) return { status: "found", domain };
-  }
-
-  return { status: "not-listed" };
 }
 
 /**
@@ -95,14 +75,9 @@ export async function findDomainByName(name: string): Promise<Domain | undefined
  * "No matching domains found" (see docs/MIND.md principles #2 and #3).
  */
 export async function getAllDomains(): Promise<Domain[]> {
-  // Straight table read when Supabase is the source of truth; the manifest
-  // path would otherwise return the same domain once per category it's in.
-  if (isSupabaseConfigured) {
-    return fetchAllDomains();
-  }
-
-  const categoriesData = await loadCategoriesManifest();
-  return Object.values(categoriesData).flatMap((category) => category.domains);
+  // A straight table read. The manifest path this replaced returned the same
+  // domain once per category it was in.
+  return fetchAllDomains();
 }
 
 /**
@@ -120,29 +95,14 @@ export async function findDomainCategoryTitle(name: string): Promise<string | un
   if (!name) return undefined;
   const searchName = normalizeDomainName(name);
 
-  if (isSupabaseConfigured) {
-    try {
-      const categories = await fetchDomainCategories(searchName);
-      if (categories.length === 0) return undefined;
-      // Prefer a published category; fall back to a withdrawn one rather than
-      // showing nothing, since the domain is genuinely in it.
-      return (categories.find((c) => c.isAllowed) ?? categories[0]).title;
-    } catch (error) {
-      console.error("Supabase category lookup failed for", searchName, error);
-      return undefined;
-    }
-  }
-
   try {
-    const categoriesData = await loadCategoriesManifest();
-    const normalized = searchName.replace(/\.kas$/, "");
-    return Object.values(categoriesData).find((category) =>
-      category.domains.some(
-        (d) => d.name.toLowerCase().replace(/\.kas$/, "") === normalized
-      )
-    )?.title;
+    const categories = await fetchDomainCategories(searchName);
+    if (categories.length === 0) return undefined;
+    // Prefer a published category; fall back to a withdrawn one rather than
+    // showing nothing, since the domain is genuinely in it.
+    return (categories.find((c) => c.isAllowed) ?? categories[0]).title;
   } catch (error) {
-    console.error("Failed to load categories manifest for category lookup:", error);
+    console.error("Supabase category lookup failed for", searchName, error);
     return undefined;
   }
 }

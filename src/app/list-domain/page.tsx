@@ -4,15 +4,11 @@ import React from 'react';
 import PickDomainModal from '@/components/PickDomainModal';
 import { useOwnedDomains } from '@/hooks/kns/api/useOwnedDomains';
 import { useWalletContext } from '@/context/WalletContext';
-import { isSupabaseConfigured } from '@/lib/supabase';
 
 export default function ListDomainPage() {
-  const { kasware, kasplex } = useWalletContext();
+  const { kasware } = useWalletContext();
 
-  const isEvmConnected = kasplex.status === 'connected';
   const isKaspaConnected = kasware.status === 'connected';
-
-  const evmAccount = kasplex.account;
   const kaspaAccount = kasware.account;
 
   const {
@@ -23,12 +19,9 @@ export default function ListDomainPage() {
 
   const ownedDomains = domainData?.domains ?? [];
 
-  // Kasware (L1) is always required — it holds the key that owns the domain on
-  // KNS and signs the listing request. Kasplex is only needed on the on-chain
-  // fallback path, so demanding it when the database is the store would block
-  // an owner who has only L1 connected.
-  const shouldShowConnectPrompt =
-    !isKaspaConnected || (!isSupabaseConfigured && !isEvmConnected);
+  // Kasware (L1) is the only wallet involved — it holds the key that owns the
+  // domain on KNS and signs the listing request.
+  const shouldShowConnectPrompt = !isKaspaConnected;
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-12 space-y-16">
@@ -49,7 +42,6 @@ export default function ListDomainPage() {
             <button
               className="underline text-sm text-yellow-300"
               onClick={() => {
-                kasplex.connect();
                 kasware.connect();
               }}
             >
@@ -93,16 +85,12 @@ export default function ListDomainPage() {
             ) : ownedDomains.length === 0 ? (
               <p className="text-white">You don’t own any .kas domains.</p>
             ) : (
-              <PickDomainModal
-                domains={ownedDomains}
-                evmAccount={evmAccount}
-                kaspaAccount={kaspaAccount}
-              />
+              <PickDomainModal domains={ownedDomains} kaspaAccount={kaspaAccount} />
             )}
 
             {/* Wallet Errors */}
-            {(kasware.error || kasplex.error) && (
-              <p className="text-red-400 text-sm mt-4">{kasware.error || kasplex.error}</p>
+            {kasware.error && (
+              <p className="text-red-400 text-sm mt-4">{kasware.error}</p>
             )}
           </div>
         </section>

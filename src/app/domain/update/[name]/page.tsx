@@ -5,17 +5,16 @@ import { useParams } from 'next/navigation';
 import { useWalletContext } from '@/context/WalletContext';
 import { useGetDomainLinks, type DomainLink } from '@/hooks/domain/useGetDomainLinks';
 import { useUpdateDomainLinks } from '@/hooks/domain/useUpdateDomainLinks';
-import { contracts } from '@/lib/contracts';
-import { kasplexClient } from '@/lib/viemClient';
-import { isSupabaseConfigured } from '@/lib/supabase';
 import { normalizeDomainName } from '@/lib/domainName';
+import { knsApiUrl } from '@/lib/kaspaDomainRuntime';
 import { CategoryEditor } from '@/components/pages/domain/CategoryEditor';
 
-const DEFAULT_MAX_LINKS = 10;
+/** Mirrors MAX_LINKS in the links API route. */
+const MAX_LINKS = 10;
 
 async function fetchDomainOwner(domain: string): Promise<string> {
   const encoded = encodeURIComponent(domain.toLowerCase());
-  const res = await fetch(`https://api.knsdomains.org/mainnet/api/v1/${encoded}/owner`);
+  const res = await fetch(knsApiUrl(`${encoded}/owner`));
 
   if (!res.ok) {
     const text = await res.text();
@@ -37,7 +36,7 @@ function normalizeAddress(addr?: string | null) {
 
 export default function UpdateDomainPage() {
   const { name: domainSlug } = useParams() as { name: string };
-  const { kasware, kasplex } = useWalletContext();
+  const { kasware } = useWalletContext();
 
   const domainName = useMemo(() => {
     if (!domainSlug) return '';
@@ -48,10 +47,9 @@ export default function UpdateDomainPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [links, setLinks] = useState<DomainLink[]>([{ name: 'X', url: '' }]);
-  const [maxLinks, setMaxLinks] = useState(DEFAULT_MAX_LINKS);
+  const maxLinks = MAX_LINKS;
   const [linksSeeded, setLinksSeeded] = useState(false);
 
-  const isEvmConnected = kasplex.status === 'connected';
   const isKaspaConnected = kasware.status === 'connected';
   const isOwner = normalizeAddress(owner) === normalizeAddress(kasware.account);
 
@@ -93,23 +91,9 @@ export default function UpdateDomainPage() {
     loadOwner();
   }, [domainSlug, domainName]);
 
-  // Fetch the contract's link cap once. Skipped when the database is the
-  // store: the cap is enforced by the API (same value as DEFAULT_MAX_LINKS),
-  // so reading it from a contract that isn't in use would just be a failing
-  // request that always falls back to the same number.
-  useEffect(() => {
-    if (isSupabaseConfigured) return;
-    kasplexClient
-      .readContract({
-        address: contracts.DomainLinksStorage.address,
-        abi: contracts.DomainLinksStorage.abi,
-        functionName: 'MAX_LINKS',
-      })
-      .then((val) => setMaxLinks(Number(val)))
-      .catch(() => {
-        // fall back to the client-side default
-      });
-  }, []);
+  // The cap is enforced by the API. It used to be read from
+  // DomainLinksStorage.MAX_LINKS, which is the same number and a contract with
+  // no deployed code.
 
   function updateLinkField(index: number, field: 'name' | 'url', value: string) {
     setLinks((prev) => {
@@ -139,19 +123,7 @@ export default function UpdateDomainPage() {
     e.preventDefault();
     setMessage('');
 
-    // Only the on-chain path needs a Kasplex account; the database path signs
-    // with the Kaspa L1 key. Fail loudly rather than returning silently, which
-    // previously made "Save" do nothing at all with no explanation.
-    if (!isSupabaseConfigured && !kasplex.account) {
-      setMessage('❌ Connect Kasware (Kasplex) before saving.');
-      return;
-    }
-
-    const ok = await updateLinks(
-      domainName,
-      (kasplex.account as `0x${string}` | null) ?? null,
-      displayedLinks
-    );
+    const ok = await updateLinks(domainName, displayedLinks);
     if (ok) {
       setMessage(`✅ Resources for '${domainName}' updated successfully.`);
     }
@@ -173,9 +145,9 @@ export default function UpdateDomainPage() {
     );
   }
 
-  // Kasware (L1) is always required: it holds the key that owns the domain and
-  // signs the edit. Kasplex is only needed on the on-chain fallback path.
-  if (!isKaspaConnected || (!isSupabaseConfigured && !isEvmConnected)) {
+  // Kasware (L1) is the only wallet involved: it holds the key that owns the
+  // domain and signs the edit.
+  if (!isKaspaConnected) {
     return (
       <main className="max-w-xl mx-auto p-6 mt-10 text-center text-yellow-400">
         Connect your Kasware wallet to manage this domain.
@@ -183,7 +155,6 @@ export default function UpdateDomainPage() {
           <button
             className="underline text-sm"
             onClick={() => {
-              kasplex.connect();
               kasware.connect();
             }}
           >

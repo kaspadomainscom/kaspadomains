@@ -137,6 +137,22 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **The EVM contract path is gone, and it was never a fallback — it was where the bugs
+  lived.** Owner decision, 2026-09-06. Six of the eight configured addresses had no deployed
+  code and the other two failed every call with `invalid opcode: MCOPY`, so the "fallback"
+  had never answered a single query. Keeping it was not free: because every read and write
+  carried two branches and one was never exercised, it directly caused **five** shipped bugs
+  already in this file — `feePaid` meaning sompi on one branch and wei on the other, votes
+  keyed by the EVM address while stored against the L1 one, a vote counter permanently
+  reading "Unavailable", an admin page telling its own administrator "Access Denied", and a
+  connect button that required two wallets when only one mattered. Removing it deleted
+  **34 files** and took `src/` from 129 source files to 95, and no remaining code had to grow
+  a branch to compensate. Distilled as `MIND.md` #20.
+  Also removed in the same pass: the **10,000-listing cap**, which was product copy on four
+  pages and an assumption in three code comments.
+  *Verified*: `tsc`, `eslint` and a clean build all pass; every page returns 200 against the
+  live project; `npm run dead:check` drops from 27 unreachable files to 8, all of which are
+  Codex's in-flight work and deliberately untouched.
 - **The listing page blamed an empty catalogue when the category load failed.**
   `useGetAllowedCategories` sets an `error` *and* empties the list; `PickDomainModal` read
   only the list, so a failure rendered "No categories available right now." Listing requires

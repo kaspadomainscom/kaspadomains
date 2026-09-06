@@ -1,16 +1,20 @@
 // src/lib/topVotedDomains.ts
 import { loadCategoriesManifest } from "@/data/categoriesManifest";
-import { contracts } from "@/lib/contracts";
-import { kasplexClient } from "@/lib/viemClient";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import { fetchVoteCounts } from "@/data/supabaseSource";
 import type { Domain } from "@/data/types";
 
 export type DomainWithVotes = Domain & { votes: number };
 
-// Loads all active listed domains, deduped, with real vote counts from a single
-// batched on-chain call -- used anywhere the site shows "trending"/"top voted"
-// domains, so that data is never fabricated.
+/**
+ * Every active listing, deduped, ranked by real vote counts.
+ *
+ * Listings and vote counts come from the same store, so a ranking can never mix
+ * one source's listings with another's counts and reflect neither. That used to
+ * be a live risk: the counts had a contract fallback behind them.
+ *
+ * Throws if either read fails. The callers render that as unknown rather than
+ * as an empty ranking.
+ */
 export async function loadTopVotedDomains(limit?: number): Promise<DomainWithVotes[]> {
   const manifest = await loadCategoriesManifest();
 
@@ -26,30 +30,12 @@ export async function loadTopVotedDomains(limit?: number): Promise<DomainWithVot
 
   if (domains.length === 0) return [];
 
-  // Vote counts come from the same store as the listings, so ranking can't mix
-  // database listings with on-chain vote counts (or vice versa) and produce a
-  // ranking that reflects neither.
-  if (isSupabaseConfigured) {
-    const counts = await fetchVoteCounts();
-    const ranked = domains
-      .map((domain) => ({
-        ...domain,
-        votes: counts.get(domain.domainHash.toString()) ?? 0,
-      }))
-      .sort((a, b) => b.votes - a.votes);
-
-    return limit ? ranked.slice(0, limit) : ranked;
-  }
-
-  const votes = (await kasplexClient.readContract({
-    address: contracts.DomainVotesManager.address,
-    abi: contracts.DomainVotesManager.abi,
-    functionName: "getTopVotedDomains",
-    args: [domains.map((d) => d.domainHash)],
-  })) as readonly bigint[];
-
+  const counts = await fetchVoteCounts();
   const ranked = domains
-    .map((domain, i) => ({ ...domain, votes: Number(votes[i] ?? BigInt(0)) }))
+    .map((domain) => ({
+      ...domain,
+      votes: counts.get(domain.domainHash.toString()) ?? 0,
+    }))
     .sort((a, b) => b.votes - a.votes);
 
   return limit ? ranked.slice(0, limit) : ranked;

@@ -28,24 +28,32 @@ import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
+// Files loaded by path rather than imported: Next's route conventions, the
+// proxy, ambient types -- and test files, which a runner discovers by glob.
+// Without the last one a module's only test looks like dead code, which would
+// punish exactly the thing this repo needs more of.
 const CONVENTION =
-  /src\/app\/.*(page|layout|route|loading|not-found|error|template|default)\.tsx?$|src\/proxy\.ts$|src\/types\/.*\.d\.ts$/;
+  /src\/app\/.*(page|layout|route|loading|not-found|error|template|default)\.tsx?$|src\/proxy\.ts$|src\/types\/.*\.d\.ts$|\.test\.tsx?$|\.spec\.tsx?$/;
 
 const tracked = execSync('git ls-files', { encoding: 'utf8' }).split('\n');
 const src = tracked.filter((f) => f.startsWith('src/') && /\.tsx?$/.test(f));
 
+// `git ls-files` lists tracked paths, including ones deleted from disk but not
+// yet staged. Reading those as empty made the report list deleted files as dead
+// ones -- technically true and completely unhelpful. Skip them instead.
 const bodies = new Map();
 for (const f of src) {
   try {
     bodies.set(f, readFileSync(f, 'utf8'));
   } catch {
-    bodies.set(f, '');
+    // Deleted on disk; not part of the tree being analysed.
   }
 }
+const present = src.filter((f) => bodies.has(f));
 
 // Every specifier a file can be imported by -> the file.
 const byAlias = new Map();
-for (const f of src) {
+for (const f of present) {
   const stem = f.replace(/\.(ts|tsx)$/, '');
   const withoutSrc = stem.slice('src/'.length);
   if (!byAlias.has(`@/${withoutSrc}`)) byAlias.set(`@/${withoutSrc}`, f);
@@ -70,7 +78,7 @@ function resolve(importer, spec) {
 }
 
 const imports = new Map();
-for (const f of src) {
+for (const f of present) {
   const out = new Set();
   for (const [, spec] of bodies.get(f).matchAll(SPEC)) {
     const target = resolve(f, spec);
@@ -79,7 +87,7 @@ for (const f of src) {
   imports.set(f, out);
 }
 
-const entries = src.filter((f) => CONVENTION.test(f));
+const entries = present.filter((f) => CONVENTION.test(f));
 const reachable = new Set(entries);
 const stack = [...entries];
 while (stack.length) {
@@ -91,7 +99,7 @@ while (stack.length) {
   }
 }
 
-const dead = src.filter((f) => !reachable.has(f)).sort();
+const dead = present.filter((f) => !reachable.has(f)).sort();
 
 console.log(`\n  source files      ${src.length}`);
 console.log(`  entry points      ${entries.length}  (loaded by path, not imported)`);
@@ -105,7 +113,7 @@ if (dead.length === 0) {
 
 for (const f of dead) {
   const empty = bodies.get(f).trim() === '' ? '  [EMPTY FILE]' : '';
-  const via = src.filter((g) => imports.get(g)?.has(f));
+  const via = present.filter((g) => imports.get(g)?.has(f));
   const note = via.length ? `  <- reachable only via ${via.length} dead file(s)` : '';
   console.log(`  ${f}${empty}${note}`);
 }

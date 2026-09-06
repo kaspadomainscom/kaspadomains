@@ -80,9 +80,10 @@ export default function DomainsPage() {
    * The page numbers to actually render: first, last, and a window around the
    * current page, with `null` marking an elision.
    *
-   * This used to render one button per page. The site is capped at 10,000
-   * listings and shows 20 per page, so at capacity that is **500 buttons** -- a
-   * wall of numbers nobody can use, and a lot of DOM for no benefit.
+   * This used to render one button per page. At 20 per page a directory of
+   * 10,000 listings is **500 buttons** -- a wall of numbers nobody can use, and
+   * a lot of DOM for no benefit. There is no cap on listings, so the count is
+   * unbounded and windowing is the only correct answer.
    */
   const pageWindow = useMemo<(number | null)[]>(() => {
     const pages: (number | null)[] = [];

@@ -103,9 +103,10 @@ export default function AboutPage() {
           them from the chain rather than trusting the browser.
         </p>
         <p>
-          Earlier versions kept listings in smart contracts on Kasplex. That path is still
-          in the code as a fallback, but several of those contracts have no deployed code,
-          which is why the database is now the primary store.
+          Earlier versions kept listings in smart contracts on Kasplex. Six of the eight
+          contract addresses turned out to have no deployed code and the other two failed
+          every call, so that path was removed entirely on 6 September 2026 rather than kept
+          as a fallback that had never worked.
         </p>
       </Section>
 

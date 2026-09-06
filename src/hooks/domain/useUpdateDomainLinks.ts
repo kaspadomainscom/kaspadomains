@@ -1,11 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { contracts } from '@/lib/contracts';
-import { kasplexClient } from '@/lib/viemClient';
-import { createKaswareEvmClient } from '@/lib/kaswareEvm';
 import { useToast } from '@/components/ToastProvider';
-import { isSupabaseConfigured } from '@/lib/supabase';
 import { signedFetch, readError } from '@/lib/signedFetch';
 import type { DomainLink } from './useGetDomainLinks';
 
@@ -16,14 +12,7 @@ export function useUpdateDomainLinks() {
 
   const { addToast } = useToast();
 
-  const updateLinks = async (
-    domain: string,
-    // Only needed for the on-chain path. The database path signs with the
-    // Kaspa L1 key instead, so requiring an EVM account there would lock out
-    // an owner who has only L1 connected.
-    account: `0x${string}` | null,
-    links: DomainLink[]
-  ): Promise<boolean> => {
+  const updateLinks = async (domain: string, links: DomainLink[]): Promise<boolean> => {
     if (isSubmitting.current) return false;
 
     const cleanLinks = links
@@ -35,46 +24,18 @@ export function useUpdateDomainLinks() {
     setIsLoading(true);
 
     try {
-      if (isSupabaseConfigured) {
-        addToast(`Saving resources for "${domain}"...`);
-
-        const response = await signedFetch({
-          action: 'update-links',
-          domain,
-          path: `/api/domains/${encodeURIComponent(domain)}/links`,
-          method: 'PUT',
-          body: { links: cleanLinks },
-        });
-
-        if (!response.ok) {
-          throw new Error(await readError(response, 'Failed to save resources.'));
-        }
-
-        addToast(`Resources saved for "${domain}".`, 'success');
-        return true;
-      }
-
-      if (!account) {
-        throw new Error('Kasware (Kasplex) is not connected.');
-      }
-
-      const walletClient = createKaswareEvmClient(account);
-
       addToast(`Saving resources for "${domain}"...`);
 
-      const hash = await walletClient.writeContract({
-        address: contracts.DomainLinksStorage.address,
-        abi: contracts.DomainLinksStorage.abi,
-        functionName: 'updateLinks',
-        args: [domain, cleanLinks],
-        account,
+      const response = await signedFetch({
+        action: 'update-links',
+        domain,
+        path: `/api/domains/${encodeURIComponent(domain)}/links`,
+        method: 'PUT',
+        body: { links: cleanLinks },
       });
 
-      addToast('Waiting for confirmation...');
-      const receipt = await kasplexClient.waitForTransactionReceipt({ hash });
-
-      if (receipt.status !== 'success') {
-        throw new Error(`Saving resources for "${domain}" was reverted on-chain.`);
+      if (!response.ok) {
+        throw new Error(await readError(response, 'Failed to save resources.'));
       }
 
       addToast(`Resources saved for "${domain}".`, 'success');

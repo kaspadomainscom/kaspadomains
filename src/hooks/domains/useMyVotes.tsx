@@ -2,34 +2,22 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useWalletContext } from '@/context/WalletContext';
-import { contracts } from '@/lib/contracts';
-import { kasplexClient } from '@/lib/viemClient';
-import { isSupabaseConfigured } from '@/lib/supabase';
 import { fetchVotedDomains } from '@/data/supabaseSource';
 import type { Domain } from '@/data/types';
-import { Address } from 'viem';
 
 /**
  * The domains the connected wallet has voted for.
  *
- * Returns whole `Domain` records now, not bare hashes. The old shape forced the
- * page to fan out one `useDomainByHash` call per vote, and each of those hit a
- * contract that currently has no deployed code -- so every row silently
- * rendered nothing and the page looked empty rather than broken.
- *
- * ## Which address
- *
- * Votes are recorded against the **Kaspa L1 address** (`kasware.account`),
- * because that is the key the vote route verifies and stores. The contract path
- * keys by the **Kasplex EVM address** (`kasplex.account`). Those are different
- * addresses belonging to the same person, so each source must be queried with
- * its own -- querying Supabase with the EVM address returns an empty list and
- * looks like "you haven't voted for anything".
+ * Keyed by the **Kaspa L1 address**, because that is what the vote route
+ * records. The contract path this used to fall back to keyed votes by the
+ * Kasplex EVM address -- a different address belonging to the same person --
+ * so it returned an empty list and looked like "you haven't voted for
+ * anything". It was removed on 2026-09-06 along with the rest of the EVM path.
  *
  * Loading and error state are derived from whether the stored result belongs to
- * the current request, not tracked separately: that keeps every state
- * transition out of the effect body, and makes it impossible to show one
- * wallet's votes while another is connecting.
+ * the current request, which keeps every state transition out of the effect
+ * body and makes it impossible to show one wallet's votes while another is
+ * connecting.
  */
 export type MyVotesResult = {
   /** null means "not known" -- no wallet, still loading, or the load failed. */
@@ -37,17 +25,14 @@ export type MyVotesResult = {
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
-  /** Which store answered, so the page can name the right wallet to connect. */
-  source: 'supabase' | 'chain';
   refetch: () => void;
 };
 
 type Result = { token: string; data: Domain[] | null; error: Error | null };
 
 export function useMyVotes(): MyVotesResult {
-  const { kasware, kasplex } = useWalletContext();
-  const source: 'supabase' | 'chain' = isSupabaseConfigured ? 'supabase' : 'chain';
-  const account = source === 'supabase' ? kasware.account : kasplex.account;
+  const { kasware } = useWalletContext();
+  const account = kasware.account;
 
   const [reloadCount, setReloadCount] = useState(0);
   const [result, setResult] = useState<Result | null>(null);
@@ -56,7 +41,7 @@ export function useMyVotes(): MyVotesResult {
 
   // Identifies one specific request. A change to any part of it makes whatever
   // is stored stale, which is what drives `isLoading` below.
-  const token = `${source}:${account ?? ''}:${reloadCount}`;
+  const token = `${account ?? ''}:${reloadCount}`;
 
   useEffect(() => {
     // No wallet is not an error and not a result -- it is "we can't know".
@@ -65,32 +50,7 @@ export function useMyVotes(): MyVotesResult {
 
     let cancelled = false;
 
-    async function load(voter: string): Promise<Domain[]> {
-      if (source === 'supabase') {
-        return fetchVotedDomains(voter);
-      }
-
-      const hashes = (await kasplexClient.readContract({
-        address: contracts.DomainVotesManager.address,
-        abi: contracts.DomainVotesManager.abi,
-        functionName: 'getVotedDomainIds',
-        args: [voter as Address],
-      })) as readonly bigint[];
-
-      // The chain path can only produce hashes. An empty `name` is the signal
-      // to the page that this row still needs resolving.
-      return hashes.map((domainHash) => ({
-        id: 0,
-        domainHash,
-        name: '',
-        owner: '',
-        createdAt: 0,
-        isActive: true,
-        feePaid: '0',
-      }));
-    }
-
-    load(account)
+    fetchVotedDomains(account)
       .then((domains) => {
         if (!cancelled) setResult({ token, data: domains, error: null });
       })
@@ -101,7 +61,7 @@ export function useMyVotes(): MyVotesResult {
     return () => {
       cancelled = true;
     };
-  }, [account, source, token]);
+  }, [account, token]);
 
   const fresh = result && result.token === token ? result : null;
 
@@ -110,7 +70,6 @@ export function useMyVotes(): MyVotesResult {
     isLoading: Boolean(account) && !fresh,
     isError: Boolean(fresh?.error),
     error: fresh?.error ?? null,
-    source,
     refetch,
   };
 }

@@ -11,11 +11,11 @@ const TRENDING_COUNT = 3;
 export const metadata = {
   title: "KaspaDomains — Premium .kas Domains, Organized by Category",
   description:
-    "List your .kas domain for 200 KAS. Get placed in a category, add your X account and links, and build your Kaspa-native identity. Only 10,000 listings, ever.",
+    "List your .kas domain for 200 KAS. Get placed in a category, add your X account and links, and build your Kaspa-native identity.",
   openGraph: {
     title: "KaspaDomains — Premium .kas Domains, Organized by Category",
     description:
-      "Showcase the .kas domain you already own, organized by category, with your own X account and links attached. Limited to 10,000 listings.",
+      "Showcase the .kas domain you already own, organized by category, with your own X account and links attached.",
     url: "https://kaspadomains.com",
     siteName: "KaspaDomains",
     images: [
@@ -33,7 +33,7 @@ export const metadata = {
     site: "@KaspaDomains",
     title: "KaspaDomains — Premium .kas Domains, Organized by Category",
     description:
-      "List your .kas domain, get placed in a category, and get discovered by the Kaspa community. Limited to 10,000 listings.",
+      "List your .kas domain, get placed in a category, and get discovered by the Kaspa community.",
     image: "/og-image.png",
   },
 };
@@ -70,7 +70,6 @@ export default async function Home() {
         <p className="text-lg md:text-xl max-w-3xl mx-auto mb-8 text-white/90">
           Secure your premium .kas domain for a one-time 200 KAS fee. Get placed in a category,
           attach your X account and links, and showcase your Kaspa identity.
-          Limited to only <strong>10,000 domains</strong>.
         </p>
         <Link
           href="/list-domain"
@@ -147,7 +146,7 @@ export default async function Home() {
           <p>
             <strong>1. List your domain:</strong> Connect Kasware, prove you hold the name on
             KNS, and add it to the KaspaDomains index. Listing costs a one-time <strong>200 KAS</strong>, paid from your
-            Kasware wallet, and the index is capped at 10,000 domains.
+            Kasware wallet.
           </p>
           <p>
             <strong>2. Pick a category:</strong> Every listing must belong to at least one category —

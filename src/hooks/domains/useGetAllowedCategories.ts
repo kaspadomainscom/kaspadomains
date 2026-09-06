@@ -1,18 +1,16 @@
 // src/hooks/domains/useGetAllowedCategories.ts
 import { useEffect, useState } from 'react';
-import { kasplexClient } from '@/lib/viemClient';
-import { contracts } from '@/lib/contracts';
-import { bytes32ToString } from '@/lib/utils';
-import { isSupabaseConfigured, getSupabaseReadClient } from '@/lib/supabase';
+import { getSupabaseReadClient } from '@/lib/supabase';
 
 /**
  * The categories a domain may be listed under.
  *
- * Reads from Supabase when it's the source of truth, falling back to
- * `DomainCategoriesStorage.getAllowedCategories` otherwise. Picking a category
- * is mandatory at listing time, so an empty list here blocks listing entirely
- * — which is why the failure is surfaced instead of being swallowed into an
- * empty array that looks like "no categories exist".
+ * Picking a category is mandatory at listing time, so an empty list here
+ * blocks listing entirely — which is why the failure is surfaced instead of
+ * being swallowed into an empty array that looks like "no categories exist".
+ *
+ * The `DomainCategoriesStorage.getAllowedCategories` fallback was removed on
+ * 2026-09-06: that contract has no deployed code.
  */
 export type CategoryOption = { key: string; title: string };
 
@@ -35,35 +33,20 @@ export function useGetAllowedCategories() {
       }
 
       try {
-        if (isSupabaseConfigured) {
-          const client = getSupabaseReadClient();
-          if (!client) throw new Error('Supabase client unavailable');
+        const client = getSupabaseReadClient();
+        if (!client) throw new Error('The category list is unavailable.');
 
-          const { data, error: queryError } = await client
-            .from('categories')
-            .select('key, title')
-            .eq('is_allowed', true)
-            .order('sort_order', { ascending: true });
+        const { data, error: queryError } = await client
+          .from('categories')
+          .select('key, title')
+          .eq('is_allowed', true)
+          .order('sort_order', { ascending: true });
 
-          if (queryError) throw new Error(queryError.message);
-          if (!cancelled) {
-            const rows = data ?? [];
-            setCategories(rows.map((row) => row.key));
-            setOptions(rows.map((row) => ({ key: row.key, title: row.title })));
-          }
-        } else {
-          const result = await kasplexClient.readContract({
-            address: contracts.DomainCategoriesStorage.address,
-            abi: contracts.DomainCategoriesStorage.abi,
-            functionName: 'getAllowedCategories',
-          });
-          if (!cancelled) {
-            // The contract stores no titles, so the key is the best label
-            // available on this path.
-            const keys = (result as `0x${string}`[]).map(bytes32ToString);
-            setCategories(keys);
-            setOptions(keys.map((key) => ({ key, title: key })));
-          }
+        if (queryError) throw new Error(queryError.message);
+        if (!cancelled) {
+          const rows = data ?? [];
+          setCategories(rows.map((row) => row.key));
+          setOptions(rows.map((row) => ({ key: row.key, title: row.title })));
         }
       } catch (err) {
         console.error('Error fetching allowed categories', err);

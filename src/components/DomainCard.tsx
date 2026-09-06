@@ -5,62 +5,48 @@ import { Domain } from '@/data/types';
 import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
 import { formatKas } from '@/lib/fees';
-import { isSupabaseConfigured } from '@/lib/supabase';
-import { formatEther } from 'ethers';
 
 /**
- * Where to look an owner up, chosen by the shape of the address.
+ * Where to look an owner up.
  *
- * The card used to send every owner to the Kasplex **testnet** explorer. That
- * was right when owners were EVM addresses; since listings moved to Supabase the
- * stored owner is the Kaspa L1 address KNS reports (`kaspa:qz…`), so the link
+ * The card used to send every owner to the Kasplex **testnet** explorer, which
+ * was right when owners were EVM addresses. Owners are Kaspa L1 addresses
+ * (`kaspa:qz…`) now -- the EVM path was removed on 2026-09-06 -- so that link
  * handed a bech32 string to an EVM explorer and produced a dead page.
  *
- * `kas.fyi` is used for L1 rather than `explorer.kaspa.org` because it is the
- * one that actually answered when checked (the latter returns 403 to a plain
- * request, so its URL shape could not be confirmed).
+ * `kas.fyi` rather than `explorer.kaspa.org` because it is the one that actually
+ * answered when checked; the latter returns 403 to a plain request, so its URL
+ * shape could not be confirmed, and a link built from an unverified guess is the
+ * same mistake as a fabricated fallback.
  */
 function ownerExplorerUrl(owner: string): { href: string; label: string } | null {
-  if (/^0x[a-fA-F0-9]{40}$/.test(owner)) {
-    return {
-      href: `https://frontend.kasplextest.xyz/address/${owner}`,
-      label: 'View owner on Kasplex',
-    };
-  }
   if (owner.startsWith('kaspa:')) {
     return {
       href: `https://kas.fyi/address/${encodeURIComponent(owner)}`,
       label: 'View owner on kas.fyi',
     };
   }
-  // An address in neither form is not something to guess a URL for.
+  // Anything else is not an address we can guess a URL for.
   return null;
 }
 
 /**
  * The fee, formatted -- and the unit depends on which store answered.
  *
- * `Domain.feePaid` is a raw integer string from whichever source produced the
- * record, and the two sources do **not** agree on its unit:
+ * `fee_paid` stores **sompi** (8 decimals) -- the API writes
+ * `payment.paidSompi.toString()`. The card used to print that raw with " KAS"
+ * after it, so a 200 KAS listing rendered as "20000000000 KAS" on every browse
+ * page, search result and ranking.
  *
- *   * Supabase stores **sompi** (8 decimals) -- the API writes
- *     `payment.paidSompi.toString()`.
- *   * The contracts return **wei** (18 decimals).
- *
- * They differ by a factor of 10^10, so formatting one as the other is not
- * slightly wrong, it is wrong by ten orders of magnitude. The card previously
- * printed the raw value with " KAS" after it, which rendered a 200 KAS listing
- * as "20000000000 KAS" on every browse page, search result and ranking.
- *
- * The right long-term fix is for `Domain` to carry its unit rather than leaving
- * callers to infer it; logged in GAPS.md.
+ * There used to be a second unit to worry about: the contracts returned **wei**
+ * (18 decimals), so the same field meant two things 10^10 apart depending on
+ * which source produced the record. That ambiguity went away with the contract
+ * path on 2026-09-06 -- there is one source now, and one unit.
  */
 function formatFee(feePaid: string): string {
   if (!feePaid) return 'N/A';
   try {
-    return isSupabaseConfigured
-      ? formatKas(BigInt(feePaid))
-      : `${formatEther(BigInt(feePaid))} KAS`;
+    return formatKas(BigInt(feePaid));
   } catch {
     // Never render a malformed stored value as if it were an amount.
     return 'N/A';

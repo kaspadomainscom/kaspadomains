@@ -3,7 +3,8 @@
 Last updated: 2026-09-06
 
 Every file in the repo, what it is for, and whether it is actually doing
-anything. Written because "which of these 128 source files are live?" turned out
+anything. **Rewritten 2026-09-06** after the EVM contract path was removed: `src/` went
+from 129 source files to 95, and unreachable files from 27 to 8. Written because "which of these 128 source files are live?" turned out
 to be a question nobody could answer quickly — and the answer includes **27 dead
 files**, most of them wired to contracts that have no deployed code.
 

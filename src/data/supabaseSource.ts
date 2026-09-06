@@ -59,10 +59,9 @@ function requireClient() {
  * cap is not reported missing, it simply is not there, so search says "No
  * matching domains found" for a domain that exists and is paid for.
  *
- * This app is capped at 10,000 listings by design, which is comfortably past
- * any plausible server-side limit, so the truncation is a matter of when rather
- * than if. Paging explicitly is correct whatever the server's cap turns out to
- * be: a short page is the only reliable signal that the end has been reached.
+ * There is no ceiling on how many listings this directory can hold, so a single
+ * unbounded request is a matter of when it truncates rather than if. Paging
+ * explicitly is correct whatever the server's cap turns out to be.
  */
 const PAGE_SIZE = 500;
 
@@ -431,12 +430,12 @@ export async function fetchDomainCategories(
  * Exists because the header renders a trending strip on **every page** and was
  * getting it by loading the entire category manifest in the browser -- every
  * category, every listing, every membership row. That was wasteful at any size
- * and became genuinely expensive once the manifest started paging: at the
- * 10,000-listing cap it is roughly twenty requests per page view, per visitor,
- * to display a dozen names.
+ * and became genuinely expensive once the manifest started paging: on a large
+ * directory that is many requests per page view, per visitor, to display a
+ * dozen names.
  *
- * Capped rather than paged on purpose. A caller that wants a handful of names
- * should say so, and no UI wants ten thousand of them.
+ * Limited rather than paged on purpose. A caller that wants a handful of names
+ * should say so, and no UI wants the whole directory.
  */
 export async function fetchCategoryDomains(
   categoryKey: string,
