@@ -19,6 +19,7 @@ about.
 | [`testnet-mainnet-transitions.md`](./testnet-mainnet-transitions.md) | Judge how plausible "the testnet was reset" is, using real industry precedent | (context for `BUGS.md`) |
 | [`health-check-checklist.md`](./health-check-checklist.md) | Stop a monitor reporting OK when it could not actually see anything | #14 |
 | [`irreversible-action-checklist.md`](./irreversible-action-checklist.md) | Make sure every refusal is established before money moves, not after | #9, #16 |
+| [`shared-value-format-checklist.md`](./shared-value-format-checklist.md) | Stop two sides of a boundary agreeing informally about a value's shape | #17 |
 
 ## Related docs
 

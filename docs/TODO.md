@@ -10,6 +10,8 @@ points to them and holds the actively-updated loop backlog below.
   prioritised TODO
 - [`kaspadomains-systems.md`](./kaspadomains-systems.md) — the same codebase by *system*,
   each with the files it's built from
+- [`PROPOSED-STRUCTURE.md`](./PROPOSED-STRUCTURE.md) — proposed feature-sliced layout and
+  the lint rules that would enforce it (needs a decision)
 - [`BUGS.md`](./BUGS.md) — what's broken (open + a fixed-bugs changelog)
 - [`GAPS.md`](./GAPS.md) — what's missing or incomplete (features, dead code, infra)
 - [`LIFECYCLE.md`](./LIFECYCLE.md) — how a domain/fee/vote flows through the system

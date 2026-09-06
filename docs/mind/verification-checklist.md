@@ -3,7 +3,7 @@
 **Purpose**: stop a technical claim from being written down as fact before it's actually
 been checked against the real, live thing it's a claim about.
 
-Last updated: 2026-09-05
+Last updated: 2026-09-06
 
 Run this before writing down — in a doc, a comment, or a "Fixed" changelog entry — any
 claim that a piece of on-chain functionality works. Grew out of
@@ -11,6 +11,25 @@ claim that a piece of on-chain functionality works. Grew out of
 against current docs), and #10 (ABI-correct isn't chain-correct), plus the concrete
 2026-09-05 session where all three were needed together to find that 4 of 6 contracts had
 no deployed code and the other 2 failed every call with `invalid opcode: MCOPY`.
+
+## 0. Where is your list coming from?
+
+Do this before anything else. An audit is only as complete as the list it started from, and
+the natural way to explore a codebase produces the wrong list.
+
+- [ ] Write down the **source of the list** you are about to check.
+- [ ] Is it a *declaration* or a *usage*? Prefer the declaration every time: the config file,
+  the schema, `git ls-files`, the route manifest. Following imports outward from the routes
+  is a reachability analysis, not an inventory -- it can never find an entry nothing calls.
+- [ ] Check **every** entry, including the boring ones nothing seems to touch. Those are
+  exactly where stale config and dead code accumulate.
+
+**Why (2026-09-06)**: "4 of 6 contracts have no deployed code" sat in five documents for two
+days. Re-querying all eight addresses declared in `contracts.ts` gave **6 of 8** --
+`EcosystemFund` and `DemoKNS` were dead too, and had never been checked, because the original
+sweep enumerated from what the listing and voting flow calls. One of the two backs a
+475-line admin page that consequently told its own administrator "Access Denied". The same
+pass found 18 dead files, and only by enumerating `git ls-files`.
 
 ## 1. Does the function actually exist?
 

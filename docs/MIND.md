@@ -97,6 +97,8 @@ touch the codebase, you own the part of the map you moved. See
 | 14 | A check that can't see must not report OK | A monitor is most dangerous when it goes green precisely because it observed nothing |
 | 15 | A migration ends when the old paths are gone | The new store working proves nothing about the pages still reading the old one |
 | 16 | Irreversible steps go last | Once money has moved, every check you hadn't run yet is a check the user pays for |
+| 17 | One owner per shared format | Two sides agreeing informally on a format fail silently, because a wrong form still parses |
+| 18 | Enumerate from the source of record | An audit is only as complete as the list it started from, and usage is never that list |
 
 ## 1. Never trust a hardcoded value against a live contract — verify the ABI first
 
@@ -189,6 +191,19 @@ explicit, repeated "we don't sell domains" positioning elsewhere on the same sit
 what UI copy ("Buy," "Sold," "For Sale") is allowed anywhere, and what data models are
 appropriate — it's an architectural constraint, not decoration.
 
+**Extension (2026-09-06): product copy is a claim, and claims get verified.**
+`/list-domain` -- the page where someone decides to spend 200 KAS -- advertised "a dedicated
+profile with bio, links, image, and categories" and "featured in categories, search, and
+premium drops". A profile renders category, listed status, vote count and links. There is no
+bio and no image: `DomainDataStorage` is referenced only by a file nothing imports, and its
+contract fails every call. "Premium drops" appears **nowhere in the codebase**. Nobody lied;
+the copy simply outlived the plan.
+
+The rule: treat a sentence in the UI exactly like a comment claiming a function's behaviour
+-- check it against the code, especially on a page that asks for money. And note the
+compounding risk: the refund policy is an unmade decision, so a promise the product cannot
+keep is a dispute with no agreed resolution.
+
 ## 5. A plain-text grep is not a complete audit
 
 **Purpose**: a source-text search only proves the literal string isn't there — not that
@@ -218,6 +233,15 @@ been hiding in the untruncated middle of the output the whole time.
 
 **The rule**: `tail` is fine for a quick sanity check, never for a claim about totals or
 "nothing changed."
+
+**Recurrence (2026-09-06)**: I grepped `npm run build` output for
+`Compiled successfully|Failed to compile`, got a match on the first, and called it green --
+while `npx tsc --noEmit` was failing on a missing import in the file I had just edited. Next
+prints "Compiled successfully" at an **early** stage and type-checks later, so a narrow grep
+matches the optimistic line and never reaches the real one. The tail was fine; the middle
+was not. Filtering output is a way of reading less of it, which is the exact failure this
+principle names -- and knowing the principle did not stop me, because the grep *felt* like
+being rigorous.
 
 ## 7. Verify framework/library/ecosystem claims against current sources, not memory
 
@@ -376,6 +400,14 @@ the cascading-render behaviour the rule exists to prevent (see `GAPS.md`'s lint 
 zero-error lint run can mean *fixed*, *silenced*, or *quietly broken*, and only reading the
 diff tells you which.
 
+**Related instance (2026-09-06): suppressing a symptom is not fixing a cause.**
+`DomainCard` wrapped an `<a>` inside a card-wide `next/link` -- a nested anchor, which is
+invalid HTML that browsers resolve inconsistently and screen readers announce as one
+confused control. Someone had added `onClick={(e) => e.stopPropagation()}`, which made the
+*click* behave correctly and left the invalid markup exactly where it was. Same shape as the
+lint case: the visible signal went quiet, so it looked fixed. When a workaround makes a
+symptom disappear, ask what it did to the cause -- usually nothing.
+
 ## 14. A check that cannot see must report "unknown", never "OK"
 
 **Purpose**: a monitor's job is to distinguish *working* from *broken*; a monitor that
@@ -461,12 +493,76 @@ extra signature; the alternative costs the user the fee. And note what the prefl
 write time, so it can be deleted without making anything forgeable. A convenience mechanism
 that quietly becomes load-bearing is principle #12's problem waiting to happen.
 
+## 17. A value that crosses a boundary needs one owner of its format
+
+**Purpose**: when a producer and a consumer agree informally on how a value is shaped, the
+agreement is invisible to the compiler and the mismatch is invisible at runtime -- a value in
+the wrong form does not throw, it just quietly means something else.
+**Mechanic**: for any value two sides must agree on -- an identifier's canonical form, a
+number's unit, a timestamp's epoch -- put the format in **one place** and make both sides go
+through it. Where that is impossible, put the format **in the type**
+(`{ amount: bigint; unit: 'sompi' | 'wei' }`) so a mismatch is a compile error rather than a
+rendering. A comment saying "this is in sompi" is not an owner.
+
+**The incidents (both 2026-09-06, both silent, both shipped)**:
+
+- **Header search never worked.** It stripped `.kas` before looking a domain up, while
+  `normalizeDomain` on the server *always appends* `.kas` before storing. So the lookup
+  compared `"foo"` against a stored `"foo.kas"`, matched nothing, and sent the user to the
+  search page instead of the domain whose exact name they had just typed. Broken on both
+  read paths, from the first day, with no error anywhere. An equality match on the wrong
+  form does not fail -- it returns "not found", which is a perfectly plausible answer.
+- **Every domain card showed the fee off by ten orders of magnitude.** `Domain.feePaid` is
+  **sompi** when Supabase produced the record and **wei** when a contract did -- one field,
+  two units, differing by 10^10. The card printed it raw, so a 200 KAS listing rendered as
+  "20000000000 KAS". And the obvious fix reintroduced it mirrored: formatting everything as
+  sompi would have been just as wrong on the other path.
+
+**The rule**: ask "who owns this format, and does everyone go through them?" Normalisation
+belongs **inside** the lookup, not at each call site -- `lookupDomain` normalises now, so a
+caller cannot get it wrong. A unit belongs in the type, not in a comment. And when you find
+one of these, look for its mirror image: an implicit agreement is usually implicit in both
+directions.
+
+**Checklist**:
+[`mind/shared-value-format-checklist.md`](./mind/shared-value-format-checklist.md).
+
+## 18. Enumerate from the source of record, not from what the code happens to touch
+
+**Purpose**: an audit's completeness is decided entirely by where its list came from, and
+following usage produces a list missing precisely the things nothing uses yet -- which is
+where dead and stale entries live.
+**Mechanic**: before auditing anything, **write down where the list is coming from**, and
+prefer the *declaration* over the *usage*: the config file, the schema, `git ls-files`, the
+route manifest. Then check every entry, including the boring ones.
+
+**The incident (2026-09-06)**: "4 of 6 contracts have no deployed code" appeared in five
+documents for two days. Re-querying **all eight** addresses declared in `contracts.ts` with
+raw `eth_getCode` gave **6 of 8** -- `EcosystemFund` and `DemoKNS` were dead too and had
+never been checked. The original sweep enumerated from what the listing and voting flow
+calls, so it missed exactly the two entries no live code path touches. One of them backs a
+475-line admin page that consequently told its own administrator "Access Denied".
+
+The same pass produced the other half of the lesson: the **18 dead files** were only found by
+enumerating `git ls-files` and checking importers. Following imports outward from the routes
+-- the natural way to explore a codebase -- can *never* find a file that nothing imports.
+
+**The rule**: usage-based enumeration is a reachability analysis, not an inventory. It
+answers "what does the running code touch?", which is a different question from "what is
+declared?" -- and the gap between those answers is where dead code, stale config and
+unverified claims accumulate. When a count matters enough to write into a document, count
+from the declaration.
+
+**Checklist**: [`mind/verification-checklist.md`](./mind/verification-checklist.md), step 0.
+
 ## Related docs
 
 - [`mind/`](./mind/) — working checklists that turn the principles above into concrete
   steps to run (verification, fallback-auditing, shared-function changes, testnet-reset
   context), for when you're about to do the thing a principle is about, not just remember
   why it matters.
+- [`mind/shared-value-format-checklist.md`](./mind/shared-value-format-checklist.md) —
+  the runnable version of principle #17.
 - [`FILES.md`](./FILES.md) — the map: every file, its status, and the prioritised TODO.
   Keeping it current is a standing rule, not an optional courtesy — see above.
 - [`kaspadomains-systems.md`](./kaspadomains-systems.md) — the same codebase cut by

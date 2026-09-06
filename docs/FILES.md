@@ -220,8 +220,9 @@ The map had no entry for its own folder until 2026-09-06. 22 files.
 | `HISTORY.md` | Dated narrative — the *order* things were discovered in |
 | `PROJECT_PLAN.md`, `BUSINESS_PLAN.md` | Product and business framing |
 | `TODO.md` | Live backlog and doc index |
-| `MIND.md` | 16 operating principles, each from a real incident |
-| `mind/README.md` + 6 checklists | The runnable version of those principles |
+| `MIND.md` | 18 operating principles, each from a real incident |
+| `PROPOSED-STRUCTURE.md` | A feature-sliced layout for `src/`, with lint enforcement and a phased migration. **Proposal — needs a decision** |
+| `mind/README.md` + 7 checklists | The runnable version of those principles |
 | `Toccata-Dev.md` | Kaspa covenants — the intended end state |
 | `KASPA_DEVELOPMENT.md` | Ecosystem research |
 | `SECURITY_AUDIT_2026-09-05.md` | Codex's audit. 8 of 9 findings closed; SA-05 open |

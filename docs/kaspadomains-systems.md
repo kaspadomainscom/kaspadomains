@@ -378,6 +378,7 @@ without colliding.
 | `docs/ARCHITECTURE.md`, `LIFECYCLE.md`, `PROJECT_PLAN.md`, `BUSINESS_PLAN.md` | How and why |
 | `docs/HISTORY.md` | Dated narrative — the *order things were discovered in* |
 | `docs/MIND.md` + `docs/mind/**` | Operating principles and runnable checklists |
+| `docs/PROPOSED-STRUCTURE.md` | How this file's systems could become actual directories. Proposal |
 | `docs/Toccata-Dev.md`, `KASPA_DEVELOPMENT.md` | Ecosystem research and the covenant plan |
 | `docs/SECURITY_AUDIT_2026-09-05.md` | Codex's audit — 8 of 9 findings closed |
 | `AGENTS.md` | Work split, ground rules, and the message board with Codex |
