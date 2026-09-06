@@ -24,6 +24,8 @@
  * a signature now authorises one specific request and nothing else.
  */
 
+import { getKnsSignatureScope } from './kaspaDomainRuntime';
+
 export type WriteAction =
   | 'list-domain'
   | 'vote'
@@ -75,6 +77,10 @@ export function buildSignedMessage(input: {
     `domain: ${input.domain.toLowerCase()}`,
     `publicKey: ${input.publicKey.toLowerCase()}`,
     `issuedAt: ${input.issuedAt}`,
+    // Domain-separate signatures from any future KNS network migration. The
+    // current L1 covenant target is testnet-only but not active, so signed
+    // directory writes remain explicitly tied to mainnet KNS ownership.
+    getKnsSignatureScope(),
     `payload: ${input.payloadDigest}`,
   ].join('\n');
 }

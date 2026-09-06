@@ -17,5 +17,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run test:kaspa-runtime
       - run: npm run lint
       - run: npm run build

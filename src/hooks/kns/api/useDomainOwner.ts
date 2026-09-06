@@ -1,5 +1,6 @@
 // src/hooks/kns/useDomainOwner.ts
 import { useQuery } from '@tanstack/react-query';
+import { KNS_NETWORK, knsApiUrl } from '@/lib/kaspaDomainRuntime';
 
 interface OwnerResponse {
   success: boolean;
@@ -13,12 +14,12 @@ interface OwnerResponse {
 
 export function useDomainOwner(domain: string | null) {
   return useQuery<string, Error>({
-    queryKey: ['kns', 'domainOwner', domain],
+    queryKey: ['kns', KNS_NETWORK, 'domainOwner', domain],
     queryFn: async () => {
       if (!domain) throw new Error('Domain is required');
       if (!domain.toLowerCase().endsWith('.kas')) throw new Error('Invalid domain format');
 
-      const response = await fetch(`https://api.knsdomains.org/mainnet/api/v1/${domain.toLowerCase()}/owner`);
+      const response = await fetch(knsApiUrl(`${encodeURIComponent(domain.toLowerCase())}/owner`));
       if (!response.ok) {
         throw new Error(`Network response was not ok: ${response.statusText}`);
       }

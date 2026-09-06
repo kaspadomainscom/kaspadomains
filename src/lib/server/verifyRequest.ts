@@ -7,6 +7,7 @@ import {
   extractPayload,
   type WriteAction,
 } from '../signedMessage';
+import { KNS_NETWORK, knsApiUrl } from '../kaspaDomainRuntime';
 
 export { buildSignedMessage, extractPayload };
 export type { WriteAction };
@@ -105,10 +106,9 @@ export async function fetchKnsOwner(domain: string): Promise<string> {
 
   let response: Response;
   try {
-    response = await fetch(
-      `https://api.knsdomains.org/mainnet/api/v1/${encodeURIComponent(normalized)}/owner`,
-      { headers: { accept: 'application/json' } }
-    );
+    response = await fetch(knsApiUrl(`${encodeURIComponent(normalized)}/owner`), {
+      headers: { accept: 'application/json' },
+    });
   } catch (error) {
     // A KNS outage must not be treated as "nobody owns this", which would let
     // anyone list any domain the moment KNS is unreachable.
@@ -182,7 +182,7 @@ export async function verifySignedRequest(input: SignedRequest): Promise<Verifie
   let signerAddress: string;
   try {
     signatureValid = verifyMessage({ message, signature, publicKey: publicKey.trim() });
-    signerAddress = new PublicKey(publicKey.trim()).toAddress('mainnet').toString();
+    signerAddress = new PublicKey(publicKey.trim()).toAddress(KNS_NETWORK).toString();
   } catch {
     // A malformed key or signature lands here. Treat it as a failed check,
     // never as a pass.

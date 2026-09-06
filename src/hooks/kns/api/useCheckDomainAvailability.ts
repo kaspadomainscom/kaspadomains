@@ -1,5 +1,6 @@
 // src/hooks/kns/useCheckDomainAvailability.ts
 import { useMutation } from '@tanstack/react-query';
+import { knsApiUrl } from '@/lib/kaspaDomainRuntime';
 
 type DomainCheckRequest = {
   domainNames: string[];
@@ -22,7 +23,7 @@ type ApiResponse = {
 export const useCheckDomainAvailability = () => {
   return useMutation<DomainCheckResult[], Error, DomainCheckRequest>({
     mutationFn: async ({ domainNames, address }) => {
-      const res = await fetch('https://api.knsdomains.org/mainnet/api/v1/domains/check', {
+      const res = await fetch(knsApiUrl('domains/check'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { KNS_NETWORK, knsApiUrl } from '@/lib/kaspaDomainRuntime';
 
 interface VerifiedDomain {
   assetId: string;
@@ -32,11 +33,11 @@ interface UseVerifiedDomainsOptions {
 
 export function useVerifiedDomains({ owner, page = 1, pageSize = 20 }: UseVerifiedDomainsOptions) {
   return useQuery<AssetsResponse, Error>({
-    queryKey: ['kns', 'verifiedDomains', owner, page, pageSize],
+    queryKey: ['kns', KNS_NETWORK, 'verifiedDomains', owner, page, pageSize],
     queryFn: async () => {
       if (!owner) throw new Error('Owner is required');
 
-      const url = new URL('https://api.knsdomains.org/mainnet/api/v1/assets');
+      const url = knsApiUrl('assets');
       url.searchParams.set('owner', owner);
       url.searchParams.set('type', 'domain');
       url.searchParams.set('page', page.toString());

@@ -1,5 +1,6 @@
 // src/lib/server/verifyPayment.ts
 import { TREASURY_ADDRESS, isFeeCollectionConfigured, formatKas } from '../fees';
+import { kaspaTransactionUrl } from '../kaspaDomainRuntime';
 import { VerificationError } from './verifyRequest';
 
 /**
@@ -75,10 +76,9 @@ export async function verifyPayment(input: {
   try {
     // "light" resolves each input's previous outpoint address, which is what
     // lets us check who actually paid.
-    response = await fetch(
-      `https://api.kaspa.org/transactions/${txId}?resolve_previous_outpoints=light`,
-      { headers: { accept: 'application/json' } }
-    );
+    const transactionUrl = kaspaTransactionUrl(txId);
+    transactionUrl.searchParams.set('resolve_previous_outpoints', 'light');
+    response = await fetch(transactionUrl, { headers: { accept: 'application/json' } });
   } catch (error) {
     // Treat an unreachable API as "cannot confirm", never as "confirmed".
     throw new VerificationError(

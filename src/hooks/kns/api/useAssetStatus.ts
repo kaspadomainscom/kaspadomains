@@ -1,12 +1,13 @@
 // src/hooks/kns/useAssetStatus.ts
 import { useQuery } from '@tanstack/react-query';
+import { KNS_NETWORK, knsApiUrl } from '@/lib/kaspaDomainRuntime';
 
 export function useAssetStatus(domain: string | null) {
   return useQuery({
-    queryKey: ['kns', 'assetStatus', domain],
+    queryKey: ['kns', KNS_NETWORK, 'assetStatus', domain],
     queryFn: async () => {
       if (!domain) throw new Error("Domain is required");
-      const url = new URL('https://api.knsdomains.org/mainnet/api/v1/assets');
+      const url = knsApiUrl('assets');
       url.searchParams.set('asset', domain);
 
       const res = await fetch(url.toString());

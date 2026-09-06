@@ -14,6 +14,7 @@ import {
   VOTE_FEE_SOMPI,
   formatKas,
 } from '@/lib/fees';
+import { getL1CovenantStatus, resolveDirectorySource } from '@/lib/kaspaDomainRuntime';
 
 export const runtime = 'nodejs';
 // Health is worthless cached: the whole point is what is true right now.
@@ -307,6 +308,7 @@ async function checkRls(): Promise<Check> {
 
 export async function GET() {
   const checks: Check[] = [];
+  const l1Covenant = getL1CovenantStatus();
 
   checks.push({
     id: 'supabase-read',
@@ -316,6 +318,20 @@ export async function GET() {
       ? 'URL and public key are set.'
       : 'Not configured; the app is on the contract fallback.',
     action: isSupabaseConfigured ? undefined : 'Set the two NEXT_PUBLIC_SUPABASE_* variables.',
+  });
+
+  // The requested L1 direction is intentionally visible, but it is not mixed
+  // into the directory health result: there is no reviewed artifact, deployed
+  // outpoint, or broadcast path to check yet. "Warn" is more honest than both
+  // "OK" (which would invent a deployment) and "fail" (which would make a
+  // non-production prototype look like a broken current feature).
+  checks.push({
+    id: 'l1-covenant-target',
+    label: 'L1 covenant testnet target',
+    state: l1Covenant.authoritative ? 'ok' : 'warn',
+    detail: l1Covenant.authoritative
+      ? `Authoritative on ${l1Covenant.network}.`
+      : `Targeting ${l1Covenant.network}; no artifact or deployment is configured, and transaction broadcast is disabled.`,
   });
 
   checks.push({
@@ -367,7 +383,8 @@ export async function GET() {
         vote: formatKas(VOTE_FEE_SOMPI),
         treasury: isFeeCollectionConfigured ? TREASURY_ADDRESS : null,
       },
-      source: isSupabaseConfigured ? 'supabase' : 'kasplex-contracts',
+      source: resolveDirectorySource(isSupabaseConfigured),
+      l1Covenant,
       checks,
     },
     {

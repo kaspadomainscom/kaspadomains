@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test:kaspa-runtime": "node --experimental-strip-types --test src/lib/kaspaDomainRuntime.test.ts",
     "db:check": "node scripts/db-check.mjs",
     "dead:check": "node scripts/dead-code.mjs"
   },

@@ -1,5 +1,6 @@
 // src/hooks/kns/api/useOwnedDomains.ts
 import { useQuery } from '@tanstack/react-query';
+import { KNS_NETWORK, knsApiUrl } from '@/lib/kaspaDomainRuntime';
 import { DomainAsset, Pagination } from '../types';
 
 interface KNSApiResponseData {
@@ -31,7 +32,7 @@ interface UseOwnedDomainsResult {
 }
 
 const fetchOwnedDomains = async (address: string): Promise<UseOwnedDomainsResult> => {
-  const url = new URL('https://api.knsdomains.org/mainnet/api/v1/assets');
+  const url = knsApiUrl('assets');
   url.searchParams.set('owner', address);
   url.searchParams.set('type', 'domain');
   url.searchParams.set('pageSize', '100');
@@ -102,7 +103,7 @@ const fetchOwnedDomains = async (address: string): Promise<UseOwnedDomainsResult
 
 export function useOwnedDomains(address: string | null) {
   return useQuery<UseOwnedDomainsResult, Error>({
-    queryKey: ['ownedDomains', address],
+    queryKey: ['kns', KNS_NETWORK, 'ownedDomains', address],
     queryFn: () => {
       if (!address) throw new Error('No address provided');
       return fetchOwnedDomains(address);

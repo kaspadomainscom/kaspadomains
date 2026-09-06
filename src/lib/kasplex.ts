@@ -1,12 +1,10 @@
 // src/lib/kasplex.ts
+import { LEGACY_KASPLEX_TESTNET } from './kaspaDomainRuntime';
+
 export const KASPLEX_TESTNET = {
-  chainId: "0x28d84", // 167012 in hex
-  chainName: "Kasplex Testnet",
-  rpcUrls: ["https://rpc.kasplextest.xyz"],
-  nativeCurrency: {
-    name: "Kaspa",
-    symbol: "KAS",
-    decimals: 18,
-  },
-  blockExplorerUrls: ["https://frontend.kasplextest.xyz"],
+  chainId: LEGACY_KASPLEX_TESTNET.chainHexId,
+  chainName: LEGACY_KASPLEX_TESTNET.chainName,
+  rpcUrls: [LEGACY_KASPLEX_TESTNET.rpcUrl],
+  nativeCurrency: LEGACY_KASPLEX_TESTNET.nativeCurrency,
+  blockExplorerUrls: [LEGACY_KASPLEX_TESTNET.explorerUrl],
 };

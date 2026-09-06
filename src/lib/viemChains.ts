@@ -1,26 +1,22 @@
 // src/lib/viemChains.ts
 import { defineChain } from 'viem';
+import { LEGACY_KASPLEX_TESTNET } from './kaspaDomainRuntime';
 
 export const kasplexTestnet = defineChain({
-  id: 167012, // 0x28d84
-  name: 'Kasplex Testnet',
-  nativeCurrency: {
-    name: 'Kaspa',
-    symbol: 'KAS',
-    decimals: 18,
-  },
+  id: LEGACY_KASPLEX_TESTNET.chainId,
+  name: LEGACY_KASPLEX_TESTNET.chainName,
+  nativeCurrency: LEGACY_KASPLEX_TESTNET.nativeCurrency,
   rpcUrls: {
     default: {
-      http: ['https://rpc.kasplextest.xyz'],
+      http: [LEGACY_KASPLEX_TESTNET.rpcUrl],
     },
   },
   blockExplorers: {
     default: {
       name: 'Kasplex Explorer',
-      url: 'https://frontend.kasplextest.xyz',
+      url: LEGACY_KASPLEX_TESTNET.explorerUrl,
     },
   },
 });
-
 
 

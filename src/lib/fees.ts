@@ -1,4 +1,6 @@
 // src/lib/fees.ts
+import { KASPA_L1_ADDRESS_PREFIX } from './kaspaDomainRuntime';
+
 /**
  * Fee schedule, in one place so the client (which asks the wallet for the
  * payment) and the server (which verifies it) can never disagree about the
@@ -30,7 +32,7 @@ export const TREASURY_ADDRESS =
   process.env.NEXT_PUBLIC_KASPADOMAINS_TREASURY_ADDRESS?.trim() || '';
 
 /**
- * Shape check on the configured address: `kaspa:` followed by bech32 characters
+ * Shape check on the configured address: current L1 prefix followed by bech32 characters
  * (no 1, b, i or o). This cannot catch a valid-but-wrong address -- nothing
  * can, which is why the value is verified against the SDK before being set --
  * but it does stop a truncated or mangled env var from being handed to a wallet
@@ -39,7 +41,9 @@ export const TREASURY_ADDRESS =
  * Deliberately a regex rather than the Kaspa SDK: this module is imported by
  * client code, and the SDK is server-only.
  */
-const KASPA_ADDRESS_PATTERN = /^kaspa:[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{50,}$/;
+const KASPA_ADDRESS_PATTERN = new RegExp(
+  `^${KASPA_L1_ADDRESS_PREFIX}:[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{50,}$`
+);
 
 export const isTreasuryAddressValid = KASPA_ADDRESS_PATTERN.test(TREASURY_ADDRESS);
 

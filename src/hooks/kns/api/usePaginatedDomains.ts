@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { KNS_NETWORK, knsApiUrl } from '@/lib/kaspaDomainRuntime';
 
 // export interface DomainAsset {
 //   name: string;
@@ -63,7 +64,7 @@ interface UsePaginatedDomainsResult {
 const fetchPaginatedDomains = async (
   params: UsePaginatedDomainsParams
 ): Promise<UsePaginatedDomainsResult> => {
-  const url = new URL('https://api.knsdomains.org/mainnet/api/v1/assets');
+  const url = knsApiUrl('assets');
 
   const queryParams: Record<string, string> = {
     page: String(params.page ?? 1),
@@ -128,7 +129,7 @@ const fetchPaginatedDomains = async (
 
 export function usePaginatedDomains(params: UsePaginatedDomainsParams) {
   return useQuery<UsePaginatedDomainsResult, Error>({
-    queryKey: ['kns', 'paginated', params],
+    queryKey: ['kns', KNS_NETWORK, 'paginated', params],
     queryFn: () => fetchPaginatedDomains(params),
     staleTime: 60_000,
     enabled: !!params.owner,

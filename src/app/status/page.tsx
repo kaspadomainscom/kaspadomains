@@ -28,6 +28,12 @@ type Status = {
   checkedAt: string;
   fees: { listing: string; vote: string; treasury: string | null };
   source: 'supabase' | 'kasplex-contracts';
+  l1Covenant: {
+    network: 'testnet-10';
+    deployment: 'not-built';
+    broadcastEnabled: boolean;
+    authoritative: boolean;
+  };
   checks: Check[];
 };
 
@@ -198,6 +204,16 @@ export default async function StatusPage() {
               profile edits will not work in this state.
             </>
           )}
+        </p>
+      </section>
+
+      <section className="mt-8">
+        <h2 className="mb-3 text-lg font-semibold">L1 covenant testnet</h2>
+        <p className="text-sm text-gray-300">
+          KaspaDomains is preparing an L1 covenant for {status.l1Covenant.network}. It is
+          currently {status.l1Covenant.deployment.replace('-', ' ')}, is not the authority for
+          any listing, and cannot broadcast a transaction. KNS ownership and current directory
+          writes continue to use their existing mainnet-verified paths.
         </p>
       </section>
 
