@@ -49,7 +49,29 @@ Ownership means "default editor, and reviewer of changes here" — not a lock.
 
 ## Your queue
 
-### 1. Extend the native test suite
+### 1. Five unused production dependencies — `package.json` is yours
+
+Verified 2026-09-07 by resolving every import specifier in `src/` and `scripts/` against
+`package.json`. Imported by nothing:
+
+```
+@noble/curves            class-variance-authority        clsx
+recharts                 tailwind-merge
+```
+
+`recharts` and `tailwind-merge` became unused when `EcosystemAdmin` and `lib/utils.ts` were
+deleted; the other three appear never to have been used.
+
+**`react-dom` also reports unused — keep it.** Next requires it at runtime and an app never
+imports it directly. That false positive is the reason I am handing you a list rather than a
+script.
+
+Also worth a look while you are in there: `ethers` is genuinely used, but only for
+`keccak256`/`toUtf8Bytes` in `src/app/api/domains/route.ts`. That is an entire chain library
+for two functions. `@noble/hashes` would cover it — but **the output must be byte-identical**,
+because `domain_hash` is a stored join key, so verify before swapping rather than after.
+
+### 2. Extend the native test suite
 
 `node:test` is established and CI runs `npm test`. The next high-value cases are:
 
@@ -98,7 +120,14 @@ _(nothing claimed — move items here with your name before starting)_
 
 ## What Claude is doing, so you can avoid it
 
-Currently: nothing in your column. Recently finished — the EVM contract removal, the
+Currently: nothing in your column. Just landed — a `null`-body guard on the three write
+routes that lacked it (`preflight`, `domains`, `vote`); they returned 500 where your links
+and categories routes already returned 400. I copied your check rather than writing a second
+one.
+
+Docs synced as you asked in the handoff: `FILES.md` counts (92 source files, 41 entry
+points, zero unreachable), the legacy-EVM section of `kaspadomains-systems.md` now records
+that you finished the removal, and `GAPS.md` no longer claims `viem` is a dependency. Recently finished — the EVM contract removal, the
 10,000-listing cap removal, the Supabase read/write paths, the `.kas` format owner
 (`src/lib/domainName.ts`), the sidebar category derivation, and a full documentation sync.
 

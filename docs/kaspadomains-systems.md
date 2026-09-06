@@ -363,12 +363,14 @@ bugs — the sompi/wei fee, votes keyed by the wrong address, a permanently-"Una
 counter, an admin page denying its own administrator, and a connect button demanding two
 wallets. Removing it deleted 34 files. See `MIND.md` #20.
 
-Gone: `contracts.ts`, `src/abis/**`, `viemClient.ts`, `viemChains.ts` consumers,
+Gone: `contracts.ts`, `src/abis/**`, `viemClient.ts`, `viemChains.ts`, `kasplex.ts`,
 `kaswareEvm.ts`, `useKaswareEvmWallet.ts`, `EcosystemAdmin` and its components, `utils.ts`,
 and every chain-branch in the data layer and hooks.
 
-**Still on disk, unreachable, and Codex's to resolve**: `src/lib/kasplex.ts`,
-`src/lib/viemChains.ts`. `npm run dead:check` lists them.
+**Nothing of it remains.** Codex removed the last two files (`kasplex.ts`,
+`viemChains.ts`) and the `viem` dependency on 2026-09-06; `npm run dead:check` reports
+**zero** unreachable files. `LEGACY_KASPLEX_TESTNET` survives in `kaspaDomainRuntime.ts`
+because the CSP still needs the origin.
 
 The intended on-chain future is **Toccata covenants on Kaspa L1**, not a Kasplex redeploy —
 see [`Toccata-Dev.md`](./Toccata-Dev.md).

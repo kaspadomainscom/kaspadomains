@@ -4,7 +4,7 @@ Last updated: 2026-09-07
 
 Every file in the repo, what it is for, and whether it is actually doing
 anything. **Current inventory:** 93 files under `src/`, with `npm run dead:check` reporting
-89 source files, 39 entry points, and **zero unreachable files** on 2026-09-06. This map
+92 source files, 41 entry points, and **zero unreachable files** on 2026-09-06. This map
 exists because nobody could previously answer which files were live without manually tracing
 many dead EVM fallback paths.
 
@@ -180,7 +180,7 @@ hook.
 ### Reachability
 
 `npm run dead:check` is the source of record: as of 2026-09-06 it reports 89 source files,
-39 entry points, 89 reachable files and **0 unreachable files**. The stale EVM adapters and
+41 entry points, 92 reachable files and **0 unreachable files**. The stale EVM adapters and
 six unimported KNS hooks were removed rather than allowlisted.
 
 ## 8b. Documentation — `docs/`

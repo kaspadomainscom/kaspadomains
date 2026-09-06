@@ -54,7 +54,15 @@ export async function POST(request: Request) {
   };
 
   try {
-    body = await request.json();
+    const parsed: unknown = await request.json();
+    // JSON `null`, `[1,2]` and `"x"` all parse without throwing, and every field
+    // read after this assumes an object -- so without this check they produce a
+    // TypeError and a 500 on an unauthenticated request. The links and
+    // categories routes already had it; these three did not.
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return NextResponse.json({ error: 'Expected a JSON object.' }, { status: 400 });
+    }
+    body = parsed as typeof body;
   } catch {
     return NextResponse.json({ error: 'Expected a JSON body.' }, { status: 400 });
   }

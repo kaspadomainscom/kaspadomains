@@ -290,7 +290,18 @@ a grep.
       editor's dropped `linksLoading` guard, see `BUGS.md`). Two smaller deltas were left
       alone as cosmetic: `Sidebar.tsx` now clears its search box only when the toggle
       button collapses it, rather than on any collapse.
-- [ ] **`ethers` and `viem` are both still dependencies** but the EVM path is gone. `ethers` is used only for `keccak256` in the listing route; `viem` may now be unused entirely. Worth checking and dropping — two chain libraries for one hash function is a lot of dependency surface.
+- [x] ~~**`viem` is still a dependency**~~ — removed by Codex, `8060a3b`.
+- [ ] **Five production dependencies are imported by nothing.** Verified 2026-09-07 by
+      resolving every import specifier in `src/` and `scripts/` against `package.json`:
+      `@noble/curves`, `class-variance-authority`, `clsx`, `recharts` and `tailwind-merge`.
+      `recharts` and `tailwind-merge` became unused when `EcosystemAdmin` and `lib/utils.ts`
+      were deleted; the others appear never to have been used here. **`react-dom` also
+      reports unused and must be kept** — Next requires it at runtime and an app never
+      imports it directly, which is exactly the false positive that makes this kind of sweep
+      dangerous to automate.
+      `ethers` is genuinely used, but only for `keccak256`/`toUtf8Bytes` in the listing
+      route — a whole chain library for two functions, worth replacing with a hash package
+      once someone owns `package.json`. All of this is queued for Codex, who owns that file.
 - [x] ~~Confirm whether `https://supabase.com` in the CSP `connect-src` reflects
       real/planned infra or can be removed~~ — answered 2026-09-05: it was a leftover
       *and* it was the wrong host (clients call `https://<ref>.supabase.co`, never the

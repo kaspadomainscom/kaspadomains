@@ -33,6 +33,17 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
 Most recent first. Each entry names the file(s), what was actually wrong, and how it was
 verified — not just "fixed X."
 
+- **Three write routes returned 500 on a `null` request body.** `JSON.parse` accepts `null`,
+  `[1,2]`, `"a string"` and `123` without throwing, and every field read after
+  `await request.json()` assumes an object — so an unauthenticated POST of the four bytes
+  `null` produced a TypeError and a 500 with a stack trace, on `/api/domains/preflight`,
+  `/api/domains` and `/api/domains/[name]/vote`. Not exploitable, but it is unauthenticated
+  log noise that buries real errors, and a 500 where a 400 belongs. The links and categories
+  routes already had the guard, added during Codex's SA-05 work — so this was found by the
+  two routes disagreeing with the other three. Fixed by using their exact check rather than
+  inventing a second one. *Verified*: all four non-object bodies now return
+  `400 Expected a JSON object.` on all five routes.
+
 - **A valid old profile save could replay and overwrite a newer profile.** This was Codex's
   final audit finding (SA-05). Signing the exact body stopped substitution, but it still let
   a byte-identical `update-links` or `update-categories` request run during its five-minute
