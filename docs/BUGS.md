@@ -30,6 +30,25 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
 
 ## Fixed
 
+### 2026-09-07 — "My Votes" would have silently truncated a long voting history
+
+`fetchVotedDomains` selected every vote for a wallet with no `range`, so PostgREST would
+return its configured maximum and stop — no error, no marker, just a shorter list presented as
+the complete one. Its three sibling multi-row reads (`fetchAllDomains`,
+`fetchCategoryManifest`, `fetchVoteCounts`) were all already paged through `fetchAllPages`;
+this one had been missed when they were fixed, which is `MIND.md` #18 again — the fix went to
+the queries someone had noticed rather than to the enumerated list.
+
+Now paged, and ordered by `created_at` **then `id`**: paging needs a total order, and votes
+cast in the same second could otherwise swap places between page requests, duplicating one row
+and dropping another.
+
+Re-audited all twelve reads in `supabaseSource.ts` rather than stopping at the one found. Two
+are unbounded by the query and bounded by their data — `fetchListingStatuses` cannot exceed
+the names its caller passes (one KNS page, 12) and `fetchDomainCategories` cannot exceed
+`MAX_CATEGORIES`. Both now say so in place, because an implicit bound is exactly what turns
+into a silent truncation when a later caller passes something bigger.
+
 ### 2026-09-07 — An expired payment intent refused a fee that had already been paid
 
 Found by applying the tell from `MIND.md` #22 (grep server messages for "again"). The intent

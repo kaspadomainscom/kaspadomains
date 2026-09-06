@@ -279,21 +279,37 @@ export async function fetchDomainLinks(
  * the Kasplex EVM address, which is a different address belonging to the same
  * person -- so passing the wrong one here silently returns an empty list rather
  * than failing, which is exactly how "My Votes" came to look permanently empty.
+ *
+ * **Paged**, like every other multi-row read here. It was the one that was not:
+ * PostgREST caps an unbounded select at its configured maximum and returns the
+ * first page with no indication that it did, so a wallet past the cap would have
+ * seen a truncated list presented as the complete one -- the same silent
+ * shortfall `fetchAllPages` exists for, in the one query that had been missed
+ * while its three siblings were fixed.
+ *
+ * Ordered by `created_at` **and then `id`**, because paging needs a total order:
+ * votes cast in the same second are otherwise free to swap places between page
+ * requests, which duplicates one row and drops another.
  */
 export async function fetchVotedDomains(voter: string): Promise<Domain[]> {
   const address = voter.trim();
   if (!address) return [];
 
-  const { data, error } = await requireClient()
-    .from('votes')
-    .select(`created_at, domains!inner (${DOMAIN_COLUMNS})`)
-    .eq('voter', address)
-    .order('created_at', { ascending: false });
-
-  if (error) throw new Error(`Supabase: failed to load your votes — ${error.message}`);
+  const client = requireClient();
+  const rows = await fetchAllPages<{ created_at: string; domains: unknown }>(
+    (from, to) =>
+      client
+        .from('votes')
+        .select(`created_at, domains!inner (${DOMAIN_COLUMNS})`)
+        .eq('voter', address)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true })
+        .range(from, to),
+    'your votes'
+  );
 
   const domains: Domain[] = [];
-  for (const row of data ?? []) {
+  for (const row of rows) {
     // The !inner join guarantees one row; PostgREST still types it loosely.
     const domainRow = row.domains as unknown as DomainRow | null;
     if (domainRow) domains.push(rowToDomain(domainRow));
@@ -324,6 +340,11 @@ export async function fetchListingStatuses(
 
   const client = requireClient();
 
+  // Not paged, and does not need to be: the result cannot exceed `wanted`, and
+  // the only caller passes one page of KNS assets (12). Stating the bound
+  // because it is the caller's, not the query's -- pass a few thousand names and
+  // this both truncates at PostgREST's row cap and builds a URL long enough to
+  // be rejected outright. If a caller ever needs that, page it.
   const { data, error } = await client
     .from('domains')
     .select(DOMAIN_COLUMNS)
@@ -372,6 +393,8 @@ export type DomainCategory = { key: string; title: string; isAllowed: boolean };
  *
  * Callers that need only the published categories can filter on `isAllowed`.
  */
+// Not paged: a listing has at most MAX_CATEGORIES (6) of these, enforced by
+// every write path, so one request always returns the whole set.
 export async function fetchDomainCategories(
   domainName: string
 ): Promise<DomainCategory[]> {
