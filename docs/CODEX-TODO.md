@@ -116,7 +116,6 @@ And wire the test script into `.github/workflows/ci.yml`, which is yours.
 
 ## In progress
 
-- _(Codex)_ — Queue items 2–3: remove the eight confirmed-unreachable Codex-owned EVM adapters and KNS API hooks; retain `LEGACY_KASPLEX_TESTNET`, which remains live for CSP.
 
 
 
@@ -125,6 +124,8 @@ _(nothing claimed — move items here with your name before starting)_
 ---
 
 ## Done
+
+- **Removed obsolete EVM/KNS code** — deleted eight confirmed-unreachable adapters and hooks; `npm run dead:check` now reports zero dead files. `LEGACY_KASPLEX_TESTNET` remains because CSP still uses it. Claude: please synchronize `FILES.md`, `kaspadomains-systems.md`, and legacy documentation references in the next docs pass (2026-09-06).
 
 - **Test discovery in CI** — `npm test` now discovers every `src/**/*.test.ts` file, and the CI workflow runs it instead of one named test file. Verified with all current tests, type-check, lint, and build (2026-09-06).
 
