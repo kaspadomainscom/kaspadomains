@@ -1,6 +1,6 @@
 # TODO / Backlog
 
-Last updated: 2026-09-06
+Last updated: 2026-09-07
 
 This file is now a **live scratchpad and index**, not the full record. The detailed,
 organized content that used to live here has moved into focused files — this file just
@@ -43,7 +43,7 @@ in-progress notes only.
 
 ## Continuous audit loop — backlog for next iterations
 
-A recurring local loop (`/loop 8m`, job `2e58e210`) is running audit-and-fix passes across
+A recurring local loop (`/loop 10m`, job `9a9a1656`) is running audit-and-fix passes across
 UI/UX, content, SEO, and missing-page gaps, recording completed work in `BUGS.md`/`GAPS.md`
 as it goes. Checked so far: homepage + trending data, `/domains`, `/domains/top-voted`,
 `/search`, `DomainCard`, OG/Twitter metadata, robots.txt, marketplace-language across the
@@ -124,12 +124,14 @@ and [`BUGS.md`](./BUGS.md):
 - [ ] **Dependency majors, deliberately not taken** (2026-09-06). In-range updates applied
       (React 19.2.8, viem 2.56.3, Tailwind 4.3.3, ethers 6.17, TypeScript 5.9.3), 0
       vulnerabilities. Left alone because each is a breaking jump needing its own pass:
-      **eslint 10**, **TypeScript 7**, **@noble/curves 2**, **lucide-react 1**,
-      **@types/node 26**.
-- [ ] **SA-05: one-time nonce and a profile revision.** Bites hardest on `update-links`,
-      which delete-and-reinserts, so replaying an older captured request rolls a newer
-      profile back. Needs a table, an issuing endpoint, and a decision on how long an
-      unspent nonce lives.
+      **eslint 10**, **TypeScript 7**, **lucide-react 1**, **@types/node 26**. (**@noble/curves 2**
+      was on this list; the package is unused and is queued for removal in
+      [`CODEX-TODO.md`](./CODEX-TODO.md) item 1, so it needs deleting rather than upgrading.
+      `viem` is already gone.)
+- [x] **SA-05: one-time nonce and a profile revision** — closed by Codex in `548e764`.
+      `/api/domains/[name]/write-nonce` issues the nonce, `lib/profileWrite.ts` owns the
+      revision, and the SQL functions raise `KD006`/`KD007` for a spent nonce and a stale
+      revision. See `MIND.md` #21 for why both were needed rather than either alone.
 - [ ] **L1 covenants as the source of truth** (decided in principle 2026-09-05, not
       started). Listings move to a Toccata covenant family; Postgres stays as a rebuildable
       index rather than the truth; votes stay off-chain until Based Apps ship. Resolve the
@@ -158,14 +160,16 @@ and [`BUGS.md`](./BUGS.md):
 - [ ] Internal linking + breadcrumbs on domain profile pages (`/domain/[name]`) — has a
       Home/Domains breadcrumb; worth checking whether it should also link to the domain's
       category.
-- [ ] Mobile check remaining pages: `/domain/update/[name]`, `EcosystemAdmin`,
-      `/domains/my-domains`, and the four new ones (`/status`, `/about`, `/terms`,
-      `/privacy`).
+- [ ] Mobile check remaining pages: `/domain/update/[name]`, `/domains/my-domains`, and
+      the four newer ones (`/status`, `/about`, `/terms`, `/privacy`). (`EcosystemAdmin`
+      was on this list and no longer exists — deleted with the EVM removal on 2026-09-06.)
 - [ ] Competitor/search-intent research for Kaspa/KNS domain discovery sites — not started.
 - [ ] Re-grep periodically for marketplace-adjacent language using entity-aware patterns.
 - [ ] Core Web Vitals — `next.config.ts` sets `images.unoptimized: true`; worth a decision.
-- [ ] Spot-check remaining contract-call sites against `SPEC.md` (the voting bug means
-      nothing gets a pass just because it's not "likes"-named).
+- [x] ~~Spot-check remaining contract-call sites against `SPEC.md`~~ — moot since
+      2026-09-06: there are no contract-call sites left. `contracts.ts`, `src/abis/**`,
+      `viemClient.ts` and the Kasplex hooks were all removed, and `viem` is no longer a
+      dependency. `SPEC.md` is kept as the record of what those addresses were.
 
 ## Process note
 
