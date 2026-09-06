@@ -424,3 +424,39 @@ export async function fetchDomainCategories(
       isAllowed: row.categories!.is_allowed,
     }));
 }
+
+/**
+ * The domains in one category, newest first, capped.
+ *
+ * Exists because the header renders a trending strip on **every page** and was
+ * getting it by loading the entire category manifest in the browser -- every
+ * category, every listing, every membership row. That was wasteful at any size
+ * and became genuinely expensive once the manifest started paging: at the
+ * 10,000-listing cap it is roughly twenty requests per page view, per visitor,
+ * to display a dozen names.
+ *
+ * Capped rather than paged on purpose. A caller that wants a handful of names
+ * should say so, and no UI wants ten thousand of them.
+ */
+export async function fetchCategoryDomains(
+  categoryKey: string,
+  limit: number
+): Promise<Domain[]> {
+  const { data, error } = await requireClient()
+    .from('domain_categories')
+    .select(`domains!inner (${DOMAIN_COLUMNS})`)
+    .eq('category_key', categoryKey)
+    .order('domain_id', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`Supabase: failed to load "${categoryKey}" — ${error.message}`);
+  }
+
+  const domains: Domain[] = [];
+  for (const row of data ?? []) {
+    const domainRow = row.domains as unknown as DomainRow | null;
+    if (domainRow?.is_active) domains.push(rowToDomain(domainRow));
+  }
+  return domains;
+}

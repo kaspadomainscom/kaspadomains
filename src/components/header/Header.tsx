@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import KaspaDomainsLogo from '../KaspaDomainsLogo';
-import { findDomainByName } from '@/data/domainLookup';
-import { loadCategoriesManifest, type CategoryManifest } from '@/data/categoriesManifest';
+import { findDomainByName, normalizeDomainName } from '@/data/domainLookup';
+import { useTrendingDomains } from '@/hooks/domains/useTrendingDomains';
 import { useWalletContext } from '@/context/WalletContext';
 import TrendingDomainsComponent from './trendingDomains';
 
@@ -213,20 +213,10 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const [categoriesData, setCategoriesData] = useState<CategoryManifest | null>(null);
-
-  useEffect(() => {
-    loadCategoriesManifest()
-      .then(setCategoriesData)
-      .catch(err => {
-        console.error('Failed to load categories manifest', err);
-      });
-  }, []);
-
-  const trendingDomains = useMemo(() => {
-    if (!categoriesData?.trending) return [];
-    return categoriesData.trending.domains.map(d => d.name.replace(/\.kas$/i, ''));
-  }, [categoriesData]);
+  // One targeted query. This used to load the entire category manifest -- every
+  // category, every listing, every membership row -- on every page view, to
+  // display a dozen names.
+  const trendingDomains = useTrendingDomains();
 
   const isPathActive = useCallback(
     (href: string) => pathname === href || (href !== '/' && pathname.startsWith(href)),
@@ -235,16 +225,24 @@ export default function Header() {
 
   const handleSearch = useCallback(
     async (raw: string) => {
-      let term = raw.trim().toLowerCase();
-      if (!term) return;
-      if (term.endsWith('.kas')) term = term.slice(0, -4);
+      const canonical = normalizeDomainName(raw);
+      if (!canonical) return;
 
-      const exists = await findDomainByName(term);
-      router.push(
-        exists ? `/domain/${encodeURIComponent(term)}` : `/search?q=${encodeURIComponent(term)}`
-      );
+      // Clear the box and close the menu straight away, before awaiting the
+      // lookup. Doing it afterwards left the typed term sitting in the input
+      // for the whole round trip, so a second Enter re-ran the same search.
       setSearchTerm('');
       setMenuOpen(false);
+
+      // Push the canonical name. Pushing the bare term made the profile page
+      // immediately redirect to add `.kas`, which is a wasted navigation and
+      // leaves the un-suffixed URL in history.
+      const exists = await findDomainByName(canonical);
+      router.push(
+        exists
+          ? `/domain/${encodeURIComponent(canonical)}`
+          : `/search?q=${encodeURIComponent(canonical.replace(/\.kas$/, ''))}`
+      );
     },
     [router]
   );

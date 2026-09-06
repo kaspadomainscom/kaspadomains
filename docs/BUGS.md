@@ -130,6 +130,31 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **Header search never jumped to a domain, because it looked up the wrong name.**
+  `handleSearch` stripped the `.kas` suffix before calling `findDomainByName` — but
+  `normalizeDomain` on the server *always appends* `.kas`, so `domains.name` is stored with
+  it. The lookup compared `"foo"` against a stored `"foo.kas"`, matched nothing, and sent
+  the user to `/search` instead of the domain whose exact name they had just typed. Broken
+  on the chain path too, for the same reason. No error, no warning — a feature that had
+  simply never worked. Fixed by normalising **inside** `lookupDomain` rather than at the
+  call site, to the same rule the server stores by, with a comment on each pointing at the
+  other. Also stops pushing the un-suffixed URL, which made the profile page immediately
+  redirect, and clears the search box before the round trip rather than after — it used to
+  sit there long enough that a second Enter re-ran the same search.
+- **The header loaded the entire category manifest on every page view.** Every category,
+  every listing, every membership row, client-side, to render a dozen trending names — and
+  the paging fix above made it worse, turning one oversized request into roughly twenty at
+  the 10,000-listing cap, per visitor, per page. Replaced with `fetchCategoryDomains`, one
+  targeted query with a limit. Failure stays silent by design: the strip is decoration, and
+  a header that shouts about a database problem on every page is worse than one that shows
+  nothing — `/status` is where that belongs.
+- **My own build check was reading the wrong part of the output.** While fixing the above I
+  grepped `npm run build` for `Compiled successfully|Failed to compile` and got a pass —
+  while `tsc --noEmit` was failing on a missing import in the same file. The build prints
+  "Compiled successfully" at an early stage and type-checks later, so the narrow grep
+  matched the optimistic line and missed the real one. Exactly `MIND.md` #6, self-inflicted.
+  Build output is now read in full, and `tsc --noEmit` is treated as the type gate rather
+  than a formality.
 - **Every "load all domains" read was capped by the server and truncated without an
   error.** `fetchAllDomains`, `fetchCategoryManifest` and `fetchVoteCounts` each issued one
   unbounded `select`. PostgREST caps the rows a single request may return, and a query that

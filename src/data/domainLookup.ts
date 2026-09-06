@@ -4,6 +4,21 @@ import { fetchAllDomains, fetchDomainByName, fetchDomainCategories } from "./sup
 import type { Domain } from "./types";
 
 /**
+ * The canonical form of a domain name: lowercase, trimmed, always ending
+ * `.kas`.
+ *
+ * Must match `normalizeDomain` in `src/lib/server/verifyRequest.ts`, which is
+ * what decides the form actually stored in the database. If the two drift,
+ * lookups fail silently -- an equality match on the wrong form returns nothing,
+ * which is indistinguishable from "not listed".
+ */
+export function normalizeDomainName(name: string): string {
+  const trimmed = name.trim().toLowerCase();
+  if (!trimmed) return trimmed;
+  return trimmed.endsWith(".kas") ? trimmed : `${trimmed}.kas`;
+}
+
+/**
  * The three possible answers to "is this domain listed?".
  *
  * Three, not two. "Not listed" and "we could not check" look identical to a
@@ -26,7 +41,16 @@ export type DomainLookup =
  */
 export async function lookupDomain(name: string): Promise<DomainLookup> {
   if (!name) return { status: "not-listed" };
-  const searchName = name.toLowerCase();
+
+  // Normalised here rather than at each call site, and to the same rule the
+  // server uses when it stores a name (`normalizeDomain` in verifyRequest.ts):
+  // always with the `.kas` suffix.
+  //
+  // Getting this wrong is silent. The header stripped `.kas` before calling,
+  // so every lookup compared "foo" against a stored "foo.kas", matched nothing,
+  // and quietly sent the user to the search page instead of the domain they had
+  // just typed the exact name of. No error, just a feature that never worked.
+  const searchName = normalizeDomainName(name);
 
   // Indexed single-row lookup when the database is the source of truth,
   // instead of loading every category to scan for one name.
@@ -104,7 +128,7 @@ export async function getAllDomains(): Promise<Domain[]> {
  */
 export async function findDomainCategoryTitle(name: string): Promise<string | undefined> {
   if (!name) return undefined;
-  const searchName = name.toLowerCase();
+  const searchName = normalizeDomainName(name);
 
   if (isSupabaseConfigured) {
     try {
