@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import KaspaDomainsLogo from '../KaspaDomainsLogo';
 import { findDomainByName, normalizeDomainName } from '@/data/domainLookup';
 import { useTrendingDomains } from '@/hooks/domains/useTrendingDomains';
+import { isSupabaseConfigured } from '@/lib/supabase';
 import { useWalletContext } from '@/context/WalletContext';
 import TrendingDomainsComponent from './trendingDomains';
 
@@ -25,17 +26,36 @@ function ConnectButton() {
     [kasware.account]
   );
 
-  const isConnected = !!kasware.account && !!kasplex.account;
+  // "Connected" means connected *for what this deployment actually needs*.
+  //
+  // This used to require both accounts. Since listings moved to Supabase the
+  // Kaspa L1 wallet is the only one that matters -- it holds the key that owns
+  // the domain and signs every write -- so a user who connected Kasware and
+  // then declined or failed the second, EVM prompt saw a button still reading
+  // "Connect Kasware" and no Logout, while being perfectly able to list and
+  // vote. The app looked broken to exactly the users it now serves.
+  const isConnected = isSupabaseConfigured
+    ? !!kasware.account
+    : !!kasware.account && !!kasplex.account;
 
   // One wallet, two capabilities: the Kaspa L1 address (KNS ownership) and the
-  // Kasplex EVM signer both come from Kasware, so a single click connects both.
+  // Kasplex EVM signer both come from Kasware.
   const handleConnect = async () => {
     try {
       setConnectError(null);
       setConnecting(true);
       if (!kasware.account) await kasware.connect();
-      if (!kasplex.account) await kasplex.connect();
-      setActiveWalletType('kasplex');
+
+      // The EVM signer is only used on the contract fallback path. Asking for
+      // it when the database is the store is a second wallet prompt for a
+      // capability nothing will use.
+      if (!isSupabaseConfigured && !kasplex.account) await kasplex.connect();
+
+      // The active wallet must be the one the app actually reads. Setting this
+      // to 'kasplex' on the database path pointed `activeAccount`,
+      // `activeStatus` and `activeError` at the wrong identity -- and made the
+      // next page load try to reconnect the wallet nothing needs.
+      setActiveWalletType(isSupabaseConfigured ? 'kasware' : 'kasplex');
     } catch (error) {
       console.error('Failed to connect Kasware:', error);
       setConnectError(
@@ -72,9 +92,12 @@ function ConnectButton() {
       )}
 
       {/* Errors */}
-      {(connectError || activeError || kasware.error || kasplex.error) && (
+      {/* Don't surface an EVM error on a deployment that never uses the EVM
+          signer -- it is noise the user can do nothing about. */}
+      {(connectError || activeError || kasware.error || (!isSupabaseConfigured && kasplex.error)) && (
         <p className="text-red-500 text-xs mt-1">
-          {connectError || activeError || kasware.error || kasplex.error}
+          {connectError || activeError || kasware.error ||
+            (!isSupabaseConfigured ? kasplex.error : null)}
         </p>
       )}
     </div>

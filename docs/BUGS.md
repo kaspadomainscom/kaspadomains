@@ -137,6 +137,31 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **The connect button said "Connect Kasware" to users who were connected.** `isConnected`
+  required **both** wallets. Since listings moved to Supabase only the Kaspa L1 wallet
+  matters — it holds the key that owns the domain and signs every write — so anyone who
+  connected Kasware and then declined or failed the second, EVM prompt saw a button still
+  offering to connect, and no Logout, while being perfectly able to list and vote. The app
+  looked broken to exactly the users it now serves. Three related fixes in the same place:
+  the EVM signer is no longer requested at all when the database is the store (it was a
+  second wallet prompt for a capability nothing would use); `setActiveWalletType` no longer
+  points `activeAccount`/`activeStatus`/`activeError` at the wallet the app does not read;
+  and an EVM connection error is no longer surfaced on a deployment that never uses the EVM
+  signer.
+- **The categories index rendered an outage as "No categories available right now."** The
+  `catch` fell back to `{}`, which is indistinguishable from a genuinely empty catalogue —
+  on a site whose entire navigation is categories. The manifest stopped fabricating fallback
+  data specifically so callers could tell these apart, and this caller collapsed them again.
+  Now three outcomes, with the failure saying plainly that it is a problem on our side.
+  *Verified* against the live project with the schema unapplied: the page renders the
+  failure state, not the empty one.
+- **`VotingSection` had principle #17 live in a single variable.** `effectiveFeeWei` held
+  **sompi** on the database path and **wei** on the contract path — 8 decimals versus 18, in
+  a variable whose name asserts one of them. It happened to be formatted correctly because
+  every read branched on the source, but the next person to compare or format it had no way
+  to know which they had. Split: `voteFeeWei` is strictly wei and only read on the contract
+  path, the database amount comes from `VOTE_FEE_SOMPI` directly, and the "is it loaded"
+  guard is now its own boolean. Also removed a stale comment claiming votes are free.
 - **Every domain card showed the fee off by ten orders of magnitude.**
   `Fee Paid: {domain.feePaid} KAS` printed the stored value raw — but `fee_paid` holds
   **sompi**, so a 200 KAS listing displayed as **"20000000000 KAS"** on every browse page,

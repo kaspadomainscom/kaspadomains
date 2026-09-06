@@ -9,15 +9,18 @@ export const metadata: Metadata = {
 };
 
 export default async function DomainCategoriesPage() {
-  // Load categories manifest dynamically (async). Degrades to the existing
-  // "No categories available right now" empty state on failure rather than
-  // crashing -- this manifest no longer fabricates fallback data on error,
-  // so every caller needs its own honest degraded state (see docs/BUGS.md).
-  let categoriesData: CategoryManifest = {};
+  // Three outcomes, not two. Falling back to `{}` on failure meant an outage
+  // rendered as "No categories available right now." -- a confident statement
+  // that there are none, on a site whose entire navigation is categories. The
+  // manifest stopped fabricating data on error precisely so callers could tell
+  // these apart; collapsing them here threw that away again. See docs/MIND.md #2.
+  let categoriesData: CategoryManifest | null = null;
+  let loadFailed = false;
   try {
     categoriesData = await loadCategoriesManifest();
   } catch (error) {
     console.error("Failed to load categories manifest:", error);
+    loadFailed = true;
   }
 
   return (
@@ -35,7 +38,15 @@ export default async function DomainCategoriesPage() {
           Explore premium KNS domains by curated categories like finance, gaming, memes, and more.
         </p>
 
-        {Object.keys(categoriesData).length === 0 ? (
+        {loadFailed || !categoriesData ? (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-6 text-amber-200">
+            <p className="font-medium">We couldn&apos;t load the categories.</p>
+            <p className="mt-1 text-sm text-amber-200/80">
+              This is a problem on our side, not an empty catalogue — please try again in a
+              few moments.
+            </p>
+          </div>
+        ) : Object.keys(categoriesData).length === 0 ? (
           <p className="text-gray-400">No categories available right now.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">

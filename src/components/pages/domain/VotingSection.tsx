@@ -216,7 +216,7 @@ export function VotingSection({ domainName }: { domainName: string }) {
             alert("Voting is temporarily unavailable. Please try again later.");
             return;
         }
-        if (effectiveFeeWei === null) {
+        if (feeNotLoaded) {
             alert("Vote fee not loaded yet, please try again in a moment.");
             return;
         }
@@ -261,7 +261,8 @@ export function VotingSection({ domainName }: { domainName: string }) {
             if (!contract) return;
 
             const tx = await contract.voteDomainByHash(domainHash, {
-                value: effectiveFeeWei,
+                // Chain path only, so this is genuinely wei.
+                value: voteFeeWei,
             });
             await tx.wait();
 
@@ -284,15 +285,23 @@ export function VotingSection({ domainName }: { domainName: string }) {
         ? kasware.status === "connected" && !!account
         : kasplex.status === "connected" && !!account;
 
-    // Derived, not stored: with the database as the store there is no contract
-    // to be unavailable and no fee to fetch -- votes are free (see docs/GAPS.md).
-    const effectiveFeeWei = isSupabaseConfigured ? VOTE_FEE_SOMPI : voteFeeWei;
+    // Deliberately NOT one `effectiveFeeWei` variable holding both.
+    //
+    // It used to be, and the two paths do not share a unit: the database path
+    // charges 1 KAS as **sompi** (8 decimals) and the contract path reads a fee
+    // in **wei** (18). A single variable named `...Wei` holding sompi half the
+    // time is principle #17 waiting to bite -- the next person to format or
+    // compare it has no way to know which they have.
+    //
+    // `voteFeeWei` stays strictly wei and is only ever read on the contract
+    // path; the database amount comes from `VOTE_FEE_SOMPI` directly.
+    const feeNotLoaded = !isSupabaseConfigured && voteFeeWei === null;
     const votingUnavailable = isSupabaseConfigured ? false : contractUnavailable;
 
     const voteFeeLabel = isSupabaseConfigured
         ? formatKas(VOTE_FEE_SOMPI)
-        : effectiveFeeWei !== null
-            ? `${formatEther(effectiveFeeWei)} KAS`
+        : voteFeeWei !== null
+            ? `${formatEther(voteFeeWei)} KAS`
             : "…";
 
     return (
