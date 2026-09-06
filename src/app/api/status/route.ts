@@ -26,8 +26,8 @@ export const dynamic = 'force-dynamic';
  * Every failure this reports has, at some point, been invisible: the schema not
  * run, a secret key that was really a database password, a treasury address left
  * unset. Each of those degrades the app into a *quieter* version of itself
- * rather than a broken one -- listings fall back to contracts with no deployed
- * code, or writes answer 503 -- so nothing surfaces until someone loses money or
+ * rather than a broken one -- listings cannot load at all, or writes answer 503 --
+ * so nothing surfaces until someone loses money or
  * gives up.
  *
  * Deliberately public and deliberately thin on detail. It reports whether a
@@ -214,7 +214,7 @@ async function checkPublicRead(): Promise<Check> {
       id: 'read',
       label: 'Public reads',
       state: 'fail',
-      detail: 'Supabase is not configured, so listings fall back to the contracts.',
+      detail: 'Supabase is not configured, so the site cannot serve listings.',
       action: 'Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.',
     };
   }
@@ -316,7 +316,7 @@ export async function GET() {
     state: isSupabaseConfigured ? 'ok' : 'fail',
     detail: isSupabaseConfigured
       ? 'URL and public key are set.'
-      : 'Not configured; the app is on the contract fallback.',
+      : 'Not configured; the site cannot serve listings.',
     action: isSupabaseConfigured ? undefined : 'Set the two NEXT_PUBLIC_SUPABASE_* variables.',
   });
 

@@ -13,7 +13,7 @@
  * the network that proves ownership or receives a real payment.
  */
 
-export type DirectorySource = 'supabase' | 'kasplex-contracts';
+export type DirectorySource = 'supabase' | 'unavailable';
 export type KaspaL1Network = 'mainnet' | 'testnet-10';
 export type L1CovenantDeployment = 'not-built';
 
@@ -78,7 +78,7 @@ export function getKnsSignatureScope(): string {
  * it must not be smuggled into the old Supabase boolean.
  */
 export function resolveDirectorySource(isSupabaseConfigured: boolean): DirectorySource {
-  return isSupabaseConfigured ? 'supabase' : 'kasplex-contracts';
+  return isSupabaseConfigured ? 'supabase' : 'unavailable';
 }
 
 function pathAt(baseUrl: string, path: string): URL {

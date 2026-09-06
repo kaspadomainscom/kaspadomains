@@ -27,7 +27,7 @@ type Status = {
   status: 'ok' | 'degraded' | 'down';
   checkedAt: string;
   fees: { listing: string; vote: string; treasury: string | null };
-  source: 'supabase' | 'kasplex-contracts';
+  source: 'supabase' | 'unavailable';
   l1Covenant: {
     network: 'testnet-10';
     deployment: 'not-built';
@@ -82,8 +82,8 @@ const HEADLINE: Record<Status['status'], { title: string; blurb: string; tone: s
  * Every problem it reports has, at some point in this project's life, been
  * silent: the schema never applied, a database password pasted in where a
  * secret key belonged, a treasury address left blank. None of those produce a
- * crash -- the app quietly falls back to contracts that have no deployed code,
- * or answers 503 to every write -- so nothing surfaces until a user loses money
+ * crash -- the app cannot serve listings, or answers 503 to every write -- so
+ * nothing surfaces until a user loses money
  * or gives up. This makes them visible without needing terminal access.
  */
 export default async function StatusPage() {
@@ -199,9 +199,9 @@ export default async function StatusPage() {
             </>
           ) : (
             <>
-              The database is not configured, so the site is falling back to the Kasplex
-              contracts. Several of those have no deployed code, so listing, voting and
-              profile edits will not work in this state.
+              The database is not configured, so the site cannot serve listings, votes,
+              categories, or profile data. Configure Supabase to make directory features
+              available.
             </>
           )}
         </p>

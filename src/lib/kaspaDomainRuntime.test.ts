@@ -44,12 +44,12 @@ test('keeps the testnet covenant target separate from current mainnet authority'
   assert.notEqual(runtime.LEGACY_KASPLEX_TESTNET?.chainName, covenant?.network);
 });
 
-test('keeps the covenant unavailable even when the directory database is configured', () => {
-  // Defect this protects: using Supabase configuration as evidence that an L1
-  // covenant exists or is ready to receive/broadcast a transaction.
+test('reports no directory source when the database is unconfigured', () => {
+  // Defect this protects: describing a removed Kasplex contract path as a
+  // fallback, which makes a deployment without Supabase look usable.
   assert.equal(runtime.isL1CovenantOperational?.(), false);
   assert.equal(runtime.resolveDirectorySource?.(true), 'supabase');
-  assert.equal(runtime.resolveDirectorySource?.(false), 'kasplex-contracts');
+  assert.equal(runtime.resolveDirectorySource?.(false), 'unavailable');
 });
 
 test('exports the current KNS network as a signed-request scope', () => {
