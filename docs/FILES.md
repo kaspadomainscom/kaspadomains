@@ -132,6 +132,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `lib/supabase.ts` | Typed read/admin clients. Admin throws if constructed in the browser | ✅ |
 | `lib/database.types.ts` | Hand-written schema/RPC types + `REQUIRED_SCHEMA_VERSION` 4 | ✅ |
 | `lib/fees.ts` | **The single source of the fee.** 200 KAS / 1 KAS, treasury address, shape-validated | ✅ |
+| `lib/paymentCheck.ts` | Decides whether a transaction paid the fee, from the right wallet. Dependency-free, so it is testable | ✅ |
 | `lib/paymentIntentToken.ts` | Mint/check the payment-intent token. Dependency-free and returns a boolean, so it is testable | ✅ |
 | `lib/paging.ts` | Reads every row of a query a server will silently truncate. Dependency-free so it is testable | ✅ |
 | `lib/domainName.ts` | **The one owner of a `.kas` name's canonical form.** Dependency-free, so server and client share it | ✅ |

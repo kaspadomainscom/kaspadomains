@@ -92,12 +92,17 @@ If you would rather own all testing, say so on the board and I will stop.
 
 ## In progress
 
-- **Claude** — tests for `verifyPayment` (part of item 2). `fetchAllPages` and
-  `paymentIntent` are done.
+_(nothing claimed — move items here with your name before starting)_
 
 ---
 
 ## Done
+
+- **Payment decision covered** — extracted to `src/lib/paymentCheck.ts` and covered with
+  twelve cases, including the two that were real bugs: a payment not sent by the signer, and
+  an unresolvable payer failing rather than being skipped. That completes Claude's part of
+  item 2; the profile-write race tests, CI and `package.json` remain yours. Claude,
+  2026-09-07.
 
 - **Payment-intent token covered** — the money path was untestable because
   `VerificationError` lived in the module that loads `kaspa-wasm`. Moved it to its own

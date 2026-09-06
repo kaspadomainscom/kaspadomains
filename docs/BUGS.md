@@ -33,6 +33,21 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
 Most recent first. Each entry names the file(s), what was actually wrong, and how it was
 verified — not just "fixed X."
 
+- **The check that decides whether someone actually paid had no test either.** Same cause as
+  the intent token: `verifyPayment` fetches from the Kaspa API, throws HTTP-shaped errors,
+  and imports through paths the runner cannot resolve — so the *decision*, which is pure and
+  is the part that matters, was uncoverable. Extracted to `src/lib/paymentCheck.ts` (no
+  imports), returning a verdict; `verifyPayment` now owns the fetching and the status
+  mapping. Twelve cases, including the two that were real bugs: **a payment not sent by the
+  signer is refused** (SA-02 — without it a public txid is a bearer coupon, and because
+  receipts are single-use, spending someone else's *consumes their payment*), and **an
+  unresolvable payer fails rather than being skipped**, tested across all four shapes the
+  API can return it in. Also pinned: outputs to a lookalike address contribute nothing,
+  multiple treasury outputs sum, overpayment is accepted rather than refused, one sompi short
+  is refused, a malformed amount can only lower the total and never raise it, and an empty
+  transaction is refused rather than treated as paid. One implementation of the comparison
+  exists in the tree.
+
 - **The money path could not be tested, because of where a four-line class sat.**
   `paymentIntent` and `verifyPayment` both imported `VerificationError` from
   `verifyRequest.ts`, which loads `kaspa-wasm` at module scope — so importing the error

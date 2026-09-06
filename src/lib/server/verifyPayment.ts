@@ -2,6 +2,7 @@
 import { TREASURY_ADDRESS, isFeeCollectionConfigured, formatKas } from '../fees';
 import { kaspaTransactionUrl } from '../kaspaDomainRuntime';
 import { VerificationError } from './verificationError';
+import { checkPayment, type PaymentTransaction } from '../paymentCheck';
 
 /**
  * Confirm that a Kaspa L1 transaction actually paid the fee.
@@ -27,17 +28,6 @@ import { VerificationError } from './verificationError';
  *   nothing the moment an env var went missing.
  */
 
-type KaspaTransaction = {
-  transaction_id?: string;
-  is_accepted?: boolean;
-  inputs?: {
-    previous_outpoint_address?: string | null;
-  }[];
-  outputs?: {
-    amount?: number | string;
-    script_public_key_address?: string;
-  }[];
-};
 
 export type VerifiedPayment = {
   txId: string;
@@ -100,57 +90,48 @@ export async function verifyPayment(input: {
     );
   }
 
-  const tx = (await response.json()) as KaspaTransaction;
+  const tx = (await response.json()) as PaymentTransaction;
 
-  if (tx.is_accepted !== true) {
-    throw new VerificationError(
-      'That payment has not been accepted by the network yet. Wait for confirmation and try again.',
-      409
-    );
-  }
+  // The decision itself lives in `@/lib/paymentCheck`, which imports nothing, so
+  // it can be tested. This function owns the fetching and the HTTP mapping; that
+  // one owns "did this transaction actually pay us, from the right wallet".
+  const verdict = checkPayment({
+    tx,
+    treasury: TREASURY_ADDRESS,
+    requiredSompi: input.requiredSompi,
+    payerAddress: input.payerAddress,
+  });
 
-  // Who paid? At least one input must be funded by the signer's own address.
-  // Kaspa transactions can have several inputs, and a wallet may pull from more
-  // than one UTXO, so this is "any input belongs to them" rather than "all".
-  const payer = input.payerAddress.trim().toLowerCase();
-  const inputAddresses = (tx.inputs ?? [])
-    .map((i) => (i.previous_outpoint_address ?? '').trim().toLowerCase())
-    .filter(Boolean);
-
-  if (inputAddresses.length === 0) {
-    // The API could not resolve the payer. Refuse rather than skip the check --
-    // an unresolvable payer is exactly the case an attacker would want.
-    throw new VerificationError(
-      'Could not determine who paid that transaction; try again shortly.',
-      503
-    );
-  }
-
-  if (!inputAddresses.includes(payer)) {
-    throw new VerificationError(
-      'That payment was not sent from your wallet. Pay the fee from the address that owns the domain.',
-      403
-    );
-  }
-
-  let paidSompi = BigInt(0);
-  for (const output of tx.outputs ?? []) {
-    if (output.script_public_key_address !== TREASURY_ADDRESS) continue;
-    try {
-      paidSompi += BigInt(output.amount ?? 0);
-    } catch {
-      // A malformed amount is not payment.
+  if (!verdict.ok) {
+    switch (verdict.reason) {
+      case 'not-accepted':
+        throw new VerificationError(
+          'That payment has not been accepted by the network yet. Wait for confirmation and try again.',
+          409
+        );
+      case 'payer-unknown':
+        // Refuse rather than skip the check -- an unresolvable payer is exactly
+        // the case an attacker would want.
+        throw new VerificationError(
+          'Could not determine who paid that transaction; try again shortly.',
+          503
+        );
+      case 'wrong-payer':
+        throw new VerificationError(
+          'That payment was not sent from your wallet. Pay the fee from the address that owns the domain.',
+          403
+        );
+      case 'underpaid':
+        throw new VerificationError(
+          `That transaction paid ${formatKas(verdict.paidSompi)} to the fee address, but ${formatKas(
+            input.requiredSompi
+          )} is required.`,
+          402
+        );
     }
   }
 
-  if (paidSompi < input.requiredSompi) {
-    throw new VerificationError(
-      `That transaction paid ${formatKas(paidSompi)} to the fee address, but ${formatKas(
-        input.requiredSompi
-      )} is required.`,
-      402
-    );
-  }
+  const paidSompi = verdict.paidSompi;
 
   return { txId, paidSompi };
 }
