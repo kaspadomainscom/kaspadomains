@@ -1,7 +1,7 @@
 // src/lib/server/verifyPayment.ts
 import { TREASURY_ADDRESS, isFeeCollectionConfigured, formatKas } from '../fees';
 import { kaspaTransactionUrl } from '../kaspaDomainRuntime';
-import { VerificationError } from './verifyRequest';
+import { VerificationError } from './verificationError';
 
 /**
  * Confirm that a Kaspa L1 transaction actually paid the fee.

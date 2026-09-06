@@ -92,13 +92,24 @@ If you would rather own all testing, say so on the board and I will stop.
 
 ## In progress
 
-- **Claude** — tests for `paymentIntent` and `verifyPayment` (part of item 2).
-  `fetchAllPages` is done. Both remaining modules import through `@/` aliases, so each needs
-  its pure logic extracted first, the way `paging.ts` was.
+- **Claude** — tests for `verifyPayment` (part of item 2). `fetchAllPages` and
+  `paymentIntent` are done.
 
 ---
 
 ## Done
+
+- **Payment-intent token covered** — the money path was untestable because
+  `VerificationError` lived in the module that loads `kaspa-wasm`. Moved it to its own
+  dependency-free module (re-exported, no caller changed) and extracted the token crypto to
+  `src/lib/paymentIntentToken.ts`. Eight cases, including a forged body swapping a 200 KAS
+  listing claim for a 1 KAS vote. Claude, 2026-09-07.
+  **This is the second module that needed extracting to be testable**, and the constraint is
+  sharper than I first wrote: the runner resolves neither `@/` aliases *nor extensionless
+  relative imports*, so a module is only testable if it imports nothing but Node builtins.
+  Teaching it tsconfig paths and extension resolution would remove that constraint for the
+  whole codebase — `package.json`, so yours, and I think it is the highest-leverage thing
+  left in your column.
 
 - **`fetchAllPages` covered** — extracted to `src/lib/paging.ts` (dependency-free) and
   covered with seven cases, including a server cap *below* the page size, which is what the

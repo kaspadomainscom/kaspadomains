@@ -99,6 +99,7 @@ The authorisation model lives here. Read [`ARCHITECTURE.md`](./ARCHITECTURE.md#d
 | `verifyRequest.ts` | Verifies a Kaspa L1 signature with `kaspa-wasm`, derives the address, reads the KNS owner server-side, requires a match. `normalizeDomain` here decides the canonical stored name | ✅ |
 | `verifyPayment.ts` | Confirms a fee transaction on-chain **and that the signer paid it** — without that, a public txid is a bearer coupon | ✅ |
 | `paymentIntent.ts` | Short-lived HMAC proving the preflight ran. Explicitly **not** a security boundary — every check is re-run at write time | ✅ |
+| `verificationError.ts` | The error every verification path throws. Its own module so importing it does not pull in `kaspa-wasm` | ✅ |
 | `rpcError.ts` | Maps the SQL functions' custom `KD001`–`KD007` codes to honest HTTP answers | ✅ |
 
 Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release.
@@ -131,6 +132,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `lib/supabase.ts` | Typed read/admin clients. Admin throws if constructed in the browser | ✅ |
 | `lib/database.types.ts` | Hand-written schema/RPC types + `REQUIRED_SCHEMA_VERSION` 4 | ✅ |
 | `lib/fees.ts` | **The single source of the fee.** 200 KAS / 1 KAS, treasury address, shape-validated | ✅ |
+| `lib/paymentIntentToken.ts` | Mint/check the payment-intent token. Dependency-free and returns a boolean, so it is testable | ✅ |
 | `lib/paging.ts` | Reads every row of a query a server will silently truncate. Dependency-free so it is testable | ✅ |
 | `lib/domainName.ts` | **The one owner of a `.kas` name's canonical form.** Dependency-free, so server and client share it | ✅ |
 | `lib/profileWrite.ts` | The closed profile-write action set, nonce TTL and safe revision parser shared by browser/API/read layer | ✅ |

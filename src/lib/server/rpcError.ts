@@ -1,6 +1,6 @@
 // src/lib/server/rpcError.ts
 import type { PostgrestError } from '@supabase/supabase-js';
-import { VerificationError } from './verifyRequest';
+import { VerificationError } from './verificationError';
 
 /**
  * Turn a Postgres error from one of the atomic write functions into an HTTP

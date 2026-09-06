@@ -33,6 +33,23 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
 Most recent first. Each entry names the file(s), what was actually wrong, and how it was
 verified — not just "fixed X."
 
+- **The money path could not be tested, because of where a four-line class sat.**
+  `paymentIntent` and `verifyPayment` both imported `VerificationError` from
+  `verifyRequest.ts`, which loads `kaspa-wasm` at module scope — so importing the error
+  dragged a WASM module in, and the test runner cannot load that. The code deciding whether
+  a payment request is authentic was uncoverable for an incidental reason. Moved the class to
+  its own dependency-free module (re-exported, so no caller changed), then extracted the
+  token crypto to `src/lib/paymentIntentToken.ts`, which imports only `node:crypto` and
+  returns a **boolean** rather than throwing — `paymentIntent.ts` is now the thin wrapper
+  that turns a failure into an HTTP status. That split is worth having anyway: deciding
+  whether a token is valid and deciding what to tell the user are different jobs.
+  Eight cases now cover it, including the attack the signature exists to stop — taking a
+  real 200 KAS listing token and swapping the payload for a 1 KAS vote while keeping the
+  signature — plus a token signed with a different secret (so rotating it invalidates old
+  tokens), expiry checked on both sides of the boundary, and six malformed inputs that must
+  return false rather than throw, since a throw there is a 500 on an unauthenticated request.
+  Verified only one implementation of the comparison exists in the tree.
+
 - **The most silently-wrong code in the app had no test, and could not have one.**
   `fetchAllPages` — the loop whose first version returned 100 of 10,000 rows and reported
   success — lived inside `supabaseSource.ts`, which imports the Supabase client through a

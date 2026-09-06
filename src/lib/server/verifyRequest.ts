@@ -1,5 +1,6 @@
 // src/lib/server/verifyRequest.ts
 import { normalizeDomainName } from '../domainName';
+import { VerificationError } from './verificationError';
 import { PublicKey, verifyMessage } from 'kaspa-wasm';
 import {
   buildSignedMessage,
@@ -79,15 +80,10 @@ export type VerifiedRequest = {
   isOwner: boolean;
 };
 
-export class VerificationError extends Error {
-  constructor(
-    message: string,
-    readonly status: number
-  ) {
-    super(message);
-    this.name = 'VerificationError';
-  }
-}
+// Defined in its own module so the money path can be tested: this file loads
+// `kaspa-wasm` at module scope, and anything importing the error class used to
+// drag that in. Re-exported here so existing callers are unchanged.
+export { VerificationError };
 
 // The canonical form is owned by src/lib/domainName.ts, which both this
 // verifier and the client lookups use. They used to be separate copies of the
