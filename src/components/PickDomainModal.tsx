@@ -5,6 +5,7 @@ import { useListDomain } from '@/hooks/domain/useListDomain';
 import { useSetDomainCategories } from '@/hooks/domain/useSetDomainCategories';
 import { useGetAllowedCategories } from '@/hooks/domains/useGetAllowedCategories';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { LISTING_FEE_SOMPI, formatKas } from '@/lib/fees';
 import { useState } from 'react';
 
 type PickDomainModalProps = {
@@ -19,10 +20,13 @@ export default function PickDomainModal({
   kaspaAccount,
 }: PickDomainModalProps) {
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
+  const [listedDomain, setListedDomain] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const { listDomain, txHash, isLoading: listing, error: listError } = useListDomain();
   const { setCategories, isLoading: assigningCategories } = useSetDomainCategories();
-  const { categories: allowedCategories, loading: categoriesLoading } = useGetAllowedCategories();
+  // `options` carries titles; `categories` is keys only. Rendering the keys
+  // showed people raw slugs -- "realWords", "999club" -- as if they were labels.
+  const { options: categoryOptions, loading: categoriesLoading } = useGetAllowedCategories();
 
   const verifiedDomains = domains.filter((domain) => domain.isVerifiedDomain === true);
   const busy = listing || assigningCategories;
@@ -70,17 +74,17 @@ export default function PickDomainModal({
         </p>
         {categoriesLoading ? (
           <p className="text-sm text-gray-400">Loading categories…</p>
-        ) : allowedCategories.length === 0 ? (
+        ) : categoryOptions.length === 0 ? (
           <p className="text-sm text-red-400">No categories available right now.</p>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {allowedCategories.map((category) => {
-              const active = selectedCategories.includes(category);
+            {categoryOptions.map((option) => {
+              const active = selectedCategories.includes(option.key);
               return (
                 <button
-                  key={category}
+                  key={option.key}
                   type="button"
-                  onClick={() => toggleCategory(category)}
+                  onClick={() => toggleCategory(option.key)}
                   disabled={busy}
                   aria-pressed={active}
                   className={`px-3 py-1 rounded-full text-xs font-medium border transition
@@ -89,7 +93,7 @@ export default function PickDomainModal({
                       : 'bg-transparent text-gray-300 border-gray-600 hover:border-kaspaMint'
                     }`}
                 >
-                  {category}
+                  {option.title}
                 </button>
               );
             })}
@@ -112,6 +116,7 @@ export default function PickDomainModal({
                   if (result && !isSupabaseConfigured) {
                     await setCategories(domain.asset, evmAccount as `0x${string}`, selectedCategories);
                   }
+                  if (result) setListedDomain(domain.asset);
                 } catch {
                   // errors are surfaced via toasts inside the hooks
                 }
@@ -130,7 +135,9 @@ export default function PickDomainModal({
             >
               <span>{domain.asset}</span>
               <span className="text-xs font-semibold">
-                {busy && selectedDomain === domain.asset ? 'Listing…' : 'List for 210 KAS'}
+                {busy && selectedDomain === domain.asset
+                  ? 'Listing…'
+                  : `List for ${formatKas(LISTING_FEE_SOMPI)}`}
               </span>
             </button>
           </li>
@@ -140,6 +147,18 @@ export default function PickDomainModal({
       {selectedCategories.length === 0 && (
         <p className="text-yellow-400 text-xs mt-2">
           Pick a category above to enable listing.
+        </p>
+      )}
+
+      {/* The database path returns a domain name, not a transaction hash, so
+          the block below never fired for it -- a paid listing produced no
+          confirmation in the modal at all, only a toast. */}
+      {listedDomain && !txHash && (
+        <p className="text-green-400 text-sm mt-4">
+          <strong>{listedDomain}</strong> is listed.{' '}
+          <a href={`/domain/${encodeURIComponent(listedDomain)}`} className="underline">
+            View its page
+          </a>
         </p>
       )}
 

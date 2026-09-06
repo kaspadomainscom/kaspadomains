@@ -130,6 +130,31 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **The listing button quoted 210 KAS for a 200 KAS fee.** Every other place in the app —
+  homepage, `/docs`, `/learn`, `/list-domain`, `/business-plan` — says 200. The one place
+  that was wrong was `PickDomainModal`, which is the actual button a user clicks to pay.
+  Left over from when the marketing figure was 210 and the contract charged 420; the fee has
+  since become a single constant and this was the only caller not reading it. Now
+  `formatKas(LISTING_FEE_SOMPI)`, so it cannot drift again.
+- **The category picker showed raw slugs.** `PickDomainModal` rendered
+  `useGetAllowedCategories().categories`, which is keys — so users chose between
+  `realWords`, `999club` and `100kclub` as if those were labels. `options` (key + title) was
+  added two sessions ago and this consumer never moved to it. Also: a successful listing on
+  the database path produced **no confirmation in the modal at all**, because the success
+  block was keyed on `txHash`, which only the on-chain path sets. Now shows the listing with
+  a link to its page.
+- **`/EcosystemAdmin` told the real administrator "⛔ Access Denied".** `isOwner` was
+  `account && owner ? compare : false`, so an owner that could not be *loaded* was
+  indistinguishable from an owner that did not *match*. And it can never be loaded:
+  `EcosystemFund` at `0x07Cb…4389` has **no deployed code** (verified 2026-09-06 by raw
+  `eth_getCode` against `rpc.kasplextest.xyz` — a fifth dead contract, alongside the four in
+  the CRITICAL section). So `owner()` always threw, and the page confidently told whoever
+  opened it that they were not authorized. Fixed with three states —
+  loading / loaded / unavailable — where only `loaded` can produce a denial. The unavailable
+  case now names the real cause (nothing is deployed at that address; ethers reports it as a
+  decode failure, which reads like a bug in the page) and says plainly that fees are paid to
+  a Kaspa L1 treasury and never pass through this contract, so there would be nothing to
+  report even if it were reachable.
 - **Header search never jumped to a domain, because it looked up the wrong name.**
   `handleSearch` stripped the `.kas` suffix before calling `findDomainByName` — but
   `normalizeDomain` on the server *always appends* `.kas`, so `domains.name` is stored with

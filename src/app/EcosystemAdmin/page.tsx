@@ -108,7 +108,23 @@ export default function EcosystemAdmin() {
     };
   }, [rawProvider]);
 
-  const [owner, setOwner] = useState<string | null>(null);
+  /**
+   * Who owns the fund contract -- in three states, not two.
+   *
+   * `owner === null` used to mean both "not loaded yet / couldn't load" and
+   * "no owner", and `isOwner` collapsed that to `false`. Since the fund contract
+   * has no deployed code at its configured address (verified 2026-09-06 with
+   * eth_getCode), `owner()` always throws -- so the page showed the real
+   * administrator a red "⛔ Access Denied — You are not authorized to enter this
+   * area." That is a confident, alarming, and wrong answer to a question we
+   * could not answer at all.
+   */
+  type OwnerState =
+    | { status: "loading" }
+    | { status: "loaded"; owner: string }
+    | { status: "unavailable"; reason: string };
+
+  const [ownerState, setOwnerState] = useState<OwnerState>({ status: "loading" });
   const contract = useMemo(
     () => (signer ? new Contract(contractAddress, contractABI, signer) : null),
     [signer]
@@ -131,33 +147,42 @@ export default function EcosystemAdmin() {
   const [txPending, setTxPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Only ever true when the contract actually told us who the owner is.
   const isOwner =
-    account && owner ? account.toLowerCase() === owner.toLowerCase() : false;
+    ownerState.status === "loaded" && account
+      ? account.toLowerCase() === ownerState.owner.toLowerCase()
+      : false;
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadOwner() {
-      if (!contract) {
-        if (!cancelled) {
-          setOwner(null);
-          setErrorMessage(null);
-        }
-        return;
-      }
+      if (!contract) return;
 
       try {
         const contractOwner = await contract.owner();
         if (!cancelled) {
-          setOwner(contractOwner);
+          setOwnerState({ status: "loaded", owner: contractOwner });
           setErrorMessage(null);
         }
       } catch (err: unknown) {
         console.error("Failed to fetch contract owner:", err);
-        if (!cancelled) {
-          setOwner(null);
-          setErrorMessage("Failed to fetch contract owner");
-        }
+        if (cancelled) return;
+
+        // ethers reports a call against an address with no code as a decode
+        // failure, which reads like a bug in this page. Name the actual cause:
+        // there is nothing deployed to call.
+        const message = err instanceof Error ? err.message : String(err);
+        const looksUndeployed =
+          /could not decode|BAD_DATA|returned no data|missing revert data/i.test(message);
+
+        setOwnerState({
+          status: "unavailable",
+          reason: looksUndeployed
+            ? `No contract is deployed at ${contractAddress} on this network, so its owner cannot be read.`
+            : `The fund contract could not be reached: ${message}`,
+        });
+        setErrorMessage(null);
       }
     }
 
@@ -390,6 +415,33 @@ export default function EcosystemAdmin() {
           {errorMessage && (
             <p className="mt-4 text-red-600 font-semibold">{errorMessage}</p>
           )}
+        </div>
+      ) : ownerState.status === "loading" ? (
+        <div className="max-w-lg mx-auto mt-24 p-6 text-center text-gray-600">
+          Checking whether this wallet administers the fund…
+        </div>
+      ) : ownerState.status === "unavailable" ? (
+        // Deliberately not "Access Denied". We do not know whether this wallet
+        // is the owner, and saying it is not would be a definite answer to a
+        // question that could not be asked.
+        <div
+          role="alert"
+          className="max-w-xl mx-auto mt-24 p-6 border-2 border-amber-500 bg-amber-50 text-amber-800 rounded-lg shadow-lg text-center"
+        >
+          <p className="font-bold mb-3">Ownership could not be verified</p>
+          <p className="text-sm">{ownerState.reason}</p>
+          <p className="mt-4 text-sm text-amber-900/80">
+            This page administers an on-chain ecosystem fund. Listing and voting fees are
+            currently paid on Kaspa L1 to a treasury address instead, and do not pass
+            through this contract — so there is nothing for it to report even once it is
+            reachable.
+          </p>
+          <button
+            onClick={disconnectAll}
+            className="mt-6 px-5 py-2 text-base rounded-md bg-amber-600 text-white shadow hover:bg-amber-700 transition-colors"
+          >
+            Disconnect Wallet
+          </button>
         </div>
       ) : !isOwner ? (
         <div
