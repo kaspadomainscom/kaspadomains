@@ -1,6 +1,7 @@
 // src/app/sitemap.xml/route.ts
 
-import { loadCategoriesManifest, type CategoryManifest } from "@/data/categoriesManifest";
+import { loadCategoriesManifestOnce } from "@/data/categoriesManifest.server";
+import { type CategoryManifest } from "@/data/categoriesManifest";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-static";
@@ -17,7 +18,7 @@ export async function GET() {
   // one that's wrong or one that doesn't build at all.
   let categoriesData: CategoryManifest = {};
   try {
-    categoriesData = await loadCategoriesManifest();
+    categoriesData = await loadCategoriesManifestOnce();
   } catch (error) {
     console.error("Failed to load categories manifest for sitemap:", error);
   }

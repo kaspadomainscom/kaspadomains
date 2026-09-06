@@ -68,7 +68,7 @@ export function getDomainJsonLd({ name, owner, category }: DomainJsonLdInput) {
   };
 }
 
-import { loadCategoriesManifest } from "@/data/categoriesManifest"; // import the async loader
+import { loadCategoriesManifestOnce } from "@/data/categoriesManifest.server"; // import the async loader
 
 /**
  * Structured data for the recent-domains list, or `null` if we could not read
@@ -93,7 +93,7 @@ export async function getItemListJsonLd(limit = 6): Promise<ItemListJsonLd | nul
 
   let categoriesData;
   try {
-    categoriesData = await loadCategoriesManifest();
+    categoriesData = await loadCategoriesManifestOnce();
   } catch (error) {
     console.error("Failed to load categories for ItemList JSON-LD:", error);
     return null;

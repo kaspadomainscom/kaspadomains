@@ -1,7 +1,8 @@
 // src/app/page.tsx
 import Link from "next/link";
 import { headers } from "next/headers";
-import { loadCategoriesManifest, type CategoryManifest } from "@/data/categoriesManifest";
+import { loadCategoriesManifestOnce } from "@/data/categoriesManifest.server";
+import { type CategoryManifest } from "@/data/categoriesManifest";
 import { loadTopVotedDomains, type DomainWithVotes } from "@/lib/topVotedDomains";
 import { getWebsiteJsonLd, getItemListJsonLd } from "@/lib/jsonld";
 import { JsonLd } from "@/components/JsonLd";
@@ -49,7 +50,7 @@ export default async function Home() {
   // and #3.
   let categoriesData: CategoryManifest | null = null;
   try {
-    categoriesData = await loadCategoriesManifest();
+    categoriesData = await loadCategoriesManifestOnce();
   } catch (e) {
     console.error("Failed to load categories manifest", e);
   }

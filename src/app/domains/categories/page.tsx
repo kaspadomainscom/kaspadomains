@@ -1,7 +1,8 @@
 // src/app/domains/categories/page.tsx
 import Link from "next/link";
 import { Metadata } from "next";
-import { loadCategoriesManifest, type CategoryManifest } from "@/data/categoriesManifest";
+import { loadCategoriesManifestOnce } from "@/data/categoriesManifest.server";
+import { type CategoryManifest } from "@/data/categoriesManifest";
 
 export const metadata: Metadata = {
   title: "Domain Categories | kaspadomains.com",
@@ -17,7 +18,7 @@ export default async function DomainCategoriesPage() {
   let categoriesData: CategoryManifest | null = null;
   let loadFailed = false;
   try {
-    categoriesData = await loadCategoriesManifest();
+    categoriesData = await loadCategoriesManifestOnce();
   } catch (error) {
     console.error("Failed to load categories manifest:", error);
     loadFailed = true;

@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
 import type { Metadata } from "next";
 
-import { loadCategoriesManifest } from "@/data/categoriesManifest";
+import { loadCategoriesManifestOnce } from "@/data/categoriesManifest.server";
 import { lookupDomain, findDomainCategoryTitle } from "@/data/domainLookup";
 import { normalizeDomainName } from "@/lib/domainName";
 import { getDomainJsonLd } from "@/lib/jsonld";
@@ -41,7 +41,7 @@ const ensureKasSuffix = normalizeDomainName;
 
 export async function generateStaticParams(): Promise<StaticParam[]> {
   try {
-    const manifest = await loadCategoriesManifest();
+    const manifest = await loadCategoriesManifestOnce();
     if (!manifest) return [];
 
     const allDomains = Object.values(manifest).flatMap((cat) => cat.domains);

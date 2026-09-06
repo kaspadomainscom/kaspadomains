@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { normalizeDomainName } from "@/lib/domainName";
 import { headers } from "next/headers";
 import Link from "next/link";
-import { loadCategoriesManifest } from "@/data/categoriesManifest";
+import { loadCategoriesManifestOnce } from "@/data/categoriesManifest.server";
 import { DomainCard } from "@/components/DomainCard";
 import { JsonLd } from "@/components/JsonLd";
 import type { Metadata } from "next";
@@ -13,7 +13,7 @@ type StaticParam = { category: string };
 
 export async function generateStaticParams(): Promise<StaticParam[]> {
   try {
-    const categoriesData = await loadCategoriesManifest();
+    const categoriesData = await loadCategoriesManifestOnce();
     return Object.keys(categoriesData).map((category) => ({ category }));
   } catch (error) {
     console.error("Failed to load categories manifest for static params:", error);
@@ -31,7 +31,7 @@ export async function generateMetadata({
     const resolvedParams = await params;
     const category = resolvedParams.category;
 
-    const categoriesData = await loadCategoriesManifest();
+    const categoriesData = await loadCategoriesManifestOnce();
     const categoryData = categoriesData[category];
 
     if (!categoryData) {
@@ -87,7 +87,7 @@ export default async function CategoryPage({ params }: PageProps) {
   // failure and "this category doesn't exist" are kept as separate outcomes
   // below -- collapsing them into one notFound() call previously meant a
   // real outage was mislabeled as a 404 (see docs/MIND.md principle #11).
-  let categoryData: Awaited<ReturnType<typeof loadCategoriesManifest>>[string] | undefined;
+  let categoryData: Awaited<ReturnType<typeof loadCategoriesManifestOnce>>[string] | undefined;
   let nonce: string | undefined;
   let loadFailed = false;
 
@@ -95,7 +95,7 @@ export default async function CategoryPage({ params }: PageProps) {
     const resolvedParams = await params;
     const category = resolvedParams.category;
 
-    const categoriesData = await loadCategoriesManifest();
+    const categoriesData = await loadCategoriesManifestOnce();
     categoryData = categoriesData[category];
     nonce = (await headers()).get("x-csp-nonce") || undefined;
   } catch (error) {

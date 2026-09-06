@@ -1,5 +1,5 @@
 // src/lib/topVotedDomains.ts
-import { loadCategoriesManifest } from "@/data/categoriesManifest";
+import { loadCategoriesManifestOnce } from "@/data/categoriesManifest.server";
 import { fetchVoteCounts } from "@/data/supabaseSource";
 import type { Domain } from "@/data/types";
 
@@ -16,7 +16,7 @@ export type DomainWithVotes = Domain & { votes: number };
  * as an empty ranking.
  */
 export async function loadTopVotedDomains(limit?: number): Promise<DomainWithVotes[]> {
-  const manifest = await loadCategoriesManifest();
+  const manifest = await loadCategoriesManifestOnce();
 
   const seen = new Set<string>();
   const domains: Domain[] = [];

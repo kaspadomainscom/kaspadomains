@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { fetchAllDomains, fetchDomainByName, fetchDomainCategories } from "./supabaseSource";
 import type { Domain } from "./types";
 import { normalizeDomainName } from "@/lib/domainName";
@@ -27,7 +28,19 @@ export type DomainLookup =
  * Look a domain up by name (case-insensitive), reporting *why* when it isn't
  * returned.
  */
-export async function lookupDomain(name: string): Promise<DomainLookup> {
+/**
+ * Memoised per server request. Both callers are on the same page render:
+ * `generateMetadata` needs the domain to build the title, and the page body
+ * needs it again to render — so without this, every profile page ran the whole
+ * lookup twice, doubling its cost and creating a window in which the two could
+ * disagree about whether the domain exists.
+ *
+ * Server-only, which is what makes `cache` safe here: nothing in this module is
+ * reachable from a client component.
+ */
+export const lookupDomain = cache(async function lookupDomain(
+  name: string
+): Promise<DomainLookup> {
   if (!name) return { status: "not-listed" };
 
   // Normalised here rather than at each call site, and to the same rule the
@@ -50,7 +63,7 @@ export async function lookupDomain(name: string): Promise<DomainLookup> {
     console.error("Supabase lookup failed for", searchName, error);
     return { status: "unavailable", error: error as Error };
   }
-}
+});
 
 /**
  * Finds a domain by its name (case-insensitive).
@@ -91,7 +104,10 @@ export async function getAllDomains(): Promise<Domain[]> {
  * Returns undefined when there is no category to show -- which callers should
  * render as "Uncategorized", never as "this domain does not exist".
  */
-export async function findDomainCategoryTitle(name: string): Promise<string | undefined> {
+/** Memoised for the same reason as `lookupDomain`. */
+export const findDomainCategoryTitle = cache(async function findDomainCategoryTitle(
+  name: string
+): Promise<string | undefined> {
   if (!name) return undefined;
   const searchName = normalizeDomainName(name);
 
@@ -105,4 +121,4 @@ export async function findDomainCategoryTitle(name: string): Promise<string | un
     console.error("Supabase category lookup failed for", searchName, error);
     return undefined;
   }
-}
+});
