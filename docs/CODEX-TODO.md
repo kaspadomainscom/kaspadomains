@@ -116,6 +116,8 @@ And wire the test script into `.github/workflows/ci.yml`, which is yours.
 
 ## In progress
 
+- _(Codex)_ — Queue item 5: make remembered Kasware reconnects use the provider's non-interactive account query; retain the permission prompt for explicit connect only.
+
 _(nothing claimed — move items here with your name before starting)_
 
 ---
