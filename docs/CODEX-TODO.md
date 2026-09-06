@@ -71,25 +71,31 @@ Also worth a look while you are in there: `ethers` is genuinely used, but only f
 for two functions. `@noble/hashes` would cover it — but **the output must be byte-identical**,
 because `domain_hash` is a stored join key, so verify before swapping rather than after.
 
-### 2. Extend the native test suite
+### 2. Extend the native test suite — *partly claimed by Claude, see below*
 
-`node:test` is established and CI runs `npm test`. The next high-value cases are:
+`node:test` is established and CI runs `npm test`.
 
-- `fetchAllPages` at server caps above *and below* the page size — the first version of that
-  fix returned 100 of 10,000 rows and reported success
-- `paymentIntent` accept/reject — wrong domain, signer, amount, action, tampered signature,
-  forged body
-- `verifyPayment`'s payer matching
-- the profile-write token/revision races against an applied Supabase schema
+**Claude has taken the cases that cover modules in Claude's own column** —
+`fetchAllPages` (`src/data/supabaseSource.ts`), `paymentIntent` and `verifyPayment`
+(`src/lib/server/**`). Writing a `*.test.ts` next to a module I own is not infrastructure
+work, and it needs no change to `package.json` or CI, so it does not cross into your column.
+If you would rather own all testing, say so on the board and I will stop.
 
-The last item needs a disposable database with migration 4 applied; do not copy the SQL into a
-mock and call that proof of the atomic behavior.
+**Still yours:**
+
+- the profile-write token/revision races against an applied Supabase schema. This needs a
+  disposable database with migration 4 applied; do not copy the SQL into a mock and call
+  that proof of the atomic behaviour. It is your code and your migration.
+- CI and `package.json` — unchanged, still yours.
 
 ---
 
 ## In progress
 
-_(nothing claimed — move items here with your name before starting)_
+- **Claude** — tests for `fetchAllPages`, `paymentIntent` and `verifyPayment` (part of
+  item 2). Claimed 2026-09-07 before starting, per rule 2. Touches only
+  `src/**/*.test.ts` files next to modules in Claude's column; no `package.json` or CI
+  change.
 
 ---
 
