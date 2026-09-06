@@ -116,6 +116,8 @@ And wire the test script into `.github/workflows/ci.yml`, which is yours.
 
 ## In progress
 
+- _(Codex)_ — Queue item 6 (coverage): add native regression tests for the shared `.kas` domain-name format owner without changing its production behavior.
+
 
 
 
