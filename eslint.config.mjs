@@ -36,10 +36,40 @@ const noEmptyOnError = {
   },
 };
 
+/**
+ * `toLocaleDateString` / `toLocaleString` render differently on the server than
+ * in the browser — different locale, different time zone — and this app renders
+ * the same components in both. React treats the difference as a failed
+ * hydration: it throws away the server markup for that subtree, re-renders on
+ * the client and logs an error, so the version search engines read is the one
+ * that got discarded.
+ *
+ * It is not a hypothetical. `DomainCard` is a client component rendered from
+ * three server components, and it formatted a creation date this way.
+ *
+ * `src/lib/format.ts` owns these formats now and derives them from UTC parts,
+ * so the same input gives the same string in every runtime.
+ */
+const noLocaleFormatting = {
+  files: ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}", "src/hooks/**/*.{ts,tsx}"],
+  rules: {
+    "no-restricted-syntax": [
+      "error",
+      {
+        selector:
+          "MemberExpression[property.name=/^toLocale(Date|Time)?String$/]",
+        message:
+          "Locale formatting differs between the server and the browser, which breaks hydration. Use formatUtcDate, formatUtcDateFromSeconds or formatCount from @/lib/format. See docs/MIND.md #17.",
+      },
+    ],
+  },
+};
+
 const eslintConfig = [
   ...nextCoreWebVitals,
   ...nextTypescript,
   noEmptyOnError,
+  noLocaleFormatting,
   {
     ignores: [
       "node_modules/**",

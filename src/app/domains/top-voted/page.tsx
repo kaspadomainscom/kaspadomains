@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { loadTopVotedDomains, type DomainWithVotes } from "@/lib/topVotedDomains";
 import Link from "next/link";
 import { DomainCard } from "@/components/DomainCard";
+import { formatCount } from "@/lib/format";
 
 const TOP_N = 24;
 
@@ -54,7 +55,7 @@ export default async function TopVotedPage() {
             {topDomains.map((domain) => (
               <div key={domain.name} className="relative">
                 <span className="absolute -top-2 -right-2 z-10 bg-kaspaMint text-[#0F2F2E] text-xs font-bold px-2 py-1 rounded-full shadow">
-                  {domain.votes.toLocaleString()} vote{domain.votes === 1 ? "" : "s"}
+                  {formatCount(domain.votes)} vote{domain.votes === 1 ? "" : "s"}
                 </span>
                 <DomainCard domain={domain} />
               </div>

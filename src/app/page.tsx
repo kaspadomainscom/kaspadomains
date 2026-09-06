@@ -6,6 +6,7 @@ import { type CategoryManifest } from "@/data/categoriesManifest";
 import { loadTopVotedDomains, type DomainWithVotes } from "@/lib/topVotedDomains";
 import { getWebsiteJsonLd, getItemListJsonLd } from "@/lib/jsonld";
 import { JsonLd } from "@/components/JsonLd";
+import { formatCount } from "@/lib/format";
 
 const TRENDING_COUNT = 3;
 
@@ -107,7 +108,7 @@ export default async function Home() {
               >
                 <h3 className="text-xl font-semibold text-white mb-2">{domain.name}</h3>
                 <p className="text-sm text-gray-400 mb-1">
-                  🔥 {domain.votes.toLocaleString()} vote{domain.votes === 1 ? "" : "s"}
+                  🔥 {formatCount(domain.votes)} vote{domain.votes === 1 ? "" : "s"}
                 </p>
                 <p className="text-sm text-gray-500">200 KAS to list</p>
                 <Link

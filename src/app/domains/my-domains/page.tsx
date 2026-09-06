@@ -8,6 +8,7 @@ import { usePaginatedDomains, type DomainAsset } from '@/hooks/kns/api/usePagina
 import { useListingStatuses, type ListingStatus } from '@/hooks/domains/useListingStatuses';
 import Loader from '@/components/Loader';
 import { formatKas, LISTING_FEE_SOMPI } from '@/lib/fees';
+import { formatUtcDate } from '@/lib/format';
 
 /**
  * "My Domains" answers two questions that come from two different places, and
@@ -54,6 +55,10 @@ function DomainRow({
   status: ListingStatus | null | undefined;
 }) {
   const name = asset.asset;
+  // KNS gives this as a millisecond timestamp in a string. `null` when it is
+  // missing or unparseable, so an unreadable value renders as nothing rather
+  // than as "Invalid Date".
+  const registered = formatUtcDate(Number(asset.creationBlockTime));
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-white/10 bg-white/5 p-4">
@@ -62,10 +67,8 @@ function DomainRow({
         <ListedBadge status={status} />
       </div>
 
-      {asset.creationBlockTime && (
-        <span className="text-xs text-gray-400">
-          Registered {new Date(asset.creationBlockTime).toLocaleDateString()}
-        </span>
+      {registered && (
+        <span className="text-xs text-gray-400">Registered {registered}</span>
       )}
 
       <div className="mt-auto flex flex-wrap gap-2 pt-1">

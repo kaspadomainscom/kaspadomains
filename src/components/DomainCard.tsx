@@ -5,6 +5,7 @@ import { Domain } from '@/data/types';
 import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
 import { formatKas } from '@/lib/fees';
+import { formatUtcDateFromSeconds } from '@/lib/format';
 
 /**
  * Where to look an owner up.
@@ -90,9 +91,7 @@ export function DomainCard({ domain }: { domain: Domain }) {
 
         <div className="text-sm text-gray-500">
           <strong className="font-medium">Created:</strong>{' '}
-          {domain.createdAt
-            ? new Date(domain.createdAt * 1000).toLocaleDateString()
-            : 'Unknown'}
+          {formatUtcDateFromSeconds(domain.createdAt) ?? 'Unknown'}
         </div>
       </Link>
 

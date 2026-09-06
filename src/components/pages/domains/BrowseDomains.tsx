@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Domain } from '@/data/types';
 import type { CategoryManifest } from '@/data/categoriesManifest';
 import { DomainCard } from '@/components/DomainCard';
+import { formatCount } from '@/lib/format';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -93,7 +94,7 @@ export function BrowseDomains({ manifest }: { manifest: CategoryManifest }) {
   return (
     <>
       <p className="text-lg font-semibold text-kaspaMint">
-        {filteredDomains.length.toLocaleString()} domains listed
+        {formatCount(filteredDomains.length)} domains listed
         {selectedCategory !== 'all'
           ? ` in ${allCategories.find((c) => c.key === selectedCategory)?.title ?? selectedCategory}`
           : ''}

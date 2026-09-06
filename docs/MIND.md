@@ -532,6 +532,29 @@ directions.
 **Checklist**:
 [`mind/shared-value-format-checklist.md`](./mind/shared-value-format-checklist.md).
 
+### Recurrence (2026-09-07): a format with two owners, one of them the runtime
+
+`DomainCard` rendered a listing date with `toLocaleDateString()`. That is not one format with
+no owner — it is one call site whose output is decided by **whichever runtime evaluates it**,
+and this app evaluates the same components twice: once on the server to produce HTML, once in
+the browser to hydrate it. The two disagree on locale (`9/7/2026` vs `07.09.2026`) and, even
+with the locale pinned, on time zone — a UTC server and a reader east of it do not agree which
+*day* a near-midnight timestamp falls on.
+
+React's response to a mismatch is to discard the server markup for that subtree, re-render on
+the client, and log an error. So the version a crawler reads is the one that got thrown away.
+
+The fix is the usual one: give the format a single owner (`src/lib/format.ts`) that derives it
+from UTC parts, with no locale, no time zone and no ICU — the same input gives the same string
+in every runtime, which is the only property that matters. Enforced by a lint rule, because
+`toLocaleDateString` is the obvious thing to reach for and nothing about it looks wrong.
+
+**Found while widening the blast radius, not by an audit.** Making `/domains` server-rendered
+turned a client-only date into a server-rendered one, which is what prompted the check — and
+the check showed the bug already existed on two other pages that had always rendered
+`DomainCard` from a server component. Changing where something renders is a reason to re-ask
+what it renders (#12).
+
 ## 18. Enumerate from the source of record, not from what the code happens to touch
 
 **Purpose**: an audit's completeness is decided entirely by where its list came from, and
