@@ -221,7 +221,7 @@ every call.
 
 | File | Role |
 |---|---|
-| `src/app/domains/page.tsx` | Browse + filter |
+| `src/app/domains/page.tsx` | Browse + filter, windowed pagination |
 | `src/app/domains/categories/**` | Category index and pages |
 | `src/app/domains/top-voted/page.tsx` | Ranking |
 | `src/app/search/page.tsx` | Search results — four explicit states |

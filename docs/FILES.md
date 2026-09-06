@@ -34,7 +34,7 @@ missing.
   contracts.
 - Four new pages (`/status`, `/about`, `/terms`, `/privacy`) and two new
   endpoints (`/api/domains/preflight`, `/api/domains/[name]/categories`).
-- Twenty user-facing bugs, including structured data that published
+- Twenty-two user-facing bugs, including structured data that published
   `foo.kas.kas` to every search engine, a resources editor that would delete an
   owner's links after a failed read, a pay button quoting the wrong price, an
   admin page that denied access to the administrator, header search that never
@@ -142,7 +142,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | Page | Purpose | Status |
 |---|---|---|
 | `page.tsx` | Homepage | ✅ |
-| `domains/page.tsx` | Browse + filter | 🔒 |
+| `domains/page.tsx` | Browse + filter. Windowed pagination; an outage is not rendered as an empty directory | 🔒 |
 | `domains/categories/` | Category index and per-category pages | 🔒 |
 | `domains/top-voted/` | Ranking | 🔒 |
 | `domains/my-domains/` | KNS ownership **and** listing status, kept as separate questions | 🔒 |

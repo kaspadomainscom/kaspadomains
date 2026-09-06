@@ -13,13 +13,18 @@ interface DomainWithCategory extends Domain {
 
 export default function DomainsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [fullManifest, setFullManifest] = useState<CategoryManifest>({});
+  // `null` is "not known", not "empty". Falling back to {} on failure made this
+  // page announce "0 domains listed" and "No domains found matching your
+  // search" during an outage -- two confident false statements on the main
+  // browse page. See docs/MIND.md #2.
+  const [fullManifest, setFullManifest] = useState<CategoryManifest | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
 
   const allCategories = useMemo(
-    () => Object.entries(fullManifest).map(([key, { title }]) => ({ key, title })),
+    () => Object.entries(fullManifest ?? {}).map(([key, { title }]) => ({ key, title })),
     [fullManifest]
   );
 
@@ -29,9 +34,11 @@ export default function DomainsPage() {
       try {
         const manifest = await loadCategoriesManifest();
         setFullManifest(manifest);
+        setLoadFailed(false);
       } catch (err) {
         console.error('Failed to load categories manifest:', err);
-        setFullManifest({});
+        setFullManifest(null);
+        setLoadFailed(true);
       } finally {
         setLoading(false);
       }
@@ -42,11 +49,12 @@ export default function DomainsPage() {
   // Flatten domains (all categories, or just the selected one), deduped by name
   const allDomains: DomainWithCategory[] = useMemo(() => {
     const seen = new Set<string>();
+    const manifest = fullManifest ?? {};
     const entries =
       selectedCategory === 'all'
-        ? Object.entries(fullManifest)
-        : fullManifest[selectedCategory]
-          ? [[selectedCategory, fullManifest[selectedCategory]] as const]
+        ? Object.entries(manifest)
+        : manifest[selectedCategory]
+          ? [[selectedCategory, manifest[selectedCategory]] as const]
           : [];
 
     const result: DomainWithCategory[] = [];
@@ -68,6 +76,27 @@ export default function DomainsPage() {
 
   const totalPages = Math.max(1, Math.ceil(filteredDomains.length / ITEMS_PER_PAGE));
 
+  /**
+   * The page numbers to actually render: first, last, and a window around the
+   * current page, with `null` marking an elision.
+   *
+   * This used to render one button per page. The site is capped at 10,000
+   * listings and shows 20 per page, so at capacity that is **500 buttons** -- a
+   * wall of numbers nobody can use, and a lot of DOM for no benefit.
+   */
+  const pageWindow = useMemo<(number | null)[]>(() => {
+    const pages: (number | null)[] = [];
+    for (let page = 1; page <= totalPages; page += 1) {
+      const near = Math.abs(page - currentPage) <= 1;
+      if (page === 1 || page === totalPages || near) {
+        if (pages[pages.length - 1] !== page) pages.push(page);
+      } else if (pages[pages.length - 1] !== null) {
+        pages.push(null);
+      }
+    }
+    return pages;
+  }, [totalPages, currentPage]);
+
   const paginatedDomains = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredDomains.slice(start, start + ITEMS_PER_PAGE);
@@ -83,12 +112,14 @@ export default function DomainsPage() {
             holder. The listing itself lives in our index — KaspaDomains is a registry and
             discovery layer, not a marketplace. Browse by category or search by name.
           </p>
+          {!loadFailed && !loading && (
           <p className="text-lg font-semibold text-kaspaMint">
             {filteredDomains.length.toLocaleString()} domains listed
             {selectedCategory !== 'all'
               ? ` in ${allCategories.find((c) => c.key === selectedCategory)?.title ?? selectedCategory}`
               : ''}
           </p>
+          )}
         </header>
 
         <div className="max-w-4xl mx-auto">
@@ -145,6 +176,14 @@ export default function DomainsPage() {
 
         {loading ? (
           <p className="text-center text-gray-400 py-10">Loading domains…</p>
+        ) : loadFailed ? (
+          <div className="mx-auto max-w-lg rounded-lg border border-amber-500/30 bg-amber-500/5 p-6 text-center text-amber-200">
+            <p className="font-medium">We couldn&apos;t load the domain list.</p>
+            <p className="mt-1 text-sm text-amber-200/80">
+              This is a problem on our side, not an empty directory &mdash; please try again
+              in a few moments.
+            </p>
+          </div>
         ) : paginatedDomains.length === 0 ? (
           <p className="text-center text-gray-400 py-10">No domains found matching your search.</p>
         ) : (
@@ -155,21 +194,44 @@ export default function DomainsPage() {
           </div>
         )}
 
-        {!loading && totalPages > 1 && (
-          <div className="flex justify-center flex-wrap gap-2 pt-4">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-4 py-2 rounded-lg font-semibold transition border ${
-                  currentPage === page
-                    ? 'bg-kaspaMint text-[#0F2F2E] border-kaspaMint'
-                    : 'bg-[#122c2a] text-gray-300 border-[#1d3b39] hover:bg-[#1d3b39]'
-                }`}
-              >
-                {page}
-              </button>
-            ))}
+        {!loading && !loadFailed && totalPages > 1 && (
+          <div className="flex justify-center flex-wrap items-center gap-2 pt-4">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-2 rounded-lg font-semibold border bg-[#122c2a] text-gray-300 border-[#1d3b39] hover:bg-[#1d3b39] disabled:opacity-40"
+            >
+              Prev
+            </button>
+
+            {pageWindow.map((page, i) =>
+              page === null ? (
+                <span key={`gap-${i}`} className="px-2 text-gray-500">
+                  &hellip;
+                </span>
+              ) : (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  aria-current={currentPage === page ? 'page' : undefined}
+                  className={`px-4 py-2 rounded-lg font-semibold transition border ${
+                    currentPage === page
+                      ? 'bg-kaspaMint text-[#0F2F2E] border-kaspaMint'
+                      : 'bg-[#122c2a] text-gray-300 border-[#1d3b39] hover:bg-[#1d3b39]'
+                  }`}
+                >
+                  {page}
+                </button>
+              )
+            )}
+
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-2 rounded-lg font-semibold border bg-[#122c2a] text-gray-300 border-[#1d3b39] hover:bg-[#1d3b39] disabled:opacity-40"
+            >
+              Next
+            </button>
           </div>
         )}
       </section>

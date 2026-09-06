@@ -137,6 +137,18 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **The main browse page announced "0 domains listed" during an outage.** `/domains` caught
+  a failed manifest load and fell back to `{}`, so it rendered a confident count of zero and
+  "No domains found matching your search" — on the page whose entire job is showing what
+  exists. Now three outcomes, with the failure saying it is a problem on our side and not an
+  empty directory. *Verified in a real browser* against the live project with the schema
+  unapplied: the page shows the failure text and neither of the two false statements.
+- **Pagination rendered one button per page — 500 of them at the design cap.** 10,000
+  listings at 20 per page is 500 numbered buttons, which is a wall nobody can use and a lot
+  of DOM for no benefit. Replaced with Prev/Next plus a window of first, last and the pages
+  either side of the current one. *Verified* across 11 cases including 500 pages at the
+  first, middle and last position: every window is at most 7 elements, always contains page
+  1, the last page and the current page, and never renders two elisions in a row.
 - **Structured data published `foo.kas.kas` to every search engine.** `jsonld.ts` appended
   `.kas` unconditionally, as `name: <template>${name}.kas</template>`, while callers pass the
   stored name,
