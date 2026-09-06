@@ -116,6 +116,8 @@ And wire the test script into `.github/workflows/ci.yml`, which is yours.
 
 ## In progress
 
+- _(Codex)_ — Queue item 6 (CI portion): add one project test command that discovers every `*.test.ts` file and make CI run it.
+
 
 _(nothing claimed — move items here with your name before starting)_
 
