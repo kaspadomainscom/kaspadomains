@@ -1,5 +1,6 @@
 // src/data/supabaseSource.ts
 import { getSupabaseReadClient } from '@/lib/supabase';
+import { fetchAllPages } from '@/lib/paging';
 import { parseProfileRevision } from '@/lib/profileWrite';
 import type { CategoryManifest } from './categoriesManifest';
 import type { Domain } from './types';
@@ -51,59 +52,10 @@ function requireClient() {
   return client;
 }
 
-/**
- * How many rows to ask for per request when reading a whole table.
- *
- * PostgREST caps the rows any single request may return -- Supabase projects
- * ship with a `max-rows` setting, and a query that would exceed it comes back
- * **truncated with no error**. That is the dangerous part: a listing past the
- * cap is not reported missing, it simply is not there, so search says "No
- * matching domains found" for a domain that exists and is paid for.
- *
- * There is no ceiling on how many listings this directory can hold, so a single
- * unbounded request is a matter of when it truncates rather than if. Paging
- * explicitly is correct whatever the server's cap turns out to be.
- */
-const PAGE_SIZE = 500;
-
-/**
- * Read every row of a query, one page at a time.
- *
- * `build` is called per page so each request gets a fresh query object -- a
- * PostgREST query builder is single-use and re-ranging one silently returns the
- * first page again.
- */
-async function fetchAllPages<T>(
-  build: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
-  label: string
-): Promise<T[]> {
-  const all: T[] = [];
-
-  for (let from = 0; ; ) {
-    const { data, error } = await build(from, from + PAGE_SIZE - 1);
-    if (error) throw new Error(`Supabase: failed to load ${label} — ${error.message}`);
-
-    const page = data ?? [];
-
-    // **Only an empty page means the end.** The obvious version of this loop
-    // treats a short page as the end and advances by PAGE_SIZE -- which breaks
-    // in exactly the situation this function exists for: if the server's own
-    // cap is *lower* than PAGE_SIZE (Supabase's max-rows is configurable), every
-    // page is short, the loop stops after one, and the result is silently
-    // truncated to the cap. Advancing by the number of rows actually returned
-    // is correct for any cap, at the cost of one final empty request.
-    if (page.length === 0) return all;
-
-    all.push(...page);
-    from += page.length;
-
-    // Guard against a server that ignores `range` and keeps returning the same
-    // page: without this the loop would never terminate.
-    if (all.length > 100_000) {
-      throw new Error(`Supabase: refusing to page past 100,000 rows loading ${label}.`);
-    }
-  }
-}
+// Paging lives in `@/lib/paging` so it can be tested. The runner strips types
+// but does not resolve `@/` aliases, so only dependency-free modules are
+// testable -- and this one imports the Supabase client. That file explains why
+// an unbounded read here is silently wrong rather than loudly broken.
 
 /** Every active listing, flat. */
 export async function fetchAllDomains(): Promise<Domain[]> {

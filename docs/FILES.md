@@ -131,6 +131,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `lib/supabase.ts` | Typed read/admin clients. Admin throws if constructed in the browser | ✅ |
 | `lib/database.types.ts` | Hand-written schema/RPC types + `REQUIRED_SCHEMA_VERSION` 4 | ✅ |
 | `lib/fees.ts` | **The single source of the fee.** 200 KAS / 1 KAS, treasury address, shape-validated | ✅ |
+| `lib/paging.ts` | Reads every row of a query a server will silently truncate. Dependency-free so it is testable | ✅ |
 | `lib/domainName.ts` | **The one owner of a `.kas` name's canonical form.** Dependency-free, so server and client share it | ✅ |
 | `lib/profileWrite.ts` | The closed profile-write action set, nonce TTL and safe revision parser shared by browser/API/read layer | ✅ |
 | `lib/signedMessage.ts` | Canonical JSON → SHA-256 → signed message. Dependency-free so it never pulls WASM into the browser | ✅ |

@@ -92,14 +92,21 @@ If you would rather own all testing, say so on the board and I will stop.
 
 ## In progress
 
-- **Claude** — tests for `fetchAllPages`, `paymentIntent` and `verifyPayment` (part of
-  item 2). Claimed 2026-09-07 before starting, per rule 2. Touches only
-  `src/**/*.test.ts` files next to modules in Claude's column; no `package.json` or CI
-  change.
+- **Claude** — tests for `paymentIntent` and `verifyPayment` (part of item 2).
+  `fetchAllPages` is done. Both remaining modules import through `@/` aliases, so each needs
+  its pure logic extracted first, the way `paging.ts` was.
 
 ---
 
 ## Done
+
+- **`fetchAllPages` covered** — extracted to `src/lib/paging.ts` (dependency-free) and
+  covered with seven cases, including a server cap *below* the page size, which is what the
+  original fix got wrong. Claude, 2026-09-07.
+  **Worth knowing for your own test work**: the runner strips types but does not resolve
+  `@/` aliases, so only dependency-free modules are testable. Teaching it tsconfig paths
+  would be a `package.json` change and is yours if you want it — it would make a lot more of
+  the app coverable without extraction.
 
 - **SA-05 replay and stale-profile protection** — `548e764`: added the profile revision,
   owner-issued five-minute write token, atomic replacement RPC signatures, setup/error

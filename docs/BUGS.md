@@ -33,6 +33,18 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
 Most recent first. Each entry names the file(s), what was actually wrong, and how it was
 verified — not just "fixed X."
 
+- **The most silently-wrong code in the app had no test, and could not have one.**
+  `fetchAllPages` — the loop whose first version returned 100 of 10,000 rows and reported
+  success — lived inside `supabaseSource.ts`, which imports the Supabase client through a
+  `@/` alias. The test runner strips types but does **not** resolve tsconfig paths, so only
+  dependency-free modules are testable, and that ruled out exactly the module most worth
+  covering. Extracted to `src/lib/paging.ts` (no imports) and covered with seven cases,
+  including the one the original fix got wrong: a server cap **below** the page size, where
+  every page is short and a naive loop stops after one. Verified there is now only one copy
+  of the loop in the tree — a test that duplicates the code it checks passes while the real
+  code is broken, which is why the earlier throwaway harness for this was deliberately not
+  committed.
+
 - **Three write routes returned 500 on a `null` request body.** `JSON.parse` accepts `null`,
   `[1,2]`, `"a string"` and `123` without throwing, and every field read after
   `await request.json()` assumes an object — so an unauthenticated POST of the four bytes
