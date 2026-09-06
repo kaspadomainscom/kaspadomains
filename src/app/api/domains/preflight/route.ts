@@ -1,10 +1,10 @@
 // src/app/api/domains/preflight/route.ts
 import { NextResponse } from 'next/server';
+import { verificationFailure } from '@/lib/server/apiError';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
 import {
   requireDomainOwner,
   verifySignedRequest,
-  VerificationError,
   extractPayload,
 } from '@/lib/server/verifyRequest';
 import { issuePaymentIntent, type IntentAction } from '@/lib/server/paymentIntent';
@@ -113,10 +113,7 @@ export async function POST(request: Request) {
         ? await requireDomainOwner(envelope)
         : await verifySignedRequest(envelope);
   } catch (error) {
-    if (error instanceof VerificationError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    throw error;
+    return verificationFailure(error);
   }
 
   const supabase = getSupabaseAdminClient();

@@ -30,6 +30,32 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
 
 ## Fixed
 
+### 2026-09-07 — "Wait and try again" was an instruction to pay 200 KAS twice
+
+`verifyPayment` refused a not-yet-accepted payment with *"Wait for confirmation and try
+again"*. The server was right; the client could not act on it. `useListDomain` and
+`VotingSection` caught the error, showed it, and discarded `paymentTxId` — so the only retry
+available re-ran the flow from the preflight and asked the wallet for the fee **again**.
+
+Not an edge case: Kasware's `sendKaspa` resolves on *submission*, so the write routinely
+arrived before the network had accepted the payment or the indexer had published it. A 404 or
+a 425 was what a correctly paid listing looked like on the first attempt. It had never been
+seen only because the schema has never been applied and nothing has run end to end.
+
+Fixed in three parts, because any one alone is incomplete:
+
+- `VerificationError` carries `retryable`, set at the throw site. Status could not carry it —
+  409 meant both "not accepted yet" (wait) and "intent expired" (start over).
+- Signing split from sending (`signRequest` / `sendPaidWrite`), so the same signed request is
+  resent with backoff for up to 90s without a second wallet prompt.
+- A receipt found already consumed **on a retry** is reported as success, not as a conflict.
+  Receipts are payer-bound, so only our own earlier attempt could have spent ours — without
+  this, the fix would tell users their listing failed when it existed.
+
+Ten hand-rolled `VerificationError → NextResponse` blocks were collapsed into one renderer at
+the same time; with the flag added, a route that forgot it would have looked fine and cost a
+user 200 KAS. See `MIND.md` #22.
+
 Most recent first. Each entry names the file(s), what was actually wrong, and how it was
 verified — not just "fixed X."
 

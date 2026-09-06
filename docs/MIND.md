@@ -103,6 +103,7 @@ touch the codebase, you own the part of the map you moved. See
 | 19 | A repeated violation needs a mechanism | Documentation is a request; only a check is a constraint, and the recurrence count tells you which one you need |
 | 20 | A dead fallback is not free | An untaken branch is never exercised, so it stops being a safety net and becomes the place bugs hide |
 | 21 | A one-time token is not a version check | A replay guard says “only once”; it does not say the editor was based on the state it is replacing |
+| 22 | An error message is an instruction | "Try again" is a bug if the only retry available charges the user a second time |
 
 ## 1. Never trust a hardcoded value against a live contract — verify the ABI first
 
@@ -674,6 +675,61 @@ both: “can this capability be used twice?” and “was this change based on t
 about to replace?” A yes to the first does not imply a yes to the second. See
 [`mind/optimistic-concurrency-checklist.md`](./mind/optimistic-concurrency-checklist.md)
 before adding any bulk replace, especially where a second browser tab can edit the same row.
+
+## 22. An error message is an instruction -- check that the user can follow it
+
+**Purpose**: a message telling the user to do something they cannot do, or that costs them
+something to do, is not error handling. It is a bug with polite wording, and it survives
+review because the sentence itself is true.
+**Mechanic**: for every failure message, ask **what the user does next**, then check the
+product actually offers that. If the answer is "retry", the retry has to reuse whatever was
+already spent -- money, a signature, a one-time token. If it cannot, the message is wrong no
+matter how accurate it is.
+
+**The incident (2026-09-07)**: the paid flow is preflight -> pay -> write. `verifyPayment`
+refused a payment the network had not accepted yet with, verbatim:
+
+> That payment has not been accepted by the network yet. Wait for confirmation and try again.
+
+Accurate, and the right thing for the server to say. But the client caught it, showed it as a
+toast, and threw `paymentTxId` away -- so the only "try again" that existed was the button
+that re-runs the flow **from the preflight**, asking the wallet for another 200 KAS. The
+message on screen was an instruction to pay twice.
+
+It was not the rare path either. Kasware's `sendKaspa` resolves when a transaction is
+*submitted*; the write left milliseconds later, before the network had accepted it or the
+indexer had published it. The 404 and the 409 were what a **correctly paid** listing looked
+like. Nothing has run end to end yet (the schema has never been applied), so it had never been
+observed -- but every first listing would have hit it.
+
+Three things had to change together, and their shape is the general one:
+
+1. **The server has to say whether a failure is transient.** Status could not carry it: 409
+   meant both "not accepted yet" (wait) and "your intent expired" (start over). Guessing wrong
+   one way charges twice, the other way hammers an endpoint that can never succeed. So
+   `VerificationError` gained an explicit `retryable`, set at the throw site (#17: the value
+   crossing the boundary got one owner).
+2. **The client has to resend the identical request** -- same signature, same intent, same
+   payment id -- which meant separating signing from sending, so a retry does not prompt the
+   wallet again. A second wallet prompt is indistinguishable to a user from something going
+   wrong.
+3. **A retry after a lost response has to be safe.** A receipt is bound to its payer, so a
+   receipt found already consumed on retry was consumed by *our own* earlier attempt: that is
+   success, not a collision. Without this, the fix for one double-charge introduces a new
+   failure that tells users their listing failed when it exists.
+
+**The tell**: the server's own message contained the word "again". Every occurrence of it is a
+claim about what the client can do, and each one is worth checking against what the client
+actually does.
+
+### Recurrence (2026-09-07, same day, inside the fix)
+
+Caught by the #19 lint rule. The new `readErrorBody` returned `{}` when a response body would
+not parse, which left `retryable` undefined and stopped the retry loop. But a body that will
+not parse as JSON is not this API answering with no detail -- it is a proxy's 502 page or a
+gateway timeout, precisely the transient case a paid write most needs to retry. The
+empty-for-unknown bug (#2) had reappeared *in the code written to fix a money-losing bug*, and
+only the mechanism caught it. That is the argument for #19 in one paragraph.
 
 ## Related docs
 

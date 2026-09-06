@@ -73,20 +73,25 @@ export async function verifyPayment(input: {
     // Treat an unreachable API as "cannot confirm", never as "confirmed".
     throw new VerificationError(
       `Could not reach the Kaspa API to confirm payment: ${(error as Error).message}`,
-      503
+      503,
+      { retryable: true }
     );
   }
 
   if (response.status === 404) {
+    // The everyday case, not an exception: the wallet returns as soon as the
+    // transaction is submitted, and the indexer has not seen it yet.
     throw new VerificationError(
-      'That payment transaction could not be found yet. Wait a few seconds and try again.',
-      404
+      'That payment transaction has not appeared on the network yet.',
+      404,
+      { retryable: true }
     );
   }
   if (!response.ok) {
     throw new VerificationError(
       `The Kaspa API returned ${response.status} while confirming payment.`,
-      503
+      503,
+      { retryable: true }
     );
   }
 
@@ -105,16 +110,20 @@ export async function verifyPayment(input: {
   if (!verdict.ok) {
     switch (verdict.reason) {
       case 'not-accepted':
+        // 425 rather than 409, because the client has to tell this apart from
+        // an expired intent -- which is also a 409 and is the opposite advice.
         throw new VerificationError(
-          'That payment has not been accepted by the network yet. Wait for confirmation and try again.',
-          409
+          'That payment has not been accepted by the network yet.',
+          425,
+          { retryable: true }
         );
       case 'payer-unknown':
         // Refuse rather than skip the check -- an unresolvable payer is exactly
         // the case an attacker would want.
         throw new VerificationError(
-          'Could not determine who paid that transaction; try again shortly.',
-          503
+          'Could not determine who paid that transaction yet.',
+          503,
+          { retryable: true }
         );
       case 'wrong-payer':
         throw new VerificationError(

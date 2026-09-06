@@ -1,8 +1,9 @@
 // src/app/api/domains/route.ts
 import { NextResponse } from 'next/server';
+import { verificationFailure } from '@/lib/server/apiError';
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
-import { requireDomainOwner, VerificationError, extractPayload } from '@/lib/server/verifyRequest';
+import { requireDomainOwner, extractPayload } from '@/lib/server/verifyRequest';
 import { verifyPayment } from '@/lib/server/verifyPayment';
 import { rpcError } from '@/lib/server/rpcError';
 import { verifyPaymentIntent } from '@/lib/server/paymentIntent';
@@ -103,10 +104,7 @@ export async function POST(request: Request) {
       payload: extractPayload(body as Record<string, unknown>),
     });
   } catch (error) {
-    if (error instanceof VerificationError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    throw error;
+    return verificationFailure(error);
   }
 
   // The intent proves the preflight ran and passed for this exact signer,
@@ -125,10 +123,7 @@ export async function POST(request: Request) {
       amountSompi: LISTING_FEE_SOMPI.toString(),
     });
   } catch (error) {
-    if (error instanceof VerificationError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    throw error;
+    return verificationFailure(error);
   }
 
   // Payment is checked after ownership, so we never ask a non-owner to pay for
@@ -143,10 +138,7 @@ export async function POST(request: Request) {
       payerAddress: verified.signerAddress,
     });
   } catch (error) {
-    if (error instanceof VerificationError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    throw error;
+    return verificationFailure(error);
   }
 
   const supabase = getSupabaseAdminClient();
@@ -186,8 +178,7 @@ export async function POST(request: Request) {
   });
 
   if (rpcFailure) {
-    const mapped = rpcError(rpcFailure, 'Could not create the listing.');
-    return NextResponse.json({ error: mapped.message }, { status: mapped.status });
+    return verificationFailure(rpcError(rpcFailure, 'Could not create the listing.'));
   }
 
   return NextResponse.json(

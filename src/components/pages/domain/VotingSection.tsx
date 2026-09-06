@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useWalletContext } from "@/context/WalletContext";
 import { fetchVoteCount, fetchHasVoted, fetchVoters } from "@/data/supabaseSource";
-import { signedFetch, readError, payFee, preflight } from "@/lib/signedFetch";
+import { signRequest, sendPaidWrite, payFee, preflight } from "@/lib/signedFetch";
 import { formatKas, VOTE_FEE_SOMPI } from "@/lib/fees";
 
 const VOTERS_PER_PAGE = 10;
@@ -123,18 +123,29 @@ export function VotingSection({ domainName }: { domainName: string }) {
       // The server's quote, not our constant.
       const paymentTxId = await payFee(amountSompi);
 
-      const response = await signedFetch({
+      // Signed once and resent until it lands. The fee is already paid by this
+      // point, so a transient "not accepted yet" must not be reported as a
+      // failure -- the user cannot act on that without paying again.
+      const signed = await signRequest({
         action: "vote",
         domain: domainName,
         path: `/api/domains/${encodeURIComponent(domainName)}/vote`,
         body: { paymentTxId, intent },
       });
 
-      if (!response.ok) {
-        setMessage(await readError(response, "Could not record your vote."));
-        return;
-      }
+      await sendPaidWrite({
+        signed,
+        fallbackMessage: "Could not record your vote.",
+        onWait: ({ attempt }) => {
+          if (attempt === 1) {
+            setMessage("Waiting for the network to confirm your payment...");
+          }
+        },
+      });
 
+      // `already-done` counts as success here: the receipt is bound to this
+      // wallet, so a vote recorded against it is this vote.
+      setMessage(null);
       setVotedResult({ key: voteKey, voted: true });
       setPage(1);
       // Re-read from the server rather than guessing locally, so the UI shows

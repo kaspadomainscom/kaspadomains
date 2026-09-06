@@ -5,6 +5,7 @@ import {
   parseProfileRevision,
   type ProfileWriteAction,
 } from './profileWrite';
+import { decidePaidWrite, type PaidWriteAttempt } from './paidWriteRetry';
 
 /**
  * Ask Kasware to sign a write request with the user's **Kaspa L1 key**, then
@@ -69,13 +70,33 @@ function getKaswareL1(): KaswareL1 | null {
   return w.kasware ?? null;
 }
 
-export async function signedFetch(input: {
+/**
+ * A request that has been signed and is ready to send -- as many times as
+ * necessary.
+ *
+ * Signing and sending are separate because a paid write may have to be resent:
+ * the wallet returns a payment id as soon as the transaction is submitted, so
+ * the write frequently arrives before the network has accepted it. Re-running
+ * `signedFetch` for each attempt would work, but it would prompt the wallet for
+ * a signature every time, which is indistinguishable to the user from something
+ * having gone wrong.
+ *
+ * One signature covers all attempts. It is valid for five minutes, comfortably
+ * more than `RETRY_DEADLINE_MS`.
+ */
+export type SignedRequest = {
+  path: string;
+  method: 'POST' | 'PUT';
+  body: Record<string, unknown>;
+};
+
+export async function signRequest(input: {
   action: WriteAction;
   domain: string;
   path: string;
   method?: 'POST' | 'PUT';
   body?: Record<string, unknown>;
-}): Promise<Response> {
+}): Promise<SignedRequest> {
   const kasware = getKaswareL1();
   if (!kasware?.signMessage || !kasware?.getPublicKey) {
     throw new Error(
@@ -107,27 +128,124 @@ export async function signedFetch(input: {
 
   const signature = await kasware.signMessage(message);
 
-  return fetch(input.path, {
+  return {
+    path: input.path,
     method: input.method ?? 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+    body: {
       ...payload,
       domain: input.domain,
       publicKey,
       issuedAt,
       signature,
-    }),
+    },
+  };
+}
+
+function send(signed: SignedRequest): Promise<Response> {
+  return fetch(signed.path, {
+    method: signed.method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(signed.body),
   });
+}
+
+/** Sign and send once. For everything that has not cost the user anything. */
+export async function signedFetch(input: {
+  action: WriteAction;
+  domain: string;
+  path: string;
+  method?: 'POST' | 'PUT';
+  body?: Record<string, unknown>;
+}): Promise<Response> {
+  return send(await signRequest(input));
+}
+
+/**
+ * Send a write whose fee has **already been paid**, retrying the same request
+ * until it lands or the deadline passes.
+ *
+ * Retrying here is not an optimisation, it is the correctness property. The
+ * money has already moved; the alternative to retrying is telling the user to
+ * "try again", which re-runs the flow from the preflight and charges them
+ * again. So this resends the *identical* request -- same signature, same intent,
+ * same payment id -- and never asks the wallet for anything.
+ *
+ * `onWait` reports each pause so the UI can say what is happening. A silent
+ * ninety-second wait after a wallet prompt reads as a hang, and a user who
+ * reloads at that point is back to the double payment this exists to prevent.
+ */
+export async function sendPaidWrite(input: {
+  signed: SignedRequest;
+  fallbackMessage: string;
+  onWait?: (info: { attempt: number; afterMs: number }) => void;
+}): Promise<{ outcome: 'success' | 'already-done'; message?: string }> {
+  const startedAt = Date.now();
+
+  for (let attempt = 1; ; attempt += 1) {
+    let attemptResult: PaidWriteAttempt;
+    try {
+      const response = await send(input.signed);
+      if (response.ok) {
+        attemptResult = { transport: 'ok', ok: true, status: response.status, body: {} };
+      } else {
+        const body = await readErrorBody(response);
+        // No readable body means we never got this API's verdict, so treat it
+        // like a connection that dropped rather than like a refusal.
+        attemptResult = body
+          ? { transport: 'ok', ok: false, status: response.status, body }
+          : { transport: 'failed' };
+      }
+    } catch {
+      // The request never completed. It may still have been executed, which is
+      // why giving up here would be wrong -- see `decidePaidWrite`.
+      attemptResult = { transport: 'failed' };
+    }
+
+    const decision = decidePaidWrite({
+      attemptResult,
+      attempt,
+      elapsedMs: Date.now() - startedAt,
+      fallbackMessage: input.fallbackMessage,
+    });
+
+    switch (decision.kind) {
+      case 'success':
+        return { outcome: 'success' };
+      case 'already-done':
+        return { outcome: 'already-done', message: decision.message };
+      case 'failed':
+        throw new Error(decision.message);
+      case 'retry':
+        input.onWait?.({ attempt, afterMs: decision.afterMs });
+        await new Promise((resolve) => setTimeout(resolve, decision.afterMs));
+    }
+  }
+}
+
+type ErrorBody = { error?: string; retryable?: boolean; code?: string };
+
+/**
+ * Pull the server's error body out of a failed response, or `null` if there was
+ * no readable body.
+ *
+ * `null` rather than `{}` on purpose, and the distinction is load-bearing for
+ * paid writes. An error that will not parse as JSON is not this API answering
+ * with no detail -- it is a proxy's 502 page, a gateway timeout, a truncated
+ * response. Those are the transient infrastructure failures a paid write most
+ * needs to retry, and flattening them into an empty body would mark them
+ * `retryable: undefined` and stop the loop, stranding a user who has paid.
+ */
+async function readErrorBody(response: Response): Promise<ErrorBody | null> {
+  try {
+    return ((await response.json()) ?? {}) as ErrorBody;
+  } catch {
+    return null;
+  }
 }
 
 /** Pull the server's error message out of a failed response. */
 export async function readError(response: Response, fallback: string): Promise<string> {
-  try {
-    const body = (await response.json()) as { error?: string };
-    return body?.error || fallback;
-  } catch {
-    return fallback;
-  }
+  return (await readErrorBody(response))?.error || fallback;
 }
 
 /**

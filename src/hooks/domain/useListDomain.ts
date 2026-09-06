@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useToast } from '@/components/ToastProvider';
-import { signedFetch, readError, payFee, preflight } from '@/lib/signedFetch';
+import { signRequest, sendPaidWrite, payFee, preflight } from '@/lib/signedFetch';
 import { formatKas } from '@/lib/fees';
 
 /**
@@ -66,18 +66,35 @@ export function useListDomain() {
 
       addToast(`Payment sent. Listing "${domain}"...`);
 
-      const response = await signedFetch({
+      // Signed once, then sent as many times as it takes. The wallet returns as
+      // soon as the payment is submitted, so this first attempt usually arrives
+      // before the network has accepted it -- and the fee is already gone, so
+      // "try again later" is not something the user can safely act on.
+      const signed = await signRequest({
         action: 'list-domain',
         domain,
         path: '/api/domains',
         body: { categories, paymentTxId, intent },
       });
 
-      if (!response.ok) {
-        throw new Error(await readError(response, 'Could not create the listing.'));
-      }
+      const { outcome } = await sendPaidWrite({
+        signed,
+        fallbackMessage: 'Could not create the listing.',
+        onWait: ({ attempt }) => {
+          // Say what is happening. Silence after a wallet prompt reads as a
+          // hang, and a reload here is exactly the second payment this avoids.
+          if (attempt === 1) {
+            addToast('Waiting for the network to confirm your payment...');
+          }
+        },
+      });
 
-      addToast(`"${domain}" listed successfully!`, 'success');
+      addToast(
+        outcome === 'already-done'
+          ? `"${domain}" is already listed -- your payment went through.`
+          : `"${domain}" listed successfully!`,
+        'success'
+      );
       return domain;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong.';

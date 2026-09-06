@@ -1,7 +1,8 @@
 // src/app/api/domains/[name]/vote/route.ts
 import { NextResponse } from 'next/server';
+import { verificationFailure } from '@/lib/server/apiError';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
-import { verifySignedRequest, VerificationError, extractPayload } from '@/lib/server/verifyRequest';
+import { verifySignedRequest, extractPayload } from '@/lib/server/verifyRequest';
 import { verifyPayment } from '@/lib/server/verifyPayment';
 import { rpcError } from '@/lib/server/rpcError';
 import { verifyPaymentIntent } from '@/lib/server/paymentIntent';
@@ -64,10 +65,7 @@ export async function POST(
       payload: extractPayload(body as Record<string, unknown>),
     });
   } catch (error) {
-    if (error instanceof VerificationError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    throw error;
+    return verificationFailure(error);
   }
 
   // Required, not advisory: the preflight is what confirms the domain exists and
@@ -81,10 +79,7 @@ export async function POST(
       amountSompi: VOTE_FEE_SOMPI.toString(),
     });
   } catch (error) {
-    if (error instanceof VerificationError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    throw error;
+    return verificationFailure(error);
   }
 
   let payment;
@@ -95,10 +90,7 @@ export async function POST(
       payerAddress: verified.signerAddress,
     });
   } catch (error) {
-    if (error instanceof VerificationError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    throw error;
+    return verificationFailure(error);
   }
 
   const supabase = getSupabaseAdminClient();
@@ -116,8 +108,7 @@ export async function POST(
   });
 
   if (rpcFailure) {
-    const mapped = rpcError(rpcFailure, 'Could not record the vote.');
-    return NextResponse.json({ error: mapped.message }, { status: mapped.status });
+    return verificationFailure(rpcError(rpcFailure, 'Could not record the vote.'));
   }
 
   return NextResponse.json({ votes: Number(votes ?? 0) }, { status: 201 });

@@ -1,7 +1,8 @@
 // src/app/api/domains/[name]/links/route.ts
 import { NextResponse } from 'next/server';
+import { verificationFailure } from '@/lib/server/apiError';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
-import { requireDomainOwner, VerificationError, extractPayload } from '@/lib/server/verifyRequest';
+import { requireDomainOwner, extractPayload } from '@/lib/server/verifyRequest';
 import { rpcError } from '@/lib/server/rpcError';
 import { MAX_LINKS } from '@/lib/limits';
 import { parseProfileRevision } from '@/lib/profileWrite';
@@ -109,10 +110,7 @@ export async function PUT(
       payload: extractPayload(body as Record<string, unknown>),
     });
   } catch (error) {
-    if (error instanceof VerificationError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    throw error;
+    return verificationFailure(error);
   }
 
   const supabase = getSupabaseAdminClient();
@@ -167,8 +165,7 @@ export async function PUT(
   });
 
   if (rpcFailure) {
-    const mapped = rpcError(rpcFailure, 'Could not update resources.');
-    return NextResponse.json({ error: mapped.message }, { status: mapped.status });
+    return verificationFailure(rpcError(rpcFailure, 'Could not update resources.'));
   }
 
   return NextResponse.json({ links, profileRevision: nextProfileRevision }, { status: 200 });

@@ -134,6 +134,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `lib/fees.ts` | **The single source of the fee.** 200 KAS / 1 KAS, treasury address, shape-validated | ✅ |
 | `lib/limits.ts` | How much of a listing a domain may have: the category cap and the link cap. Both were declared twice; the category one was enforced only on edits, so it could be sidestepped at creation | ✅ |
 | `lib/paymentCheck.ts` | Decides whether a transaction paid the fee, from the right wallet. Dependency-free, so it is testable | ✅ |
+| `lib/paidWriteRetry.ts` | When a request whose fee is **already paid** comes back failed: retry, treat as done, or stop. Dependency-free and tested — the wrong answer here charges someone twice | ✅ |
 | `lib/paymentIntentToken.ts` | Mint/check the payment-intent token. Dependency-free and returns a boolean, so it is testable | ✅ |
 | `lib/paging.ts` | Reads every row of a query a server will silently truncate. Dependency-free so it is testable | ✅ |
 | `lib/domainName.ts` | **The one owner of a `.kas` name's canonical form.** Dependency-free, so server and client share it | ✅ |

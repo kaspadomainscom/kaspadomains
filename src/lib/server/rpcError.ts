@@ -25,7 +25,10 @@ const CODES: Record<string, { status: number; message: string }> = {
 
 export function rpcError(error: PostgrestError, fallback: string): VerificationError {
   const known = CODES[error.code];
-  if (known) return new VerificationError(known.message, known.status);
+  // The code travels with the error. A client that has already paid needs to
+  // tell "your payment was consumed by your own earlier attempt" (KD001/KD002,
+  // which mean the write landed) apart from every other 409.
+  if (known) return new VerificationError(known.message, known.status, { code: error.code });
 
   // KD003 carries the offending category name, so use the database's own text.
   if (error.code === 'KD003') {

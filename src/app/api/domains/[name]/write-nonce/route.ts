@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
+import { verificationFailure } from '@/lib/server/apiError';
 import { REQUIRED_SCHEMA_VERSION } from '@/lib/database.types';
 import {
   isProfileWriteAction,
@@ -10,7 +11,6 @@ import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
 import {
   extractPayload,
   requireDomainOwner,
-  VerificationError,
 } from '@/lib/server/verifyRequest';
 
 export const runtime = 'nodejs';
@@ -82,10 +82,7 @@ export async function POST(
       payload: extractPayload(body),
     });
   } catch (error) {
-    if (error instanceof VerificationError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    throw error;
+    return verificationFailure(error);
   }
 
   const supabase = getSupabaseAdminClient();
