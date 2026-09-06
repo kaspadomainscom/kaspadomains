@@ -308,6 +308,12 @@ a grep.
       marketing site). Supabase is now genuinely used as the primary store, and the
       allowlist entry is derived from `NEXT_PUBLIC_SUPABASE_URL` — correct when
       configured, absent when not. See [`ARCHITECTURE.md`](./ARCHITECTURE.md#data-model).
+      **Follow-up (2026-09-07): the rest of that list was never audited.** Checking the live
+      header found the identical mistake still present for KNS — `https://knsdomains.org` is
+      the marketing site, while the app calls `https://api.knsdomains.org` — plus a dead
+      `https://rpc.kasplextest.xyz` left from the removed EVM path. Queued for Codex in
+      [`CODEX-TODO.md`](./CODEX-TODO.md) item 3, since `proxy.ts` reads from
+      `kaspaDomainRuntime.ts`. `MIND.md` #18.
 
 ## Unverified (not gaps or bugs — genuinely unknown, needs testing)
 
