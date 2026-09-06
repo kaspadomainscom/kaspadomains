@@ -137,6 +137,28 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **A failed vote read rendered as "Votes: 0" and "Be the first to vote!"** `likesCount`
+  started at `0` and `voters` at `[]`, and both `catch` blocks left them there — so a
+  database outage on a domain with fifty votes displayed a confident zero, and invited the
+  next visitor to **pay 1 KAS to be first**. `MIND.md` #2 again, on the money path this
+  time. Both are now `null` for "not known": the count renders as `—`, and the voter list
+  says plainly that we could not load it and therefore do not know whether there are any.
+  Note what already saved this from costing anyone money: the SA-04 preflight re-checks
+  "have you already voted" server-side before the wallet is asked, so a stale `userHasLiked`
+  leads to a refusal rather than a wasted fee.
+- **`/list-domain` promised features that do not exist, on the page where people decide to
+  spend 200 KAS.** It advertised "a dedicated profile with bio, links, image, and
+  categories" and being "featured in categories, search, and premium drops". A profile
+  renders category, listed status, vote count and links — there is no bio and no image:
+  `DomainDataStorage` is referenced only by `useGetDomainData.ts`, which is one of the 18
+  files nothing imports (see [`FILES.md`](./FILES.md)), and that contract fails every call
+  anyway. "Premium drops" and "curated drops" appear nowhere in the codebase at all.
+  Rewritten to list what actually ships — profile links, up to six categories, both editable
+  later for free, community voting, and ownership re-checked on every edit. This matters
+  beyond accuracy: the refund policy is explicitly undecided, so a promise the product
+  cannot keep is a dispute with no agreed resolution. *Verified by build and inspection
+  only* — the copy sits behind a wallet-connected branch that cannot be rendered without a
+  wallet.
 - **The listing button quoted 210 KAS for a 200 KAS fee.** Every other place in the app —
   homepage, `/docs`, `/learn`, `/list-domain`, `/business-plan` — says 200. The one place
   that was wrong was `PickDomainModal`, which is the actual button a user clicks to pay.

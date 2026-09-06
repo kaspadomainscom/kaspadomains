@@ -36,7 +36,8 @@ export default function ListDomainPage() {
       <header className="text-center space-y-4">
         <h1 className="text-5xl font-extrabold text-white">List Your .kas Domain</h1>
         <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-          Showcase your Kaspa identity. Verified domains gain exposure in search, curated drops, and profile pages.
+          Showcase your Kaspa identity. A listed domain gets a profile page, a place in the
+          categories you choose, and visibility in search.
         </p>
       </header>
 
@@ -70,15 +71,18 @@ export default function ListDomainPage() {
             <div className="bg-[#101A23] p-5 rounded-xl border border-[#1f2c38]">
               <h3 className="text-white font-medium mb-3">Includes:</h3>
               <ul className="list-disc list-inside space-y-2 text-gray-300">
-                <li>Ownership checked against KNS when you list</li>
-                <li>Dedicated profile with bio, links, image, and categories</li>
-                <li>Featured in categories, search, and premium drops</li>
+                <li>Ownership checked against KNS when you list, and on every later edit</li>
+                <li>A profile page with your own links, editable any time, free</li>
+                <li>Placement in up to six categories, changeable later, free</li>
+                <li>Community voting, and a place in the top-voted ranking</li>
                 <li>One-time 200 KAS fee — no renewals or subscriptions</li>
               </ul>
             </div>
 
             <p className="text-sm text-gray-400">
-              * You must own the domain on the <strong>KNS</strong> contract, verified and listed with your Kasware wallet.
+              * You must own the domain on <strong>KNS</strong>, and sign with the same Kasware
+              wallet that holds it. We read the owner from KNS ourselves — you cannot list a
+              domain you do not own.
             </p>
 
             {/* Domain Picker Section */}

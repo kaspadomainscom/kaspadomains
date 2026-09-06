@@ -30,9 +30,14 @@ export function VotingSection({ domainName }: { domainName: string }) {
     // until the server rejected the duplicate.
     const account = isSupabaseConfigured ? kasware.account : kasplex.account;
 
-    const [likesCount, setLikesCount] = useState<number>(0);
+    // `null` means "not known", not "zero". A failed read used to leave both of
+    // these at their empty values, so an outage rendered "Votes: 0" and "No
+    // votes yet. Be the first to vote!" as statements of fact -- on a domain
+    // that might have fifty votes, to a user about to pay 1 KAS believing they
+    // were first. See docs/MIND.md #2.
+    const [likesCount, setLikesCount] = useState<number | null>(null);
     const [userHasLiked, setUserHasLiked] = useState(false);
-    const [voters, setVoters] = useState<string[]>([]);
+    const [voters, setVoters] = useState<string[] | null>(null);
     const [page, setPage] = useState(1);
     const [loadingVoters, setLoadingVoters] = useState(false);
     const [txPending, setTxPending] = useState(false);
@@ -77,7 +82,10 @@ export function VotingSection({ domainName }: { domainName: string }) {
                 .then((count) => {
                     if (!cancelled) setLikesCount(count);
                 })
-                .catch(console.error);
+                .catch((error) => {
+                    console.error(error);
+                    if (!cancelled) setLikesCount(null);
+                });
             return () => {
                 cancelled = true;
             };
@@ -89,7 +97,10 @@ export function VotingSection({ domainName }: { domainName: string }) {
             .then((count: bigint) => {
                 if (!cancelled) setLikesCount(Number(count));
             })
-            .catch(console.error);
+            .catch((error: unknown) => {
+                console.error(error);
+                if (!cancelled) setLikesCount(null);
+            });
 
         return () => {
             cancelled = true;
@@ -147,7 +158,9 @@ export function VotingSection({ domainName }: { domainName: string }) {
                     if (!cancelled) setVoters(addresses);
                 } catch (error) {
                     console.error(error);
-                    if (!cancelled) setVoters([]);
+                    // null, not [] -- "we could not load the voters" is not
+                    // "there are no voters".
+                    if (!cancelled) setVoters(null);
                 }
                 if (!cancelled) setLoadingVoters(false);
                 return;
@@ -176,7 +189,7 @@ export function VotingSection({ domainName }: { domainName: string }) {
                 if (!cancelled) setVoters(voterAddresses);
             } catch (error) {
                 console.error(error);
-                if (!cancelled) setVoters([]);
+                if (!cancelled) setVoters(null);
             }
             if (!cancelled) setLoadingVoters(false);
         }
@@ -310,18 +323,25 @@ export function VotingSection({ domainName }: { domainName: string }) {
                             : `Vote to this domain (${voteFeeLabel})`}
                 </button>
 
-                <span className="text-lg font-semibold text-white">Votes: {likesCount}</span>
+                <span className="text-lg font-semibold text-white">
+                    Votes: {likesCount === null ? '—' : likesCount}
+                </span>
             </div>
 
             <h3 className="font-medium mb-2 text-gray-200">Voters</h3>
 
             {loadingVoters ? (
                 <p className="text-gray-400">Loading voters...</p>
+            ) : voters === null ? (
+                <p className="text-yellow-400/90">
+                    We couldn&apos;t load the voters for this domain, so we don&apos;t know
+                    whether it has any. This is a problem on our side.
+                </p>
             ) : voters.length === 0 ? (
                 <p className="text-gray-400">No votes yet. Be the first to vote!</p>
             ) : (
                 <ul className="space-y-1 max-h-48 overflow-auto border border-[#1d3b39] rounded p-2 font-mono text-sm text-gray-300">
-                    {voters.map((voter) => (
+                    {(voters ?? []).map((voter) => (
                         <li key={voter}>{voter}</li>
                     ))}
                 </ul>
@@ -338,7 +358,7 @@ export function VotingSection({ domainName }: { domainName: string }) {
                 </button>
                 <button
                     onClick={() => setPage((p) => p + 1)}
-                    disabled={voters.length < DOMAIN_LIKES_PER_PAGE}
+                    disabled={!voters || voters.length < DOMAIN_LIKES_PER_PAGE}
                     className="px-2 py-1 bg-[#1d3b39] text-gray-200 rounded disabled:opacity-50"
                 >
                     Next
