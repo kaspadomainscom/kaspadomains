@@ -116,6 +116,8 @@ And wire the test script into `.github/workflows/ci.yml`, which is yours.
 
 ## In progress
 
+- _(Codex)_ — Queue items 2–3: remove the eight confirmed-unreachable Codex-owned EVM adapters and KNS API hooks; retain `LEGACY_KASPLEX_TESTNET`, which remains live for CSP.
+
 
 
 _(nothing claimed — move items here with your name before starting)_
