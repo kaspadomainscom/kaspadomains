@@ -137,6 +137,29 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **`/docs` documented KNS smart-contract calls we have never made.** It told users "we use
+  the official KNS smart contracts to ensure domain legitimacy" and listed
+  `ownerOf(tokenId)` and `isVerifiedDomain(name)`. We call the KNS **HTTP API**
+  (`api.knsdomains.org`), not a contract; `ownerOf` appears nowhere in the codebase, and
+  `isVerifiedDomain` exists only as a JSON field on an API response. Plausible-sounding
+  function names that do not exist — `MIND.md` #1, except in documentation rather than code,
+  where nothing type-checks it. Replaced with what actually happens.
+- **`/docs` told users the wrong people can edit a listing.** "Categories and resources can
+  be updated by the wallet that listed it." The rule is the opposite and deliberately so:
+  the **current KNS owner**, re-read on every request, specifically so a transferred domain
+  follows its new owner and stops obeying the old one. That distinction is the entire point
+  of the ownership model, and the docs stated its inverse — a buyer would think they cannot
+  edit what they own, and a seller would think they still can. Also removed "Unique ID
+  (0–9999)", a leftover of the deleted listing cap.
+- **Every toast reset every other toast's timer.** The auto-remove effect was keyed on the
+  whole `toasts` array, so each add or remove cleared and recreated *all* timers. A toast
+  2.9s into its 3s life got a fresh 3s the moment the next one appeared — and the listing
+  flow emits four in a row, so the first lived roughly twice its duration and the stack
+  drifted further out of sync the more there were. Each toast now gets one timer at creation,
+  cancelled on removal and on unmount. *Verified* with a simulated clock: three toasts added
+  a second apart each expire exactly at creation + duration; under the old logic the first
+  was still on screen 2s late. Also stopped announcing every toast as `assertive` — only
+  errors interrupt now, rather than talking over whatever the user is reading.
 - **Nine of the sidebar's nineteen category links pointed at categories that do not
   exist.** The list was hard-coded: `ai-tech` for what the schema calls `tech`, `real-words`
   for `realWords`, `memes` for `meme`, plus `profiles`, `vaults`, `tools`, `utilities`,

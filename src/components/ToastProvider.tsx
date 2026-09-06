@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 
 type ToastType = 'success' | 'error' | 'info';
 
@@ -22,34 +22,53 @@ const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
+  // One timer per toast, owned here so it can be cancelled on unmount.
+  //
+  // The previous version ran a single effect keyed on the whole `toasts` array,
+  // which cleared and recreated **every** timer each time any toast was added
+  // or removed. So a toast already 2.9s into its 3s life got a fresh 3s the
+  // moment the next one appeared -- and the listing flow emits four in a row
+  // ("Checking...", "Confirm the fee...", "Payment sent...", "listed"), so the
+  // first one lived roughly twice its duration and the stack drifted further
+  // out of sync the more there were.
+  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+
   const removeToast = useCallback((id: string) => {
+    const timer = timers.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      timers.current.delete(id);
+    }
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
   const addToast = useCallback(
     (message: string, type: ToastType = 'info', duration = 3000) => {
       const id = crypto.randomUUID();
+
       setToasts((prev) => {
-        const newToasts = [...prev, { id, message, type, duration }];
-        // Limit max toasts to 5
-        return newToasts.length > 5 ? newToasts.slice(1) : newToasts;
+        const next = [...prev, { id, message, type, duration }];
+        // At most five on screen; the oldest goes first.
+        return next.length > 5 ? next.slice(next.length - 5) : next;
       });
+
+      // Scheduled once, when the toast is created, so its lifetime is its own.
+      timers.current.set(
+        id,
+        setTimeout(() => removeToast(id), duration)
+      );
     },
-    []
+    [removeToast]
   );
 
-  // Handle auto-remove for each toast with cleanup
+  // Cancel anything still pending when the provider goes away.
   useEffect(() => {
-    if (toasts.length === 0) return;
-
-    const timers = toasts.map(({ id, duration }) =>
-      setTimeout(() => removeToast(id), duration)
-    );
-
+    const pending = timers.current;
     return () => {
-      timers.forEach(clearTimeout);
+      pending.forEach(clearTimeout);
+      pending.clear();
     };
-  }, [toasts, removeToast]);
+  }, []);
 
   const value = useMemo(() => ({ toasts, addToast, removeToast }), [toasts, addToast, removeToast]);
 
@@ -60,8 +79,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {toasts.map(({ id, message, type }) => (
           <div
             key={id}
-            role="alert"
-            aria-live="assertive"
+            // Only errors interrupt. Announcing every "Payment sent..." with
+            // assertive talks over whatever the user is actually reading.
+            role={type === 'error' ? 'alert' : 'status'}
+            aria-live={type === 'error' ? 'assertive' : 'polite'}
             className={`rounded-md px-4 py-2 shadow-md text-white flex items-center justify-between gap-4 ${
               type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-600' : 'bg-blue-600'
             }`}

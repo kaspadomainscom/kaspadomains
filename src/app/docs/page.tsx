@@ -114,11 +114,15 @@ export default function Docs() {
           </Section>
 
           <Section id="kns" title="KNS Verification">
-            <p>We use the official KNS smart contracts to ensure domain legitimacy:</p>
+            <p>
+              We ask KNS who owns a domain, from our server, using its public API at{" "}
+              <code>api.knsdomains.org</code> — never a value your browser sends us. Then we
+              verify that the request was signed by the key behind that address.
+            </p>
             <ul>
-              <li><code>ownerOf(tokenId)</code> — to verify ownership</li>
-              <li><code>isVerifiedDomain(name)</code> — to validate name</li>
-              <li><code>keccak256(&quot;yourdomain.kas&quot;)</code> — for domain hashing</li>
+              <li>The owner is read from KNS on <strong>every</strong> write, not stored and trusted</li>
+              <li>The signature must come from the key that owns the address KNS reports</li>
+              <li><code>keccak256(&quot;yourdomain.kas&quot;)</code> — how a listing is hashed for indexing</li>
               <li>Only real owners can list. No duplicates, no fakes.</li>
             </ul>
           </Section>
@@ -128,7 +132,7 @@ export default function Docs() {
               <li>Plaintext domain (e.g. <code>example.kas</code>)</li>
               <li>Hashed domain (<code>keccak256(&quot;example.kas&quot;)</code>)</li>
               <li>Wallet address of the domain owner</li>
-              <li>Unique ID (0–9999) tied to listing</li>
+              <li>A listing id, and the timestamp it was created</li>
             </ul>
           </Section>
 
@@ -138,7 +142,12 @@ export default function Docs() {
               <li>The owner is read from KNS when you list</li>
               <li>Each domain can only be listed once</li>
               <li>Must belong to at least one category</li>
-              <li>Categories and resources can be updated by the wallet that listed it</li>
+              <li>
+                Categories and resources can be updated by whichever wallet owns the domain{" "}
+                <strong>now</strong> — not by whoever listed it. Ownership is re-read from KNS
+                on every edit, so a domain that changes hands is editable by its new owner
+                immediately, and stops being editable by the previous one.
+              </li>
             </ul>
           </Section>
 
