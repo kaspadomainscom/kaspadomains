@@ -8,6 +8,8 @@ points to them and holds the actively-updated loop backlog below.
 
 - [`FILES.md`](./FILES.md) — every file, what it does, whether it's live, and the
   prioritised TODO
+- [`kaspadomains-systems.md`](./kaspadomains-systems.md) — the same codebase by *system*,
+  each with the files it's built from
 - [`BUGS.md`](./BUGS.md) — what's broken (open + a fixed-bugs changelog)
 - [`GAPS.md`](./GAPS.md) — what's missing or incomplete (features, dead code, infra)
 - [`LIFECYCLE.md`](./LIFECYCLE.md) — how a domain/fee/vote flows through the system

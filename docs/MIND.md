@@ -45,6 +45,38 @@ as a natural byproduct of any session that surfaces a real, generalizable lesson
 "Expand your mind" just means: do that pass explicitly and thoroughly, right now, instead
 of waiting for it to happen incidentally as a side effect of other work.
 
+## Standing practice: keep `FILES.md` current
+
+**Purpose**: [`FILES.md`](./FILES.md) is the map — every file, what it does, whether it is
+actually live, and what is outstanding. A map that lags the territory is worse than none,
+because people trust it and stop looking.
+
+**Mechanic**: **update `FILES.md` in the same change that makes it wrong.** Not afterwards,
+not "next session". Specifically, before finishing any piece of work, ask:
+
+1. **Did I add a file?** Add it to its section with a purpose and a status marker.
+2. **Did I delete one, or make one dead?** Move it to the dead list, or out of it. A file
+   whose last importer just disappeared is now dead and nothing will tell you.
+3. **Did a status change?** ⛔ → ✅ when something starts working, ✅ → 🟡 when a limitation
+   appears, 🔒 → ✅ when the blocker clears.
+4. **Did I finish something on the TODO, or discover something new?** Update section 9 —
+   including moving an item between *blocking*, *owner decision* and *engineering* when its
+   nature changes.
+5. **Did the "where the project stands" summary just become stale?** It is the first thing
+   anyone reads; a stale one misdirects every reader after it.
+6. **Bump `Last updated`.**
+
+**Why this is a standing rule rather than a nice-to-have**: `FILES.md` exists because
+nobody could answer "which of these 128 source files are live?" — and the answer turned out
+to include 18 dead files and a contract count that had been wrong in every doc for two days.
+That is what an unmaintained map costs. The same pass produced principle #15: a migration
+ends when the old paths are gone, and the only way to know they are gone is to have looked
+at every file recently.
+
+**This applies to every agent working in this repo, not just whoever wrote it.** If you
+touch the codebase, you own the part of the map you moved. See
+[`../AGENTS.md`](../AGENTS.md) for the work split.
+
 ## Quick reference
 
 | # | Principle | Purpose |
@@ -435,6 +467,10 @@ that quietly becomes load-bearing is principle #12's problem waiting to happen.
   steps to run (verification, fallback-auditing, shared-function changes, testnet-reset
   context), for when you're about to do the thing a principle is about, not just remember
   why it matters.
+- [`FILES.md`](./FILES.md) — the map: every file, its status, and the prioritised TODO.
+  Keeping it current is a standing rule, not an optional courtesy — see above.
+- [`kaspadomains-systems.md`](./kaspadomains-systems.md) — the same codebase cut by
+  *system* rather than by folder: what each one does and which files build it.
 - [`SPEC.md`](./SPEC.md) — the verified ground truth principle #1 depends on.
 - [`BUGS.md`](./BUGS.md) — the incidents behind these principles, in full, including how
   each was actually fixed where it has been.

@@ -34,8 +34,12 @@ missing.
   contracts.
 - Four new pages (`/status`, `/about`, `/terms`, `/privacy`) and two new
   endpoints (`/api/domains/preflight`, `/api/domains/[name]/categories`).
-- Eight user-facing bugs, including a pay button quoting the wrong price and an
-  admin page that denied access to the administrator.
+- Twelve user-facing bugs, including a pay button quoting the wrong price, an
+  admin page that denied access to the administrator, header search that never
+  found anything, and two places that rendered a confident zero when they had
+  simply failed to load.
+- `docs/FILES.md` and `docs/kaspadomains-systems.md` — the file map and the
+  system map. Keeping both current is now a standing rule in `MIND.md`.
 
 **The one thing blocking everything:** `supabase/schema.sql` has never been
 applied. `npm run db:check` and `/status` agree, independently, that every table
@@ -199,6 +203,30 @@ hooks are plausibly wanted later.
 
 ---
 
+## 8b. Documentation — `docs/`
+
+The map had no entry for its own folder until 2026-09-06. 22 files.
+
+| File | Purpose |
+|---|---|
+| `FILES.md` | This file. **Keeping it current is a standing rule** — see `MIND.md` |
+| `kaspadomains-systems.md` | The same codebase cut by *system*: what each does and which files build it |
+| `BUGS.md` | Open bugs + a fixed changelog carrying the evidence for each claim |
+| `GAPS.md` | What's missing, and the decision blocking each |
+| `SPEC.md` | Endpoints, pages, verified contract signatures, the paid-write order |
+| `ARCHITECTURE.md` | Stack, data model, authorisation model |
+| `LIFECYCLE.md` | How a `.kas` name moves from KNS to a listing with votes |
+| `HISTORY.md` | Dated narrative — the *order* things were discovered in |
+| `PROJECT_PLAN.md`, `BUSINESS_PLAN.md` | Product and business framing |
+| `TODO.md` | Live backlog and doc index |
+| `MIND.md` | 16 operating principles, each from a real incident |
+| `mind/README.md` + 6 checklists | The runnable version of those principles |
+| `Toccata-Dev.md` | Kaspa covenants — the intended end state |
+| `KASPA_DEVELOPMENT.md` | Ecosystem research |
+| `SECURITY_AUDIT_2026-09-05.md` | Codex's audit. 8 of 9 findings closed; SA-05 open |
+
+---
+
 ## 9. TODO — in priority order
 
 ### Blocking
@@ -253,4 +281,5 @@ hooks are plausibly wanted later.
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — how the pieces fit
 - [`SPEC.md`](./SPEC.md) — endpoints, pages, contract signatures
 - [`LIFECYCLE.md`](./LIFECYCLE.md) — how a domain moves through the system
+- [`kaspadomains-systems.md`](./kaspadomains-systems.md) — the same code by system
 - [`MIND.md`](./MIND.md) — the operating principles these bugs produced

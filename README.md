@@ -40,6 +40,8 @@ for the full picture.
 
 New to the codebase? [`docs/FILES.md`](./docs/FILES.md) maps every file to what it does,
 flags the 18 that are dead, and carries the prioritised TODO.
+[`docs/kaspadomains-systems.md`](./docs/kaspadomains-systems.md) cuts the same code by
+*system* — start there when you want to change a behaviour rather than a file.
 
 ## Getting started
 

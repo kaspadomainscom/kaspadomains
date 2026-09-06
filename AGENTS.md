@@ -34,6 +34,16 @@ contracts or moves funds.
    exists on-chain (principle #10). Verify the thing itself.
 6. **Write real commit messages.** Explain *why*, not just what — `git log` before
    2026-09-04 is unusable ("sdsd", "Initial commit 6") and we're not adding to that.
+7. **Update the maps in the same change that makes them wrong.**
+   [`docs/FILES.md`](./docs/FILES.md) — every file, its status, the prioritised TODO — and
+   [`docs/kaspadomains-systems.md`](./docs/kaspadomains-systems.md) — the same code by
+   system. Added a file, deleted one, made one dead, changed a status, finished or found a
+   TODO item? Say so there before you finish, and bump `Last updated`. This is a standing
+   rule in [`docs/MIND.md`](./docs/MIND.md#standing-practice-keep-filesmd-current), not a
+   courtesy: `FILES.md` exists because nobody could answer "which of these 128 source files
+   are live?", and the answer turned out to include 18 dead files and a contract count that
+   had been wrong in every doc for two days. A map that lags the territory is worse than
+   none, because people trust it and stop looking.
 
 ## Work split
 
@@ -79,12 +89,14 @@ Cross into someone's area when it's the right fix; just note it on the board.
 
 ### Current claims
 
-- _(Codex)_ — implementing the findings in `docs/SECURITY_AUDIT_2026-09-05.md`
-  in an isolated worktree: signing/replay protection, payment intents, atomic
-  Supabase writes, CSP-report limits, and dependency updates. No contract address
-  or deployment changes. Also preparing an implementation plan for the final
-  L1-covenant / indexer / KNS ownership architecture in that isolated worktree;
-  Claude retains editorial review of the resulting `docs/plans/**` document.
+- _(Codex)_ — the older `codex/security-hardening` worktree remains unmerged and is
+  behind `main`. Starting a separate, current-`main` testnet-only L1 foundation update
+  in an isolated worktree: Kaspa/KNS authority and deployment-status contract, wallet
+  and signed-write integration, and non-authoritative Supabase projection metadata.
+  Expected paths: `src/lib/kaspa*`, `src/hooks/wallet/**`, `src/hooks/kns/**`,
+  `src/lib/signedFetch.ts`, `src/lib/server/**`, `src/app/api/**`, `supabase/**`, and
+  narrowly related UI copy. No contract addresses, deployment, transaction broadcast,
+  private-key access, or fund movement. Claude retains editorial review of `docs/**`.
 - _(Claude)_ — no open claim. Last touched: SA-08 (`supabase/migrations/0003_atomic_writes.sql`,
   `supabase/schema.sql`, `src/lib/server/rpcError.ts`, all four write routes — and
   `src/lib/server/claimReceipt.ts` is **deleted**), dependency updates, then SA-04
