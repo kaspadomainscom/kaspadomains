@@ -4,6 +4,7 @@ import { DomainAsset } from '@/hooks/kns/types';
 import { useListDomain } from '@/hooks/domain/useListDomain';
 import { useGetAllowedCategories } from '@/hooks/domains/useGetAllowedCategories';
 import { LISTING_FEE_SOMPI, formatKas } from '@/lib/fees';
+import { MAX_CATEGORIES } from '@/lib/categories';
 import { useState } from 'react';
 
 type PickDomainModalProps = {
@@ -31,11 +32,13 @@ export default function PickDomainModal({
   const busy = listing;
 
   function toggleCategory(category: string) {
-    setSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category]
-    );
+    setSelectedCategories((prev) => {
+      if (prev.includes(category)) return prev.filter((c) => c !== category);
+      // Stop at the cap rather than letting the server refuse after the user has
+      // already chosen. The editor has always done this; listing did not.
+      if (prev.length >= MAX_CATEGORIES) return prev;
+      return [...prev, category];
+    });
   }
 
   // Kasware (L1) is the only wallet involved: it signs the listing request.
@@ -67,7 +70,10 @@ export default function PickDomainModal({
       {/* Category selection — required before a domain can be listed */}
       <div className="mb-4">
         <p className="text-sm text-white font-medium mb-2">
-          Choose at least one category <span className="text-red-400">*</span>
+          Choose at least one category <span className="text-red-400">*</span>{' '}
+          <span className="font-normal text-gray-400">
+            ({selectedCategories.length} / {MAX_CATEGORIES})
+          </span>
         </p>
         {categoriesLoading ? (
           <p className="text-sm text-gray-400">Loading categories…</p>
@@ -87,12 +93,15 @@ export default function PickDomainModal({
           <div className="flex flex-wrap gap-2">
             {categoryOptions.map((option) => {
               const active = selectedCategories.includes(option.key);
+              // Disable at the cap rather than swallowing the click. A button
+              // that does nothing when pressed reads as broken.
+              const atCap = !active && selectedCategories.length >= MAX_CATEGORIES;
               return (
                 <button
                   key={option.key}
                   type="button"
                   onClick={() => toggleCategory(option.key)}
-                  disabled={busy}
+                  disabled={busy || atCap}
                   aria-pressed={active}
                   className={`px-3 py-1 rounded-full text-xs font-medium border transition
                     ${active
@@ -150,6 +159,13 @@ export default function PickDomainModal({
       {selectedCategories.length === 0 && (
         <p className="text-yellow-400 text-xs mt-2">
           Pick a category above to enable listing.
+        </p>
+      )}
+
+      {selectedCategories.length >= MAX_CATEGORIES && (
+        <p className="text-gray-400 text-xs mt-2">
+          That&apos;s the maximum of {MAX_CATEGORIES} categories. Deselect one to choose a
+          different category.
         </p>
       )}
 

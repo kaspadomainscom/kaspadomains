@@ -5,8 +5,7 @@ import { useMemo, useState } from 'react';
 import { useGetAllowedCategories } from '@/hooks/domains/useGetAllowedCategories';
 import { useDomainCategories } from '@/hooks/domain/useDomainCategories';
 
-/** Matches MAX_CATEGORIES in the API route. */
-const MAX_CATEGORIES = 6;
+import { MAX_CATEGORIES } from '@/lib/categories';
 
 /**
  * Change which categories a listing appears under.

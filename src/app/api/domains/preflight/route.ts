@@ -9,6 +9,7 @@ import {
 } from '@/lib/server/verifyRequest';
 import { issuePaymentIntent, type IntentAction } from '@/lib/server/paymentIntent';
 import { REQUIRED_SCHEMA_VERSION } from '@/lib/database.types';
+import { MAX_CATEGORIES } from '@/lib/categories';
 import {
   LISTING_FEE_SOMPI,
   VOTE_FEE_SOMPI,
@@ -170,6 +171,16 @@ export async function POST(request: Request) {
     if (categories.length === 0) {
       return NextResponse.json(
         { error: 'Pick at least one category before listing.' },
+        { status: 400 }
+      );
+    }
+
+    // Checked here as well as in the write route, so an over-categorised
+    // listing is refused before the wallet is asked to pay rather than after
+    // (docs/MIND.md #16).
+    if (categories.length > MAX_CATEGORIES) {
+      return NextResponse.json(
+        { error: `At most ${MAX_CATEGORIES} categories are allowed.` },
         { status: 400 }
       );
     }

@@ -7,6 +7,7 @@ import { verifyPayment } from '@/lib/server/verifyPayment';
 import { rpcError } from '@/lib/server/rpcError';
 import { verifyPaymentIntent } from '@/lib/server/paymentIntent';
 import { LISTING_FEE_SOMPI } from '@/lib/fees';
+import { MAX_CATEGORIES } from '@/lib/categories';
 
 export const runtime = 'nodejs';
 
@@ -73,6 +74,16 @@ export async function POST(request: Request) {
   if (categories.length === 0) {
     return NextResponse.json(
       { error: 'Pick at least one category before listing.' },
+      { status: 400 }
+    );
+  }
+
+  // The upper bound was enforced on edits and not here, so the anti-spam rule
+  // could be sidestepped by picking twenty categories at listing time instead of
+  // editing to them afterwards.
+  if (categories.length > MAX_CATEGORIES) {
+    return NextResponse.json(
+      { error: `At most ${MAX_CATEGORIES} categories are allowed.` },
       { status: 400 }
     );
   }

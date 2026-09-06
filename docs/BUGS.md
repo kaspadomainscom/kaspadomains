@@ -33,6 +33,19 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
 Most recent first. Each entry names the file(s), what was actually wrong, and how it was
 verified — not just "fixed X."
 
+- **The category cap applied to editing a listing but not to creating one.** `MAX_CATEGORIES
+  = 6` was declared twice — in the category edit route and in the editor component — and
+  enforced in neither the listing route, the preflight, nor the listing UI. So the rule the
+  cap exists for ("a listing in every category is a listing on every browse page, which is
+  spam with extra steps") could be sidestepped entirely: pick twenty categories at listing
+  time instead of editing to them afterwards. Nothing refused it. Fixed by giving the
+  constant one owner (`src/lib/categories.ts`) and checking it in all four places —
+  including **the preflight, so an over-categorised listing is refused before the wallet is
+  asked to pay** rather than after (`MIND.md` #16). Verified only one definition of the
+  number exists in the tree.
+  Also fixed while there: the listing UI silently swallowed clicks past the cap, which reads
+  as a broken button. It now shows a count, disables the remaining options, and says why.
+
 - **The check that decides whether someone actually paid had no test either.** Same cause as
   the intent token: `verifyPayment` fetches from the Kaspa API, throws HTTP-shaped errors,
   and imports through paths the runner cannot resolve — so the *decision*, which is pure and

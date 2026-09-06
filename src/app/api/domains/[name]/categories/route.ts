@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
 import { requireDomainOwner, VerificationError, extractPayload } from '@/lib/server/verifyRequest';
 import { rpcError } from '@/lib/server/rpcError';
+import { MAX_CATEGORIES } from '@/lib/categories';
 import { parseProfileRevision } from '@/lib/profileWrite';
 
 export const runtime = 'nodejs';
@@ -15,14 +16,7 @@ function setupUnavailable(error?: { code?: string } | null) {
     error?.code === '42703';
 }
 
-/**
- * How many categories one listing may sit in.
- *
- * A cap exists because categories are the only navigation this site has: a
- * listing in every category is in effect a listing on every browse page, which
- * is spam with extra steps. Six is generous for an honest listing.
- */
-const MAX_CATEGORIES = 6;
+// The cap is owned by @/lib/categories and enforced at listing time too.
 
 /**
  * Replace a listing's categories (the off-chain
