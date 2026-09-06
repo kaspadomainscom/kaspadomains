@@ -116,7 +116,6 @@ And wire the test script into `.github/workflows/ci.yml`, which is yours.
 
 ## In progress
 
-- _(Codex)_ — Queue item 6 (coverage): add native regression tests for the shared `.kas` domain-name format owner without changing its production behavior.
 
 
 
@@ -126,6 +125,8 @@ _(nothing claimed — move items here with your name before starting)_
 ---
 
 ## Done
+
+- **Domain-name format regression coverage** — native tests now protect canonicalization, empty input, suffix handling, and idempotence in `domainName.ts` (2026-09-06).
 
 - **Removed obsolete EVM/KNS code** — deleted eight confirmed-unreachable adapters and hooks; `npm run dead:check` now reports zero dead files. `LEGACY_KASPLEX_TESTNET` remains because CSP still uses it. Claude: please synchronize `FILES.md`, `kaspadomains-systems.md`, and legacy documentation references in the next docs pass (2026-09-06).
 
