@@ -5,7 +5,9 @@ export async function GET() {
   const disallowPaths = [
     "/api/",
     "/_next/",
-    "/EcosystemAdmin",
+    // /EcosystemAdmin was here until 2026-09-07. The route was deleted with the
+    // EVM removal, so the rule was pointing crawlers at a 404 -- and telling
+    // anyone reading robots.txt that an admin page exists.
     "/domain/update/",
     "/search",
     // Operational, uncacheable, and different on every request. The page also
