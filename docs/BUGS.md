@@ -137,6 +137,14 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **The listing page blamed an empty catalogue when the category load failed.**
+  `useGetAllowedCategories` sets an `error` *and* empties the list; `PickDomainModal` read
+  only the list, so a failure rendered "No categories available right now." Listing requires
+  a category, so the user was blocked **and** told the wrong reason for it, on the page where
+  they were trying to spend 200 KAS. Now surfaces the actual error and says the action is
+  unavailable until it loads. (`CategoryEditor`, which consumes the same hook, was already
+  reading `error` — one consumer had it right and one didn't, which is why the hook exposing
+  both is not enough on its own.)
 - **The main browse page announced "0 domains listed" during an outage.** `/domains` caught
   a failed manifest load and fell back to `{}`, so it rendered a confident count of zero and
   "No domains found matching your search" — on the page whose entire job is showing what

@@ -5,6 +5,7 @@ import { useListDomain } from '@/hooks/domain/useListDomain';
 import { useSetDomainCategories } from '@/hooks/domain/useSetDomainCategories';
 import { useGetAllowedCategories } from '@/hooks/domains/useGetAllowedCategories';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { LEGACY_KASPLEX_TESTNET } from '@/lib/kaspaDomainRuntime';
 import { LISTING_FEE_SOMPI, formatKas } from '@/lib/fees';
 import { useState } from 'react';
 
@@ -26,7 +27,11 @@ export default function PickDomainModal({
   const { setCategories, isLoading: assigningCategories } = useSetDomainCategories();
   // `options` carries titles; `categories` is keys only. Rendering the keys
   // showed people raw slugs -- "realWords", "999club" -- as if they were labels.
-  const { options: categoryOptions, loading: categoriesLoading } = useGetAllowedCategories();
+  const {
+    options: categoryOptions,
+    loading: categoriesLoading,
+    error: categoriesError,
+  } = useGetAllowedCategories();
 
   const verifiedDomains = domains.filter((domain) => domain.isVerifiedDomain === true);
   const busy = listing || assigningCategories;
@@ -74,6 +79,16 @@ export default function PickDomainModal({
         </p>
         {categoriesLoading ? (
           <p className="text-sm text-gray-400">Loading categories…</p>
+        ) : categoriesError ? (
+          // The hook sets `error` and also empties the list, and this component
+          // used to read only the list -- so a failed load blamed an empty
+          // catalogue. On this page that is worse than a wrong message: listing
+          // requires a category, so the user is blocked and told the wrong
+          // reason for it.
+          <p className="text-sm text-red-400">
+            {categoriesError} You can&apos;t list a domain until this loads — please try
+            again shortly.
+          </p>
         ) : categoryOptions.length === 0 ? (
           <p className="text-sm text-red-400">No categories available right now.</p>
         ) : (
@@ -166,7 +181,7 @@ export default function PickDomainModal({
         <p className="text-green-400 text-sm mt-4 break-all">
           Domain listed! Tx:{' '}
           <a
-            href={`https://frontend.kasplextest.xyz/tx/${txHash}`}
+            href={`${LEGACY_KASPLEX_TESTNET.explorerUrl}/tx/${txHash}`}
             target="_blank"
             rel="noopener noreferrer"
             className="underline"

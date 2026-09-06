@@ -31,6 +31,18 @@ live backlog the continuous audit loop appends to.
 
 ## Data-shape gaps
 
+- [x] ~~**Empty-for-unknown in the data layer.**~~ **Now a lint error** (2026-09-06). Found
+      and fixed in seven places — the vote count, the voter list, the resources editor (where
+      it let a save delete every link an owner had), the categories index, the browse page,
+      the profile lookup and the admin owner check. Same shape each time: `[]` and `{}` mean
+      "there are none", a failed read means "we don't know", and collapsing them turns an
+      outage into a confident false statement. Documenting it as `MIND.md` #2 did not stop it
+      recurring, so `eslint.config.mjs` now rejects `return []` / `return {}` from a `catch`
+      in `src/data` and `src/lib`. Scoped rather than global because pages legitimately
+      degrade — `generateStaticParams` returning `[]` is correct. *Verified in both
+      directions*: the rule fires on a deliberate probe and the current tree is clean.
+
+
 - [ ] **`Domain.feePaid` does not carry its unit.** It is a raw integer string whose meaning
       depends on which store produced the record: Supabase writes **sompi** (8 decimals), the
       contracts return **wei** (18 decimals). Those differ by 10^10, so a component that

@@ -34,7 +34,7 @@ missing.
   contracts.
 - Four new pages (`/status`, `/about`, `/terms`, `/privacy`) and two new
   endpoints (`/api/domains/preflight`, `/api/domains/[name]/categories`).
-- Twenty-two user-facing bugs, including structured data that published
+- Twenty-three user-facing bugs, including structured data that published
   `foo.kas.kas` to every search engine, a resources editor that would delete an
   owner's links after a failed read, a pay button quoting the wrong price, an
   admin page that denied access to the administrator, header search that never
@@ -64,7 +64,8 @@ below is waiting on that single step.
 | `.env.example` | Every variable, with why each one matters | ✅ |
 | `.github/workflows/ci.yml` | Runs `lint` + `build` on push/PR. No tests, because there are none | 🟡 |
 | `.claude/launch.json` | Dev-server config for the preview tooling | ✅ |
-| `tsconfig.json`, `eslint.config.mjs`, `postcss.config.mjs`, `tailwind.config.ts`, `components.json`, `.gitattributes`, `.gitignore`, `.vscode/`, `schemas/` | Standard tooling config | ✅ |
+| `eslint.config.mjs` | Next presets **plus a project rule**: no `return []`/`{}` from a `catch` in `src/data` or `src/lib` | ✅ |
+| `tsconfig.json`, `postcss.config.mjs`, `tailwind.config.ts`, `components.json`, `.gitattributes`, `.gitignore`, `.vscode/`, `schemas/` | Standard tooling config | ✅ |
 
 ---
 
