@@ -9,16 +9,23 @@ actively-updated backlog the continuous audit loop appends to.
 
 ## Open
 
-- [ ] **CRITICAL — 4 of 6 contract addresses in `src/lib/contracts.ts` have no deployed
-      code on the live Kasplex testnet RPC.** Verified 2026-09-05 by querying
-      `https://rpc.kasplextest.xyz` directly (the exact endpoint hardcoded in
-      [`viemChains.ts`](../src/lib/viemChains.ts)) with raw `eth_getCode` calls, bypassing
-      the frontend entirely:
+- [ ] **CRITICAL — 6 of the 8 contract addresses in `src/lib/contracts.ts` have no
+      deployed code on the live Kasplex testnet RPC.** Verified 2026-09-05 and **re-verified
+      in full on 2026-09-06** by querying `https://rpc.kasplextest.xyz` directly (the exact
+      endpoint hardcoded in [`viemChains.ts`](../src/lib/viemChains.ts)) with raw
+      `eth_getCode`, bypassing the frontend entirely:
       - `KaspaDomainsRegistry` (`0x599DB3Ffbba36FfaAB3f86e92e1fCA0465b2CDeA`) → `0x`
       - `DomainVotesManager` (`0xbFB179D21A082cBb30ff245b6bCAb8a5b5566bAa`) → `0x`
       - `DomainCategoriesStorage` (`0x73DeAC4CE5Ae3caCe36F1481B62cb635D9733E0D`) → `0x`
       - `KDCToken` (`0x48526edd858a05f8591c0BA38c10f7493174ee1E`) → `0x`
-      - `DomainLinksStorage` and `DomainDataStorage` do have real bytecode — see below.
+      - `EcosystemFund` (`0x07Cb88b1d6E06a5fd54Ae8d4A71713BF822f4389`) → `0x` **(new)**
+      - `DemoKNS` (`0x5Fcd5d9f6444dD23Ca2af792B58B041A14fB34EB`) → `0x` **(new)**
+      - `DomainLinksStorage` (24,574 chars) and `DomainDataStorage` (12,110 chars) do have
+        real bytecode — see below.
+      The count was "4 of 6" until 2026-09-06, because the original sweep checked only the
+      six contracts the listing/voting flow touches and never looked at the other two. The
+      lesson generalises: an audit that enumerates from *what the code calls* rather than
+      from *what the config declares* will miss exactly the entries nothing calls yet.
 
       Checked at `latest`, `earliest`, and an early block (all empty), and confirmed the
       address's transaction count is `0` — as far as this RPC's history goes, these

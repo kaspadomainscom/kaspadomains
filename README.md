@@ -38,6 +38,9 @@ Next.js 16 (App Router, Turbopack), React 19, TypeScript, Tailwind CSS v4, viem 
 access, TanStack Query for data fetching. See [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)
 for the full picture.
 
+New to the codebase? [`docs/FILES.md`](./docs/FILES.md) maps every file to what it does,
+flags the 18 that are dead, and carries the prioritised TODO.
+
 ## Getting started
 
 ```bash
@@ -48,7 +51,7 @@ npm run dev
 ### Database (optional, but it's what makes the app work today)
 
 Supabase is the primary store for listings, votes and categories. Without it the app
-falls back to reading the Kasplex contracts — which currently fail, since four of them
+falls back to reading the Kasplex contracts — which currently fail, since six of the eight
 have no deployed code (see [`docs/BUGS.md`](./docs/BUGS.md)).
 
 1. Create a project at [supabase.com](https://supabase.com).

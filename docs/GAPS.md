@@ -31,9 +31,11 @@ live backlog the continuous audit loop appends to.
 
 ## No automated tests at all
 
-- [ ] **The repo has no test runner.** `package.json` has `dev`, `build`, `start`, `lint`
-      and `db:check` — no `test`. Every claim of correctness in `BUGS.md` rests on a
-      type-check, a lint run, a manual probe, or a throwaway script that was deleted
+- [ ] **The repo has no test runner.** There *is* CI —
+      [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs `npm run lint` and
+      `npm run build` on every push and PR, and the build type-checks — but `package.json`
+      has no `test` script, so CI runs none. Every claim of correctness in `BUGS.md` rests
+      on a type-check, a lint run, a manual probe, or a throwaway script that was deleted
       afterwards. For an app that moves real KAS that is the largest structural gap left.
       The 2026-09-06 paging bug is the argument: the first fix looked obviously right,
       passed `tsc`, `eslint` and `build`, and silently returned 100 of 10,000 rows — a

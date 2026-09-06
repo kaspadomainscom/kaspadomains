@@ -121,7 +121,7 @@ and `src/lib/topVotedDomains.ts`, and those decide at call time where to read fr
 | Otherwise | Kasplex contracts | the original on-chain reads, unchanged |
 
 Callers never learn which answered — `supabaseSource` returns the same `Domain` and
-`CategoryManifest` shapes the chain path returns. **Why**: four of six contracts have no
+`CategoryManifest` shapes the chain path returns. **Why**: six of the eight configured contracts have no
 deployed code and the other two fail every call (see [`BUGS.md`](./BUGS.md)), so the
 product could not function at all on-chain. The chain path was deliberately kept rather
 than deleted, so unsetting the env vars restores the previous behaviour exactly, and a

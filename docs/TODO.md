@@ -6,6 +6,8 @@ This file is now a **live scratchpad and index**, not the full record. The detai
 organized content that used to live here has moved into focused files — this file just
 points to them and holds the actively-updated loop backlog below.
 
+- [`FILES.md`](./FILES.md) — every file, what it does, whether it's live, and the
+  prioritised TODO
 - [`BUGS.md`](./BUGS.md) — what's broken (open + a fixed-bugs changelog)
 - [`GAPS.md`](./GAPS.md) — what's missing or incomplete (features, dead code, infra)
 - [`LIFECYCLE.md`](./LIFECYCLE.md) — how a domain/fee/vote flows through the system
@@ -53,7 +55,7 @@ and [`BUGS.md`](./BUGS.md):
 
 - [x] ~~`DomainLinksStorage.getLinks` throws `invalid opcode: MCOPY`~~ — investigated
       2026-09-05 by querying the live RPC directly. Turned out much bigger than the one
-      function: **4 of 6 contracts in `contracts.ts` have no deployed code at all**
+      function: **6 of the 8 contracts in `contracts.ts` have no deployed code at all**
       (Registry, VotesManager, CategoriesStorage, KDCToken — real fund-safety risk, see
       `BUGS.md`), and the 2 that do exist (`DomainLinksStorage`, `DomainDataStorage`) fail
       `invalid opcode: MCOPY` on **every** function touching a dynamic type, not just
