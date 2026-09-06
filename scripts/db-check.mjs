@@ -36,7 +36,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // Kept in step with src/lib/database.types.ts, which cannot be imported here
 // (it is TypeScript, and this script runs under plain node).
-const REQUIRED_SCHEMA_VERSION = 3;
+const REQUIRED_SCHEMA_VERSION = 4;
 
 // ---------------------------------------------------------------------------
 // What the app expects. Keep in step with src/lib/database.types.ts.
@@ -57,15 +57,25 @@ const EXPECTED = {
     'ownership_verified',
     'payment_tx_id',
     'created_at',
+    'profile_revision',
   ],
   domain_categories: ['domain_id', 'category_key'],
   votes: ['id', 'domain_id', 'voter', 'payment_tx_id', 'fee_paid', 'created_at'],
   domain_links: ['id', 'domain_id', 'name', 'url', 'position'],
   payment_receipts: ['tx_id', 'purpose', 'payer', 'amount_sompi', 'created_at'],
+  profile_write_nonces: [
+    'nonce',
+    'domain_id',
+    'action',
+    'signer',
+    'profile_revision',
+    'expires_at',
+    'created_at',
+  ],
 };
 
 // Reachable only with the secret key: RLS is on with no policy at all.
-const SERVER_ONLY = new Set(['payment_receipts']);
+const SERVER_ONLY = new Set(['payment_receipts', 'profile_write_nonces']);
 
 let failures = 0;
 const line = (label, ok, detail) => {
@@ -199,6 +209,14 @@ const anonProbes = [
   ['domain_links', { domain_id: 1, name: 'probe', url: 'https://example.com' }],
   ['categories', { key: 'rls-probe', title: 'probe' }],
   ['payment_receipts', { tx_id: 'probe', purpose: 'vote', payer: 'kaspa:probe', amount_sompi: '1' }],
+  ['profile_write_nonces', {
+    nonce: '00000000-0000-0000-0000-000000000000',
+    domain_id: 1,
+    action: 'update-links',
+    signer: 'kaspa:probe',
+    profile_revision: 0,
+    expires_at: '2030-01-01T00:00:00.000Z',
+  }],
 ];
 
 for (const [table, row] of anonProbes) {
@@ -220,9 +238,51 @@ for (const [table, row] of anonProbes) {
 // Atomic write functions
 // ---------------------------------------------------------------------------
 console.log('\n--- FUNCTIONS ---');
-// Whether the functions exist at all. The permission checks below are only
-// meaningful if they do -- see the note there.
+// Every protected write function, including deliberately-invalid inputs that
+// prove its exact signature exists without changing data. The permission checks
+// below are only meaningful if the service-role call reaches each function -- a
+// version number alone can be bumped while a function is missing, and anon sees
+// a correctly-revoked function and a nonexistent one as the same PGRST202.
+const WRITE_FUNCTIONS = [
+  {
+    name: 'create_listing',
+    args: {
+      p_domain_hash: '1', p_name: 'rpc-probe-never-persists.kas', p_owner: 'kaspa:probe',
+      p_submitted_by: 'kaspa:probe', p_fee_paid: '0', p_payment_tx_id: 'rpc-probe',
+      p_payer: 'kaspa:probe', p_categories: [],
+    },
+    expectedCode: 'KD003',
+  },
+  {
+    name: 'record_vote',
+    args: {
+      p_name: 'rpc-probe-never-persists.kas', p_voter: 'kaspa:probe',
+      p_fee_paid: '0', p_payment_tx_id: 'rpc-probe-2',
+    },
+    expectedCode: 'KD005',
+  },
+  {
+    name: 'replace_domain_categories',
+    args: {
+      p_name: 'rpc-probe-never-persists.kas', p_categories: ['other'],
+      p_nonce: '00000000-0000-0000-0000-000000000000',
+      p_expected_revision: 0, p_signer: 'kaspa:probe',
+    },
+    expectedCode: 'KD005',
+  },
+  {
+    name: 'replace_domain_links',
+    args: {
+      p_name: 'rpc-probe-never-persists.kas', p_links: [],
+      p_nonce: '00000000-0000-0000-0000-000000000000',
+      p_expected_revision: 0, p_signer: 'kaspa:probe',
+    },
+    expectedCode: 'KD005',
+  },
+];
+
 let functionsExist = false;
+let schemaVersionCurrent = false;
 {
   const { data, error } = await admin.rpc('kaspadomains_schema_version');
   if (error) {
@@ -230,13 +290,67 @@ let functionsExist = false;
       'schema version',
       false,
       error.code === 'PGRST202'
-        ? 'missing — apply supabase/migrations/0003_atomic_writes.sql'
+        ? 'missing — apply the files in supabase/migrations/ in filename order'
         : `${error.code}: ${error.message}${explainTransport(error.message)}`
     );
   } else {
     const found = Number(data ?? 0);
-    functionsExist = found >= REQUIRED_SCHEMA_VERSION;
-    line(`schema version ${found}`, functionsExist, `need >= ${REQUIRED_SCHEMA_VERSION}`);
+    schemaVersionCurrent = found >= REQUIRED_SCHEMA_VERSION;
+    line(`schema version ${found}`, schemaVersionCurrent, `need >= ${REQUIRED_SCHEMA_VERSION}`);
+  }
+}
+
+if (schemaVersionCurrent) {
+  let allFunctionsPresent = true;
+  console.log('\n--- FUNCTION EXISTENCE (secret key) — every probe must reach its function ---');
+  for (const { name, args, expectedCode } of WRITE_FUNCTIONS) {
+    const { error } = await admin.rpc(name, args);
+    const present = error?.code === expectedCode;
+    line(
+      `service rpc ${name} exists`,
+      present,
+      present
+        ? `reached function (${expectedCode})`
+        : error
+          ? `${error.code}: ${error.message}`
+          : 'CALL SUCCEEDED — probe must fail before it can prove a safe signature'
+    );
+    if (!present) allFunctionsPresent = false;
+  }
+  functionsExist = allFunctionsPresent;
+}
+
+// The old two-argument replacement functions are a bypass if they survived an
+// upgrade: PostgreSQL overloads by argument list, so creating the new five-
+// argument versions does not remove them. The migration *and* schema snapshot
+// drop them; this probe catches a bootstrap re-run that failed to do so. The
+// old migration grants service_role execute, so a surviving overload reaches
+// KD005 for this nonexistent domain instead of looking absent.
+const LEGACY_REPLACEMENT_FUNCTIONS = [
+  {
+    name: 'replace_domain_categories',
+    args: { p_name: 'rpc-probe-never-persists.kas', p_categories: ['other'] },
+  },
+  {
+    name: 'replace_domain_links',
+    args: { p_name: 'rpc-probe-never-persists.kas', p_links: [] },
+  },
+];
+
+if (schemaVersionCurrent) {
+  console.log('\n--- LEGACY FUNCTION ABSENCE (secret key) — old bypasses MUST be gone ---');
+  for (const { name, args } of LEGACY_REPLACEMENT_FUNCTIONS) {
+    const { error } = await admin.rpc(name, args);
+    const absent = error?.code === 'PGRST202';
+    line(
+      `legacy rpc ${name} absent`,
+      absent,
+      absent
+        ? 'old argument signature is not registered'
+        : error
+          ? `${error.code}: ${error.message}`
+          : 'CALL SUCCEEDED — old nonce-free overload survived'
+    );
   }
 }
 
@@ -248,22 +362,10 @@ let functionsExist = false;
 // opened by the migration that was supposed to make writes safer. This is the
 // check that proves the revokes landed.
 console.log('\n--- FUNCTION PERMISSIONS (anon) — every one MUST fail ---');
-for (const [fn, args] of [
-  ['create_listing', {
-    p_domain_hash: '1', p_name: 'rpc-probe-never-persists.kas', p_owner: 'kaspa:probe',
-    p_submitted_by: 'kaspa:probe', p_fee_paid: '0', p_payment_tx_id: 'rpc-probe',
-    p_payer: 'kaspa:probe', p_categories: ['other'],
-  }],
-  ['record_vote', {
-    p_name: 'rpc-probe-never-persists.kas', p_voter: 'kaspa:probe',
-    p_fee_paid: '0', p_payment_tx_id: 'rpc-probe-2',
-  }],
-  ['replace_domain_categories', { p_name: 'rpc-probe-never-persists.kas', p_categories: ['other'] }],
-  ['replace_domain_links', { p_name: 'rpc-probe-never-persists.kas', p_links: [] }],
-]) {
-  const { error } = await anon.rpc(fn, args);
+for (const { name, args } of WRITE_FUNCTIONS) {
+  const { error } = await anon.rpc(name, args);
   if (!error) {
-    line(`anon rpc ${fn} blocked`, false, 'CALL SUCCEEDED — THE PUBLIC KEY CAN BYPASS RLS');
+    line(`anon rpc ${name} blocked`, false, 'CALL SUCCEEDED — THE PUBLIC KEY CAN BYPASS RLS');
   } else if (error.code === 'PGRST202') {
     // "Not found" is what a correctly revoked function looks like -- PostgREST
     // hides functions the calling role cannot execute -- but it is also what a
@@ -272,14 +374,14 @@ for (const [fn, args] of [
     // green precisely when nothing has been set up. Only treat it as a pass if
     // the admin probe above proved the functions actually exist.
     if (functionsExist) {
-      line(`anon rpc ${fn} blocked`, true, 'exists, but not exposed to the anon role');
+      line(`anon rpc ${name} blocked`, true, 'exists, but not exposed to the anon role');
     } else {
-      line(`anon rpc ${fn} blocked`, false, 'inconclusive — the function does not exist yet');
+      line(`anon rpc ${name} blocked`, false, 'inconclusive — the function does not exist yet');
     }
   } else if (error.code === '42501' || /permission denied/i.test(error.message)) {
-    line(`anon rpc ${fn} blocked`, true, `permission denied (${error.code})`);
+    line(`anon rpc ${name} blocked`, true, `permission denied (${error.code})`);
   } else {
-    warn(`anon rpc ${fn}`, `refused, but by ${error.code}: ${error.message}`);
+    warn(`anon rpc ${name}`, `refused, but by ${error.code}: ${error.message}`);
   }
 }
 

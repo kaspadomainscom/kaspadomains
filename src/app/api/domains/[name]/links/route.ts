@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
 import { requireDomainOwner, VerificationError, extractPayload } from '@/lib/server/verifyRequest';
 import { rpcError } from '@/lib/server/rpcError';
+import { parseProfileRevision } from '@/lib/profileWrite';
 
 export const runtime = 'nodejs';
 
@@ -42,11 +43,24 @@ export async function PUT(
     issuedAt?: number;
     signature?: string;
     links?: { name?: string; url?: string }[];
+    nonce?: string;
+    profileRevision?: unknown;
   };
   try {
-    body = await request.json();
+    const parsed: unknown = await request.json();
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return NextResponse.json({ error: 'Expected a JSON object.' }, { status: 400 });
+    }
+    body = parsed as typeof body;
   } catch {
     return NextResponse.json({ error: 'Expected a JSON body.' }, { status: 400 });
+  }
+
+  let requestedDomain: string;
+  try {
+    requestedDomain = decodeURIComponent(name);
+  } catch {
+    return NextResponse.json({ error: 'The domain name is malformed.' }, { status: 400 });
   }
 
   const links = (Array.isArray(body.links) ? body.links : [])
@@ -71,12 +85,21 @@ export async function PUT(
     }
   }
 
+  const nonce = typeof body.nonce === 'string' ? body.nonce : '';
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(nonce)) {
+    return NextResponse.json({ error: 'A valid one-time save token is required.' }, { status: 400 });
+  }
+  const profileRevision = parseProfileRevision(body.profileRevision);
+  if (profileRevision === null) {
+    return NextResponse.json({ error: 'A valid loaded profile revision is required.' }, { status: 400 });
+  }
+
   let verified;
   try {
     // Owner-only, re-checked against KNS on every edit.
     verified = await requireDomainOwner({
       action: 'update-links',
-      domain: decodeURIComponent(name),
+      domain: requestedDomain,
       publicKey: String(body.publicKey ?? ''),
       issuedAt: Number(body.issuedAt ?? 0),
       signature: String(body.signature ?? ''),
@@ -133,9 +156,14 @@ export async function PUT(
   // a destroyed profile, and the user had no way to know their links were gone
   // rather than merely unsaved. `replace_domain_links` does both inside one
   // Postgres transaction, so a failure changes nothing at all.
-  const { error: rpcFailure } = await supabase.rpc('replace_domain_links', {
+  const { data: nextProfileRevision, error: rpcFailure } = await supabase.rpc('replace_domain_links', {
     p_name: verified.domain,
     p_links: links,
+    p_nonce: nonce,
+    p_expected_revision: profileRevision,
+    // Never trust a client-supplied address for a capability. This is the
+    // address proven by the signature and rechecked as the KNS owner above.
+    p_signer: verified.signerAddress,
   });
 
   if (rpcFailure) {
@@ -143,5 +171,5 @@ export async function PUT(
     return NextResponse.json({ error: mapped.message }, { status: mapped.status });
   }
 
-  return NextResponse.json({ links }, { status: 200 });
+  return NextResponse.json({ links, profileRevision: nextProfileRevision }, { status: 200 });
 }

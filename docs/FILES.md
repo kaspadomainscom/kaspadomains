@@ -3,11 +3,10 @@
 Last updated: 2026-09-06
 
 Every file in the repo, what it is for, and whether it is actually doing
-anything. **Rewritten 2026-09-06** after the EVM contract path was removed: `src/` went from
-129 source files to **93**, and unreachable files from 27 to **8** — all of which are
-Codex's in-flight work. Written because "which of these 128 source files are live?" turned out
-to be a question nobody could answer quickly — and the answer includes **27 dead
-files**, most of them wired to contracts that have no deployed code.
+anything. **Current inventory:** 93 files under `src/`, with `npm run dead:check` reporting
+89 source files, 39 entry points, and **zero unreachable files** on 2026-09-06. This map
+exists because nobody could previously answer which files were live without manually tracing
+many dead EVM fallback paths.
 
 Use this as the map. [`TODO.md`](./TODO.md) is the live backlog,
 [`BUGS.md`](./BUGS.md) is what's broken, [`GAPS.md`](./GAPS.md) is what's
@@ -26,16 +25,17 @@ missing.
 
 ## 1. Where the project actually stands
 
-**Fixed and verified this session** (13 commits, `4f2b4c3`…`64c7c6d`):
+**Current implementation:**
 
-- All nine findings from Codex's security audit closed except SA-05 — body-bound
-  signatures, payer-attributed receipts, a global single-use receipt ledger, a
-  free preflight before any payment, atomic writes, CSP limits, a server-side
-  category allow-list, and patched `ws`.
+- All nine findings from Codex's security audit now have code-level fixes — body-bound
+  signatures, payer-attributed receipts, a global single-use receipt ledger, a free
+  preflight before payment, atomic writes, CSP limits, a server-side category allow-list,
+  profile-write replay/concurrency protection, and patched `ws`.
 - The Supabase migration finished: three read paths had never left the
   contracts.
-- Four new pages (`/status`, `/about`, `/terms`, `/privacy`) and two new
-  endpoints (`/api/domains/preflight`, `/api/domains/[name]/categories`).
+- Four new pages (`/status`, `/about`, `/terms`, `/privacy`), the paid-write preflight, and
+  owner-only category/profile-token endpoints make failed deployment setup honest rather than
+  pretending that an absent contract fallback works.
 - Twenty-three user-facing bugs, including structured data that published
   `foo.kas.kas` to every search engine, a resources editor that would delete an
   owner's links after a failed read, a pay button quoting the wrong price, an
@@ -61,10 +61,10 @@ below is waiting on that single step.
 |---|---|---|
 | `README.md` | Setup, database bootstrap, the TLS-interception pitfall | ✅ |
 | `AGENTS.md` | Coordination board with Codex — work split, ground rules, message log | ✅ |
-| `package.json` | Deps + `dev`/`build`/`start`/`lint`/`db:check`/`dead:check`. **No `test`** | 🟡 |
+| `package.json` | Deps + `dev`/`build`/`start`/`lint`/`test`/`db:check`/`dead:check` | ✅ |
 | `next.config.ts` | `serverExternalPackages: ['kaspa-wasm']` — keeps the verifier out of the browser bundle | ✅ |
 | `.env.example` | Every variable, with why each one matters | ✅ |
-| `.github/workflows/ci.yml` | Runs `lint` + `build` on push/PR. No tests, because there are none | 🟡 |
+| `.github/workflows/ci.yml` | Runs lint, native tests and build on push/PR | ✅ |
 | `.claude/launch.json` | Dev-server config for the preview tooling | ✅ |
 | `eslint.config.mjs` | Next presets **plus a project rule**: no `return []`/`{}` from a `catch` in `src/data` or `src/lib` | ✅ |
 | `tsconfig.json`, `postcss.config.mjs`, `tailwind.config.ts`, `components.json`, `.gitattributes`, `.gitignore`, `.vscode/`, `schemas/` | Standard tooling config | ✅ |
@@ -75,11 +75,12 @@ below is waiting on that single step.
 
 | File | Purpose | Status |
 |---|---|---|
-| `schema.sql` | **Run this first.** Full bootstrap: 6 tables, 1 view, RLS, 4 atomic write functions, 16 seeded categories | 🔒 never applied |
+| `schema.sql` | **Run this first.** Full bootstrap: 7 tables, 1 view, RLS, 4 atomic write functions, profile revisions/tokens, 16 seeded categories | 🔒 never applied |
 | `migrations/README.md` | Why migrations exist despite `schema.sql` being idempotent — `create table if not exists` skips new *columns* | ✅ |
 | `migrations/0001_baseline.sql` | Pointer to `schema.sql`; deliberately not a copy that could drift | ✅ |
 | `migrations/0002_payment_receipts.sql` | The global receipt ledger + ownership/payment columns | 🔒 |
 | `migrations/0003_atomic_writes.sql` | `create_listing`, `record_vote`, `replace_domain_categories`, `replace_domain_links`, `kaspadomains_schema_version` | 🔒 |
+| `migrations/20260906201516_profile_replay_protection.sql` | `profile_revision`, private one-time write tokens, revised replacement RPC signatures and schema version 4 | 🔒 |
 
 > ⚠ `0003`'s functions are `security definer` and **bypass RLS by design**. Postgres
 > grants `EXECUTE` to `PUBLIC` by default and PostgREST exposes every
@@ -98,7 +99,7 @@ The authorisation model lives here. Read [`ARCHITECTURE.md`](./ARCHITECTURE.md#d
 | `verifyRequest.ts` | Verifies a Kaspa L1 signature with `kaspa-wasm`, derives the address, reads the KNS owner server-side, requires a match. `normalizeDomain` here decides the canonical stored name | ✅ |
 | `verifyPayment.ts` | Confirms a fee transaction on-chain **and that the signer paid it** — without that, a public txid is a bearer coupon | ✅ |
 | `paymentIntent.ts` | Short-lived HMAC proving the preflight ran. Explicitly **not** a security boundary — every check is re-run at write time | ✅ |
-| `rpcError.ts` | Maps the SQL functions' custom `KD001`–`KD005` codes to HTTP answers | ✅ |
+| `rpcError.ts` | Maps the SQL functions' custom `KD001`–`KD007` codes to honest HTTP answers | ✅ |
 
 Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release.
 
@@ -113,6 +114,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `domains/[name]/vote` | POST | One vote per wallet. 1 KAS, requires an intent | 🔒 |
 | `domains/[name]/links` | PUT | Bulk-replace profile links. Owner-only, free, rejects non-`http(s)` URLs | 🔒 |
 | `domains/[name]/categories` | GET / PUT | Bulk-replace categories. Owner-only, free, allow-list enforced | 🔒 |
+| `domains/[name]/write-nonce` | POST | Owner-only, signed issuance of a short-lived token bound to the loaded profile revision | 🔒 |
 | `status` | GET | Deployment health. 503 when failing, `unknown` when it cannot see | ✅ |
 | `csp-violation-report` | POST | Hardened: 8 KB cap, ten-field allow-list, control chars stripped | ✅ |
 
@@ -122,20 +124,20 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 
 | File | Purpose | Status |
 |---|---|---|
-| `data/supabaseSource.ts` | Every Supabase read. `fetchAllPages` exists because PostgREST truncates unbounded selects **without an error** | ✅ |
+| `data/supabaseSource.ts` | Every Supabase read. `fetchAllPages` avoids silent truncation; profile-link reads include the rendered revision | ✅ |
 | `data/domainLookup.ts` | `lookupDomain` returns three outcomes — found / not-listed / **unavailable** — so an outage never 404s a live domain | ✅ |
-| `data/categoriesManifest.ts` | Category manifest, Supabase or chain. Filters `is_allowed`, which is why the profile page must not use it for existence | 🟡 |
-| `data/types.ts` | The `Domain` shape both sources return | ✅ |
+| `data/categoriesManifest.ts` | Supabase category manifest. Filters `is_allowed`, which is why the profile page must not use it for existence | 🟡 |
+| `data/types.ts` | The canonical directory `Domain` shape | ✅ |
 | `lib/supabase.ts` | Typed read/admin clients. Admin throws if constructed in the browser | ✅ |
-| `lib/database.types.ts` | Hand-written schema types + `REQUIRED_SCHEMA_VERSION` | ✅ |
+| `lib/database.types.ts` | Hand-written schema/RPC types + `REQUIRED_SCHEMA_VERSION` 4 | ✅ |
 | `lib/fees.ts` | **The single source of the fee.** 200 KAS / 1 KAS, treasury address, shape-validated | ✅ |
 | `lib/domainName.ts` | **The one owner of a `.kas` name's canonical form.** Dependency-free, so server and client share it | ✅ |
+| `lib/profileWrite.ts` | The closed profile-write action set, nonce TTL and safe revision parser shared by browser/API/read layer | ✅ |
 | `lib/signedMessage.ts` | Canonical JSON → SHA-256 → signed message. Dependency-free so it never pulls WASM into the browser | ✅ |
-| `lib/signedFetch.ts` | `preflight` → `payFee` → `signedFetch`. The order is the safety property | ✅ |
+| `lib/signedFetch.ts` | `preflight` → `payFee` → `signedFetch`, plus signed profile-token preparation | ✅ |
 | `lib/topVotedDomains.ts` | Ranking. Reads counts from the same store as the listings, never a mix | 🟡 |
-| `lib/jsonld.ts`, `lib/utils.ts`, `lib/domains.ts` | Structured data and helpers | ✅ |
-| `lib/contracts.ts` | Contract addresses + ABIs. **6 of the 8 have no deployed code** (re-verified 2026-09-06) | ⛔ |
-| `lib/viemChains.ts`, `viemClient.ts`, `kasplex.ts`, `kasplexProvider.ts`, `kaswareEvm.ts`, `walletClient.ts` | Kasplex EVM access — fallback path only | 🟡 |
+| `lib/jsonld.ts` | Structured data | ✅ |
+| `lib/kaspaDomainRuntime.ts` | Current KNS network, endpoint and non-authoritative covenant target | ✅ |
 | `proxy.ts` | CSP with per-request nonce, HSTS, COOP/CORP | ✅ |
 
 ---
@@ -158,7 +160,6 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `status/` | Live health, human-readable. `noindex` | ✅ |
 | `about/`, `terms/`, `privacy/` | Written from the source, not a template | 🟡 not legally reviewed |
 | `docs/`, `learn/`, `business-plan/` | Explanatory content | ✅ |
-| `EcosystemAdmin/` | Administers a fund contract with **no deployed code** | ⛔ |
 | `sitemap.xml/`, `robots.txt/`, `layout.tsx`, `loading.tsx`, `not-found.tsx`, `providers/` | Infrastructure | ✅ |
 
 ---
@@ -166,38 +167,21 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 ## 8. Components and hooks
 
 **Live components:** `Header` (+`trendingDomains`), `Footer`, `Sidebar`,
-`ConnectButton`, `DomainCard`, `PickDomainModal`, `Loader`, `ToastProvider`,
+`DomainCard`, `PickDomainModal`, `Loader`, `ToastProvider`,
 `JsonLd`, `NonceWrapper`, `KaspaDomainsLogo`, `icons`, and under `pages/domain/`:
 `VotingSection`, `CategoryEditor`, `DomainInfoPanel`, `DomainTitleSection`,
 `DomainBreadcrumb`, `DomainResources`, `Detail`.
 
 **Live hooks:** `useListDomain`, `useUpdateDomainLinks`, `useDomainCategories`,
-`useGetDomainLinks`, `useGetAllowedCategories`, `useMyVotes`,
-`useListingStatuses`, `useTrendingDomains`, `useSetDomainCategories`,
-`useDomainByHash`, `useGetDomainLikeCount`, `usePaginatedDomains`,
-`useOwnedDomains`, `useVerifiedDomains`, `useKasware`, and the two wallet
-internals.
+`useGetDomainLinks`, `useGetAllowedCategories`, `useMyVotes`, `useListingStatuses`,
+`useTrendingDomains`, `useOwnedDomains`, `usePaginatedDomains`, and the Kasware wallet
+hook.
 
-### ⛔ Unreachable files — 8, all Codex's
+### Reachability
 
-Run `npm run dead:check` — this list is its output, not a hand count.
-
-```
-src/hooks/kns/api/useAssetStatus.ts            ┐
-src/hooks/kns/api/useCheckDomainAvailability.ts │ Codex added knsApiUrl() to these
-src/hooks/kns/api/useDomainOwner.ts             │ on 2026-09-06; none is wired to a
-src/hooks/kns/api/useDomainSearch.ts            │ page yet
-src/hooks/kns/api/useVerifiedDomains.ts         │
-src/hooks/kns/api/useVerifyOwnership.ts        ┘
-src/lib/kasplex.ts          — EVM chain config, unreachable since the contract removal
-src/lib/viemChains.ts       — same
-```
-
-Down from 27 on 2026-09-06. The other 19, plus 15 more that were live but only served the
-contract path, were deleted with the EVM removal.
-
-**None of these are mine to delete.** Codex has uncommitted work in all eight; the last two
-are listed for them in [`CODEX-TODO.md`](./CODEX-TODO.md).
+`npm run dead:check` is the source of record: as of 2026-09-06 it reports 89 source files,
+39 entry points, 89 reachable files and **0 unreachable files**. The stale EVM adapters and
+six unimported KNS hooks were removed rather than allowlisted.
 
 ## 8b. Documentation — `docs/`
 
@@ -216,12 +200,12 @@ The map had no entry for its own folder until 2026-09-06. 22 files.
 | `HISTORY.md` | Dated narrative — the *order* things were discovered in |
 | `PROJECT_PLAN.md`, `BUSINESS_PLAN.md` | Product and business framing |
 | `TODO.md` | Live backlog and doc index |
-| `MIND.md` | 18 operating principles, each from a real incident |
+| `MIND.md` | 21 operating principles, each from a real incident |
 | `PROPOSED-STRUCTURE.md` | A feature-sliced layout for `src/`, with lint enforcement and a phased migration. **Proposal — needs a decision** |
-| `mind/README.md` + 7 checklists | The runnable version of those principles |
+| `mind/README.md` + 8 checklists | The runnable version of those principles |
 | `Toccata-Dev.md` | Kaspa covenants — the intended end state |
 | `KASPA_DEVELOPMENT.md` | Ecosystem research |
-| `SECURITY_AUDIT_2026-09-05.md` | Codex's audit. 8 of 9 findings closed; SA-05 open |
+| `SECURITY_AUDIT_2026-09-05.md` | Codex's audit. All nine findings have code-level fixes; deployment still awaits schema application |
 
 ---
 
@@ -241,26 +225,16 @@ The map had no entry for its own folder until 2026-09-06. 22 files.
    impossible.
 4. **Operating entity and jurisdiction** for `/terms` and `/privacy`, plus legal
    review. Both carry an explicit "not reviewed by a lawyer" notice.
-5. **Delete `/EcosystemAdmin` and the 27 dead files?** They administer and query
-   contracts that do not exist.
-6. **A test runner** (`node:test` vs `vitest`, and whether CI runs it). See the
-   argument in `GAPS.md` — the 2026-09-06 paging bug passed `tsc`, `eslint` and
-   `build` while returning 100 of 10,000 rows.
 
 ### Engineering
 
-7. **SA-05** — one-time nonce + profile revision. The last open audit finding;
-   unclaimed on the board.
-8. **Silent wallet reconnect.** Auto-reconnect calls `eth_requestAccounts`, which
-   **prompts on every page load** with a remembered wallet. Should use
-   `eth_accounts` and only escalate on explicit user action. Codex's area.
-9. **Server-side search.** `/search` loads every listing into the browser to
+5. **Server-side search.** `/search` loads every listing into the browser to
    filter client-side.
-10. **Dependency majors**: eslint 10, TypeScript 7, `@noble/curves` 2,
+6. **Dependency majors**: eslint 10, TypeScript 7, `@noble/curves` 2,
     `lucide-react` 1, `@types/node` 26. In-range updates are already applied.
-11. **Real OG image.** `public/og-image.png` is the square logo renamed, so every
+7. **Real OG image.** `public/og-image.png` is the square logo renamed, so every
     social share is cropped.
-12. Mobile pass on `/status`, `/about`, `/terms`, `/privacy`,
+8. Mobile pass on `/status`, `/about`, `/terms`, `/privacy`,
     `/domain/update/[name]`, `/domains/my-domains`.
 
 ### Long-term

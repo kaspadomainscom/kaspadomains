@@ -62,6 +62,7 @@ export type Database = {
           tx_hash: string | null;
           created_at: string;
           updated_at: string;
+          profile_revision: number;
         };
         Insert: {
           id?: number;
@@ -76,6 +77,7 @@ export type Database = {
           tx_hash?: string | null;
           created_at?: string;
           updated_at?: string;
+          profile_revision?: number;
         };
         Update: {
           id?: number;
@@ -90,6 +92,7 @@ export type Database = {
           tx_hash?: string | null;
           created_at?: string;
           updated_at?: string;
+          profile_revision?: number;
         };
         Relationships: [];
       };
@@ -189,6 +192,44 @@ export type Database = {
           },
         ];
       };
+      /** Server-only, short-lived capabilities for bulk profile replacements. */
+      profile_write_nonces: {
+        Row: {
+          nonce: string;
+          domain_id: number;
+          action: 'update-links' | 'update-categories';
+          signer: string;
+          profile_revision: number;
+          expires_at: string;
+          created_at: string;
+        };
+        Insert: {
+          nonce: string;
+          domain_id: number;
+          action: 'update-links' | 'update-categories';
+          signer: string;
+          profile_revision: number;
+          expires_at: string;
+          created_at?: string;
+        };
+        Update: {
+          nonce?: string;
+          domain_id?: number;
+          action?: 'update-links' | 'update-categories';
+          signer?: string;
+          profile_revision?: number;
+          expires_at?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'profile_write_nonces_domain_id_fkey';
+            columns: ['domain_id'];
+            referencedRelation: 'domains';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       domain_vote_counts: {
@@ -237,12 +278,24 @@ export type Database = {
         Returns: number;
       };
       replace_domain_categories: {
-        Args: { p_name: string; p_categories: string[] };
-        Returns: undefined;
+        Args: {
+          p_name: string;
+          p_categories: string[];
+          p_nonce: string;
+          p_expected_revision: number;
+          p_signer: string;
+        };
+        Returns: number;
       };
       replace_domain_links: {
-        Args: { p_name: string; p_links: { name: string; url: string }[] };
-        Returns: undefined;
+        Args: {
+          p_name: string;
+          p_links: { name: string; url: string }[];
+          p_nonce: string;
+          p_expected_revision: number;
+          p_signer: string;
+        };
+        Returns: number;
       };
     };
     Enums: Record<never, never>;
@@ -264,7 +317,7 @@ export type Views<T extends keyof Database['public']['Views']> =
  * Bump it in the same commit as the migration that raises it, or the check
  * passes against a database that is missing what the code needs.
  */
-export const REQUIRED_SCHEMA_VERSION = 3;
+export const REQUIRED_SCHEMA_VERSION = 4;
 
 /** Every table name, for the schema-drift check in `scripts/db-check.mjs`. */
 export const TABLE_NAMES = [
@@ -274,4 +327,5 @@ export const TABLE_NAMES = [
   'domain_categories',
   'votes',
   'domain_links',
+  'profile_write_nonces',
 ] as const;

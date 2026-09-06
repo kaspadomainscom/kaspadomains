@@ -67,7 +67,11 @@ create table if not exists public.domains (
   -- its eventual on-chain counterpart can be reconciled rather than duplicated.
   tx_hash       text,
   created_at    timestamptz not null default now(),
-  updated_at    timestamptz not null default now()
+  updated_at    timestamptz not null default now(),
+  -- Incremented by either bulk profile replacement. It is deliberately not
+  -- inferred from updated_at: that timestamp can change for unrelated cache
+  -- syncs, while this value is the concurrency contract the editor renders.
+  profile_revision bigint not null default 0 check (profile_revision >= 0)
 );
 
 create index if not exists domains_owner_idx on public.domains (lower(owner));
@@ -140,6 +144,28 @@ create table if not exists public.domain_links (
 create index if not exists domain_links_domain_idx on public.domain_links (domain_id);
 
 -- ---------------------------------------------------------------------------
+-- One-time tokens for profile writes
+-- ---------------------------------------------------------------------------
+-- Links and categories are both bulk replacements. A body-bound signature
+-- stops substitution, but an old valid request could still restore an older
+-- profile during its five-minute validity window. The API issues this token
+-- only after re-verifying KNS ownership; the atomic replacement functions bind
+-- it to exactly one domain, action, signer and loaded profile revision.
+create table if not exists public.profile_write_nonces (
+  nonce            uuid primary key,
+  domain_id        bigint      not null references public.domains (id) on delete cascade,
+  action           text        not null check (action in ('update-links', 'update-categories')),
+  signer           text        not null,
+  profile_revision bigint      not null check (profile_revision >= 0),
+  expires_at       timestamptz not null,
+  created_at       timestamptz not null default now(),
+  unique (domain_id, action, signer, profile_revision)
+);
+
+create index if not exists profile_write_nonces_expires_at_idx
+  on public.profile_write_nonces (expires_at);
+
+-- ---------------------------------------------------------------------------
 -- Row Level Security
 -- ---------------------------------------------------------------------------
 alter table public.payment_receipts  enable row level security;
@@ -148,6 +174,7 @@ alter table public.categories        enable row level security;
 alter table public.domain_categories enable row level security;
 alter table public.votes             enable row level security;
 alter table public.domain_links      enable row level security;
+alter table public.profile_write_nonces enable row level security;
 
 -- Public read: everything here is meant to be publicly visible, and the site
 -- renders it server-side and in the browser.
@@ -170,6 +197,9 @@ create policy "public read" on public.domain_links for select using (true);
 -- link a payer address to an action, which is nobody else's business. With RLS
 -- on and no policy, the publishable key can neither read nor write it; only the
 -- server's secret key, which bypasses RLS, can touch it.
+--
+-- profile_write_nonces gets the same no-policy treatment. A nonce is a
+-- short-lived capability for a specific owner-verified edit, not public data.
 
 -- No insert/update/delete policies are defined on purpose. With RLS enabled and
 -- no write policy, the anon key cannot write at all; the service-role key
@@ -203,7 +233,7 @@ create or replace function public.kaspadomains_schema_version()
   language sql
   immutable
   set search_path = public, pg_temp
-as $$ select 3 $$;
+as $$ select 4 $$;
 
 -- ---------------------------------------------------------------------------
 -- Error codes
@@ -216,6 +246,8 @@ as $$ select 3 $$;
 --   KD003  a category is not on the allow-list
 --   KD004  that wallet has already voted for that domain
 --   KD005  that domain is not listed
+--   KD006  the one-time profile-write token is expired or already used
+--   KD007  the editor's loaded profile revision is stale
 
 -- ---------------------------------------------------------------------------
 -- create_listing
@@ -338,28 +370,65 @@ $$;
 -- ---------------------------------------------------------------------------
 -- replace_domain_categories
 -- ---------------------------------------------------------------------------
--- Free to call (no receipt), but still atomic: the previous version added the
--- new rows and then deleted the old ones in two round trips, so a failure
--- between them left a listing in categories the owner had just removed.
+-- Keep the bootstrap safe to re-run on a version-3 project too. PostgreSQL
+-- treats a different argument list as an overload, not a replacement, so
+-- creating the new signature alone would leave a service-role caller able to
+-- bypass the nonce/revision checks via the old two-argument function.
+drop function if exists public.replace_domain_categories(text, text[]);
+drop function if exists public.replace_domain_links(text, jsonb);
+
+-- A bulk replacement has to reject stale editor state, not merely make its
+-- delete/insert atomic. The editor submits the revision it loaded; the token
+-- it presents is bound to that same revision and one verified KNS owner.
 create or replace function public.replace_domain_categories(
-  p_name       text,
-  p_categories text[]
-) returns void
+  p_name              text,
+  p_categories        text[],
+  p_nonce             uuid,
+  p_expected_revision bigint,
+  p_signer            text
+) returns bigint
   language plpgsql
   security definer
   set search_path = public, pg_temp
 as $$
 declare
-  v_domain_id bigint;
-  v_bad       text;
+  v_domain_id      bigint;
+  v_revision       bigint;
+  v_consumed_nonce uuid;
+  v_new_revision   bigint;
+  v_bad            text;
 begin
   if p_categories is null or array_length(p_categories, 1) is null then
     raise exception 'At least one category is required.' using errcode = 'KD003';
   end if;
 
-  select id into v_domain_id from public.domains where name = p_name;
+  select id, profile_revision
+    into v_domain_id, v_revision
+    from public.domains
+    where name = p_name
+    for update;
+
   if v_domain_id is null then
     raise exception 'That domain is not listed.' using errcode = 'KD005';
+  end if;
+
+  if p_expected_revision is null
+     or p_expected_revision < 0
+     or v_revision <> p_expected_revision then
+    raise exception 'This profile changed in another tab. Reload before saving.' using errcode = 'KD007';
+  end if;
+
+  delete from public.profile_write_nonces
+    where nonce = p_nonce
+      and domain_id = v_domain_id
+      and action = 'update-categories'
+      and signer = p_signer
+      and profile_revision = p_expected_revision
+      and expires_at > clock_timestamp()
+    returning nonce into v_consumed_nonce;
+
+  if v_consumed_nonce is null then
+    raise exception 'This save request expired or was already used. Reload and try again.' using errcode = 'KD006';
   end if;
 
   select c into v_bad
@@ -379,32 +448,66 @@ begin
   insert into public.domain_categories (domain_id, category_key)
   select distinct v_domain_id, c from unnest(p_categories) as c
   on conflict (domain_id, category_key) do nothing;
+
+  update public.domains
+  set profile_revision = profile_revision + 1,
+      updated_at = now()
+  where id = v_domain_id
+  returning profile_revision into v_new_revision;
+
+  return v_new_revision;
 end;
 $$;
 
 -- ---------------------------------------------------------------------------
 -- replace_domain_links
 -- ---------------------------------------------------------------------------
--- The links editor is a bulk replace done as delete-then-insert. If the insert
--- failed the profile was left empty -- visible and recoverable, but still a
--- destroyed profile. One transaction removes that window entirely.
---
--- Takes jsonb rather than parallel arrays so the name/url/position of a link
--- cannot be misaligned by a caller.
+-- The token is consumed in this same transaction. If validation or an insert
+-- fails, PostgreSQL rolls it back together with the attempted replacement.
 create or replace function public.replace_domain_links(
-  p_name  text,
-  p_links jsonb
-) returns void
+  p_name              text,
+  p_links             jsonb,
+  p_nonce             uuid,
+  p_expected_revision bigint,
+  p_signer            text
+) returns bigint
   language plpgsql
   security definer
   set search_path = public, pg_temp
 as $$
 declare
-  v_domain_id bigint;
+  v_domain_id      bigint;
+  v_revision       bigint;
+  v_consumed_nonce uuid;
+  v_new_revision   bigint;
 begin
-  select id into v_domain_id from public.domains where name = p_name;
+  select id, profile_revision
+    into v_domain_id, v_revision
+    from public.domains
+    where name = p_name
+    for update;
+
   if v_domain_id is null then
     raise exception 'That domain is not listed.' using errcode = 'KD005';
+  end if;
+
+  if p_expected_revision is null
+     or p_expected_revision < 0
+     or v_revision <> p_expected_revision then
+    raise exception 'This profile changed in another tab. Reload before saving.' using errcode = 'KD007';
+  end if;
+
+  delete from public.profile_write_nonces
+    where nonce = p_nonce
+      and domain_id = v_domain_id
+      and action = 'update-links'
+      and signer = p_signer
+      and profile_revision = p_expected_revision
+      and expires_at > clock_timestamp()
+    returning nonce into v_consumed_nonce;
+
+  if v_consumed_nonce is null then
+    raise exception 'This save request expired or was already used. Reload and try again.' using errcode = 'KD006';
   end if;
 
   delete from public.domain_links where domain_id = v_domain_id;
@@ -418,6 +521,14 @@ begin
       (ordinality - 1)::integer
     from jsonb_array_elements(p_links) with ordinality as t(link, ordinality);
   end if;
+
+  update public.domains
+  set profile_revision = profile_revision + 1,
+      updated_at = now()
+  where id = v_domain_id
+  returning profile_revision into v_new_revision;
+
+  return v_new_revision;
 end;
 $$;
 
@@ -442,8 +553,8 @@ begin
   foreach fn in array array[
     'public.create_listing(text, text, text, text, text, text, text, text[])',
     'public.record_vote(text, text, text, text)',
-    'public.replace_domain_categories(text, text[])',
-    'public.replace_domain_links(text, jsonb)'
+    'public.replace_domain_categories(text, text[], uuid, bigint, text)',
+    'public.replace_domain_links(text, jsonb, uuid, bigint, text)'
   ] loop
     execute format('revoke all on function %s from public', fn);
     execute format('revoke all on function %s from anon', fn);

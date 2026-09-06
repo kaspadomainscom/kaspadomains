@@ -1,5 +1,6 @@
 // src/data/supabaseSource.ts
 import { getSupabaseReadClient } from '@/lib/supabase';
+import { parseProfileRevision } from '@/lib/profileWrite';
 import type { CategoryManifest } from './categoriesManifest';
 import type { Domain } from './types';
 
@@ -275,23 +276,47 @@ export async function fetchVoters(
   return (data ?? []).map((row) => row.voter as string);
 }
 
-/** The resources attached to a domain (the off-chain DomainLinksStorage). */
+/**
+ * The resources attached to a domain, coupled to the exact revision they came
+ * from. The editor must carry this value through to save; fetching a revision
+ * only when Save is clicked would let a stale tab overwrite data it never saw.
+ */
 export async function fetchDomainLinks(
   domainName: string
-): Promise<{ name: string; url: string }[]> {
+): Promise<{ links: { name: string; url: string }[]; profileRevision: number | null }> {
   const client = requireClient();
 
-  const domain = await fetchDomainByName(domainName);
-  if (!domain) return [];
+  const { data: domain, error: domainError } = await client
+    .from('domains')
+    .select('id, profile_revision, domain_links (name, url, position)')
+    .eq('name', domainName.trim().toLowerCase())
+    .maybeSingle();
 
-  const { data, error } = await client
-    .from('domain_links')
-    .select('name, url, position')
-    .eq('domain_id', domain.id)
-    .order('position', { ascending: true });
+  if (domainError) {
+    throw new Error(`Supabase: failed to load profile revision — ${domainError.message}`);
+  }
+  if (!domain) return { links: [], profileRevision: null };
 
-  if (error) throw new Error(`Supabase: failed to load links — ${error.message}`);
-  return (data ?? []).map((row) => ({ name: row.name, url: row.url }));
+  const profileRevision = parseProfileRevision(domain.profile_revision);
+  if (profileRevision === null) {
+    throw new Error('Supabase: domain has an invalid profile revision.');
+  }
+
+  // This is deliberately one database snapshot with the revision above. Two
+  // separate reads could pair links from one save with a revision from another;
+  // rejecting such a mismatch would be safe, but rendering a coherent snapshot
+  // is both safer and much less surprising to the owner.
+  const linkRows = (domain.domain_links ?? []) as {
+    name: string;
+    url: string;
+    position: number;
+  }[];
+  return {
+    links: [...linkRows]
+      .sort((a, b) => a.position - b.position)
+      .map((row) => ({ name: row.name, url: row.url })),
+    profileRevision,
+  };
 }
 
 /**

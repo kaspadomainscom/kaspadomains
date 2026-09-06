@@ -1,6 +1,10 @@
 // src/lib/signedFetch.ts
 import { buildSignedMessage, digestPayload, type WriteAction } from './signedMessage';
 import { TREASURY_ADDRESS, isFeeCollectionConfigured } from './fees';
+import {
+  parseProfileRevision,
+  type ProfileWriteAction,
+} from './profileWrite';
 
 /**
  * Ask Kasware to sign a write request with the user's **Kaspa L1 key**, then
@@ -124,6 +128,48 @@ export async function readError(response: Response, fallback: string): Promise<s
   } catch {
     return fallback;
   }
+}
+
+/**
+ * Obtain a short-lived, owner-bound token before a bulk profile replacement.
+ *
+ * The revision is the one rendered with the profile data, not a fresh read at
+ * save time: refreshing it here would let a stale tab overwrite a change it
+ * never saw. The server verifies ownership and rejects a revision that has
+ * changed since that rendered snapshot.
+ */
+export async function prepareProfileWrite(input: {
+  action: ProfileWriteAction;
+  domain: string;
+  profileRevision: number;
+}): Promise<{ nonce: string; profileRevision: number; expiresAt: string }> {
+  const response = await signedFetch({
+    action: 'issue-profile-write',
+    domain: input.domain,
+    path: `/api/domains/${encodeURIComponent(input.domain)}/write-nonce`,
+    body: { action: input.action, profileRevision: input.profileRevision },
+  });
+
+  if (!response.ok) {
+    throw new Error(await readError(response, 'Could not prepare this profile update.'));
+  }
+
+  const body = (await response.json()) as {
+    nonce?: unknown;
+    profileRevision?: unknown;
+    expiresAt?: unknown;
+  };
+  const profileRevision = parseProfileRevision(body.profileRevision);
+  if (
+    typeof body.nonce !== 'string' ||
+    body.nonce.length === 0 ||
+    profileRevision !== input.profileRevision ||
+    typeof body.expiresAt !== 'string'
+  ) {
+    throw new Error('The server did not prepare a safe profile update. Nothing was saved.');
+  }
+
+  return { nonce: body.nonce, profileRevision, expiresAt: body.expiresAt };
 }
 
 /**

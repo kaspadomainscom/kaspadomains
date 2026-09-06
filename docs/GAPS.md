@@ -59,28 +59,17 @@ live backlog the continuous audit loop appends to.
       source boundary in `rowToDomain` / the contract mappers. Not done blind because it
       touches `src/data/types.ts`, which both read paths and every card depend on.
 
-## No automated tests at all
+## Automated test coverage
 
-- [~] **The repo has almost no tests.** Codex added the first one on 2026-09-06 —
-      `src/lib/kaspaDomainRuntime.test.ts`, run by `npm run test:kaspa-runtime` under
-      `node --test` — which answers the runner question by making it: **node:test**, no new
-      dependency. What is still missing is coverage of the things that have actually broken:
-      `fetchAllPages` at various server caps, `paymentIntent` accept/reject, the
-      `signedMessage` digest, `verifyPayment`'s payer matching, and `normalizeDomainName`'s
-      idempotence. CI does not run the test script yet. Original note follows —
-      <br>There *is* CI —
-      [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs `npm run lint` and
-      `npm run build` on every push and PR, and the build type-checks — but `package.json`
-      has no `test` script, so CI runs none. Every claim of correctness in `BUGS.md` rests
-      on a type-check, a lint run, a manual probe, or a throwaway script that was deleted
-      afterwards. For an app that moves real KAS that is the largest structural gap left.
-      The 2026-09-06 paging bug is the argument: the first fix looked obviously right,
-      passed `tsc`, `eslint` and `build`, and silently returned 100 of 10,000 rows — a
-      ten-line harness found it in one run. Things that would repay a runner immediately:
-      `fetchAllPages` behaviour at various server caps, `paymentIntent` accept/reject
-      properties, `signedMessage` digest stability, and `verifyPayment`'s payer matching.
-      Not set up unilaterally because picking a runner (node:test vs vitest) and a CI
-      shape is a project decision.
+- [~] **The repo has a small native test suite, not broad behavioral coverage.** `npm test`
+      uses `node:test` with no additional runner, and CI runs it with lint and build. The
+      current nine tests cover silent wallet restoration, domain-name canonicalization, the
+      KNS-runtime boundary, and profile-write action/revision parsing. The important missing
+      cases are still `fetchAllPages` at server caps above and below the page size,
+      `paymentIntent` accept/reject properties, signed-message digest behavior,
+      `verifyPayment` payer matching, and a database-backed race test for the profile-write
+      token/revision transaction. The last of those cannot be meaningful until the Supabase
+      schema exists somewhere to run it against.
 
 ## Supabase write-path gaps
 
@@ -91,17 +80,16 @@ live backlog the continuous audit loop appends to.
       none is invisible while still having been paid for), and it is **free** (the listing
       was already paid for; charging to fix a category just leaves listings
       miscategorised). Editable from the domain's update page.
-- [ ] **No one-time nonce or profile revision on signed requests** (Codex SA-05). The
-      signature now covers the request body (see `BUGS.md`), but a byte-identical request
-      can still be replayed inside the 5-minute window. For listing, voting and payments
-      this is a no-op — the unique constraints on `name`, `(domain_id, voter)` and
-      `payment_tx_id` absorb it. For `update-links` it is **not** harmless: the route
-      deletes and reinserts the whole set, so replaying an older captured update rolls a
-      newer profile back, and concurrent replays can interleave the delete and insert and
-      leave a mixed link set. Needs a server-issued nonce consumed atomically before the
-      mutation, plus a profile revision the request must match. Deliberately not built
-      blind — it needs a table, an issuing endpoint and a decision about how long an
-      unspent nonce lives.
+- [x] ~~**No one-time nonce or profile revision on signed requests**~~ (Codex SA-05).
+      **Code-level fix completed 2026-09-06.** Both bulk replacements now load their data
+      with a monotonic `profile_revision`; the owner signs for a five-minute token bound to
+      the domain, action, verified signer and that rendered revision; and the replacement
+      RPC locks, compares, consumes and increments in one transaction. `KD006` tells an
+      owner to sign again after a used/expired token; `KD007` tells a stale tab to reload.
+      The migration and schema snapshot also remove the old nonce-free RPC overloads. This
+      remains unavailable — deliberately with a 503 rather than a false success — until the
+      never-applied Supabase schema is deployed, and no real wallet/database run has yet
+      exercised it.
 - [x] ~~**The user pays before the server has agreed to fulfil the action**~~ (Codex SA-04).
       **Fixed 2026-09-06.** `POST /api/domains/preflight` — signed, free — now runs
       write-readiness, KNS ownership, target existence, duplicate state and the category

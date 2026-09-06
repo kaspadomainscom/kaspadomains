@@ -31,6 +31,10 @@ export type WriteAction =
   | 'vote'
   | 'update-links'
   | 'update-categories'
+  // A separate owner-verified request that issues a one-time token for either
+  // bulk profile replacement. It must not be interchangeable with the write
+  // itself: a token-issuance signature has a different safety contract.
+  | 'issue-profile-write'
   // A no-fee dry run of 'list-domain' or 'vote'. A distinct action so a
   // preflight signature can never be replayed as the write it was previewing.
   | 'preflight';

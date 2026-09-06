@@ -53,10 +53,16 @@ export default function UpdateDomainPage() {
   const isKaspaConnected = kasware.status === 'connected';
   const isOwner = normalizeAddress(owner) === normalizeAddress(kasware.account);
 
-  const { links: existingLinks, loading: linksLoading } = useGetDomainLinks(domainName);
+  const {
+    links: existingLinks,
+    profileRevision,
+    loading: linksLoading,
+    replaceSnapshot,
+  } = useGetDomainLinks(domainName);
   const { updateLinks, isLoading: saving, error: saveError } = useUpdateDomainLinks();
   // `null` means we do not know what the current links are.
-  const linksUnavailable = !linksLoading && existingLinks === null;
+  const linksUnavailable =
+    !linksLoading && (existingLinks === null || profileRevision === null);
   const knownLinks = existingLinks ?? [];
 
   const displayedLinks = !linksSeeded && knownLinks.length > 0 ? knownLinks : links;
@@ -123,8 +129,16 @@ export default function UpdateDomainPage() {
     e.preventDefault();
     setMessage('');
 
-    const ok = await updateLinks(domainName, displayedLinks);
-    if (ok) {
+    if (profileRevision === null) {
+      setMessage('Reload the current profile before saving resources.');
+      return;
+    }
+
+    const saved = await updateLinks(domainName, displayedLinks, profileRevision);
+    if (saved) {
+      setLinks(saved.links);
+      setLinksSeeded(false);
+      replaceSnapshot(saved.links, saved.profileRevision);
       setMessage(`✅ Resources for '${domainName}' updated successfully.`);
     }
   };
@@ -222,15 +236,15 @@ export default function UpdateDomainPage() {
 
         {linksUnavailable && (
           <p className="rounded border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-amber-200">
-            We couldn&apos;t load this domain&apos;s current links, so editing is disabled.
-            Saving replaces the whole list, and doing that without knowing what is there
-            would delete your existing links. Please reload in a moment.
+            {existingLinks === null
+              ? "We couldn't load this domain's current links, so editing is disabled. Saving replaces the whole list, and doing that without knowing what is there would delete your existing links. Please reload in a moment."
+              : 'This listing has no usable current revision, so editing is disabled. Reload before saving.'}
           </p>
         )}
 
         <p className="text-xs text-gray-500">
           {linksUnavailable
-            ? 'Current links unknown — editing disabled.'
+            ? 'Current profile state unknown — editing disabled.'
             : linksLoading
               ? 'Loading your current links…'
               : `${displayedLinks.length} / ${maxLinks} links`}

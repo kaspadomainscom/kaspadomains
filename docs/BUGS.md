@@ -25,18 +25,6 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
       tested from here. The residual risk is narrow and fails safe — a signing-convention
       mismatch rejects legitimate owners rather than admitting impostors — but it is
       untested, and it is the second thing to do after the schema.
-- [ ] **SA-05 — no one-time nonce or profile revision on signed requests.** The last open
-      finding from Codex's audit. The signature covers the body, but a byte-identical
-      request can be replayed inside the five-minute window. Harmless for listing, voting
-      and payments (the unique constraints absorb it); **not** harmless for `update-links`,
-      which delete-and-reinserts, so replaying an older capture rolls a newer profile back.
-      Unclaimed — see [`CODEX-TODO.md`](./CODEX-TODO.md).
-- [ ] **Two false claims remain in the status files, which are Codex's.**
-      `resolveDirectorySource` still returns `'kasplex-contracts'` when Supabase is
-      unconfigured, and `/status` still tells users the site "is falling back to the Kasplex
-      contracts". There is no fallback any more: without a database the site cannot serve
-      listings at all. Left for Codex because they have uncommitted work in both files; see
-      [`CODEX-TODO.md`](./CODEX-TODO.md).
 - [ ] **No proper Open Graph image.** `public/og-image.png` is the square logo renamed, so
       every social share is cropped. Needs a design asset, not code.
 
@@ -44,6 +32,20 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
 
 Most recent first. Each entry names the file(s), what was actually wrong, and how it was
 verified — not just "fixed X."
+
+- **A valid old profile save could replay and overwrite a newer profile.** This was Codex's
+  final audit finding (SA-05). Signing the exact body stopped substitution, but it still let
+  a byte-identical `update-links` or `update-categories` request run during its five-minute
+  window. Both are bulk replacements, so an old tab could restore data it never rendered.
+  Fixed in the code path with a profile revision carried from the data read, a short-lived
+  owner-issued token bound to domain/action/signer/revision, and a database function that
+  locks, compares, consumes, replaces and increments atomically. The migration drops old
+  nonce-free RPC overloads, and `db:check` proves each replacement signature exists to the
+  service key but is hidden from anonymous callers. Focused read-only review cleared the
+  migration-overload and setup-error handling. *Verified locally:* type-check, lint, nine
+  native tests, reachability check and whitespace check. The live schema has never been
+  applied, so no wallet/database run can yet verify this in deployment; the new routes fail
+  closed with 503 when the required setup is absent.
 
 - **A fee transaction was a bearer coupon: anyone could spend a stranger's 200 KAS
   payment on their own listing.** Found by Codex (SA-02). `verifyPayment` checked that a
@@ -542,9 +544,9 @@ verified — not just "fixed X."
   signed envelope is covered. *Verified*, rather than assumed: an untampered body agrees
   across client and server, substituted links change the digest, an added field changes
   it, key order does **not** affect it (it would otherwise fail honest requests at
-  random), and array order **does** (link order is meaningful). Remaining gap, logged in
-  `GAPS.md`: no one-time nonce, so a byte-identical replay inside the 5-minute window is
-  still possible — currently a no-op thanks to idempotency and the unique constraints.
+  random), and array order **does** (link order is meaningful). The subsequent SA-05 fix
+  adds the separate one-time-token and profile-revision guarantees that a body digest alone
+  cannot provide; see the newest Fixed entry above.
 - **Every write flow still demanded a Kasplex EVM connection it no longer uses, and the
   resource editor's Save button did nothing at all without one.** Fallout from moving
   signing to the Kaspa L1 key: `/list-domain`, `PickDomainModal` and

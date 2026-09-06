@@ -3,8 +3,17 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
 import { requireDomainOwner, VerificationError, extractPayload } from '@/lib/server/verifyRequest';
 import { rpcError } from '@/lib/server/rpcError';
+import { parseProfileRevision } from '@/lib/profileWrite';
 
 export const runtime = 'nodejs';
+
+function setupUnavailable(error?: { code?: string } | null) {
+  return error?.code === 'PGRST202' ||
+    error?.code === 'PGRST204' ||
+    error?.code === 'PGRST205' ||
+    error?.code === '42P01' ||
+    error?.code === '42703';
+}
 
 /**
  * How many categories one listing may sit in.
@@ -46,11 +55,29 @@ export async function PUT(
 
   const { name } = await context.params;
 
-  let body: { publicKey?: string; issuedAt?: number; signature?: string; categories?: string[] };
+  let body: {
+    publicKey?: string;
+    issuedAt?: number;
+    signature?: string;
+    categories?: string[];
+    nonce?: string;
+    profileRevision?: unknown;
+  };
   try {
-    body = await request.json();
+    const parsed: unknown = await request.json();
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return NextResponse.json({ error: 'Expected a JSON object.' }, { status: 400 });
+    }
+    body = parsed as typeof body;
   } catch {
     return NextResponse.json({ error: 'Expected a JSON body.' }, { status: 400 });
+  }
+
+  let requestedDomain: string;
+  try {
+    requestedDomain = decodeURIComponent(name);
+  } catch {
+    return NextResponse.json({ error: 'The domain name is malformed.' }, { status: 400 });
   }
 
   const categories = Array.from(
@@ -79,11 +106,20 @@ export async function PUT(
     );
   }
 
+  const nonce = typeof body.nonce === 'string' ? body.nonce : '';
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(nonce)) {
+    return NextResponse.json({ error: 'A valid one-time save token is required.' }, { status: 400 });
+  }
+  const profileRevision = parseProfileRevision(body.profileRevision);
+  if (profileRevision === null) {
+    return NextResponse.json({ error: 'A valid loaded profile revision is required.' }, { status: 400 });
+  }
+
   let verified;
   try {
     verified = await requireDomainOwner({
       action: 'update-categories',
-      domain: decodeURIComponent(name),
+      domain: requestedDomain,
       publicKey: String(body.publicKey ?? ''),
       issuedAt: Number(body.issuedAt ?? 0),
       signature: String(body.signature ?? ''),
@@ -119,9 +155,12 @@ export async function PUT(
   // evaluated against the same snapshot as the write -- and the add and the
   // remove can no longer be separated by a failure, which previously left a
   // listing in categories its owner had just removed.
-  const { error: rpcFailure } = await supabase.rpc('replace_domain_categories', {
+  const { data: nextProfileRevision, error: rpcFailure } = await supabase.rpc('replace_domain_categories', {
     p_name: verified.domain,
     p_categories: categories,
+    p_nonce: nonce,
+    p_expected_revision: profileRevision,
+    p_signer: verified.signerAddress,
   });
 
   if (rpcFailure) {
@@ -129,7 +168,7 @@ export async function PUT(
     return NextResponse.json({ error: mapped.message }, { status: mapped.status });
   }
 
-  return NextResponse.json({ categories }, { status: 200 });
+  return NextResponse.json({ categories, profileRevision: nextProfileRevision }, { status: 200 });
 }
 
 /**
@@ -145,6 +184,13 @@ export async function GET(
 ) {
   const { name } = await context.params;
 
+  let domain: string;
+  try {
+    domain = decodeURIComponent(name).trim().toLowerCase();
+  } catch {
+    return NextResponse.json({ error: 'The domain name is malformed.' }, { status: 400 });
+  }
+
   const { getSupabaseReadClient } = await import('@/lib/supabase');
   const supabase = getSupabaseReadClient();
   if (!supabase) {
@@ -153,18 +199,31 @@ export async function GET(
 
   const { data, error } = await supabase
     .from('domains')
-    .select('id, domain_categories (category_key)')
-    .eq('name', decodeURIComponent(name).trim().toLowerCase())
+    .select('id, profile_revision, domain_categories (category_key)')
+    .eq('name', domain)
     .maybeSingle();
 
   if (error) {
     console.error('Category read failed:', error);
-    return NextResponse.json({ error: 'Could not load categories.' }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: setupUnavailable(error)
+          ? 'This deployment is not finished setting up profile editing.'
+          : 'Could not load categories.',
+      },
+      { status: setupUnavailable(error) ? 503 : 500 }
+    );
   }
   if (!data) {
     return NextResponse.json({ error: 'That domain is not listed.' }, { status: 404 });
   }
 
+  const profileRevision = parseProfileRevision(data.profile_revision);
+  if (profileRevision === null) {
+    console.error('Invalid stored profile revision:', data.profile_revision);
+    return NextResponse.json({ error: 'Could not load the current profile revision.' }, { status: 503 });
+  }
+
   const rows = (data.domain_categories ?? []) as { category_key: string }[];
-  return NextResponse.json({ categories: rows.map((row) => row.category_key) });
+  return NextResponse.json({ categories: rows.map((row) => row.category_key), profileRevision });
 }

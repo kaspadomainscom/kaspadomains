@@ -25,6 +25,7 @@ export function CategoryEditor({ domainName }: { domainName: string }) {
   const { options, loading: optionsLoading, error: optionsError } = useGetAllowedCategories();
   const {
     categories: saved,
+    profileRevision,
     loading,
     loadError,
     supported,
@@ -39,7 +40,7 @@ export function CategoryEditor({ domainName }: { domainName: string }) {
   const [message, setMessage] = useState('');
 
   const selected = draft ?? saved ?? [];
-  const locked = loading || optionsLoading || saving;
+  const locked = loading || optionsLoading || saving || profileRevision === null;
 
   const dirty = useMemo(() => {
     if (!draft || !saved) return false;

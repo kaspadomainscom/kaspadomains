@@ -55,19 +55,17 @@ hands immediately follows its new owner.
 |---|---|
 | `src/lib/signedMessage.ts` | Message format, canonical JSON, body digest. Dependency-free so WASM never reaches the browser |
 | `src/lib/domainName.ts` | The one owner of a `.kas` name's canonical form — server and client both use it, so they cannot drift |
-| `src/lib/signedFetch.ts` | Client side: get the key, sign, send |
+| `src/lib/profileWrite.ts` | Closed action set, token lifetime and exact profile-revision parsing |
+| `src/lib/signedFetch.ts` | Client side: get the key, sign, send; obtains the one-time profile token before a bulk replace |
 | `src/lib/server/verifyRequest.ts` | Verify signature → derive address → read KNS owner → require match. `normalizeDomain` here defines the canonical stored name |
-| `src/context/WalletContext.tsx` | Both wallet identities, and which is active |
+| `src/context/WalletContext.tsx` | The Kaspa L1 wallet identity used for ownership proofs |
 | `src/hooks/wallet/internal/useKaswareWallet.ts` | Kaspa L1 connection |
-| `src/hooks/wallet/internal/useKaswareEvmWallet.ts` | Kasplex EVM connection (fallback path only) |
-| `src/components/ConnectButton.tsx` | Connect UI |
 | `next.config.ts` | `serverExternalPackages: ['kaspa-wasm']` — load-bearing |
 
-**Weak points.** No one-time nonce, so a byte-identical request can be replayed inside the
-5-minute window (SA-05, open — worst for `update-links`, which delete-and-reinserts).
-Kasware's signing convention is assumed to match the SDK's and has never been exercised
-against a real extension; a mismatch rejects legitimate owners rather than admitting
-impostors. Auto-reconnect calls `eth_requestAccounts`, which **prompts on every page load**.
+**Weak points.** Profile bulk writes now carry a one-time token and the revision rendered by
+the editor, but that code remains unavailable until the schema migration is applied. Kasware's
+signing convention is assumed to match the SDK's and has never been exercised against a real
+extension; a mismatch rejects legitimate owners rather than admitting impostors.
 
 ---
 
@@ -95,9 +93,10 @@ taking money for something it then refuses to do.
 | `src/app/api/domains/preflight/route.ts` | Every check that can fail, before any money moves |
 | `src/lib/server/paymentIntent.ts` | Issue/verify the HMAC intent. Explicitly *not* a security boundary |
 | `src/lib/server/verifyPayment.ts` | On-chain verification, including who paid |
-| `src/lib/server/rpcError.ts` | Maps `KD001`–`KD005` from the SQL functions to HTTP |
+| `src/lib/server/rpcError.ts` | Maps `KD001`–`KD007` from the SQL functions to HTTP |
 | `src/lib/signedFetch.ts` | `preflight()` and `payFee()` — the only place funds move |
 | `supabase/migrations/0003_atomic_writes.sql` | Receipt claim + write in one transaction |
+| `supabase/migrations/20260906201516_profile_replay_protection.sql` | Profile revision + one-time write-token transaction contract |
 | `src/hooks/domain/useListDomain.ts`, `src/components/pages/domain/VotingSection.tsx` | The two callers |
 
 **Weak points.** A payment can still be made and the write still fail if the connection
@@ -151,7 +150,8 @@ boundary, and a foreign key proves a category *exists*, not that it is published
 | File | Role |
 |---|---|
 | `src/app/api/domains/[name]/categories/route.ts` | GET (public) / PUT (owner-only, free) |
-| `supabase/migrations/0003_atomic_writes.sql` → `replace_domain_categories` | Validate + swap, atomically |
+| `src/app/api/domains/[name]/write-nonce/route.ts` | Owner-only token issuance for the revision rendered by either bulk editor |
+| `supabase/migrations/20260906201516_profile_replay_protection.sql` → `replace_domain_categories` | Validate + swap, reject stale revision, consume one token, atomically |
 | `src/hooks/domain/useDomainCategories.ts` | Read + save |
 | `src/hooks/domains/useGetAllowedCategories.ts` | The allow-list, with **titles** not just keys |
 | `src/components/pages/domain/CategoryEditor.tsx` | The editor |
@@ -200,18 +200,18 @@ as an anchor on a public profile is stored XSS.
 | File | Role |
 |---|---|
 | `src/app/api/domains/[name]/links/route.ts` | PUT, bulk replace, max 10 |
-| `supabase/migrations/0003_atomic_writes.sql` → `replace_domain_links` | Delete + insert in one transaction |
+| `src/app/api/domains/[name]/write-nonce/route.ts` | POST, signed owner-only issuance of a token bound to the rendered revision |
+| `supabase/migrations/20260906201516_profile_replay_protection.sql` → `replace_domain_links` | Lock + compare revision + consume token + replace + increment, in one transaction |
 | `src/hooks/domain/useGetDomainLinks.ts`, `useUpdateDomainLinks.ts` | Read / write |
 | `src/app/domain/update/[name]/page.tsx` | The editor |
 | `src/components/pages/domain/DomainResources.tsx` | Public render. Says so when links can't be loaded rather than rendering nothing |
 | `src/components/pages/domain/DomainInfoPanel.tsx`, `DomainTitleSection.tsx`, `DomainBreadcrumb.tsx`, `Detail.tsx` | The rest of the profile |
 
 **Weak points.** Bulk replace means an editor that saves without knowing the current links
-wipes them. That guard is load-bearing and has failed **twice**, differently: once deleted by
-a lint refactor (`MIND.md` #13), once defeated by the hook returning `[]` on error so the
-guard's input lied. The hook now returns `DomainLink[] | null` and the editor locks on
-`null`. No bio, title or image: `DomainDataStorage` was never wired and its contract fails
-every call.
+wipes them. The editor now locks on an unknown snapshot and carries the **loaded** revision
+through a one-time token into the atomic write, so an old tab is rejected instead of rolling
+the profile back. This remains blocked on the schema being applied; no live wallet/database
+run has proven the flow. No bio, title or image is implemented yet.
 
 ---
 
@@ -251,7 +251,7 @@ server's secret key, after verification.
 | File | Role |
 |---|---|
 | `supabase/schema.sql` | Full bootstrap — the one file to run on a new project |
-| `supabase/migrations/0001…0003` + `README.md` | Incremental upgrades for existing projects |
+| `supabase/migrations/0001…20260906201516` + `README.md` | Incremental upgrades for existing projects |
 | `src/lib/supabase.ts` | Typed read/admin clients; admin throws if constructed in the browser |
 | `src/lib/database.types.ts` | Hand-written schema types, `REQUIRED_SCHEMA_VERSION`, `TABLE_NAMES` |
 | `src/data/supabaseSource.ts` | Every read |
@@ -260,7 +260,8 @@ server's secret key, after verification.
 
 > ⚠ The four write functions are `security definer` and **bypass RLS by design**. Postgres
 > grants `EXECUTE` to `PUBLIC` by default and PostgREST exposes every `public`-schema
-> function as an RPC, so the revoke block in `0003` is load-bearing. If you add a function
+> function as an RPC, so the revoke blocks in `0003` and the profile-write migration are
+> load-bearing. If you add a function
 > there, add it to the revoke loop **and** to the `db:check` probe in the same change.
 
 **Weak points.** 🔒 The schema has **never been applied** — this is the single blocker for
@@ -285,7 +286,7 @@ until someone loses money or gives up.
 | `src/app/status/page.tsx` | The human-readable version |
 | `scripts/db-check.mjs` | The CLI equivalent, exits non-zero so it can gate a deploy |
 | `scripts/dead-code.mjs` | Reachability from every route. `npm run dead:check` |
-| `.github/workflows/ci.yml` | `lint` + `build` on every push |
+| `.github/workflows/ci.yml` | Native tests, lint and build on every push |
 | `src/app/api/csp-violation-report/route.ts` | Hardened report sink |
 
 **The rule that governs this system:** a check that cannot see must report **unknown**,
@@ -293,8 +294,9 @@ never OK — see `MIND.md` #14 and
 [`mind/health-check-checklist.md`](./mind/health-check-checklist.md). Two checks here have
 already gone green precisely because they could observe nothing.
 
-**Weak points.** 🟡 **No tests.** CI runs lint and build; there is no test runner at all, and
-`dead:check` is not yet wired into CI because 27 files would fail it.
+**Weak points.** 🟡 The native test suite is still small: CI runs its nine tests, lint and
+build, but profile-write race behavior needs a database-backed test after the schema exists.
+`dead:check` is green locally but is not yet a CI step.
 
 ---
 

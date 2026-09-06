@@ -21,6 +21,7 @@ Paste the file into the Supabase SQL Editor, or:
 ```bash
 psql "$DATABASE_URL" -f supabase/migrations/0002_payment_receipts.sql
 psql "$DATABASE_URL" -f supabase/migrations/0003_atomic_writes.sql
+psql "$DATABASE_URL" -f supabase/migrations/20260906201516_profile_replay_protection.sql
 ```
 
 `0003` adds the `security definer` functions that make paid writes atomic. **Read its
@@ -44,8 +45,13 @@ npm run db:check
 
 ## Adding one
 
-Name it `NNNN_short_description.sql`, make every statement re-runnable, and
-apply the same change to `schema.sql` so a fresh project still gets it in one
-step. Then update `src/lib/database.types.ts`, or the new column is invisible to
-TypeScript and every query that selects it returns `undefined` at runtime
-instead of failing to compile.
+Create it with `supabase migration new short_description` so the CLI assigns a sortable
+timestamp filename. Make every statement re-runnable, and apply the same change to
+`schema.sql` so a fresh project still gets it in one step. Then update
+`src/lib/database.types.ts`, or the new column is invisible to TypeScript and every query
+that selects it returns `undefined` at runtime instead of failing to compile.
+
+If the migration adds or changes a `security definer` function, update its revoke/grant
+block and the admin **and** anonymous probes in `scripts/db-check.mjs` in the same change.
+An anonymous `PGRST202` proves neither that the function is safely hidden nor that it exists;
+the admin probe has to establish the latter first.

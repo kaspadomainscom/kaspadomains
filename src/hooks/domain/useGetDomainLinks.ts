@@ -1,5 +1,5 @@
 import { fetchDomainLinks } from "@/data/supabaseSource";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export type DomainLink = {
   name: string;
@@ -18,6 +18,9 @@ export type DomainLink = {
  */
 export function useGetDomainLinks(domain: string) {
   const [links, setLinks] = useState<DomainLink[] | null>(null);
+  // Coupled to `links`: this is the revision the editor actually rendered, not
+  // a current value fetched just before saving.
+  const [profileRevision, setProfileRevision] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,6 +32,7 @@ export function useGetDomainLinks(domain: string) {
       if (!domain) {
         if (!cancelled) {
           setLinks([]);
+          setProfileRevision(null);
           setLoading(false);
         }
         return;
@@ -40,12 +44,18 @@ export function useGetDomainLinks(domain: string) {
       if (!cancelled) setLoading(true);
 
       try {
-        const rows = await fetchDomainLinks(domain);
-        if (!cancelled) setLinks(rows);
+        const snapshot = await fetchDomainLinks(domain);
+        if (!cancelled) {
+          setLinks(snapshot.links);
+          setProfileRevision(snapshot.profileRevision);
+        }
       } catch (err) {
         console.error("Failed to fetch domain links:", err);
         // null, not []. See the note on this hook: [] here is a data-loss bug.
-        if (!cancelled) setLinks(null);
+        if (!cancelled) {
+          setLinks(null);
+          setProfileRevision(null);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -58,5 +68,10 @@ export function useGetDomainLinks(domain: string) {
     };
   }, [domain]);
 
-  return { links, loading };
+  const replaceSnapshot = useCallback((nextLinks: DomainLink[], nextProfileRevision: number) => {
+    setLinks(nextLinks);
+    setProfileRevision(nextProfileRevision);
+  }, []);
+
+  return { links, profileRevision, loading, replaceSnapshot };
 }

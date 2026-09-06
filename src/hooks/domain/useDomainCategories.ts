@@ -3,9 +3,18 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { isSupabaseConfigured } from '@/lib/supabase';
-import { signedFetch, readError } from '@/lib/signedFetch';
+import { prepareProfileWrite, signedFetch, readError } from '@/lib/signedFetch';
+import { parseProfileRevision } from '@/lib/profileWrite';
 
-type Loaded = { domain: string; categories: string[] | null; error: string | null };
+type Loaded = {
+  domain: string;
+  categories: string[] | null;
+  // Coupled to the category snapshot the editor is displaying. This must never
+  // be refreshed only when Save is clicked, or a stale tab could overwrite a
+  // change it did not render.
+  profileRevision: number | null;
+  error: string | null;
+};
 
 /**
  * Read and replace the categories a listing belongs to.
@@ -40,23 +49,51 @@ export function useDomainCategories(domainName: string) {
       .then(async (response) => {
         if (cancelled) return;
         if (response.status === 404) {
-          // Not listed here yet -- an empty set is the honest answer, not an error.
-          setLoaded({ domain, categories: [], error: null });
+          // A profile write needs a revision, which only a listed domain has.
+          // Treating this as an editable empty set would produce a save request
+          // that can never be made safely.
+          setLoaded({
+            domain,
+            categories: null,
+            profileRevision: null,
+            error: 'That domain is not listed here yet.',
+          });
           return;
         }
         if (!response.ok) {
           setLoaded({
             domain,
             categories: null,
+            profileRevision: null,
             error: await readError(response, 'Could not load categories.'),
           });
           return;
         }
-        const body = (await response.json()) as { categories?: string[] };
-        setLoaded({ domain, categories: body.categories ?? [], error: null });
+        const body = (await response.json()) as {
+          categories?: string[];
+          profileRevision?: unknown;
+        };
+        const profileRevision = parseProfileRevision(body.profileRevision);
+        if (profileRevision === null) {
+          setLoaded({
+            domain,
+            categories: null,
+            profileRevision: null,
+            error: 'Could not load the current profile revision.',
+          });
+          return;
+        }
+        setLoaded({
+          domain,
+          categories: body.categories ?? [],
+          profileRevision,
+          error: null,
+        });
       })
       .catch((err: Error) => {
-        if (!cancelled) setLoaded({ domain, categories: null, error: err.message });
+        if (!cancelled) {
+          setLoaded({ domain, categories: null, profileRevision: null, error: err.message });
+        }
       });
 
     return () => {
@@ -69,12 +106,29 @@ export function useDomainCategories(domainName: string) {
       setSaving(true);
       setSaveError(null);
       try {
+        const snapshot = loaded?.domain === domain ? loaded : null;
+        const profileRevision = snapshot?.profileRevision ?? null;
+        if (profileRevision === null) {
+          setSaveError('Reload the current categories before saving.');
+          return false;
+        }
+
+        const prepared = await prepareProfileWrite({
+          action: 'update-categories',
+          domain,
+          profileRevision,
+        });
+
         const response = await signedFetch({
           action: 'update-categories',
           domain,
           path: `/api/domains/${encodeURIComponent(domain)}/categories`,
           method: 'PUT',
-          body: { categories },
+          body: {
+            categories,
+            nonce: prepared.nonce,
+            profileRevision: prepared.profileRevision,
+          },
         });
 
         if (!response.ok) {
@@ -82,23 +136,36 @@ export function useDomainCategories(domainName: string) {
           return false;
         }
 
-        const body = (await response.json()) as { categories?: string[] };
-        setLoaded({ domain, categories: body.categories ?? categories, error: null });
+        const body = (await response.json()) as {
+          categories?: string[];
+          profileRevision?: unknown;
+        };
+        const nextProfileRevision = parseProfileRevision(body.profileRevision);
+        if (nextProfileRevision === null) {
+          throw new Error('The categories were saved, but reload before another change.');
+        }
+        setLoaded({
+          domain,
+          categories: body.categories ?? categories,
+          profileRevision: nextProfileRevision,
+          error: null,
+        });
         return true;
       } catch (err) {
-        setSaveError((err as Error).message);
+        setSaveError(err instanceof Error ? err.message : 'Could not update categories.');
         return false;
       } finally {
         setSaving(false);
       }
     },
-    [domain]
+    [domain, loaded]
   );
 
   const fresh = loaded && loaded.domain === domain ? loaded : null;
 
   return {
     categories: fresh?.categories ?? null,
+    profileRevision: fresh?.profileRevision ?? null,
     loading: enabled && !fresh,
     loadError: fresh?.error ?? null,
     supported: enabled,

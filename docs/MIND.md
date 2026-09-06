@@ -1,6 +1,6 @@
 # Mind
 
-Last updated: 2026-09-06
+Last updated: 2026-09-06 (profile-write concurrency review)
 
 How to think about working on this codebase — principles earned the hard way, each
 backed by a real incident. Read this before making changes, especially anything that
@@ -102,6 +102,7 @@ touch the codebase, you own the part of the map you moved. See
 | 18 | Enumerate from the source of record | An audit is only as complete as the list it started from, and usage is never that list |
 | 19 | A repeated violation needs a mechanism | Documentation is a request; only a check is a constraint, and the recurrence count tells you which one you need |
 | 20 | A dead fallback is not free | An untaken branch is never exercised, so it stops being a safety net and becomes the place bugs hide |
+| 21 | A one-time token is not a version check | A replay guard says “only once”; it does not say the editor was based on the state it is replacing |
 
 ## 1. Never trust a hardcoded value against a live contract — verify the ABI first
 
@@ -639,6 +640,40 @@ is zero. It is not: it is every `if (a) { ... } else { ... }` that the live path
 be written around, and every reviewer-hour spent reading a branch that cannot execute. If it
 does not work now, and nobody can say when it last did, it is not a fallback -- it is a
 liability with a reassuring name.
+
+## 21. A one-time token is not a version check
+
+**Purpose**: prevent a valid, single-use request from replacing data the editor never saw.
+**Mechanic**: load the rendered data and a monotonic revision together; carry that revision
+through token issuance and the final write; then lock, compare, mutate and increment it in
+one database transaction.
+
+**The incident (2026-09-06)**: signing a digest of the profile body fixed substitution -- a
+captured `update-links` signature could no longer be paired with somebody else's links -- but
+it deliberately still accepted the exact old body for five minutes. The resources route is a
+bulk replacement: delete every link, then insert the supplied set. So a perfectly valid old
+request could restore the old profile after a newer save. The newer category editor has the
+same shape and would have inherited the same bug.
+
+The tempting repair was a server-issued nonce. That stops the *same request* from running
+twice, but it does not solve a stale tab on its own: if the server looks up the current
+revision when the user clicks Save, that stale tab receives a fresh token for a profile it
+never rendered and can still overwrite it. The revision has to be the one coupled to the
+initial read, not one minted at save time.
+
+The implemented contract is therefore four-part: the profile read returns its revision with
+the data; the owner signs a request for a short-lived token bound to domain, action, signer
+and that revision; the final signed body carries both token and revision; and the Postgres
+function locks the domain row, rejects a mismatch, consumes the matching unexpired token,
+replaces the data and increments the revision. A failed mutation rolls token consumption back
+with the transaction. `KD006` (used/expired token) and `KD007` (stale profile) stay separate
+because the recovery is different: sign again versus reload first.
+
+**The rule**: replay prevention and optimistic concurrency solve different questions. Ask
+both: “can this capability be used twice?” and “was this change based on the state it is
+about to replace?” A yes to the first does not imply a yes to the second. See
+[`mind/optimistic-concurrency-checklist.md`](./mind/optimistic-concurrency-checklist.md)
+before adding any bulk replace, especially where a second browser tab can edit the same row.
 
 ## Related docs
 

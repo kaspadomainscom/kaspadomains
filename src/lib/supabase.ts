@@ -3,15 +3,14 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
 
 /**
- * Supabase is the primary store for listings, votes and categories while the
- * Kasplex contracts are unreachable (see docs/BUGS.md). The on-chain code path
- * is still present and takes over automatically when Supabase isn't
- * configured, so nothing is lost when the contracts come back.
+ * Supabase is the current directory store for listings, votes and categories.
+ * The unusable Kasplex contract path was removed, so an unconfigured database
+ * must produce an honest unavailable state rather than pretend there is a
+ * fallback.
  *
- * Nothing here throws at import time. An unconfigured deployment must degrade
- * to the chain path and honest error states, not crash the whole app during
- * module evaluation -- that would take down pages that never touch the
- * database.
+ * Nothing here throws at import time. An unconfigured deployment must render
+ * honest unavailable states rather than crash the whole app during module
+ * evaluation -- that would take down pages that never touch the database.
  */
 
 /**
@@ -45,7 +44,8 @@ let readClient: TypedSupabaseClient | null = null;
 /**
  * Read-only client, safe to use from the browser and from server components.
  * Uses the anon key, which under this schema's RLS can select but never write.
- * Returns null when unconfigured so callers fall back to the chain.
+ * Returns null when unconfigured so callers can render an honest unavailable
+ * state without constructing a broken client.
  */
 export function getSupabaseReadClient(): TypedSupabaseClient | null {
   if (!url || !anonKey) return null;
