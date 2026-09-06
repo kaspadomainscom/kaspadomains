@@ -29,6 +29,18 @@ live backlog the continuous audit loop appends to.
       `BUGS.md`'s CRITICAL entries), so wiring it up wouldn't work until that's fixed
       regardless of the product decision.
 
+## Data-shape gaps
+
+- [ ] **`Domain.feePaid` does not carry its unit.** It is a raw integer string whose meaning
+      depends on which store produced the record: Supabase writes **sompi** (8 decimals), the
+      contracts return **wei** (18 decimals). Those differ by 10^10, so a component that
+      guesses wrong is not slightly off — it is wrong by ten orders of magnitude, which is
+      exactly what `DomainCard` did (a 200 KAS listing rendered as "20000000000 KAS").
+      Every consumer currently has to know which path it is on. The type should carry the
+      unit — `{ amount: bigint; unit: 'sompi' | 'wei' }`, or normalise to sompi at the
+      source boundary in `rowToDomain` / the contract mappers. Not done blind because it
+      touches `src/data/types.ts`, which both read paths and every card depend on.
+
 ## No automated tests at all
 
 - [ ] **The repo has no test runner.** There *is* CI —

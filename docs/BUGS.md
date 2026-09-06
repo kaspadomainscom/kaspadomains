@@ -137,6 +137,25 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **Every domain card showed the fee off by ten orders of magnitude.**
+  `Fee Paid: {domain.feePaid} KAS` printed the stored value raw — but `fee_paid` holds
+  **sompi**, so a 200 KAS listing displayed as **"20000000000 KAS"** on every browse page,
+  search result, ranking and "my votes" card. Fixed, and the fix had a trap in it: the same
+  `feePaid` field is **wei** on the contract path (18 decimals vs 8), so formatting one as
+  the other is wrong by 10^10 in the other direction. Now formatted by source, with the
+  underlying type problem logged in `GAPS.md` — a field whose unit depends on who produced
+  it is a bug waiting for its next reader.
+- **The owner link on every card pointed at an EVM explorer with a Kaspa L1 address.**
+  `frontend.kasplextest.xyz/address/kaspa:qz…` — correct when owners were EVM addresses,
+  dead since listings moved to Supabase and the stored owner became the `kaspa:` address KNS
+  reports. Now chosen by address shape, and `kas.fyi` for L1 rather than
+  `explorer.kaspa.org` because that is the one that actually answered when checked (the
+  latter 403s a plain request, so its URL shape could not be confirmed — and a link built
+  from an unverified guess is the same class of mistake as a fabricated fallback).
+  Also fixed while in there: the card wrapped that `<a>` inside a card-wide `<Link>`, which
+  is a **nested anchor** — invalid HTML that browsers resolve inconsistently and screen
+  readers announce as one confused control. `stopPropagation` hid the symptom without fixing
+  the nesting. The link now covers the card body and the explorer anchor is a sibling.
 - **A failed vote read rendered as "Votes: 0" and "Be the first to vote!"** `likesCount`
   started at `0` and `voters` at `[]`, and both `catch` blocks left them there — so a
   database outage on a domain with fifty votes displayed a confident zero, and invited the

@@ -226,7 +226,7 @@ loaded wipes them — the editor is disabled until they arrive, and that guard i
 | `src/components/header/trendingDomains.tsx`, `src/hooks/domains/useTrendingDomains.ts` | The trending strip |
 | `src/data/domainLookup.ts` | `getAllDomains`, `lookupDomain` |
 | `src/data/supabaseSource.ts` | `fetchAllPages`, `fetchCategoryDomains` |
-| `src/components/DomainCard.tsx` | The card |
+| `src/components/DomainCard.tsx` | The card. Formats the fee **by source unit** — sompi from Supabase, wei from the contracts |
 
 **Weak points.** 🟡 **Search loads every listing into the browser** and filters client-side;
 at the 10,000 cap that is a large payload and belongs server-side. Every "load everything"

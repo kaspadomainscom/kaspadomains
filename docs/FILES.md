@@ -34,10 +34,11 @@ missing.
   contracts.
 - Four new pages (`/status`, `/about`, `/terms`, `/privacy`) and two new
   endpoints (`/api/domains/preflight`, `/api/domains/[name]/categories`).
-- Twelve user-facing bugs, including a pay button quoting the wrong price, an
+- Fourteen user-facing bugs, including a pay button quoting the wrong price, an
   admin page that denied access to the administrator, header search that never
-  found anything, and two places that rendered a confident zero when they had
-  simply failed to load.
+  found anything, two places that rendered a confident zero when they had simply
+  failed to load, and every domain card showing the fee off by ten orders of
+  magnitude.
 - `docs/FILES.md` and `docs/kaspadomains-systems.md` — the file map and the
   system map. Keeping both current is now a standing rule in `MIND.md`.
 
