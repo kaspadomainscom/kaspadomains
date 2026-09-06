@@ -295,8 +295,23 @@ export async function fetchListingStatuses(
   return statuses;
 }
 
-/** The categories a listing currently belongs to. */
-export async function fetchDomainCategories(domainName: string): Promise<string[]> {
+export type DomainCategory = { key: string; title: string; isAllowed: boolean };
+
+/**
+ * The categories a listing belongs to, with their display titles.
+ *
+ * Includes **withdrawn** categories (`isAllowed: false`) rather than filtering
+ * them out. That matters: a domain whose only category has been withdrawn still
+ * exists, is still paid for, and still has a profile page. Hiding the membership
+ * here is what made the profile page 404 a live listing -- it scanned the
+ * category manifest, which drops disallowed categories entirely, so a moderation
+ * decision about a *category* silently deleted an owner's *page*.
+ *
+ * Callers that need only the published categories can filter on `isAllowed`.
+ */
+export async function fetchDomainCategories(
+  domainName: string
+): Promise<DomainCategory[]> {
   const client = requireClient();
 
   const domain = await fetchDomainByName(domainName);
@@ -304,9 +319,21 @@ export async function fetchDomainCategories(domainName: string): Promise<string[
 
   const { data, error } = await client
     .from('domain_categories')
-    .select('category_key')
+    .select('category_key, categories!inner (key, title, is_allowed)')
     .eq('domain_id', domain.id);
 
   if (error) throw new Error(`Supabase: failed to load categories — ${error.message}`);
-  return (data ?? []).map((row) => row.category_key);
+
+  const rows = (data ?? []) as unknown as {
+    category_key: string;
+    categories: { key: string; title: string; is_allowed: boolean } | null;
+  }[];
+
+  return rows
+    .filter((row) => row.categories)
+    .map((row) => ({
+      key: row.categories!.key,
+      title: row.categories!.title,
+      isAllowed: row.categories!.is_allowed,
+    }));
 }

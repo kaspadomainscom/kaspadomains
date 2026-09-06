@@ -79,8 +79,9 @@ export default function DomainsPage() {
         <header className="space-y-6 max-w-3xl mx-auto text-center">
           <h1 className="text-5xl font-extrabold text-white tracking-tight">Browse .kas Domains</h1>
           <p className="text-lg text-gray-400 leading-relaxed">
-            Every domain here is on-chain and owned directly by its holder — KaspaDomains is a
-            registry and discovery layer, not a marketplace. Browse by category or search by name.
+            Every domain here is registered on Kaspa L1 through KNS and owned directly by its
+            holder. The listing itself lives in our index — KaspaDomains is a registry and
+            discovery layer, not a marketplace. Browse by category or search by name.
           </p>
           <p className="text-lg font-semibold text-kaspaMint">
             {filteredDomains.length.toLocaleString()} domains listed

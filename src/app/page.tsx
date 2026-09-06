@@ -15,7 +15,7 @@ export const metadata = {
   openGraph: {
     title: "KaspaDomains — Premium .kas Domains, Organized by Category",
     description:
-      "Showcase your .kas domain on-chain, organized by category, with your own X account and links attached. Limited to 10,000 listings.",
+      "Showcase the .kas domain you already own, organized by category, with your own X account and links attached. Limited to 10,000 listings.",
     url: "https://kaspadomains.com",
     siteName: "KaspaDomains",
     images: [

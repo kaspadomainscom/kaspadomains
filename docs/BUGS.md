@@ -130,6 +130,36 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **Withdrawing a category silently deleted the profile page of every domain listed only
+  under it.** `/domain/[name]` decided whether a domain exists by scanning the *category
+  manifest* — but `fetchCategoryManifest` filters `is_allowed = true` and skips memberships
+  pointing at a disallowed category. So a moderation decision about a **category** 404'd
+  paid, active listings whose owners had done nothing wrong, with no error and no
+  explanation. Fixed by asking the right question: existence comes from an indexed lookup in
+  `domains`, and the category is now only a label — `fetchDomainCategories` deliberately
+  returns withdrawn categories too, so the page can still say what the domain is in.
+  "Uncategorized" is a fine thing to render; "this domain does not exist" is not. Side
+  benefit: a profile view is now a single-row read instead of loading every category.
+- **Nearly replaced that bug with a worse one.** The obvious fix was to call
+  `findDomainByName`, which returns `undefined` for *both* "not listed" and "couldn't
+  check" — so a database outage would have served a permanent 404 for a live domain, telling
+  search engines to drop the page and the owner that their paid listing was gone. Caught
+  before committing. `lookupDomain` now returns three outcomes (`found` / `not-listed` /
+  `unavailable`), and only the store actually saying "not listed" produces a 404; an outage
+  gets a temporary error with a link to `/status`. `findDomainByName` remains as a wrapper
+  for callers that genuinely can't act on the difference, with a comment saying so. Same
+  shape as `MIND.md` #14 — the third state is the one that matters.
+- **User-facing copy still said listings were on-chain, and outages blamed a smart
+  contract.** Listings moved to Postgres on 2026-09-05 and a copy pass was done then, but it
+  missed metadata and error states. `/domains` told users and search engines "Every listing
+  is on-chain, verified"; the homepage's Open Graph description said "Showcase your .kas
+  domain on-chain"; and both `/domain/[name]` and the category page rendered "Contract
+  Unavailable — the smart contract is not responding or not deployed" whenever the
+  *database* was unreachable. That last one is worse than cosmetic: it sends anyone
+  debugging to a component that isn't in the request path. All corrected to distinguish what
+  is genuinely on-chain (the domain, via KNS on Kaspa L1) from what is not (the listing).
+  *Verified* against the live project with the schema still unapplied: both pages now render
+  "Temporarily unavailable", not a 404 and not a contract error.
 - **A paid write was four round trips with a hand-rolled rollback.** Codex's SA-08, and the
   last of the nine. Listing was: validate categories, claim the receipt, insert the domain,
   insert the categories — four separate requests, with a manual `delete` if the last one

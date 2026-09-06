@@ -7,7 +7,7 @@ import { JsonLd } from "@/components/JsonLd";
 export const metadata: Metadata = {
   title: "Browse Premium .kas Domains | KaspaDomains",
   description:
-    "Browse premium .kas domains by category. Every listing is on-chain, verified, and owned directly by its holder — KaspaDomains is a registry, not a marketplace.",
+    "Browse premium .kas domains by category. Every domain is registered on Kaspa L1 through KNS and owned directly by its holder — KaspaDomains is a registry and discovery layer, not a marketplace.",
   alternates: {
     canonical: "https://kaspadomains.com/domains",
   },

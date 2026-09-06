@@ -88,7 +88,7 @@ export default async function CategoryPage({ params }: PageProps) {
   // real outage was mislabeled as a 404 (see docs/MIND.md principle #11).
   let categoryData: Awaited<ReturnType<typeof loadCategoriesManifest>>[string] | undefined;
   let nonce: string | undefined;
-  let contractUnavailable = false;
+  let loadFailed = false;
 
   try {
     const resolvedParams = await params;
@@ -99,16 +99,21 @@ export default async function CategoryPage({ params }: PageProps) {
     nonce = (await headers()).get("x-csp-nonce") || undefined;
   } catch (error) {
     console.error("Failed to load category page data:", error);
-    contractUnavailable = true;
+    loadFailed = true;
   }
 
-  if (contractUnavailable) {
+  // Blames nothing in particular on purpose. This used to say "the smart
+  // contract is not responding or not deployed" -- listings have been in
+  // Postgres since 2026-09-05, so that told users the opposite of what was
+  // happening and sent anyone debugging it to a component that is not in the
+  // request path.
+  if (loadFailed) {
     return (
       <main className="max-w-3xl mx-auto px-4 py-10 text-center text-gray-100">
-        <h1 className="text-2xl font-bold mb-4">Contract Unavailable</h1>
-        <p>
-          Sorry, we are unable to load domain data right now because the smart contract is not
-          responding or not deployed. Please try again later.
+        <h1 className="text-2xl font-bold mb-4">Temporarily unavailable</h1>
+        <p className="text-gray-300">
+          We couldn&apos;t load this category right now. This is a problem on our side —
+          please try again in a few moments.
         </p>
       </main>
     );
