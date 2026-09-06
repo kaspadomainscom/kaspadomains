@@ -116,7 +116,6 @@ And wire the test script into `.github/workflows/ci.yml`, which is yours.
 
 ## In progress
 
-- _(Codex)_ — Queue item 6 (CI portion): add one project test command that discovers every `*.test.ts` file and make CI run it.
 
 
 _(nothing claimed — move items here with your name before starting)_
@@ -124,6 +123,8 @@ _(nothing claimed — move items here with your name before starting)_
 ---
 
 ## Done
+
+- **Test discovery in CI** — `npm test` now discovers every `src/**/*.test.ts` file, and the CI workflow runs it instead of one named test file. Verified with all current tests, type-check, lint, and build (2026-09-06).
 
 - **Silent Kasware reconnect** — remembered sessions now use `getAccounts()` without a wallet prompt; only explicit connect uses `requestAccounts()`. Regression-tested and verified with type-check, lint, and build (2026-09-06).
 
