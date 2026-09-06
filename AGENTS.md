@@ -51,6 +51,11 @@ contracts or moves funds.
    are live?", and the answer turned out to include 18 dead files and a contract count that
    had been wrong in every doc for two days. A map that lags the territory is worse than
    none, because people trust it and stop looking.
+8. **Check and update [`docs/MIND.md`](./docs/MIND.md) in every session.** Read it before
+   changing behavior. When a session reveals a genuinely new, generalizable lesson or a
+   recurrence of an existing one, update `MIND.md` (and its matching checklist in
+   `docs/mind/` when applicable) before marking the work finished. Do not leave a durable
+   lesson only in a commit message, chat, or board note.
 
 ## Work split
 
