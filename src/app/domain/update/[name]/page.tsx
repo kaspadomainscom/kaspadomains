@@ -6,11 +6,11 @@ import { useWalletContext } from '@/context/WalletContext';
 import { useGetDomainLinks, type DomainLink } from '@/hooks/domain/useGetDomainLinks';
 import { useUpdateDomainLinks } from '@/hooks/domain/useUpdateDomainLinks';
 import { normalizeDomainName } from '@/lib/domainName';
+import { MAX_LINKS } from '@/lib/limits';
 import { knsApiUrl } from '@/lib/kaspaDomainRuntime';
 import { CategoryEditor } from '@/components/pages/domain/CategoryEditor';
 
-/** Mirrors MAX_LINKS in the links API route. */
-const MAX_LINKS = 10;
+
 
 async function fetchDomainOwner(domain: string): Promise<string> {
   const encoded = encodeURIComponent(domain.toLowerCase());
@@ -47,7 +47,6 @@ export default function UpdateDomainPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [links, setLinks] = useState<DomainLink[]>([{ name: 'X', url: '' }]);
-  const maxLinks = MAX_LINKS;
   const [linksSeeded, setLinksSeeded] = useState(false);
 
   const isKaspaConnected = kasware.status === 'connected';
@@ -97,10 +96,6 @@ export default function UpdateDomainPage() {
     loadOwner();
   }, [domainSlug, domainName]);
 
-  // The cap is enforced by the API. It used to be read from
-  // DomainLinksStorage.MAX_LINKS, which is the same number and a contract with
-  // no deployed code.
-
   function updateLinkField(index: number, field: 'name' | 'url', value: string) {
     setLinks((prev) => {
       const current = linksSeeded || knownLinks.length === 0 ? prev : knownLinks;
@@ -112,7 +107,7 @@ export default function UpdateDomainPage() {
   function addLinkRow() {
     setLinks((prev) => {
       const current = linksSeeded || knownLinks.length === 0 ? prev : knownLinks;
-      return current.length >= maxLinks ? current : [...current, { name: '', url: '' }];
+      return current.length >= MAX_LINKS ? current : [...current, { name: '', url: '' }];
     });
     setLinksSeeded(true);
   }
@@ -228,7 +223,7 @@ export default function UpdateDomainPage() {
         <button
           type="button"
           onClick={addLinkRow}
-          disabled={editorLocked || displayedLinks.length >= maxLinks}
+          disabled={editorLocked || displayedLinks.length >= MAX_LINKS}
           className="text-sm text-kaspaMint hover:underline disabled:text-gray-500 disabled:no-underline"
         >
           + Add another link
@@ -247,7 +242,7 @@ export default function UpdateDomainPage() {
             ? 'Current profile state unknown — editing disabled.'
             : linksLoading
               ? 'Loading your current links…'
-              : `${displayedLinks.length} / ${maxLinks} links`}
+              : `${displayedLinks.length} / ${MAX_LINKS} links`}
         </p>
 
         <button

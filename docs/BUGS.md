@@ -39,7 +39,7 @@ verified — not just "fixed X."
   cap exists for ("a listing in every category is a listing on every browse page, which is
   spam with extra steps") could be sidestepped entirely: pick twenty categories at listing
   time instead of editing to them afterwards. Nothing refused it. Fixed by giving the
-  constant one owner (`src/lib/categories.ts`) and checking it in all four places —
+  constant one owner (`src/lib/limits.ts`) and checking it in all four places —
   including **the preflight, so an over-categorised listing is refused before the wallet is
   asked to pay** rather than after (`MIND.md` #16). Verified only one definition of the
   number exists in the tree.

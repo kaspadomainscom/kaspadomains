@@ -9,7 +9,7 @@ import {
 } from '@/lib/server/verifyRequest';
 import { issuePaymentIntent, type IntentAction } from '@/lib/server/paymentIntent';
 import { REQUIRED_SCHEMA_VERSION } from '@/lib/database.types';
-import { MAX_CATEGORIES } from '@/lib/categories';
+import { MAX_CATEGORIES } from '@/lib/limits';
 import {
   LISTING_FEE_SOMPI,
   VOTE_FEE_SOMPI,

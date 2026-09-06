@@ -3,12 +3,12 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
 import { requireDomainOwner, VerificationError, extractPayload } from '@/lib/server/verifyRequest';
 import { rpcError } from '@/lib/server/rpcError';
+import { MAX_LINKS } from '@/lib/limits';
 import { parseProfileRevision } from '@/lib/profileWrite';
 
 export const runtime = 'nodejs';
 
-/** Mirrors DomainLinksStorage.MAX_LINKS, which the editor used to read on-chain. */
-const MAX_LINKS = 10;
+// The cap is owned by @/lib/limits, alongside the category cap.
 
 /**
  * Replace a domain's resources (the off-chain DomainLinksStorage.updateLinks).

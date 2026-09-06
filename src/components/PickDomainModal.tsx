@@ -4,7 +4,7 @@ import { DomainAsset } from '@/hooks/kns/types';
 import { useListDomain } from '@/hooks/domain/useListDomain';
 import { useGetAllowedCategories } from '@/hooks/domains/useGetAllowedCategories';
 import { LISTING_FEE_SOMPI, formatKas } from '@/lib/fees';
-import { MAX_CATEGORIES } from '@/lib/categories';
+import { MAX_CATEGORIES } from '@/lib/limits';
 import { useState } from 'react';
 
 type PickDomainModalProps = {

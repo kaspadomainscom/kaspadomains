@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
 import { requireDomainOwner, VerificationError, extractPayload } from '@/lib/server/verifyRequest';
 import { rpcError } from '@/lib/server/rpcError';
-import { MAX_CATEGORIES } from '@/lib/categories';
+import { MAX_CATEGORIES } from '@/lib/limits';
 import { parseProfileRevision } from '@/lib/profileWrite';
 
 export const runtime = 'nodejs';
@@ -16,7 +16,7 @@ function setupUnavailable(error?: { code?: string } | null) {
     error?.code === '42703';
 }
 
-// The cap is owned by @/lib/categories and enforced at listing time too.
+// The cap is owned by @/lib/limits and enforced at listing time too.
 
 /**
  * Replace a listing's categories (the off-chain

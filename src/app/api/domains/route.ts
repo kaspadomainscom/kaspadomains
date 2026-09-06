@@ -7,7 +7,7 @@ import { verifyPayment } from '@/lib/server/verifyPayment';
 import { rpcError } from '@/lib/server/rpcError';
 import { verifyPaymentIntent } from '@/lib/server/paymentIntent';
 import { LISTING_FEE_SOMPI } from '@/lib/fees';
-import { MAX_CATEGORIES } from '@/lib/categories';
+import { MAX_CATEGORIES } from '@/lib/limits';
 
 export const runtime = 'nodejs';
 
