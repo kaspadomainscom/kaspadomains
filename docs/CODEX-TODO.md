@@ -116,6 +116,8 @@ And wire the test script into `.github/workflows/ci.yml`, which is yours.
 
 ## In progress
 
+- _(Codex)_ — Remove the unused `viem` dependency and obsolete EVM-provider declarations now that the EVM path has been deleted; retain `ethers` for the live listing hash.
+
 
 
 
