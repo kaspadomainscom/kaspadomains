@@ -116,6 +116,8 @@ And wire the test script into `.github/workflows/ci.yml`, which is yours.
 
 ## In progress
 
+- _(Codex)_ — Queue item 4 / SA-05: server-issued nonce plus profile revision for signed profile writes, under the owner's explicit continuation direction and recorded handoff in `AGENTS.md`.
+
 
 
 
