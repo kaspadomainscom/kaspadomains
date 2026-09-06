@@ -1,6 +1,4 @@
 // src/components/Footer.tsx
-'use client';
-
 import Link from 'next/link';
 
 const FOOTER_LINKS = [
@@ -27,6 +25,11 @@ export default function Footer() {
           ))}
         </nav>
         <div className="text-gray-500">
+          {/* Evaluated on the server only. As a client component this ran in both
+              runtimes, so a UTC server and a reader far enough east of it could
+              disagree about the year for a day, and React would tear down and
+              re-render the footer over it. Nothing here needs the client: no
+              state, no handlers, and `Link` works in a server component. */}
           © {new Date().getFullYear()} kaspadomains.com — Built on Kaspa 🧱
         </div>
       </div>
