@@ -54,6 +54,7 @@ hands immediately follows its new owner.
 | File | Role |
 |---|---|
 | `src/lib/signedMessage.ts` | Message format, canonical JSON, body digest. Dependency-free so WASM never reaches the browser |
+| `src/lib/domainName.ts` | The one owner of a `.kas` name's canonical form — server and client both use it, so they cannot drift |
 | `src/lib/signedFetch.ts` | Client side: get the key, sign, send |
 | `src/lib/server/verifyRequest.ts` | Verify signature → derive address → read KNS owner → require match. `normalizeDomain` here defines the canonical stored name |
 | `src/context/WalletContext.tsx` | Both wallet identities, and which is active |

@@ -1,6 +1,7 @@
 // src/app/domains/categories/category/[category]/page.tsx
 
 import { notFound } from "next/navigation";
+import { normalizeDomainName } from "@/lib/domainName";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { loadCategoriesManifest } from "@/data/categoriesManifest";
@@ -130,7 +131,7 @@ export default async function CategoryPage({ params }: PageProps) {
       "@type": "ListItem",
       position: index + 1,
       url: `https://kaspadomains.com/domain/${domain.name}`,
-      name: domain.name.endsWith(".kas") ? domain.name : `${domain.name}.kas`,
+      name: normalizeDomainName(domain.name),
     })),
   };
 

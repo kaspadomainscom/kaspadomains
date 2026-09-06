@@ -8,6 +8,7 @@ import { useUpdateDomainLinks } from '@/hooks/domain/useUpdateDomainLinks';
 import { contracts } from '@/lib/contracts';
 import { kasplexClient } from '@/lib/viemClient';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { normalizeDomainName } from '@/lib/domainName';
 import { CategoryEditor } from '@/components/pages/domain/CategoryEditor';
 
 const DEFAULT_MAX_LINKS = 10;
@@ -40,7 +41,7 @@ export default function UpdateDomainPage() {
 
   const domainName = useMemo(() => {
     if (!domainSlug) return '';
-    return domainSlug.endsWith('.kas') ? domainSlug : `${domainSlug}.kas`;
+    return normalizeDomainName(domainSlug);
   }, [domainSlug]);
   const [owner, setOwner] = useState('');
   const [loading, setLoading] = useState(true);

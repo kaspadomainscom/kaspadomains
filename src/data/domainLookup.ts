@@ -2,21 +2,11 @@ import { loadCategoriesManifest } from "./categoriesManifest";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { fetchAllDomains, fetchDomainByName, fetchDomainCategories } from "./supabaseSource";
 import type { Domain } from "./types";
+import { normalizeDomainName } from "@/lib/domainName";
 
-/**
- * The canonical form of a domain name: lowercase, trimmed, always ending
- * `.kas`.
- *
- * Must match `normalizeDomain` in `src/lib/server/verifyRequest.ts`, which is
- * what decides the form actually stored in the database. If the two drift,
- * lookups fail silently -- an equality match on the wrong form returns nothing,
- * which is indistinguishable from "not listed".
- */
-export function normalizeDomainName(name: string): string {
-  const trimmed = name.trim().toLowerCase();
-  if (!trimmed) return trimmed;
-  return trimmed.endsWith(".kas") ? trimmed : `${trimmed}.kas`;
-}
+// The canonical form has one owner now: src/lib/domainName.ts. Re-exported here
+// because this module's callers already import it from this path.
+export { normalizeDomainName } from "@/lib/domainName";
 
 /**
  * The three possible answers to "is this domain listed?".

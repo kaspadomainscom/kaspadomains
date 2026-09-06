@@ -34,7 +34,8 @@ missing.
   contracts.
 - Four new pages (`/status`, `/about`, `/terms`, `/privacy`) and two new
   endpoints (`/api/domains/preflight`, `/api/domains/[name]/categories`).
-- Nineteen user-facing bugs, including a resources editor that would delete an
+- Twenty user-facing bugs, including structured data that published
+  `foo.kas.kas` to every search engine, a resources editor that would delete an
   owner's links after a failed read, a pay button quoting the wrong price, an
   admin page that denied access to the administrator, header search that never
   found anything, two places that rendered a confident zero when they had simply
@@ -125,6 +126,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `lib/supabase.ts` | Typed read/admin clients. Admin throws if constructed in the browser | ✅ |
 | `lib/database.types.ts` | Hand-written schema types + `REQUIRED_SCHEMA_VERSION` | ✅ |
 | `lib/fees.ts` | **The single source of the fee.** 200 KAS / 1 KAS, treasury address, shape-validated | ✅ |
+| `lib/domainName.ts` | **The one owner of a `.kas` name's canonical form.** Dependency-free, so server and client share it | ✅ |
 | `lib/signedMessage.ts` | Canonical JSON → SHA-256 → signed message. Dependency-free so it never pulls WASM into the browser | ✅ |
 | `lib/signedFetch.ts` | `preflight` → `payFee` → `signedFetch`. The order is the safety property | ✅ |
 | `lib/topVotedDomains.ts` | Ranking. Reads counts from the same store as the listings, never a mix | 🟡 |

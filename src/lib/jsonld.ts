@@ -1,4 +1,5 @@
 // src/lib/jsonld.ts
+import { normalizeDomainName } from "@/lib/domainName";
 
 export type DomainJsonLdInput = {
   name: string;
@@ -41,16 +42,21 @@ export function getDomainJsonLd({ name, owner, category }: DomainJsonLdInput) {
   // ProfilePage, not Product/Offer: KaspaDomains is a registry and discovery layer,
   // not a marketplace -- this domain isn't for sale here, so it shouldn't carry
   // commerce-shaped structured data (price/availability/seller) that implies it is.
+  // Normalised, not concatenated. Callers pass the stored name, which already
+  // ends in `.kas`, so appending produced "foo.kas.kas" in structured data
+  // published to every search engine.
+  const canonical = normalizeDomainName(name);
+
   return {
     "@context": "https://schema.org",
     "@type": "ProfilePage",
-    name: `${name}.kas`,
-    description: `${name}.kas — a premium KNS domain on Kaspa, showcased on KaspaDomains. Owned and controlled by its holder.`,
-    url: `https://kaspadomains.com/domain/${name}`,
+    name: canonical,
+    description: `${canonical} — a premium KNS domain on Kaspa, showcased on KaspaDomains. Owned and controlled by its holder.`,
+    url: `https://kaspadomains.com/domain/${encodeURIComponent(canonical)}`,
     mainEntity: {
       "@type": "Thing",
-      name: `${name}.kas`,
-      identifier: `KNS-${name}`,
+      name: canonical,
+      identifier: `KNS-${canonical}`,
       additionalProperty: [
         { "@type": "PropertyValue", name: "KNS Type", value: "Kaspa Domain Name" },
         { "@type": "PropertyValue", name: "Owner", value: owner },
@@ -94,8 +100,8 @@ export async function getItemListJsonLd(limit = 6): Promise<ItemListJsonLd> {
     itemListElement: recentDomains.map((domain, index) => ({
       "@type": "ListItem",
       position: index + 1,
-      url: `https://kaspadomains.com/domain/${domain.name}`,
-      name: `${domain.name}.kas`,
+      url: `https://kaspadomains.com/domain/${encodeURIComponent(normalizeDomainName(domain.name))}`,
+      name: normalizeDomainName(domain.name),
     })),
   };
 }

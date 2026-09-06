@@ -137,6 +137,24 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **Structured data published `foo.kas.kas` to every search engine.** `jsonld.ts` appended
+  `.kas` unconditionally, as `name: <template>${name}.kas</template>`, while callers pass the
+  stored name,
+  which already ends in `.kas`. So the `ProfilePage` name, its description, its `mainEntity`
+  and the homepage `ItemList` all carried a double suffix, on every domain. Every *other*
+  site in the codebase guarded with `endsWith`; this one forgot, and nothing failed, because
+  a wrong-format string renders perfectly well.
+  Root cause was structural: **five independent implementations** of the same two-line
+  normalisation — in `domainLookup`, `verifyRequest`, the profile page, the update page and a
+  category page — with `jsonld.ts` as a sixth, guardless copy. That is `MIND.md` #17 exactly:
+  a format with no owner gets reimplemented per caller until one gets it wrong. Fixed by
+  creating that owner, `src/lib/domainName.ts`, and routing all six through it, including the
+  server verifier and the search page's suffix-stripping. It is deliberately
+  dependency-free — same reason as `signedMessage.ts` — so both the WASM-using server
+  verifier and client components can use it. Two behaviour changes fell out: the function is
+  idempotent, so applying it at an extra boundary is harmless, and an empty input now stays
+  empty rather than becoming `".kas"`, which the server would previously have looked up at
+  KNS as though it were a domain.
 - **A failed link read let the resources editor delete every link the owner had.** The
   worst bug of the session, and it needed two ordinary-looking decisions to line up.
   `useGetDomainLinks` returned `[]` on error, and the editor gated on `linksLoading` alone.

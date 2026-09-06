@@ -1,4 +1,5 @@
 // src/lib/server/verifyRequest.ts
+import { normalizeDomainName } from '../domainName';
 import { PublicKey, verifyMessage } from 'kaspa-wasm';
 import {
   buildSignedMessage,
@@ -87,10 +88,11 @@ export class VerificationError extends Error {
   }
 }
 
-function normalizeDomain(domain: string): string {
-  const trimmed = domain.trim().toLowerCase();
-  return trimmed.endsWith('.kas') ? trimmed : `${trimmed}.kas`;
-}
+// The canonical form is owned by src/lib/domainName.ts, which both this
+// verifier and the client lookups use. They used to be separate copies of the
+// same two lines, which is exactly how a client ends up querying "foo" for a
+// row stored as "foo.kas".
+const normalizeDomain = normalizeDomainName;
 
 /** Compare Kaspa addresses. They are case-sensitive bech32; normalise defensively. */
 function sameAddress(a: string, b: string): boolean {

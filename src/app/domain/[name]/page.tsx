@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 
 import { loadCategoriesManifest } from "@/data/categoriesManifest";
 import { lookupDomain, findDomainCategoryTitle } from "@/data/domainLookup";
+import { normalizeDomainName } from "@/lib/domainName";
 import { getDomainJsonLd } from "@/lib/jsonld";
 import { JsonLd } from "@/components/JsonLd";
 
@@ -17,10 +18,11 @@ import { JSX } from "react";
 
 type StaticParam = { name: string };
 
-function ensureKasSuffix(name: string): string {
-  const base = name.trim().toLowerCase();
-  return base.endsWith(".kas") ? base : `${base}.kas`;
-}
+// One owner for this format: src/lib/domainName.ts. This page had its own copy,
+// as did the update page, a category page, the lookup layer and the server
+// verifier -- five implementations of two lines, and a sixth site in jsonld.ts
+// that skipped the guard and published "foo.kas.kas" to search engines.
+const ensureKasSuffix = normalizeDomainName;
 
 /**
  * Whether a domain has a profile page is decided by whether it is **listed** --
