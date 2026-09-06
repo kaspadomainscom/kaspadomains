@@ -50,6 +50,44 @@ rest of it before it surfaces the same way again.
   it shows. (Found alongside this bug: `generateMetadata`'s catch in the same file
   conflates Next.js's internal `notFound()` throw with a real contract failure.)
 
+## The one the linter cannot see: an empty accumulator
+
+The lint rule for `MIND.md` #2 matches `return []` inside a `catch`. The same bug has a
+second syntax it cannot match, because the empty value is declared before the `try` and the
+catch has nothing to return:
+
+```ts
+let trending: Domain[] = [];            // <- the empty value lives here
+try { trending = await load(); }
+catch (e) { console.error(e); }         // <- nothing to flag
+```
+
+This is not hypothetical: it is what the homepage did until 2026-09-07, rendering
+*"No domains listed yet — be the first"* to every visitor while the database was
+unreachable. A rule matching "a catch that only logs" was trialled and rejected — three hits,
+all false positives, including the *corrected* version of that same homepage.
+
+- [ ] Run it by hand. There are only ever a handful of hits:
+
+  ```bash
+  grep -rnE "^\s*let [A-Za-z_]+(: [^=]+)? = (\[\]|\{\})" src --include=*.ts --include=*.tsx
+  ```
+
+- [ ] For each hit, one of these must be true, and you must be able to point at it:
+  - a **companion failure flag** set in the catch (`let loadError = false` — see
+    [`app/domains/top-voted/page.tsx`](../../src/app/domains/top-voted/page.tsx)), and the
+    render checks that flag **before** it checks for emptiness; or
+  - the variable is `T | null`, initialised to `null`, so "not known" is representable
+    (see [`app/page.tsx`](../../src/app/page.tsx)); or
+  - a comment saying **why degrading silently is correct here**. The sitemap qualifies: a
+    sitemap is a hint rather than an exhaustive list, so publishing fewer URLs claims
+    nothing false. "The UI still renders" is not a reason — that was the exact comment
+    sitting above the homepage bug.
+
+- [ ] Same question for `useState<T[]>([])` where the state is filled by a fetch, and for a
+  component prop typed `T[]` whose parent may pass `[]` after a failed read. The parent is
+  the one that has to distinguish, and the child cannot tell.
+
 ## Worked example from this codebase
 
 See [`BUGS.md`](../BUGS.md)'s entry on `loadCategoriesManifest()` for the full trace:

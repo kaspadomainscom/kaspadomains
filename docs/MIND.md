@@ -605,6 +605,33 @@ same reasoning produced `npm run dead:check` after a hand-counted number was wro
 writing "remember to..." for the third time, you are describing a lint rule, a type, or a
 script -- write that instead.
 
+### The mechanism has a known hole (2026-09-07)
+
+The lint rule for #2 matches `return []` inside a `catch`. It does **not** match the other
+shape the same bug takes:
+
+```ts
+let trending: Domain[] = [];            // the empty value is here...
+try { trending = await load(); }
+catch (e) { console.error(e); }         // ...so the catch has nothing to return
+```
+
+That is what the homepage had, and it was the most visible instance in the codebase — an
+unreachable database rendered *"No domains listed yet — be the first"* to every visitor.
+
+A trial rule matching "a catch that only logs" was written and **rejected on the evidence**:
+scoped across `src/app`, `src/components`, `src/data` and `src/lib` it produced three hits,
+all false positives. Two were the *corrected* homepage (the fix keeps a log-only catch and
+gets its correctness from initialising to `null` instead), and the third was `sitemap.xml`,
+where degrading to the static routes is deliberate and documented. Zero real findings.
+
+So this shape stays a checklist item rather than a rule, and that is the honest state: the
+mechanism covers one of the two syntaxes. The grep that does find it —
+`grep -rnE "^\s*let [A-Za-z_]+(: [^=]+)? = (\[\]|\{\})" src` — is in
+[`mind/fallback-audit-checklist.md`](./mind/fallback-audit-checklist.md). Run it; there are
+only ever a handful of hits, and each needs a companion failure flag or an explicit comment
+saying why degrading silently is right.
+
 ## 20. A dead fallback is not free -- it is where bugs hide
 
 **Purpose**: an alternative path that never runs is not a safety net. It is untested code
