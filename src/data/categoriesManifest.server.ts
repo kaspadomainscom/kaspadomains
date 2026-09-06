@@ -7,12 +7,15 @@ import { loadCategoriesManifest, type CategoryManifest } from './categoriesManif
  * ## Why this is a separate module
  *
  * `react`'s `cache` is only meaningful during a server render, and
- * `categoriesManifest.ts` is imported by client components too
- * (`app/domains/page.tsx`, `hooks/domains/useTrendingDomains.ts`). Wrapping the
- * function there would put a `cache()` call into the browser bundle, where it
- * has no request to scope to. So the raw loader stays where it is and this file
- * — imported only from server components, route handlers and the libraries they
- * use — adds the memoisation.
+ * `categoriesManifest.ts` is imported by a client component too — the browse
+ * page, `app/domains/page.tsx`, which reads Supabase directly with the public
+ * key. Wrapping the loader in place would put a `cache()` call into the browser
+ * bundle, where there is no request to scope it to. So the raw loader stays
+ * where it is and this file — imported only from server components, route
+ * handlers and the libraries they use — adds the memoisation.
+ *
+ * One client importer is enough to require the split, so this does not change
+ * if the browse page stops reading directly.
  *
  * ## What it fixes
  *
