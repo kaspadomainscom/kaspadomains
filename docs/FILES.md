@@ -4,7 +4,7 @@ Last updated: 2026-09-06
 
 Every file in the repo, what it is for, and whether it is actually doing
 anything. Written because "which of these 128 source files are live?" turned out
-to be a question nobody could answer quickly — and the answer includes **18 dead
+to be a question nobody could answer quickly — and the answer includes **27 dead
 files**, most of them wired to contracts that have no deployed code.
 
 Use this as the map. [`TODO.md`](./TODO.md) is the live backlog,
@@ -57,7 +57,7 @@ below is waiting on that single step.
 |---|---|---|
 | `README.md` | Setup, database bootstrap, the TLS-interception pitfall | ✅ |
 | `AGENTS.md` | Coordination board with Codex — work split, ground rules, message log | ✅ |
-| `package.json` | Deps + `dev`/`build`/`start`/`lint`/`db:check`. **No `test`** | 🟡 |
+| `package.json` | Deps + `dev`/`build`/`start`/`lint`/`db:check`/`dead:check`. **No `test`** | 🟡 |
 | `next.config.ts` | `serverExternalPackages: ['kaspa-wasm']` — keeps the verifier out of the browser bundle | ✅ |
 | `.env.example` | Every variable, with why each one matters | ✅ |
 | `.github/workflows/ci.yml` | Runs `lint` + `build` on push/PR. No tests, because there are none | 🟡 |
@@ -172,38 +172,55 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 `useOwnedDomains`, `useVerifiedDomains`, `useKasware`, and the two wallet
 internals.
 
-### ⛔ Dead files — 18, none imported by anything
+### ⛔ Dead files — 27, unreachable from every route
 
-Most read contracts that have no deployed code, so wiring one up would fail
-rather than work. They are a trap, not a resource.
+Run `npm run dead:check` — the list below is its output, not a hand count.
+
+**This number was wrong twice before it was measured.** It was reported as 18, from a
+bare-name grep, which is wrong in both directions: `grep -rl walletClient` matches a *local
+variable* called `walletClient`, and `grep -rl useVerifiedDomains` matches the line that
+*defines* it. Both read as "used". Getting it right needs two things the naive version
+misses — resolve module **specifiers** rather than names, and treat reachability as
+**transitive**, because ten of these are reachable only through two barrel files that
+nothing imports.
 
 ```
-src/test/a.tsx                                  (empty file)
+src/test/a.tsx                                        (EMPTY FILE)
+src/components/ConnectButton.tsx                      (Header defines its own, locally)
 src/components/DomainForm.tsx
+src/components/NonceWrapper.tsx
+src/components/pages/EcosystemAdmin/DistributionHistoryTable.tsx
 src/components/pages/domain/DomainOwnerBio.tsx
-src/hooks/domain/index.ts                       (barrel, unused)
-src/hooks/domains/index.ts                      (barrel, unused)
-src/hooks/domain/useDomainOwnerAndTimestamp.ts
-src/hooks/domain/useDomainStringFromHash.ts
-src/hooks/domain/useGetDomainData.ts
-src/hooks/domain/useIsDomainListed.ts
-src/hooks/domains/useGetDomainCategories.ts
-src/hooks/domains/useGetDomainsByCategory.ts
-src/hooks/domains/useGetDomainsByCategoryPaginated.ts
-src/hooks/domains/useListedDomainsPaginated.ts
-src/hooks/domains/useTotalListedDomains.ts
+src/hooks/domain/index.ts                             (barrel, unused)
+src/hooks/domains/index.ts                            (barrel, unused)
+src/hooks/domain/useDomainOwnerAndTimestamp.ts        ┐
+src/hooks/domain/useDomainStringFromHash.ts           │
+src/hooks/domain/useGetDomainData.ts                  │ reachable only
+src/hooks/domain/useIsDomainListed.ts                 │ through a dead
+src/hooks/domains/useGetDomainCategories.ts           │ barrel
+src/hooks/domains/useGetDomainsByCategory.ts          │
+src/hooks/domains/useGetDomainsByCategoryPaginated.ts │
+src/hooks/domains/useListedDomainsPaginated.ts        │
+src/hooks/domains/useTotalListedDomains.ts            ┘
+src/hooks/kns/useKasware.ts                           (only the dead ConnectButton)
 src/hooks/kns/api/useAssetStatus.ts
 src/hooks/kns/api/useCheckDomainAvailability.ts
 src/hooks/kns/api/useDomainOwner.ts
 src/hooks/kns/api/useDomainSearch.ts
+src/hooks/kns/api/useVerifiedDomains.ts
 src/hooks/kns/api/useVerifyOwnership.ts
+src/lib/domains.ts
+src/lib/kasplexProvider.ts
+src/lib/walletClient.ts
 ```
 
-Verified by checking every importer, including the two barrels — nothing imports
-those either. **Not deleted**: that is a call for the owner, and some of the KNS
-hooks are plausibly wanted later.
+That is **27 of 129 source files — roughly a fifth of `src/` is unreachable.** Most read
+contracts with no deployed code, so wiring one up would fail rather than work; they are a
+trap, not a resource.
 
----
+**Not deleted**: that is the owner's call, and some of the KNS hooks
+(`useCheckDomainAvailability`, `useDomainSearch`) are plausibly wanted later. `src/test/a.tsx`
+is an empty file and could go today.
 
 ## 8b. Documentation — `docs/`
 
@@ -246,7 +263,7 @@ The map had no entry for its own folder until 2026-09-06. 22 files.
    impossible.
 4. **Operating entity and jurisdiction** for `/terms` and `/privacy`, plus legal
    review. Both carry an explicit "not reviewed by a lawyer" notice.
-5. **Delete `/EcosystemAdmin` and the 18 dead files?** They administer and query
+5. **Delete `/EcosystemAdmin` and the 27 dead files?** They administer and query
    contracts that do not exist.
 6. **A test runner** (`node:test` vs `vitest`, and whether CI runs it). See the
    argument in `GAPS.md` — the 2026-09-06 paging bug passed `tsc`, `eslint` and

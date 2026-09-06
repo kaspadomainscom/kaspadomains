@@ -68,7 +68,8 @@ not "next session". Specifically, before finishing any piece of work, ask:
 
 **Why this is a standing rule rather than a nice-to-have**: `FILES.md` exists because
 nobody could answer "which of these 128 source files are live?" — and the answer turned out
-to include 18 dead files and a contract count that had been wrong in every doc for two days.
+to include 27 dead files — a fifth of `src/` — and a contract count that had been wrong in
+every doc for two days.
 That is what an unmaintained map costs. The same pass produced principle #15: a migration
 ends when the old paths are gone, and the only way to know they are gone is to have looked
 at every file recently.
@@ -543,9 +544,25 @@ never been checked. The original sweep enumerated from what the listing and voti
 calls, so it missed exactly the two entries no live code path touches. One of them backs a
 475-line admin page that consequently told its own administrator "Access Denied".
 
-The same pass produced the other half of the lesson: the **18 dead files** were only found by
+The same pass produced the other half of the lesson: the dead files were only found by
 enumerating `git ls-files` and checking importers. Following imports outward from the routes
 -- the natural way to explore a codebase -- can *never* find a file that nothing imports.
+
+**Correction, next day**: that count was **18**. The real number is **27**, and finding it
+needed two things the first pass got wrong even though it *had* started from `git ls-files`.
+Enumerating from the declaration was necessary and not sufficient:
+
+- **Match specifiers, not names.** `grep -rl walletClient` matches a local variable called
+  `walletClient`; `grep -rl useVerifiedDomains` matches the line that *defines* it. Both
+  read as "this file is used". Eight files were called live on that evidence.
+- **Reachability is transitive.** A file imported only by a dead file is dead. Ten of the
+  twenty-seven are reachable solely through two barrel files that nothing imports, so a
+  single "does anything import me?" pass calls all ten live.
+
+So the rule has a second half: having got the list right, make sure the *test you apply to
+each entry* is the real question. And when a count is going to be written into a document,
+make it a script — `npm run dead:check` now prints it, because a number I recomputed by hand
+was wrong twice in two days.
 
 **The rule**: usage-based enumeration is a reachability analysis, not an inventory. It
 answers "what does the running code touch?", which is a different question from "what is

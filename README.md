@@ -39,7 +39,7 @@ access, TanStack Query for data fetching. See [`docs/ARCHITECTURE.md`](./docs/AR
 for the full picture.
 
 New to the codebase? [`docs/FILES.md`](./docs/FILES.md) maps every file to what it does,
-flags the 18 that are dead, and carries the prioritised TODO.
+flags the 27 that are dead, and carries the prioritised TODO.
 [`docs/kaspadomains-systems.md`](./docs/kaspadomains-systems.md) cuts the same code by
 *system* — start there when you want to change a behaviour rather than a file.
 
@@ -110,7 +110,8 @@ Open [http://localhost:3000](http://localhost:3000). You'll need the
 [Kasware](https://www.kasware.xyz/) browser extension to exercise wallet-gated flows
 (listing, voting, editing resources) against Kasplex testnet.
 
-Other scripts: `npm run build`, `npm run lint`, `npm run start`.
+Other scripts: `npm run build`, `npm run lint`, `npm run start`, and
+`npm run dead:check` (lists source files unreachable from every route — currently 27).
 
 ## Contract addresses
 

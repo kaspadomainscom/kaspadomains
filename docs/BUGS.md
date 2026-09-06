@@ -137,6 +137,18 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **The dead-file count in `FILES.md` was wrong, twice, in both directions.** Reported as 18;
+  the real number is **27 of 129 source files — roughly a fifth of `src/`**. The first count
+  came from a bare-name grep, which matches a *local variable* named `walletClient` and the
+  line that *defines* `useVerifiedDomains`; eight files were called live on that evidence,
+  including `ConnectButton.tsx`, which is dead because `Header.tsx` defines its own
+  `ConnectButton` locally. The second miss was transitivity: ten files are reachable only
+  through two barrel files that nothing imports, so a single "does anything import me?" pass
+  calls all ten live. Fixed by resolving module specifiers and computing reachability from
+  the entry points Next loads by path — and by making it `npm run dead:check` rather than a
+  number in a document, since a hand-recomputed figure was wrong on both attempts. Recorded
+  as a correction under `MIND.md` #18: enumerating from the declaration was necessary and
+  not sufficient; the test applied to each entry has to be the real question too.
 - **The connect button said "Connect Kasware" to users who were connected.** `isConnected`
   required **both** wallets. Since listings moved to Supabase only the Kaspa L1 wallet
   matters — it holds the key that owns the domain and signs every write — so anyone who

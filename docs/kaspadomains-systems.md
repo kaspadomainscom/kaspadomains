@@ -281,6 +281,7 @@ until someone loses money or gives up.
 | `src/app/api/status/route.ts` | Machine-readable; 503 when failing |
 | `src/app/status/page.tsx` | The human-readable version |
 | `scripts/db-check.mjs` | The CLI equivalent, exits non-zero so it can gate a deploy |
+| `scripts/dead-code.mjs` | Reachability from every route. `npm run dead:check` |
 | `.github/workflows/ci.yml` | `lint` + `build` on every push |
 | `src/app/api/csp-violation-report/route.ts` | Hardened report sink |
 
@@ -289,7 +290,8 @@ never OK — see `MIND.md` #14 and
 [`mind/health-check-checklist.md`](./mind/health-check-checklist.md). Two checks here have
 already gone green precisely because they could observe nothing.
 
-**Weak points.** 🟡 **No tests.** CI runs lint and build; there is no test runner at all.
+**Weak points.** 🟡 **No tests.** CI runs lint and build; there is no test runner at all, and
+`dead:check` is not yet wired into CI because 27 files would fail it.
 
 ---
 
@@ -356,7 +358,7 @@ exactly. In practice it does not work.
 | `src/lib/viemChains.ts`, `viemClient.ts`, `kasplex.ts`, `kasplexProvider.ts`, `kaswareEvm.ts`, `walletClient.ts` | EVM access |
 | `src/app/EcosystemAdmin/page.tsx` + `src/components/pages/EcosystemAdmin/**` | Administers a fund contract with no code, that fees no longer flow through |
 | `src/hooks/domain/useSetDomainCategories.ts`, `useDomainByHash.tsx` | Still reachable on the fallback path |
-| The 18 dead files in [`FILES.md`](./FILES.md) | Mostly this system's orphans |
+| The 27 dead files in [`FILES.md`](./FILES.md) | Mostly this system's orphans. `npm run dead:check` lists them |
 
 **Decision pending:** delete `/EcosystemAdmin` and the dead files, or keep them against a
 future redeploy?

@@ -18,7 +18,7 @@ Not theory. Every one of these is from the last three days, and each has a struc
 | Header search never matched anything | `.kas` normalisation duplicated on both sides of a boundary, in files four directories apart |
 | Fee shown 10¹⁰× too large | `Domain.feePaid` is sompi from one source and wei from another — one type, two producers, no owner |
 | Withdrawing a category 404'd paid listings | The profile page used the category manifest to answer "does this domain exist", because it was the nearest available function |
-| 18 dead files, invisible | Grouped by technical kind, so an orphan looks exactly like a live file |
+| 27 dead files — a fifth of `src/` — invisible | Grouped by technical kind, so an orphan looks exactly like a live file |
 | `/list-domain` promised a bio and image | Copy lives in `app/`, the feature it describes died in `hooks/` — nothing connects them |
 | "4 of 6 contracts dead" wrong for two days | Contract config in `lib/`, its consumers scattered; no single place that says "these are all of them" |
 
@@ -83,7 +83,7 @@ src/
     lib/                        # utils with no domain knowledge
 
   legacy/                       # quarantined, excluded from tsconfig `include`
-    kasplex-contracts/          # the 8 addresses, ABIs, EcosystemAdmin, 18 dead files
+    kasplex-contracts/          # the 8 addresses, ABIs, EcosystemAdmin, 27 dead files
       README.md                 # "6 of 8 have no deployed code. Do not build on this."
 ```
 
@@ -135,11 +135,13 @@ of these turns a `MIND.md` principle into something the build checks:
 | `no-restricted-imports`: `features/*/server/*` outside `app/api` and `features/*/server` | — | Server logic leaking into a page |
 | Ban raw `BigInt`→string rendering of money; require the branded formatter | #17 | The 10¹⁰ fee bug |
 | Ban `catch { return [] }` and `catch { return undefined }` in `data/` | #2, #11 | Outages rendering as "nothing found" |
-| `knip` or `ts-prune` in CI | #18 | The next 18 dead files |
+| `npm run dead:check` in CI (already written) | #18 | The next 27 dead files |
 | Forbid `legacy/` imports from anywhere but `legacy/` | — | Building on dead contracts |
 
-**Start here even if the move never happens.** `knip` alone would have found the dead files
-months earlier, and it costs one dependency and one CI line.
+**Start here even if the move never happens.** The reachability check is already written
+(`scripts/dead-code.mjs`); it just needs the current 27 dealt with before CI can enforce it.
+A tool would have found them months earlier, and got the count right first time — mine
+didn't, twice.
 
 ---
 
@@ -149,9 +151,9 @@ Each step is independently valuable and independently revertable. Stop at any po
 
 | # | Step | Risk | Payoff |
 |---|---|---|---|
-| 1 | Add `knip` + the `no-restricted-imports` rules to CI | none | Catches dead code and boundary violations immediately |
+| 1 | Wire the existing `npm run dead:check` into CI, add the `no-restricted-imports` rules | none | **Half done** — the reachability check exists; CI needs the 27 cleared first |
 | 2 | Add branded `Sompi`/`Wei` types in one file; fix `Domain.feePaid` | low | Kills a whole bug class (#17), no files move |
-| 3 | Create `legacy/`, move the 18 dead files + `EcosystemAdmin` + contracts, exclude from `tsconfig` | low | −2,000 lines of live surface. **Needs your delete-or-keep decision** |
+| 3 | Create `legacy/`, move the 27 dead files + `EcosystemAdmin` + contracts, exclude from `tsconfig` | low | −2,000 lines of live surface. **Needs your delete-or-keep decision** |
 | 4 | Extract `platform/` (supabase, kaspa, kasplex, security) | medium | Infrastructure stops being mixed with product logic |
 | 5 | Slice one feature end-to-end — **`payments` first**, it has the clearest boundary and the highest stakes | medium | Proves the pattern on the code that matters most |
 | 6 | Slice the rest, one per session, updating `FILES.md` each time | medium | — |
@@ -198,6 +200,6 @@ happens next, it should be `supabase/schema.sql`.
 
 - [`kaspadomains-systems.md`](./kaspadomains-systems.md) — the systems this tree would make
   physical
-- [`FILES.md`](./FILES.md) — current layout, and the 18 dead files
+- [`FILES.md`](./FILES.md) — current layout, and the 27 dead files
 - [`MIND.md`](./MIND.md) — the principles §3 would turn into lint rules
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — how it works today
