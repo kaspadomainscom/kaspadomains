@@ -137,6 +137,19 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **The trending strip linked to URLs that immediately redirected, and claimed an empty list
+  when it had failed.** `useTrendingDomains` stripped `.kas` before returning, so the
+  component had only the display form and rebuilt the href from it — producing `/domain/foo`,
+  which the profile page then redirected to `/domain/foo.kas`. The same shape as the header
+  search bug: a format stripped in one place and needed in another, with the reconstruction
+  guessed rather than owned (`MIND.md` #17). The hook now returns canonical names and the
+  component uses `baseDomainName` for the label, so the link and the label come from the same
+  owner. Separately, the hook left `names` at `[]` on failure, so an outage rendered "No
+  trending domains right now." — decoration, but still a claim. It returns `null` for unknown
+  now and the strip renders nothing rather than asserting there are none.
+- **A raw `<a>` for an internal link forced a full page reload.** `/domains/top-voted`
+  linked to `/docs#voting` with an anchor rather than `next/link`, throwing away client-side
+  navigation. The only instance in the app; the rest already use `Link`.
 - **`/docs` documented KNS smart-contract calls we have never made.** It told users "we use
   the official KNS smart contracts to ensure domain legitimacy" and listed
   `ownerOf(tokenId)` and `isVerifiedDomain(name)`. We call the KNS **HTTP API**

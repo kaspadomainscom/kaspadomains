@@ -1,6 +1,7 @@
 // src/app/domains/top-voted/page.tsx
 import type { Metadata } from "next";
 import { loadTopVotedDomains, type DomainWithVotes } from "@/lib/topVotedDomains";
+import Link from "next/link";
 import { DomainCard } from "@/components/DomainCard";
 
 const TOP_N = 24;
@@ -30,9 +31,9 @@ export default async function TopVotedPage() {
         <h1 className="text-3xl font-bold text-white mb-2">Top Voted Domains</h1>
         <p className="text-gray-400 mb-8">
           Ranked by community votes — see{" "}
-          <a href="/docs#voting" className="text-kaspaMint hover:underline">
+          <Link href="/docs#voting" className="text-kaspaMint hover:underline">
             how voting works
-          </a>
+          </Link>
           .
         </p>
 

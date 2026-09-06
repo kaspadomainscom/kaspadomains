@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from 'react';
 import { fetchCategoryDomains } from '@/data/supabaseSource';
-import { baseDomainName } from '@/lib/domainName';
 
 /** How many names the header strip shows. */
 const TRENDING_LIMIT = 12;
@@ -21,8 +20,11 @@ const TRENDING_LIMIT = 12;
  * shows nothing. The problem still surfaces properly on `/status` and in the
  * console.
  */
-export function useTrendingDomains(): string[] {
-  const [names, setNames] = useState<string[]>([]);
+export function useTrendingDomains(): string[] | null {
+  // null means "not known" -- still loading, or the read failed. The strip is
+  // decoration, but "No trending domains right now." is still a claim, and it
+  // is not one we can make when we could not read the list.
+  const [names, setNames] = useState<string[] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,12 +36,15 @@ export function useTrendingDomains(): string[] {
     // strictly worse than the branch it was standing in for.
     fetchCategoryDomains('trending', TRENDING_LIMIT)
       .then((domains) => {
-        // baseDomainName owns the suffix rule; stripping it by hand here is how
-        // the same format ends up with two definitions (MIND #17).
-        if (!cancelled) setNames(domains.map((d) => baseDomainName(d.name)));
+        // Canonical names, suffix included. The strip used to happen here, which
+        // meant the component had the display form and had to reconstruct the
+        // link -- and reconstructed it wrong, producing a URL the profile page
+        // immediately redirected away from.
+        if (!cancelled) setNames(domains.map((d) => d.name));
       })
       .catch((error) => {
         console.error('Failed to load trending domains', error);
+        if (!cancelled) setNames(null);
       });
 
     return () => {
