@@ -2,7 +2,7 @@
 
 **Purpose**: stop a valid request from replacing state the user never saw.
 
-Last updated: 2026-09-06
+Last updated: 2026-09-07
 
 Use this for any write that replaces a whole collection or object: profile links,
 categories, preferences, document sections, or a complete JSON blob. It operationalizes

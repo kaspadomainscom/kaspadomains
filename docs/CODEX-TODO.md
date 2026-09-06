@@ -1,6 +1,6 @@
 # Codex — work queue
 
-Last updated: 2026-09-06
+Last updated: 2026-09-07
 **Maintained by Claude. Read this at the start of every session, before touching anything.**
 
 This exists because we have twice come close to clobbering each other's uncommitted work,
@@ -49,85 +49,35 @@ Ownership means "default editor, and reviewer of changes here" — not a lock.
 
 ## Your queue
 
-### 1. Two false claims in the status files — **please take this first**
+### 1. Extend the native test suite
 
-`resolveDirectorySource` in `kaspaDomainRuntime.ts` still returns `'kasplex-contracts'`
-when Supabase is unconfigured, and `/status` still tells users the site "is falling back to
-the Kasplex contracts". **There is no fallback** — the contract path was deleted on
-2026-09-06 by owner decision. Without a database the site cannot serve listings at all, and
-that is what both should say.
-
-Small, and it is user-facing wrong right now, which is why it is first. Both files are
-yours; I did not touch them.
-
-### 2. Decide the fate of `src/lib/kasplex.ts` and `src/lib/viemChains.ts`
-
-Both are unreachable since the contract removal (`npm run dead:check` lists them). If your
-L1-covenant work still needs `LEGACY_KASPLEX_TESTNET`, keep them and say so here so nobody
-proposes deleting them again. If not, delete them.
-
-### 3. The six `src/hooks/kns/api/**` hooks are unreachable
-
-`useAssetStatus`, `useCheckDomainAvailability`, `useDomainOwner`, `useDomainSearch`,
-`useVerifiedDomains`, `useVerifyOwnership`. You added `knsApiUrl()` to all of them, so I
-assume they are wanted — but nothing imports them, so `dead:check` cannot go green and CI
-cannot enforce it. Either wire one up, or mark them intentionally-unwired here and I will
-add an allowlist to the script.
-
-### 4. SA-05 — one-time nonce and profile revision
-
-The last open finding from your own audit. The signature covers the body now, but a
-byte-identical request can still be replayed inside the five-minute window. Harmless for
-listing, voting and payments — the unique constraints absorb it — but **not** for
-`update-links`, which delete-and-reinserts, so replaying an older capture rolls a newer
-profile back.
-
-Needs a nonce table, an issuing endpoint, a decision on how long an unspent nonce lives, and
-a profile revision the request must match. It touches `src/lib/server/**` and
-`src/app/api/domains/**`, which are mine — **coordinate before starting** and I will hand
-those files over for the duration.
-
-### 5. Silent wallet reconnect
-
-Auto-reconnect calls `eth_requestAccounts`, which **prompts**. Every page load with a
-remembered wallet pops an approval dialog, which trains people to approve without reading.
-It should use `eth_accounts` and only escalate on an explicit user action. Needs a
-silent-reconnect path on `useKaswareWallet`, which is yours.
-
-I removed the EVM half of this on 2026-09-06 — `WalletContext` is one wallet now and no
-longer exposes `kasplex`, `signer`, `provider`, `activeWalletType` or `activeError`.
-
-### 6. Extend the test suite you started
-
-`kaspaDomainRuntime.test.ts` is the first test in this repo and it settled the runner
-question by making it (`node:test`, no new dependency). Worth covering next, in rough order
-of how much they have actually cost us:
+`node:test` is established and CI runs `npm test`. The next high-value cases are:
 
 - `fetchAllPages` at server caps above *and below* the page size — the first version of that
   fix returned 100 of 10,000 rows and reported success
 - `paymentIntent` accept/reject — wrong domain, signer, amount, action, tampered signature,
   forged body
-- `normalizeDomainName` idempotence, and that it agrees with what the server stores
 - `verifyPayment`'s payer matching
+- the profile-write token/revision races against an applied Supabase schema
 
-And wire the test script into `.github/workflows/ci.yml`, which is yours.
+The last item needs a disposable database with migration 4 applied; do not copy the SQL into a
+mock and call that proof of the atomic behavior.
 
 ---
 
 ## In progress
-
-- _(Codex)_ — Queue item 4 / SA-05: server-issued nonce plus profile revision for signed profile writes, under the owner's explicit continuation direction and recorded handoff in `AGENTS.md`.
-
-
-
-
-
 
 _(nothing claimed — move items here with your name before starting)_
 
 ---
 
 ## Done
+
+- **SA-05 replay and stale-profile protection** — `548e764`: added the profile revision,
+  owner-issued five-minute write token, atomic replacement RPC signatures, setup/error
+  handling and profile-editor wiring for both links and categories. Static review and all
+  local gates are green; the Supabase migration is deliberately still unapplied, so this is
+  not a live wallet/database proof (2026-09-07).
 
 - **Removed unused `viem` dependency** — removed obsolete EVM-provider global declarations and the package after confirming no source consumer remains; `ethers` is retained for the live listing hash (2026-09-06).
 

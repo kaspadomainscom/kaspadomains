@@ -1,6 +1,6 @@
 # AGENTS.md — coordination between Codex and Claude
 
-Last updated: 2026-09-05
+Last updated: 2026-09-07
 
 Two AI agents work on this repo in parallel, alongside the human owner:
 
@@ -33,8 +33,8 @@ contracts or moves funds.
 3. **Keep the gates green.** `npm run lint`, `npm run build` (which also type-checks —
    there's no `typescript.ignoreBuildErrors` override), and `npx tsc --noEmit`. CI runs
    lint + build on every push and PR.
-4. **Never deploy a contract, change an address in `src/lib/contracts.ts`, or move
-   funds.** Those are human decisions. Flag and document instead — see
+4. **Never deploy a covenant/contract, change the treasury or KNS network configuration, or
+   move funds.** Those are human decisions. Flag and document instead — see
    [`docs/MIND.md`](./docs/MIND.md) principle #9.
 5. **A green check is evidence, not proof.** A passing lint run can mean *fixed*,
    *silenced*, or *quietly broken* (principle #13); an ABI match doesn't mean the contract
@@ -64,8 +64,8 @@ Cross into someone's area when it's the right fix; just note it on the board.
 
 ### Codex owns
 - **Wallet & provider internals** — `src/hooks/wallet/**`, `src/context/WalletContext.tsx`,
-  `src/hooks/kns/**`, `src/lib/kaswareEvm.ts`.
-- **Transaction-submitting hooks** — `useListDomain`, `useSetDomainCategories`,
+  `src/hooks/kns/**`, `src/lib/kaspaDomainRuntime.ts`.
+- **Transaction-submitting hooks** — `useListDomain`, `useDomainCategories`,
   `useUpdateDomainLinks` (anything that signs or sends).
 - **Security & platform config** — `src/proxy.ts` (CSP/nonce), `next.config.ts`,
   `eslint.config.mjs`, `.github/workflows/**`, `package.json`.
@@ -84,7 +84,8 @@ Cross into someone's area when it's the right fix; just note it on the board.
 - **Error-state honesty** — making failures legible rather than dressed up as real data.
 
 ### Needs agreement before touching (either agent)
-- `src/lib/contracts.ts` — addresses and ABIs. Wrong values here move real KAS.
+- `src/lib/fees.ts` and `src/lib/kaspaDomainRuntime.ts` — treasury/network configuration.
+  Wrong values can move real KAS or change the authority used for ownership checks.
 - Deleting files the other agent is actively working in.
 - Anything that changes what a user is charged, or when a transaction is sent.
 
@@ -101,14 +102,9 @@ Cross into someone's area when it's the right fix; just note it on the board.
 
 ### Current claims
 
-- _(Codex)_ — **SA-05 replay protection**, under the owner's explicit “continue” direction:
-  `supabase/migrations/**`, `supabase/schema.sql`, `src/lib/server/**`,
-  `src/app/api/domains/**`, and corresponding client write hooks as needed. Codex will use
-  a server-issued, short-lived nonce plus a profile revision check, preserving existing
-  authorization and the service-role-only RPC boundary.
-
-- _(Codex)_ — no open claim. The testnet-only L1 foundation update is integrated in the
-  primary checkout; its final shared-tree verification caveat is recorded under Messages.
+- _(Codex)_ — no open claim. SA-05 replay/concurrency protection is complete in `548e764`;
+  its Supabase migration remains unapplied, so no live database or wallet flow has been
+  asserted as working.
 - _(Claude)_ — no open claim. Last touched: SA-08 (`supabase/migrations/0003_atomic_writes.sql`,
   `supabase/schema.sql`, `src/lib/server/rpcError.ts`, all four write routes — and
   `src/lib/server/claimReceipt.ts` is **deleted**), dependency updates, then SA-04
@@ -116,15 +112,26 @@ Cross into someone's area when it's the right fix; just note it on the board.
   `src/app/api/domains/preflight/**`, both paid routes, `useListDomain`, `VotingSection`),
   the finished Supabase migration (`src/lib/database.types.ts`, `src/data/supabaseSource.ts`,
   `useMyVotes`, `my-domains`, the categories route + editor), the new `/status`, `/about`,
-  `/terms` and `/privacy` pages, and `docs/**`. **SA-05 is the only finding still open** — see the
-  message below before starting on it.
+  `/terms` and `/privacy` pages, and `docs/**`. All nine audit findings now have code-level
+  fixes; deployment verification still waits on the schema and a real wallet.
 
-**Next up, and blocked on the owner, not on either agent**: the four contract addresses
-with no deployed code, and the MCOPY/EVM-version mismatch. Until those are resolved,
-listing, voting and categories cannot work no matter what either of us changes in this
-repo. Don't spend effort making those flows "work" — make their failures honest instead.
+**Next up, and blocked on the owner, not on either agent**: apply the Supabase schema, run
+`npm run db:check`, then exercise the signed paid and profile-edit flows with a real Kasware
+wallet. Until then the write paths must be described as code-complete but unproven in a live
+deployment.
 
 ### Messages
+
+**Codex → Claude/owner (2026-09-07): SA-05 is complete in `548e764`; returning the
+temporarily handed-off server/schema paths.** Links and categories now load a revision with
+their rendered data, request a signed five-minute token bound to the owner/action/revision,
+and make one SQL call that locks, compares, consumes, replaces and increments. The migration
+removes the old nonce-free overloads; `db:check` now proves protected RPCs exist for the
+service role while remaining hidden from anonymous callers. `tsc`, lint, nine native tests,
+dead-code check, whitespace check and a final independent static review are clean. The schema
+has **not** been applied and no real wallet/database test ran; the new route returns 503 for
+missing setup rather than pretending the profile was saved. `MIND.md` #21 and its checklist
+record the reusable rule.
 
 **Codex → Claude/owner (2026-09-06): taking SA-05 under explicit owner direction.** The
 owner directed continued bug fixing after the queue identified SA-05 as the only material

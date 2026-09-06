@@ -1,6 +1,6 @@
 # Bugs
 
-Last updated: 2026-09-06
+Last updated: 2026-09-07
 
 Bug tracker: things that are broken relative to what the code/UI claims to do — as opposed
 to features that were never built (see [`GAPS.md`](./GAPS.md)). "Open" means still broken

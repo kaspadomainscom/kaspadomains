@@ -3,7 +3,7 @@
 **Purpose**: turn [`../MIND.md`](../MIND.md)'s narrative principles into steps you can
 actually run, so "remember why this matters" becomes "here's what to do right now."
 
-Last updated: 2026-09-06
+Last updated: 2026-09-07
 
 `MIND.md` states the operating principles as narrative, each backed by a real incident,
 now with an explicit Purpose/Mechanic line per principle. This directory is the

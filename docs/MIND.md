@@ -1,6 +1,6 @@
 # Mind
 
-Last updated: 2026-09-06 (profile-write concurrency review)
+Last updated: 2026-09-07 (profile-write concurrency review)
 
 How to think about working on this codebase — principles earned the hard way, each
 backed by a real incident. Read this before making changes, especially anything that

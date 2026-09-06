@@ -1,6 +1,6 @@
 # KaspaDomains — systems
 
-Last updated: 2026-09-06
+Last updated: 2026-09-07
 
 The same codebase cut by **system** rather than by folder. Each entry says what the system
 does, how it works, every file it is built from, and where it is weak.

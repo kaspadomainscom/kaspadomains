@@ -1,6 +1,6 @@
 # Gaps
 
-Last updated: 2026-09-06
+Last updated: 2026-09-07
 
 Things that are **missing or incomplete** — as opposed to things that are broken (see
 [`BUGS.md`](./BUGS.md)). A gap is "never built" or "half-built and needs a decision";

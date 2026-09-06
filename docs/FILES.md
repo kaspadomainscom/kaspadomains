@@ -1,6 +1,6 @@
 # Files
 
-Last updated: 2026-09-06
+Last updated: 2026-09-07
 
 Every file in the repo, what it is for, and whether it is actually doing
 anything. **Current inventory:** 93 files under `src/`, with `npm run dead:check` reporting
