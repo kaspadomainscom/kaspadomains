@@ -112,9 +112,10 @@ export async function POST(request: Request) {
   // the failure mode the preflight exists to remove -- so this is required, not
   // advisory.
   //
-  // It is checked before the payment: an expired or missing intent means "start
-  // again", and there is no reason to spend a round trip to the Kaspa API to
-  // learn that.
+  // Checked before the payment, so a forged or mismatched intent costs no round
+  // trip to the Kaspa API. An *expired* one is accepted: this runs after the fee
+  // has been sent, so refusing it would charge the user again for having been
+  // slow at the wallet prompt. See `verifyPaymentIntent`.
   try {
     verifyPaymentIntent(String(body.intent ?? ''), {
       action: 'list-domain',

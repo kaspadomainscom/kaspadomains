@@ -114,3 +114,31 @@ test('rejects a well-signed body that is not an intent at all', () => {
   const signature = intent.slice(intent.lastIndexOf('.') + 1);
   assert.equal(isIntentTokenValid(SECRET, `${body}.${signature}`, LISTING), false);
 });
+
+test('separates a stale token from one that is not ours', () => {
+  // The distinction is the fix for a money-losing bug: this is checked after
+  // the fee has been paid, so refusing a merely-old token charged the user a
+  // second time. A forged one is still refused.
+  const tokens3 = require('./paymentIntentToken.ts') as {
+    checkIntentToken: (s: string, t: string, e: Claims, now?: number) => string;
+  };
+  const { checkIntentToken } = tokens3;
+  const issuedAt = 1_000_000;
+  const { intent, expiresAt } = issueIntentToken(SECRET, LISTING, issuedAt);
+
+  assert.equal(checkIntentToken(SECRET, intent, LISTING, expiresAt - 1), 'valid');
+  assert.equal(checkIntentToken(SECRET, intent, LISTING, expiresAt + 1), 'expired');
+
+  // Age must never launder a mismatch: an old token for a *different* action is
+  // "invalid", not "expired", or a caller that tolerates staleness would take it.
+  assert.equal(
+    checkIntentToken(SECRET, intent, { ...LISTING, action: 'vote' }, expiresAt + 1),
+    'invalid'
+  );
+  assert.equal(
+    checkIntentToken(SECRET, intent, { ...LISTING, domain: 'other.kas' }, expiresAt - 1),
+    'invalid'
+  );
+  assert.equal(checkIntentToken('another-secret', intent, LISTING, issuedAt), 'invalid');
+  assert.equal(checkIntentToken(SECRET, 'not-a-token', LISTING, issuedAt), 'invalid');
+});

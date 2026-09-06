@@ -71,6 +71,10 @@ export async function POST(
   // Required, not advisory: the preflight is what confirms the domain exists and
   // that this wallet has not already voted, and both of those used to be
   // discovered only after the 1 KAS had left the wallet.
+  //
+  // An expired intent is accepted, though -- this runs after the fee has been
+  // sent, so refusing it would charge the user a second time for having been
+  // slow at the wallet prompt. See `verifyPaymentIntent`.
   try {
     verifyPaymentIntent(String(body.intent ?? ''), {
       action: 'vote',

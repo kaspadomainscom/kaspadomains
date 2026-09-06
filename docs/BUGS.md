@@ -30,6 +30,29 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
 
 ## Fixed
 
+### 2026-09-07 — An expired payment intent refused a fee that had already been paid
+
+Found by applying the tell from `MIND.md` #22 (grep server messages for "again"). The intent
+is verified in the write route, which runs **after** the client has sent the fee — so
+*"This request has expired. Start again so the fee can be re-quoted"* landed on someone whose
+200 KAS had already gone, and the only "start again" available spends another 200 KAS. A user
+who left the wallet prompt open for the ten-minute TTL lost the fee for doing nothing wrong.
+
+An **expired but authentic** intent is now accepted; a forged or mismatched one is still
+refused, still before the Kaspa API round trip. `checkIntentToken` returns
+`valid | expired | invalid` instead of a boolean, and checks the claims *before* the age so
+staleness can never launder a mismatch.
+
+**This is a deliberate softening on the money path, so it is worth stating what it does not
+cost.** Age was never what the token proved — it proves a preflight ran for this signer, this
+action and this domain, which stays true at any age. The TTL was not protecting a stale quote
+either: the routes compare the claimed amount against the *current* fee constant, so an old
+token cannot authorise an old price. Everything that could make an old intent dangerous is
+re-checked at write time regardless — signature (with its own five-minute window), KNS
+ownership, the on-chain payment, the payer binding, the category allow-list, and the
+single-use receipt. `paymentIntent.ts` has always documented that deleting the module
+outright would make nothing forgeable.
+
 ### 2026-09-07 — "Wait and try again" was an instruction to pay 200 KAS twice
 
 `verifyPayment` refused a not-yet-accepted payment with *"Wait for confirmation and try

@@ -1,7 +1,7 @@
 // src/lib/server/paymentIntent.ts
 import { VerificationError } from './verificationError';
 import {
-  isIntentTokenValid,
+  checkIntentToken,
   issueIntentToken,
   type IntentAction,
   type IntentClaims,
@@ -68,18 +68,50 @@ export function issuePaymentIntent(claims: IntentClaims): {
 }
 
 /**
- * Check that an intent is authentic, unexpired, and describes the action being
- * attempted -- throwing the HTTP-shaped error the routes expect.
+ * Check that an intent is authentic and describes the action being attempted.
  *
- * Every mismatch is the same message. Saying *which* field failed would let
- * someone probe for a valid combination, and the honest user-facing answer is
- * identical in every case: start again.
+ * ## Why an expired intent is not refused
+ *
+ * The routes verify this **after** the client has paid -- the fee is sent
+ * between the preflight and the write, which is the whole point of the design.
+ * So every refusal here lands on someone whose money has already gone, and
+ * "start again so the fee can be re-quoted" meant "pay a second 200 KAS". A
+ * user who left a wallet prompt open for ten minutes would have lost the fee
+ * for doing nothing wrong. See `MIND.md` #22.
+ *
+ * Dropping the age requirement costs nothing, because age was never what this
+ * token proved. It proves a preflight ran for this signer, this action and this
+ * domain -- and that stays true at any age. Nor was the TTL protecting a stale
+ * quote: the routes compare the claimed amount against the *current* fee
+ * constant, so an old token cannot authorise an old price.
+ *
+ * Everything that could make an old intent dangerous is re-checked from scratch
+ * at write time anyway: the signature (five-minute window of its own), KNS
+ * ownership, the payment on-chain, the payer binding, the category allow-list,
+ * and the single-use receipt. This module's own header says it plainly -- delete
+ * it entirely and nothing becomes forgeable.
+ *
+ * A **forged or mismatched** token is still refused, and still before the
+ * payment is checked. That is not a user who was slow; it is a client that did
+ * not follow the flow.
+ *
+ * Returns the verdict so a caller can log how often this happens without
+ * changing what it does.
  */
-export function verifyPaymentIntent(token: string, expected: IntentClaims): void {
-  if (!isIntentTokenValid(intentSecret(), token, expected)) {
+export function verifyPaymentIntent(
+  token: string,
+  expected: IntentClaims
+): 'valid' | 'expired' {
+  const verdict = checkIntentToken(intentSecret(), token, expected);
+
+  if (verdict === 'invalid') {
+    // One message for every kind of mismatch. Saying *which* field failed would
+    // let someone probe for a valid combination.
     throw new VerificationError(
-      'This request has expired. Start again so the fee can be re-quoted.',
+      'This request could not be confirmed. Start again so the fee can be re-quoted.',
       409
     );
   }
+
+  return verdict;
 }

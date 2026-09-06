@@ -90,15 +90,32 @@ export function issueIntentToken(
  * combination, and the honest user-facing message is identical in every case:
  * start again.
  */
-export function isIntentTokenValid(
+export type IntentVerdict =
+  /** Authentic, unexpired, and describes this exact action. */
+  | 'valid'
+  /** Authentic and describes this action, but issued too long ago. */
+  | 'expired'
+  /** Forged, malformed, or about a different action. */
+  | 'invalid';
+
+/**
+ * Classify a token, separating "too old" from "not ours".
+ *
+ * The two are worlds apart for a caller, and collapsing them into a boolean is
+ * what made the distinction invisible. Age says nothing about whether the
+ * preflight ran -- which is the only thing this token proves -- so a caller
+ * holding a verified payment can reasonably accept `expired` while still
+ * refusing `invalid`. See `verifyPaymentIntent`.
+ */
+export function checkIntentToken(
   secret: string,
   token: string,
   expected: IntentClaims,
   now: number = Date.now()
-): boolean {
+): IntentVerdict {
   const raw = token?.trim() ?? '';
   const separator = raw.lastIndexOf('.');
-  if (separator <= 0) return false;
+  if (separator <= 0) return 'invalid';
 
   const body = raw.slice(0, separator);
   const signature = raw.slice(separator + 1);
@@ -107,21 +124,34 @@ export function isIntentTokenValid(
   // the lengths are checked first rather than letting that become the failure.
   const a = Buffer.from(signature);
   const b = Buffer.from(sign(secret, body));
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return false;
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return 'invalid';
 
   let claims: IntentClaims & { expiresAt?: number };
   try {
     claims = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
   } catch {
-    return false;
+    return 'invalid';
   }
 
-  if (typeof claims.expiresAt !== 'number' || claims.expiresAt < now) return false;
-
-  return (
+  // Claims are checked before age: a token for a different action is not
+  // "expired", it is not ours, and reporting it as merely stale would let a
+  // caller that tolerates staleness accept it.
+  const matches =
     claims.action === expected.action &&
     claims.domain === expected.domain &&
     claims.signer === expected.signer &&
-    claims.amountSompi === expected.amountSompi
-  );
+    claims.amountSompi === expected.amountSompi;
+  if (!matches) return 'invalid';
+
+  if (typeof claims.expiresAt !== 'number') return 'invalid';
+  return claims.expiresAt < now ? 'expired' : 'valid';
+}
+
+export function isIntentTokenValid(
+  secret: string,
+  token: string,
+  expected: IntentClaims,
+  now: number = Date.now()
+): boolean {
+  return checkIntentToken(secret, token, expected, now) === 'valid';
 }
