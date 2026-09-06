@@ -116,13 +116,14 @@ And wire the test script into `.github/workflows/ci.yml`, which is yours.
 
 ## In progress
 
-- _(Codex)_ — Queue item 5: make remembered Kasware reconnects use the provider's non-interactive account query; retain the permission prompt for explicit connect only.
 
 _(nothing claimed — move items here with your name before starting)_
 
 ---
 
 ## Done
+
+- **Silent Kasware reconnect** — remembered sessions now use `getAccounts()` without a wallet prompt; only explicit connect uses `requestAccounts()`. Regression-tested and verified with type-check, lint, and build (2026-09-06).
 
 - **Status fallback correction** — `resolveDirectorySource(false)` now returns `unavailable`; the API and status page accurately report that a deployment without Supabase cannot serve directory data. Regression-tested and verified with type-check, lint, and build (2026-09-06).
 

@@ -45,7 +45,14 @@ const WalletContext = createContext<CombinedWalletState | undefined>(undefined);
 
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const kasware = useKaswareWallet();
-  const { account, connect: connectKas, disconnect: disconnectKas, status, error } = kasware;
+  const {
+    account,
+    connect: connectKas,
+    restoreConnection: restoreKasConnection,
+    disconnect: disconnectKas,
+    status,
+    error,
+  } = kasware;
 
   // Reconnect at most once per mount, and hold that in a ref rather than state.
   //
@@ -64,13 +71,13 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         // Failure here is expected and silent: the wallet may be locked, or the
         // user may decline. An unhandled rejection on page load is not a useful
         // way to find that out.
-        connectKas().catch(() => {});
+        restoreKasConnection().catch(() => {});
       }
     } catch {
       // Private mode, or storage disabled. Not being able to remember a
       // connection is not an error worth surfacing.
     }
-  }, [connectKas]);
+  }, [restoreKasConnection]);
 
   // Only ever record a *successful* connection. Writing 'false' whenever there
   // is no account meant one page load without approving made the app forget the

@@ -9,6 +9,7 @@ export interface WalletState {
   status: WalletStatus;
   isCorrectNetwork: boolean;
   connect: () => Promise<void>;
+  restoreConnection: () => Promise<void>;
   switchNetwork: () => Promise<void>;
   disconnect: () => void;
   error: string | null;
@@ -21,6 +22,17 @@ interface KaswareProvider {
   on(event: 'accountsChanged' | 'chainChanged', handler: (payload: unknown) => void): void;
   removeListener(event: 'accountsChanged' | 'chainChanged', handler: (payload: unknown) => void): void;
   isKasware?: boolean;
+}
+
+/**
+ * Reads an account that Kasware has already authorized for this origin.
+ *
+ * Unlike requestAccounts(), this never opens the wallet permission prompt.
+ */
+export async function getRememberedKaswareAccount(
+  provider: Pick<KaswareProvider, 'getAccounts'>
+): Promise<string | null> {
+  return (await provider.getAccounts())[0] ?? null;
 }
 
 function getKaswareProvider(): KaswareProvider | undefined {
@@ -59,6 +71,23 @@ export function useKaswareWallet(): WalletState {
     } catch (e) {
       setError(getErrorMessage(e));
       setStatus('error');
+    }
+  }, []);
+
+  const restoreConnection = useCallback(async () => {
+    const provider = getKaswareProvider();
+    if (!provider) return;
+
+    try {
+      const restoredAccount = await getRememberedKaswareAccount(provider);
+      if (!restoredAccount) return;
+
+      setAccount(restoredAccount);
+      setStatus('connected');
+      setError(null);
+    } catch {
+      // A locked wallet or unavailable provider is normal during silent restore.
+      // Do not surface an error or prompt; explicit connect owns that UX.
     }
   }, []);
 
@@ -105,6 +134,7 @@ export function useKaswareWallet(): WalletState {
     status,
     isCorrectNetwork: true, // Can be updated if Kasware supports chainId
     connect,
+    restoreConnection,
     switchNetwork,
     disconnect,
     error,
