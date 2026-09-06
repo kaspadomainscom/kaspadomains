@@ -334,7 +334,7 @@ after they moved to Postgres.
 |---|---|
 | `src/app/layout.tsx`, `loading.tsx`, `not-found.tsx` | Root shell |
 | `src/app/providers/query-provider.tsx` | react-query |
-| `src/components/header/Header.tsx`, `src/components/Footer.tsx`, `Sidebar.tsx` | Chrome |
+| `src/components/header/Header.tsx`, `src/components/Footer.tsx`, `Sidebar.tsx` | Chrome. The sidebar's category list is **derived** from the database, not hard-coded — half of it used to 404 |
 | `src/components/ToastProvider.tsx`, `Loader.tsx`, `icons.tsx`, `KaspaDomainsLogo.tsx` | Shared UI |
 | `src/app/globals.css`, `tailwind.config.ts`, `components.json` | Styling |
 | `src/app/docs/`, `learn/`, `about/`, `terms/`, `privacy/`, `business-plan/` | Content pages |

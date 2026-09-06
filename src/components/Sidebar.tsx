@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useGetAllowedCategories } from '@/hooks/domains/useGetAllowedCategories';
 
 // Icons
 import {
@@ -90,11 +91,34 @@ export default function Sidebar() {
     }
   }, [isCollapsed, isMobile]);
 
+  // Derived from the real category list, not hard-coded.
+  //
+  // The hard-coded version had **nine of nineteen** links pointing at
+  // categories that do not exist -- `ai-tech` for `tech`, `real-words` for
+  // `realWords`, `memes` for `meme`, plus `profiles`, `vaults`, `tools`,
+  // `utilities`, `loved` and `active-projects`, which were never categories at
+  // all. Roughly half the primary navigation 404'd, and nothing could ever have
+  // told us: a link is just a string until someone clicks it.
+  //
+  // Deriving it means a category added to the database appears here, one
+  // removed disappears, and no link can point at something that is not there.
+  const { options: categoryOptions } = useGetAllowedCategories();
+
+  const categoryLinks = useMemo(
+    () =>
+      categoryOptions.map(({ key, title }) => ({
+        icon: CATEGORY_ICONS[key] ?? IconFolder,
+        label: title,
+        href: `/domains/categories/category/${key}`,
+      })),
+    [categoryOptions]
+  );
+
   const filteredLinks = useMemo(() => {
     return categoryLinks.filter(({ label }) =>
       label.toLowerCase().includes(debouncedSearch.toLowerCase())
     );
-  }, [debouncedSearch]);
+  }, [categoryLinks, debouncedSearch]);
 
   const showSidebar = !isMobile || mobileOpen;
 
@@ -128,7 +152,7 @@ export default function Sidebar() {
           }
         }}
         aria-label="Toggle Sidebar"
-        aria-expanded={showSidebar}
+        aria-expanded={isMobile ? mobileOpen : !collapsed}
         aria-controls="sidebar-content"
         title="Toggle Sidebar"
         className={clsx(
@@ -232,7 +256,21 @@ export default function Sidebar() {
         </nav>
       </div>
     </aside>
-  ) : null;
+  ) : (
+    // On mobile the sidebar collapses to nothing -- and the only toggle used to
+    // live *inside* it, so once closed there was no way to reopen it and the
+    // whole navigation surface was unreachable. This button is the way back in.
+    <button
+      type="button"
+      onClick={() => setMobileOpen(true)}
+      aria-label="Open sidebar navigation"
+      aria-expanded={false}
+      aria-controls="sidebar-content"
+      className="fixed bottom-4 left-4 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-[#3DFDAD]/40 bg-[#1C4745] text-[#3DFDAD] shadow-lg hover:bg-[#1a403d] focus:outline-none focus:ring-2 focus:ring-[#3DFDAD]/50 md:hidden"
+    >
+      <IconFolder width={20} height={20} />
+    </button>
+  );
 }
 
 const toolLinks = [
@@ -243,27 +281,31 @@ const toolLinks = [
   // { icon: IconSettings, label: 'Settings', href: '/settings' },
 ];
 
-const categoryLinks = [
-  { icon: IconShortNames, label: 'Short Names', href: '/domains/categories/category/short' },
-  { icon: IconClub, label: '999 Club', href: '/domains/categories/category/999club' },
-  { icon: IconClub, label: '10k Club', href: '/domains/categories/category/10kclub' },
-  { icon: IconClub, label: '100k Club', href: '/domains/categories/category/100kclub' },
-  { icon: IconTag, label: 'Brandables', href: '/domains/categories/category/brandables' },
-  { icon: IconGlobe, label: 'Real Words', href: '/domains/categories/category/real-words' },
-  { icon: IconBriefcase, label: 'Business', href: '/domains/categories/category/business' },
-  { icon: IconGamepad, label: 'Gaming', href: '/domains/categories/category/gaming' },
-  { icon: IconBrain, label: 'AI & Tech', href: '/domains/categories/category/ai-tech' },
-  { icon: IconMoney, label: 'Finance', href: '/domains/categories/category/finance' },
-  { icon: IconNetwork, label: 'Web3 / dApps', href: '/domains/categories/category/web3' },
-  { icon: IconUser, label: 'Profiles', href: '/domains/categories/category/profiles' },
-  { icon: IconTeddy, label: 'Memes & Fun', href: '/domains/categories/category/memes' },
-  { icon: IconVault, label: 'Vaults', href: '/domains/categories/category/vaults' },
-  { icon: IconActivity, label: 'Active Projects', href: '/domains/categories/category/active-projects' },
-  { icon: IconHeart, label: 'Loved', href: '/domains/categories/category/loved' },
-  // { icon: IconSettings, label: 'Utilities', href: '/domains/categories/category/utilities' },
-  { icon: IconTool, label: 'Tools', href: '/domains/categories/category/tools' },
-  { icon: IconTrending, label: 'Trending', href: '/domains/categories/category/trending' },
-];
+/**
+ * Icons by category key, for the categories the database actually has.
+ *
+ * A key with no entry falls back to the folder icon rather than being dropped:
+ * a new category should appear in the navigation immediately, looking plain,
+ * rather than silently not appearing at all.
+ */
+const CATEGORY_ICONS: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
+  trending: IconTrending,
+  '999club': IconClub,
+  '10kclub': IconClub,
+  '100kclub': IconClub,
+  short: IconShortNames,
+  realWords: IconGlobe,
+  brandables: IconTag,
+  business: IconBriefcase,
+  finance: IconMoney,
+  gaming: IconGamepad,
+  tech: IconBrain,
+  web3: IconNetwork,
+  meme: IconTeddy,
+  characters: IconUser,
+  geo: IconGlobe,
+  other: IconTool,
+};
 
 function SidebarLink({
   icon: Icon,

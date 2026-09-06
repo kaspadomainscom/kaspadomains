@@ -137,6 +137,30 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **Nine of the sidebar's nineteen category links pointed at categories that do not
+  exist.** The list was hard-coded: `ai-tech` for what the schema calls `tech`, `real-words`
+  for `realWords`, `memes` for `meme`, plus `profiles`, `vaults`, `tools`, `utilities`,
+  `loved` and `active-projects`, which were never categories at all. Roughly **half the
+  primary navigation 404'd**, on every page, and nothing could have told us — a link is just
+  a string until somebody clicks it. Found by enumerating from the declaration
+  (`schema.sql`'s seed) and diffing against the hrefs, per `MIND.md` #18. Fixed structurally
+  rather than by correcting nine strings: the list is now derived from
+  `useGetAllowedCategories`, with icons mapped by key and a folder fallback, so a category
+  added to the database appears here, one removed disappears, and no link can point at
+  something that is not there.
+- **The mobile sidebar could be closed but never reopened.** `showSidebar = !isMobile ||
+  mobileOpen` renders `null` on mobile until `mobileOpen` is true — and the only toggle lived
+  *inside* the sidebar. Since `mobileOpen` starts false, the entire navigation surface was
+  unreachable on a phone from first load. Added a fixed open button that renders in exactly
+  that state. Also corrected `aria-expanded` on the inner toggle, which was bound to
+  `showSidebar` and therefore always `true` wherever it rendered.
+- **A dead branch survived the contract removal in `useTrendingDomains`.** Its "chain
+  fallback" called `loadCategoriesManifest`, which is now Supabase-only — so the branch meant
+  to avoid Supabase loaded the *entire manifest* from Supabase instead of one targeted query.
+  Strictly worse than the thing it stood in for. This is `MIND.md` #15 on the other side of a
+  removal: taking a path out leaves conditionals whose remaining branches no longer mean what
+  they say. Also routed its `.kas` stripping through `baseDomainName` rather than a local
+  regex.
 - **The EVM contract path is gone, and it was never a fallback — it was where the bugs
   lived.** Owner decision, 2026-09-06. Six of the eight configured addresses had no deployed
   code and the other two failed every call with `invalid opcode: MCOPY`, so the "fallback"

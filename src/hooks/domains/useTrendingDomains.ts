@@ -2,9 +2,8 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { isSupabaseConfigured } from '@/lib/supabase';
 import { fetchCategoryDomains } from '@/data/supabaseSource';
-import { loadCategoriesManifest } from '@/data/categoriesManifest';
+import { baseDomainName } from '@/lib/domainName';
 
 /** How many names the header strip shows. */
 const TRENDING_LIMIT = 12;
@@ -28,22 +27,16 @@ export function useTrendingDomains(): string[] {
   useEffect(() => {
     let cancelled = false;
 
-    async function load(): Promise<string[]> {
-      if (isSupabaseConfigured) {
-        const domains = await fetchCategoryDomains('trending', TRENDING_LIMIT);
-        return domains.map((d) => d.name);
-      }
-      // Chain fallback: no targeted query exists, so the manifest is the only
-      // way to answer this.
-      const manifest = await loadCategoriesManifest();
-      return (manifest.trending?.domains ?? [])
-        .slice(0, TRENDING_LIMIT)
-        .map((d) => d.name);
-    }
-
-    load()
-      .then((loaded) => {
-        if (!cancelled) setNames(loaded.map((n) => n.replace(/\.kas$/i, '')));
+    // One targeted query. There used to be a "chain fallback" here that called
+    // loadCategoriesManifest -- which is now Supabase-only too, so the branch
+    // loaded the *entire* manifest from the same source it was supposedly
+    // falling back from. A leftover from removing the contract path, and
+    // strictly worse than the branch it was standing in for.
+    fetchCategoryDomains('trending', TRENDING_LIMIT)
+      .then((domains) => {
+        // baseDomainName owns the suffix rule; stripping it by hand here is how
+        // the same format ends up with two definitions (MIND #17).
+        if (!cancelled) setNames(domains.map((d) => baseDomainName(d.name)));
       })
       .catch((error) => {
         console.error('Failed to load trending domains', error);
