@@ -99,7 +99,8 @@ The authorisation model lives here. Read [`ARCHITECTURE.md`](./ARCHITECTURE.md#d
 | `verifyRequest.ts` | Verifies a Kaspa L1 signature with `kaspa-wasm`, derives the address, reads the KNS owner server-side, requires a match. `normalizeDomain` here decides the canonical stored name | ✅ |
 | `verifyPayment.ts` | Confirms a fee transaction on-chain **and that the signer paid it** — without that, a public txid is a bearer coupon | ✅ |
 | `paymentIntent.ts` | Short-lived HMAC proving the preflight ran. Explicitly **not** a security boundary — every check is re-run at write time | ✅ |
-| `verificationError.ts` | The error every verification path throws. Its own module so importing it does not pull in `kaspa-wasm` | ✅ |
+| `verificationError.ts` | The error every verification path throws, carrying `retryable` and the database code. Its own module so importing it does not pull in `kaspa-wasm` | ✅ |
+| `apiError.ts` | Renders a `VerificationError` as the API's error response. One renderer, so no route can forget `retryable` — a route that did would look normal and cost a user 200 KAS | ✅ |
 | `rpcError.ts` | Maps the SQL functions' custom `KD001`–`KD007` codes to honest HTTP answers | ✅ |
 
 Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release.
