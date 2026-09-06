@@ -50,16 +50,81 @@ function requireClient() {
   return client;
 }
 
+/**
+ * How many rows to ask for per request when reading a whole table.
+ *
+ * PostgREST caps the rows any single request may return -- Supabase projects
+ * ship with a `max-rows` setting, and a query that would exceed it comes back
+ * **truncated with no error**. That is the dangerous part: a listing past the
+ * cap is not reported missing, it simply is not there, so search says "No
+ * matching domains found" for a domain that exists and is paid for.
+ *
+ * This app is capped at 10,000 listings by design, which is comfortably past
+ * any plausible server-side limit, so the truncation is a matter of when rather
+ * than if. Paging explicitly is correct whatever the server's cap turns out to
+ * be: a short page is the only reliable signal that the end has been reached.
+ */
+const PAGE_SIZE = 500;
+
+/**
+ * Read every row of a query, one page at a time.
+ *
+ * `build` is called per page so each request gets a fresh query object -- a
+ * PostgREST query builder is single-use and re-ranging one silently returns the
+ * first page again.
+ */
+async function fetchAllPages<T>(
+  build: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+  label: string
+): Promise<T[]> {
+  const all: T[] = [];
+
+  for (let from = 0; ; ) {
+    const { data, error } = await build(from, from + PAGE_SIZE - 1);
+    if (error) throw new Error(`Supabase: failed to load ${label} — ${error.message}`);
+
+    const page = data ?? [];
+
+    // **Only an empty page means the end.** The obvious version of this loop
+    // treats a short page as the end and advances by PAGE_SIZE -- which breaks
+    // in exactly the situation this function exists for: if the server's own
+    // cap is *lower* than PAGE_SIZE (Supabase's max-rows is configurable), every
+    // page is short, the loop stops after one, and the result is silently
+    // truncated to the cap. Advancing by the number of rows actually returned
+    // is correct for any cap, at the cost of one final empty request.
+    if (page.length === 0) return all;
+
+    all.push(...page);
+    from += page.length;
+
+    // Guard against a server that ignores `range` and keeps returning the same
+    // page: without this the loop would never terminate.
+    if (all.length > 100_000) {
+      throw new Error(`Supabase: refusing to page past 100,000 rows loading ${label}.`);
+    }
+  }
+}
+
 /** Every active listing, flat. */
 export async function fetchAllDomains(): Promise<Domain[]> {
-  const { data, error } = await requireClient()
-    .from('domains')
-    .select(DOMAIN_COLUMNS)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false });
+  const client = requireClient();
 
-  if (error) throw new Error(`Supabase: failed to load domains — ${error.message}`);
-  return (data ?? []).map(rowToDomain);
+  const rows = await fetchAllPages<DomainRow>(
+    (from, to) =>
+      client
+        .from('domains')
+        .select(DOMAIN_COLUMNS)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        // A stable secondary sort. Without it, rows sharing a created_at can be
+        // ordered differently between two requests, so paging could return one
+        // twice and miss another entirely.
+        .order('id', { ascending: false })
+        .range(from, to),
+    'domains'
+  );
+
+  return rows.map(rowToDomain);
 }
 
 /** One listing by name, or undefined when it genuinely isn't listed. */
@@ -83,24 +148,33 @@ export async function fetchDomainByName(name: string): Promise<Domain | undefine
 export async function fetchCategoryManifest(): Promise<CategoryManifest> {
   const client = requireClient();
 
-  const [categoriesResult, membershipResult] = await Promise.all([
+  type MembershipRow = { category_key: string; domains: unknown };
+
+  const [categoriesResult, membershipRows] = await Promise.all([
     client
       .from('categories')
       .select('key, title')
       .eq('is_allowed', true)
       .order('sort_order', { ascending: true }),
-    client
-      .from('domain_categories')
-      .select(`category_key, domains!inner (${DOMAIN_COLUMNS})`),
+    // Paged. Membership is the largest table here -- one row per listing per
+    // category -- so it is the first thing to hit PostgREST's row cap, and a
+    // truncated read here silently empties whole categories across every browse
+    // page, the sitemap and the JSON-LD. Ordered by the primary key so paging
+    // is stable.
+    fetchAllPages<MembershipRow>(
+      (from, to) =>
+        client
+          .from('domain_categories')
+          .select(`category_key, domains!inner (${DOMAIN_COLUMNS})`)
+          .order('domain_id', { ascending: true })
+          .order('category_key', { ascending: true })
+          .range(from, to),
+      'category membership'
+    ),
   ]);
 
   if (categoriesResult.error) {
     throw new Error(`Supabase: failed to load categories — ${categoriesResult.error.message}`);
-  }
-  if (membershipResult.error) {
-    throw new Error(
-      `Supabase: failed to load category membership — ${membershipResult.error.message}`
-    );
   }
 
   const manifest: CategoryManifest = {};
@@ -108,7 +182,7 @@ export async function fetchCategoryManifest(): Promise<CategoryManifest> {
     manifest[category.key] = { title: category.title, domains: [] };
   }
 
-  for (const row of membershipResult.data ?? []) {
+  for (const row of membershipRows) {
     const bucket = manifest[row.category_key as string];
     if (!bucket) continue; // membership pointing at a disallowed category
     // PostgREST types an embedded to-one join loosely; the !inner join above
@@ -121,17 +195,30 @@ export async function fetchCategoryManifest(): Promise<CategoryManifest> {
   return manifest;
 }
 
-/** Vote count per domain hash, for ranking. */
+/**
+ * Vote count per domain hash, for ranking.
+ *
+ * Paged, because this is one row per listing and it drives the top-voted
+ * ranking. A truncated read here would not fail -- it would quietly produce a
+ * ranking that omits whatever fell past the cap, which is exactly the kind of
+ * wrong answer nobody notices.
+ */
 export async function fetchVoteCounts(): Promise<Map<string, number>> {
-  const { data, error } = await requireClient()
-    .from('domain_vote_counts')
-    .select('domain_hash, votes');
+  const client = requireClient();
 
-  if (error) throw new Error(`Supabase: failed to load vote counts — ${error.message}`);
+  const rows = await fetchAllPages<{ domain_hash: string | null; votes: number | null }>(
+    (from, to) =>
+      client
+        .from('domain_vote_counts')
+        .select('domain_hash, votes')
+        .order('domain_id', { ascending: true })
+        .range(from, to),
+    'vote counts'
+  );
 
   const counts = new Map<string, number>();
-  for (const row of data ?? []) {
-    counts.set(String(row.domain_hash), Number(row.votes) || 0);
+  for (const row of rows) {
+    if (row.domain_hash) counts.set(String(row.domain_hash), Number(row.votes) || 0);
   }
   return counts;
 }

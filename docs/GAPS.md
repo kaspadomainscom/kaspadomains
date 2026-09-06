@@ -29,6 +29,20 @@ live backlog the continuous audit loop appends to.
       `BUGS.md`'s CRITICAL entries), so wiring it up wouldn't work until that's fixed
       regardless of the product decision.
 
+## No automated tests at all
+
+- [ ] **The repo has no test runner.** `package.json` has `dev`, `build`, `start`, `lint`
+      and `db:check` — no `test`. Every claim of correctness in `BUGS.md` rests on a
+      type-check, a lint run, a manual probe, or a throwaway script that was deleted
+      afterwards. For an app that moves real KAS that is the largest structural gap left.
+      The 2026-09-06 paging bug is the argument: the first fix looked obviously right,
+      passed `tsc`, `eslint` and `build`, and silently returned 100 of 10,000 rows — a
+      ten-line harness found it in one run. Things that would repay a runner immediately:
+      `fetchAllPages` behaviour at various server caps, `paymentIntent` accept/reject
+      properties, `signedMessage` digest stability, and `verifyPayment`'s payer matching.
+      Not set up unilaterally because picking a runner (node:test vs vitest) and a CI
+      shape is a project decision.
+
 ## Supabase write-path gaps
 
 - [x] ~~**No category-update route.**~~ **Built 2026-09-05.**

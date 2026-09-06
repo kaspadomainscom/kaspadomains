@@ -130,6 +130,30 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **Every "load all domains" read was capped by the server and truncated without an
+  error.** `fetchAllDomains`, `fetchCategoryManifest` and `fetchVoteCounts` each issued one
+  unbounded `select`. PostgREST caps the rows a single request may return, and a query that
+  exceeds the cap comes back **short with no error** — so search would answer "No matching
+  domains found" for a domain that exists and is paid for, browse pages would be missing
+  listings, and the top-voted ranking would quietly omit whatever fell past the cap. The
+  site is capped at 10,000 listings by design, comfortably past any plausible server limit,
+  so this was a matter of when rather than if. Fixed by paging explicitly with `.range()`,
+  plus a stable secondary sort on `id` — without one, rows sharing a `created_at` can be
+  ordered differently between two requests, so paging returns one row twice and misses
+  another.
+  **The first version of the fix had the same bug at a different cap.** It advanced by a
+  fixed page size and treated a short page as the end — so if the server's cap were *lower*
+  than our page size (Supabase's `max-rows` is configurable), every page would look short,
+  the loop would stop after one, and the result would silently truncate to the cap. Caught
+  by a throwaway harness that ran the loop against a fake server at several caps: it
+  returned **100 of 10,000 rows** and reported success. Now advances by the number of rows
+  actually returned and stops only on an empty page, which is correct for any cap, plus a
+  runaway guard for a server that ignores `range` entirely. *Verified*: 0/1/499/500/501/1000/
+  1001/10000 rows at a 1000-row cap and 10000 rows at a 100-row cap all return the full set
+  contiguously; an error on page 2 rejects rather than returning a partial list as if
+  complete. That harness is **not** in the repo — it duplicated the loop rather than
+  importing it, and a copy that can drift from the original is the kind of test that passes
+  while the real code is broken.
 - **Withdrawing a category silently deleted the profile page of every domain listed only
   under it.** `/domain/[name]` decided whether a domain exists by scanning the *category
   manifest* — but `fetchCategoryManifest` filters `is_allowed = true` and skips memberships
