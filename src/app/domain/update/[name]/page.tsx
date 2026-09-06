@@ -42,9 +42,24 @@ export default function UpdateDomainPage() {
     if (!domainSlug) return '';
     return normalizeDomainName(domainSlug);
   }, [domainSlug]);
-  const [owner, setOwner] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  /**
+   * The owner lookup, stored **with the domain it is about** and carrying its
+   * own outcome.
+   *
+   * Two separate `loading` and `error` flags could not express this correctly.
+   * Effects run after render, so on the first render following a change of
+   * domain both flags still describe the *previous* domain -- `loading` false
+   * and an owner that belongs to another name -- which is one frame in which
+   * `isOwner` decides using the wrong answer. Keeping the name alongside the
+   * result makes "this is about a different domain" representable, and a
+   * success and a failure stay distinguishable rather than collapsing into a
+   * permanent spinner (`MIND.md` #3).
+   */
+  const [ownerRecord, setOwnerRecord] = useState<
+    { domain: string; owner: string } | { domain: string; failure: string } | null
+  >(null);
+  const ownerLookup = ownerRecord?.domain === domainName ? ownerRecord : null;
+  const owner = ownerLookup && 'owner' in ownerLookup ? ownerLookup.owner : '';
   const [message, setMessage] = useState('');
   const [links, setLinks] = useState<DomainLink[]>([{ name: 'X', url: '' }]);
   const [linksSeeded, setLinksSeeded] = useState(false);
@@ -79,21 +94,28 @@ export default function UpdateDomainPage() {
 
   useEffect(() => {
     if (!domainSlug) return;
+    // Same guard `useGetDomainLinks` uses, and for a sharper reason: this owner
+    // is what `isOwner` gates the editor on. A slow response for a previous
+    // domain arriving after a newer one would decide whether the person looking
+    // at this page can edit it, using an answer about a different domain.
+    let cancelled = false;
 
     const loadOwner = async () => {
-      setLoading(true);
-      setError('');
       try {
         const fetchedOwner = await fetchDomainOwner(domainName);
-        setOwner(fetchedOwner);
+        if (!cancelled) setOwnerRecord({ domain: domainName, owner: fetchedOwner });
       } catch (err) {
-        setError(`❌ ${domainSlug}: ${(err as Error).message}`);
-      } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setOwnerRecord({ domain: domainName, failure: `❌ ${domainSlug}: ${(err as Error).message}` });
+        }
       }
     };
 
-    loadOwner();
+    void loadOwner();
+
+    return () => {
+      cancelled = true;
+    };
   }, [domainSlug, domainName]);
 
   function updateLinkField(index: number, field: 'name' | 'url', value: string) {
@@ -138,7 +160,9 @@ export default function UpdateDomainPage() {
     }
   };
 
-  if (loading) {
+  // No answer *for this domain* yet -- either still in flight, or the effect
+  // for a newly selected domain has not run. Both are genuinely "loading".
+  if (!ownerLookup) {
     return (
       <main className="max-w-xl mx-auto p-6 mt-10 text-center text-gray-400">
         <p>Loading domain data...</p>
@@ -146,10 +170,10 @@ export default function UpdateDomainPage() {
     );
   }
 
-  if (error) {
+  if ('failure' in ownerLookup) {
     return (
       <main className="max-w-xl mx-auto p-6 mt-10 text-center text-red-400">
-        {error}
+        {ownerLookup.failure}
       </main>
     );
   }
