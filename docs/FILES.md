@@ -34,7 +34,8 @@ missing.
   contracts.
 - Four new pages (`/status`, `/about`, `/terms`, `/privacy`) and two new
   endpoints (`/api/domains/preflight`, `/api/domains/[name]/categories`).
-- Seventeen user-facing bugs, including a pay button quoting the wrong price, an
+- Nineteen user-facing bugs, including a resources editor that would delete an
+  owner's links after a failed read, a pay button quoting the wrong price, an
   admin page that denied access to the administrator, header search that never
   found anything, two places that rendered a confident zero when they had simply
   failed to load, every domain card showing the fee off by ten orders of
@@ -214,7 +215,7 @@ src/lib/kasplexProvider.ts
 src/lib/walletClient.ts
 ```
 
-That is **27 of 129 source files — roughly a fifth of `src/` is unreachable.** Most read
+That is **27 of 127 source files — roughly a fifth of `src/` is unreachable.** Most read
 contracts with no deployed code, so wiring one up would fail rather than work; they are a
 trap, not a resource.
 

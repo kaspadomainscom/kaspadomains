@@ -202,13 +202,15 @@ as an anchor on a public profile is stored XSS.
 | `supabase/migrations/0003_atomic_writes.sql` → `replace_domain_links` | Delete + insert in one transaction |
 | `src/hooks/domain/useGetDomainLinks.ts`, `useUpdateDomainLinks.ts` | Read / write |
 | `src/app/domain/update/[name]/page.tsx` | The editor |
-| `src/components/pages/domain/DomainResources.tsx` | Public render |
+| `src/components/pages/domain/DomainResources.tsx` | Public render. Says so when links can't be loaded rather than rendering nothing |
 | `src/components/pages/domain/DomainInfoPanel.tsx`, `DomainTitleSection.tsx`, `DomainBreadcrumb.tsx`, `Detail.tsx` | The rest of the profile |
 
-**Weak points.** Bulk replace means an editor that saves before the current links have
-loaded wipes them — the editor is disabled until they arrive, and that guard is load-bearing
-(it was deleted once by a lint refactor; see `MIND.md` #13). No bio, title or image:
-`DomainDataStorage` was never wired and its contract fails every call.
+**Weak points.** Bulk replace means an editor that saves without knowing the current links
+wipes them. That guard is load-bearing and has failed **twice**, differently: once deleted by
+a lint refactor (`MIND.md` #13), once defeated by the hook returning `[]` on error so the
+guard's input lied. The hook now returns `DomainLink[] | null` and the editor locks on
+`null`. No bio, title or image: `DomainDataStorage` was never wired and its contract fails
+every call.
 
 ---
 

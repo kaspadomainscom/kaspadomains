@@ -10,6 +10,18 @@ export function DomainResources({ domainName }: { domainName: string }) {
   const { links, loading } = useGetDomainLinks(domainName);
 
   if (loading) return null;
+
+  // Couldn't load. Rendering nothing would be indistinguishable from "this
+  // domain has no links", which is a confident claim about someone else's
+  // profile that we are in no position to make.
+  if (links === null) {
+    return (
+      <div className="pt-2 text-sm text-gray-500">
+        Resources couldn&apos;t be loaded right now.
+      </div>
+    );
+  }
+
   if (links.length === 0) return null;
 
   return (

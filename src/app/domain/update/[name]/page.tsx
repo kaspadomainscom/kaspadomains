@@ -56,13 +56,22 @@ export default function UpdateDomainPage() {
 
   const { links: existingLinks, loading: linksLoading } = useGetDomainLinks(domainName);
   const { updateLinks, isLoading: saving, error: saveError } = useUpdateDomainLinks();
-  const displayedLinks = !linksSeeded && existingLinks.length > 0 ? existingLinks : links;
+  // `null` means we do not know what the current links are.
+  const linksUnavailable = !linksLoading && existingLinks === null;
+  const knownLinks = existingLinks ?? [];
 
-  // The editor stays disabled until the on-chain links have resolved.
-  // updateLinks is a bulk replace (see docs/SPEC.md), so an edit made before
-  // existing links arrive would flip linksSeeded, hide the links that land
-  // afterwards, and silently wipe them from the contract on save.
-  const editorLocked = linksLoading;
+  const displayedLinks = !linksSeeded && knownLinks.length > 0 ? knownLinks : links;
+
+  // The editor stays disabled until the existing links have resolved -- and
+  // also if they *failed* to resolve.
+  //
+  // `updateLinks` is a bulk replace (see docs/SPEC.md): the request carries the
+  // complete desired list and anything omitted is deleted. So editing against a
+  // set we could not read is not "starting fresh", it is a delete of everything
+  // the owner had. Gating on `linksLoading` alone was not enough, because a
+  // failed read also ends the loading state -- it just ended it with an empty
+  // list that looked exactly like "this domain has no links".
+  const editorLocked = linksLoading || linksUnavailable;
 
   useEffect(() => {
     if (!domainSlug) return;
@@ -103,7 +112,7 @@ export default function UpdateDomainPage() {
 
   function updateLinkField(index: number, field: 'name' | 'url', value: string) {
     setLinks((prev) => {
-      const current = linksSeeded || existingLinks.length === 0 ? prev : existingLinks;
+      const current = linksSeeded || knownLinks.length === 0 ? prev : knownLinks;
       return current.map((l, i) => (i === index ? { ...l, [field]: value } : l));
     });
     setLinksSeeded(true);
@@ -111,7 +120,7 @@ export default function UpdateDomainPage() {
 
   function addLinkRow() {
     setLinks((prev) => {
-      const current = linksSeeded || existingLinks.length === 0 ? prev : existingLinks;
+      const current = linksSeeded || knownLinks.length === 0 ? prev : knownLinks;
       return current.length >= maxLinks ? current : [...current, { name: '', url: '' }];
     });
     setLinksSeeded(true);
@@ -119,7 +128,7 @@ export default function UpdateDomainPage() {
 
   function removeLinkRow(index: number) {
     setLinks((prev) => {
-      const current = linksSeeded || existingLinks.length === 0 ? prev : existingLinks;
+      const current = linksSeeded || knownLinks.length === 0 ? prev : knownLinks;
       return current.filter((_, i) => i !== index);
     });
     setLinksSeeded(true);
@@ -239,10 +248,20 @@ export default function UpdateDomainPage() {
           + Add another link
         </button>
 
+        {linksUnavailable && (
+          <p className="rounded border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-amber-200">
+            We couldn&apos;t load this domain&apos;s current links, so editing is disabled.
+            Saving replaces the whole list, and doing that without knowing what is there
+            would delete your existing links. Please reload in a moment.
+          </p>
+        )}
+
         <p className="text-xs text-gray-500">
-          {editorLocked
-            ? 'Loading your current links…'
-            : `${displayedLinks.length} / ${maxLinks} links`}
+          {linksUnavailable
+            ? 'Current links unknown — editing disabled.'
+            : linksLoading
+              ? 'Loading your current links…'
+              : `${displayedLinks.length} / ${maxLinks} links`}
         </p>
 
         <button

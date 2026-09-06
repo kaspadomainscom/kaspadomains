@@ -137,6 +137,28 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **A failed link read let the resources editor delete every link the owner had.** The
+  worst bug of the session, and it needed two ordinary-looking decisions to line up.
+  `useGetDomainLinks` returned `[]` on error, and the editor gated on `linksLoading` alone.
+  A failed read ends the loading state too — just with an empty list that is indistinguishable
+  from "this domain has no links". So the editor unlocked, showed a blank row, and because
+  `updateLinks` is a **bulk replace** (the request carries the complete desired list and
+  anything omitted is deleted), the owner's next save wiped their whole profile. Same class
+  as the 2026-09-05 data-loss race, reached by a different route: that one deleted the guard,
+  this one made the guard's input lie. Fixed by typing the hook's result as
+  `DomainLink[] | null`, which turned every unsafe caller into a compile error — the
+  type-checker found seven call sites a comment could not have — and by locking the editor
+  when the current links are *unknown*, with copy that says why. `DomainResources` no longer
+  renders nothing on failure either: silently showing no links is a confident claim about
+  someone else's profile that we are in no position to make.
+- **The profile page showed a pink "Likes" row that was permanently "Unavailable".** It read
+  `getDomainVoteCount` from `DomainVotesManager`, which has no deployed code, so it failed
+  on every domain — directly above the working "Votes: N" that `VotingSection` renders from
+  the database on the same page. Two counters, one dead, disagreeing on what the thing is
+  even called: the product says *votes* everywhere else, and *likes* is the exact confusion
+  that produced `MIND.md` #1. Removed rather than repaired, along with
+  `DomainLikeCount.tsx` and `useGetDomainLikeCount.ts` — the real count is already on the
+  page, so repairing it would only have produced the same number twice.
 - **The dead-file count in `FILES.md` was wrong, twice, in both directions.** Reported as 18;
   the real number is **27 of 129 source files — roughly a fifth of `src/`**. The first count
   came from a bare-name grep, which matches a *local variable* named `walletClient` and the

@@ -93,8 +93,12 @@ export default function BusinessPlanPage() {
         <Section title="Where Things Stand">
           <p>
             The full flow described above — wallet-gated listing, mandatory categories,
-            resource management, community voting, category and search browsing — is live and
-            working today on Kasplex testnet. See the{" "}
+            resource management, community voting, category and search browsing — is built,
+            and every write is gated on a Kaspa L1 signature checked against KNS. It is{" "}
+            <strong>not yet running against a live database</strong>: the schema has not been
+            applied, so no listing or vote has been created end to end. The earlier Kasplex
+            contract path is still in the code as a fallback but does not work — most of
+            those contracts have no deployed code. See the{" "}
             <Link href="/docs" className="text-kaspaMint hover:underline">
               docs
             </Link>{" "}
