@@ -52,9 +52,9 @@ npm run dev
 
 ### Database (optional, but it's what makes the app work today)
 
-Supabase is the primary store for listings, votes and categories. Without it the app
-falls back to reading the Kasplex contracts — which currently fail, since six of the eight
-have no deployed code (see [`docs/BUGS.md`](./docs/BUGS.md)).
+Supabase is **the** store for listings, votes and categories. Without it the app
+cannot serve listings at all — there is no longer a contract fallback behind it (see
+[`docs/BUGS.md`](./docs/BUGS.md)).
 
 1. Create a project at [supabase.com](https://supabase.com).
 2. Run [`supabase/schema.sql`](./supabase/schema.sql) in its SQL editor. **Leave Row Level
@@ -113,8 +113,9 @@ Open [http://localhost:3000](http://localhost:3000). You'll need the
 Other scripts: `npm run build`, `npm run lint`, `npm run start`, and
 `npm run dead:check` (lists source files unreachable from every route — currently 27).
 
-## Contract addresses
+## Contracts
 
-Kasplex testnet addresses and ABIs are centralized in
-[`src/lib/contracts.ts`](./src/lib/contracts.ts); verified function signatures are in
-[`docs/SPEC.md`](./docs/SPEC.md). No mainnet deployment exists yet.
+There are none. The Kasplex contract path was removed on 2026-09-06: six of eight addresses
+had no deployed code and the other two failed every call. Postgres is the only store, and
+the intended on-chain future is Toccata covenants on Kaspa L1 — see
+[`docs/Toccata-Dev.md`](./docs/Toccata-Dev.md).

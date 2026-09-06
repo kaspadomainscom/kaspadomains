@@ -9,92 +9,36 @@ actively-updated backlog the continuous audit loop appends to.
 
 ## Open
 
-- [ ] **CRITICAL — 6 of the 8 contract addresses in `src/lib/contracts.ts` have no
-      deployed code on the live Kasplex testnet RPC.** Verified 2026-09-05 and **re-verified
-      in full on 2026-09-06** by querying `https://rpc.kasplextest.xyz` directly (the exact
-      endpoint hardcoded in [`viemChains.ts`](../src/lib/viemChains.ts)) with raw
-      `eth_getCode`, bypassing the frontend entirely:
-      - `KaspaDomainsRegistry` (`0x599DB3Ffbba36FfaAB3f86e92e1fCA0465b2CDeA`) → `0x`
-      - `DomainVotesManager` (`0xbFB179D21A082cBb30ff245b6bCAb8a5b5566bAa`) → `0x`
-      - `DomainCategoriesStorage` (`0x73DeAC4CE5Ae3caCe36F1481B62cb635D9733E0D`) → `0x`
-      - `KDCToken` (`0x48526edd858a05f8591c0BA38c10f7493174ee1E`) → `0x`
-      - `EcosystemFund` (`0x07Cb88b1d6E06a5fd54Ae8d4A71713BF822f4389`) → `0x` **(new)**
-      - `DemoKNS` (`0x5Fcd5d9f6444dD23Ca2af792B58B041A14fB34EB`) → `0x` **(new)**
-      - `DomainLinksStorage` (24,574 chars) and `DomainDataStorage` (12,110 chars) do have
-        real bytecode — see below.
-      The count was "4 of 6" until 2026-09-06, because the original sweep checked only the
-      six contracts the listing/voting flow touches and never looked at the other two. The
-      lesson generalises: an audit that enumerates from *what the code calls* rather than
-      from *what the config declares* will miss exactly the entries nothing calls yet.
+Five of the six entries that used to sit here were about the Kasplex contracts. Those
+contracts were removed from the codebase on 2026-09-06 (owner decision), so the bugs are
+gone with them rather than fixed — see the Fixed section and `MIND.md` #20. What is left:
 
-      Checked at `latest`, `earliest`, and an early block (all empty), and confirmed the
-      address's transaction count is `0` — as far as this RPC's history goes, these
-      addresses never had a contract deployed on them. Most likely explanation: a testnet
-      reset/redeploy where only 2 of 6 addresses in `contracts.ts` were ever updated
-      afterward (see [`mind/testnet-mainnet-transitions.md`](./mind/testnet-mainnet-transitions.md)
-      for industry context on how plausible/common this kind of reset is). `listDomain` and `voteDomainByHash` are `payable`, and a transaction sent
-      to a codeless address doesn't revert — it just transfers the KAS and silently
-      succeeds doing nothing — which would normally be a direct fund-loss path. **Traced
-      the actual code 2026-09-05: this app happens not to be exposed to it right now**,
-      incidentally rather than by design —
-      [`useListDomain.ts`](../src/hooks/domain/useListDomain.ts) reads `DOMAIN_FEE()` live
-      and [`VotingSection.tsx`](../src/components/pages/domain/VotingSection.tsx) reads
-      `voteFee()` live *before* constructing the value-carrying transaction, and
-      [`useSetDomainCategories.ts`](../src/hooks/domain/useSetDomainCategories.ts) reads
-      `domainHashPublic()` first too; all three reads throw cleanly against a codeless
-      address (same "returned no data" failure mode as the `eth_getCode` checks above), so
-      none of the three flows can currently reach the point of sending value. **This is
-      fragile, accidental protection, not a guarantee** — it depends on this exact
-      read-before-write ordering never changing, so still treat real funds as at risk and
-      don't rely on this holding. The underlying bug (core product completely
-      non-functional) remains just as critical either way. Not something I can fix from
-      here — I don't know what the correct current addresses are (if they even exist yet),
-      and guessing or redeploying is out of scope (see
-      [`MIND.md`](./MIND.md#9-money-moving-and-irreversible-actions-get-flagged-not-executed)).
-- [ ] **CRITICAL — Every function on the two contracts that *do* exist fails with
-      `invalid opcode: MCOPY`, on every call, regardless of input.** The previously-known
-      `DomainLinksStorage.getLinks` MCOPY error is real, but it's not an isolated case —
-      verified 2026-09-05 via raw `eth_call` against the live RPC:
-      `getLinks`, `getLinkCount`, `getDomainHash` (pure), and `updateLinks` (the write path
-      the resources editor uses) on `DomainLinksStorage`, and `getDomainData` on
-      `DomainDataStorage`, **all** return `{"code":-32000,"message":"invalid opcode:
-      MCOPY"}` for any input tried. Only the zero-argument, no-dynamic-type `MAX_LINKS()`
-      succeeds. **Root cause confirmed 2026-09-05 against Kasplex's own network-info docs
-      (see [`KASPA_DEVELOPMENT.md`](./KASPA_DEVELOPMENT.md)): Kasplex (testnet *and*
-      mainnet) explicitly targets the Shanghai EVM hardfork.** `MCOPY` (opcode `0x5E`) was
-      introduced later, in Cancun. Modern `solc` releases default `--evm-version` to
-      Cancun or newer, so any contract compiled without explicitly pinning
-      `--evm-version shanghai` (or `paris`) will silently emit MCOPY and revert on Kasplex
-      — this isn't a mystery infra bug, it's a compiler-target mismatch. Practical effect:
-      **the entire resources/links feature is non-functional end to end** (read and write
-      both fail), not just the read side as previously thought, and `DomainDataStorage`
-      would have the identical problem the moment anyone wires it up (see `GAPS.md`). Fix:
-      recompile with `--evm-version shanghai` pinned and redeploy — needs the Solidity
-      source (not in this repo, needs to be located/reconstructed) — see
-      `KASPA_DEVELOPMENT.md`'s Phase 0 plan.
-- [ ] **Displayed listing price (210 KAS) doesn't match the real on-chain charge
-      (420 KAS).** By deliberate request — marketing/SEO copy was changed to 210 while the
-      actual `KaspaDomainsRegistry.DOMAIN_FEE` (a contract constant, no setter) still
-      charges 420. Real, ongoing risk: anyone who lists a domain today gets charged 420
-      after being told 210 everywhere on the site — **though see the item above: right
-      now `listDomain` can't be charged at all, since `KaspaDomainsRegistry` has no code
-      at its configured address.** See [`GAPS.md`](./GAPS.md) for what actually resolving
-      the price mismatch requires (a new contract deployment).
-- [ ] **Unverified access control on two contract-write paths**: whether a domain owner can
-      call `DomainCategoriesStorage.updateCategories` and `DomainLinksStorage.updateLinks`
-      directly, or whether they're admin-gated. Moot for now given the two critical items
-      above (neither contract can be called successfully at all right now), but worth
-      revisiting once those are fixed. No Solidity source in this repo to check directly.
-- [ ] **MetaMask→Kasware EVM-signing migration is unverified against a real wallet.** The
-      whole rewrite (see Fixed) follows Kasware's documented EIP-1193 conventions and
-      passes `tsc`/lint/build/HTTP smoke tests, but there's no way to test against an
-      actual Kasware browser extension from this sandbox. Needs real-world testing
-      (connect, list a domain, vote, save resources) before trusting it on testnet.
-- [ ] **~20 `react-hooks/set-state-in-effect` / `react-hooks/static-components` lint
-      errors** (calling `setState` synchronously inside `useEffect`; components defined
-      inside another component's render body) across ~10 files. Not build-blocking
-      (`next build` doesn't run ESLint in Next 16), but real failures if `npm run lint`
-      ever gets wired into CI. Full current list in [`GAPS.md`](./GAPS.md#lint-debt).
+- [ ] **BLOCKER — `supabase/schema.sql` has never been applied to the live project.**
+      Everything else is downstream of this. `npm run db:check` and `/api/status` agree,
+      independently, that every table is missing. The connection, both keys and the treasury
+      address are all configured and verified; only the SQL has not been run. Until it is,
+      **no listing, vote or profile edit has ever been created end to end**, and no RLS
+      policy has been proven in practice — the whole write path is verified by type-check,
+      lint, build and reasoning alone.
+- [ ] **Nothing has been exercised with a real Kasware wallet.** Signing, payment and the
+      preflight are implemented against Kasware's documented conventions and cannot be
+      tested from here. The residual risk is narrow and fails safe — a signing-convention
+      mismatch rejects legitimate owners rather than admitting impostors — but it is
+      untested, and it is the second thing to do after the schema.
+- [ ] **SA-05 — no one-time nonce or profile revision on signed requests.** The last open
+      finding from Codex's audit. The signature covers the body, but a byte-identical
+      request can be replayed inside the five-minute window. Harmless for listing, voting
+      and payments (the unique constraints absorb it); **not** harmless for `update-links`,
+      which delete-and-reinserts, so replaying an older capture rolls a newer profile back.
+      Unclaimed — see [`CODEX-TODO.md`](./CODEX-TODO.md).
+- [ ] **Two false claims remain in the status files, which are Codex's.**
+      `resolveDirectorySource` still returns `'kasplex-contracts'` when Supabase is
+      unconfigured, and `/status` still tells users the site "is falling back to the Kasplex
+      contracts". There is no fallback any more: without a database the site cannot serve
+      listings at all. Left for Codex because they have uncommitted work in both files; see
+      [`CODEX-TODO.md`](./CODEX-TODO.md).
+- [ ] **No proper Open Graph image.** `public/og-image.png` is the square logo renamed, so
+      every social share is cropped. Needs a design asset, not code.
 
 ## Fixed
 
@@ -137,6 +81,15 @@ verified — not just "fixed X."
   report actually defines, truncating each to 512 chars, and stripping control characters
   so a report can't forge extra log lines. Malformed bodies are now dropped **silently** —
   logging them would move the same log flood into the catch block.
+- **The two CRITICAL contract bugs are resolved by deletion, not by repair.** For the
+  record, since they dominated this file for two days: six of the eight configured addresses
+  had no deployed code, and every function on the two that did exist failed with
+  `invalid opcode: MCOPY` — Kasplex targets the Shanghai EVM and modern `solc` defaults to
+  Cancun+, which emits `MCOPY`. Neither was ever fixed. The contract path was removed
+  entirely on 2026-09-06, so there is no longer a compiler target to pin or an address to
+  redeploy. The related open items went with it: the 210-vs-420 KAS price mismatch (the fee
+  is one constant now, 200 KAS), the unverified contract-write access control, and the
+  lint-debt entry (CI runs `npm run lint` and it is clean).
 - **The trending strip linked to URLs that immediately redirected, and claimed an empty list
   when it had failed.** `useTrendingDomains` stripped `.kas` before returning, so the
   component had only the display form and rebuilt the href from it — producing `/domain/foo`,

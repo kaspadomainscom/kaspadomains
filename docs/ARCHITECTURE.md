@@ -111,21 +111,21 @@ RPC `https://rpc.kasplextest.xyz`, explorer `https://frontend.kasplextest.xyz`).
 
 ## Data model
 
-**Two sources, one interface (as of 2026-09-05).** Listings, votes, categories and
-resources are read through `src/data/categoriesManifest.ts`, `src/data/domainLookup.ts`
-and `src/lib/topVotedDomains.ts`, and those decide at call time where to read from:
+**One source (since 2026-09-06).** Listings, votes, categories and resources are read
+through `src/data/categoriesManifest.ts`, `src/data/domainLookup.ts` and
+`src/lib/topVotedDomains.ts`, all of which read Postgres via
+[`src/data/supabaseSource.ts`](../src/data/supabaseSource.ts).
 
-| Condition | Source of truth | Path |
-|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` + anon key set | **Supabase (Postgres)** | [`src/data/supabaseSource.ts`](../src/data/supabaseSource.ts) |
-| Otherwise | Kasplex contracts | the original on-chain reads, unchanged |
+There used to be a second branch behind every one of those, falling back to the Kasplex
+contracts. It was removed by owner decision: six of the eight configured addresses had no
+deployed code and the two that did failed every call, so it had never answered a query — and
+carrying two branches where one never ran had caused five separate shipped bugs. See
+`MIND.md` #20 and the entry in [`BUGS.md`](./BUGS.md).
 
-Callers never learn which answered — `supabaseSource` returns the same `Domain` and
-`CategoryManifest` shapes the chain path returns. **Why**: six of the eight configured contracts have no
-deployed code and the other two fail every call (see [`BUGS.md`](./BUGS.md)), so the
-product could not function at all on-chain. The chain path was deliberately kept rather
-than deleted, so unsetting the env vars restores the previous behaviour exactly, and a
-future redeploy doesn't need this work reversed.
+**Reads throw rather than degrading.** A failed read is not an empty result, and callers are
+required to render the difference — an outage must never appear as "no domains found". This
+is enforced now, not just documented: `eslint.config.mjs` rejects `return []` / `return {}`
+from a `catch` in `src/data` and `src/lib`.
 
 Every query is typed against [`src/lib/database.types.ts`](../src/lib/database.types.ts),
 so a column renamed in SQL is a compile error rather than an `undefined` that renders as a
@@ -133,8 +133,7 @@ blank cell. It is hand-written rather than generated: generation needs a live pr
 the Supabase CLI, which CI and a fresh clone don't have. `npm run db:check` compares it
 against a real project and reports drift.
 
-**Writes** go through signed HTTP endpoints rather than contract calls — see the API table
-in [`SPEC.md`](./SPEC.md). The client signs with the user's **Kaspa L1 key** through
+**Writes** go through signed HTTP endpoints — see the API table in [`SPEC.md`](./SPEC.md). The client signs with the user's **Kaspa L1 key** through
 Kasware (a wallet prompt, not a transaction, so it costs nothing);
 [`src/lib/server/verifyRequest.ts`](../src/lib/server/verifyRequest.ts) verifies the
 signature with the rusty-kaspa WASM SDK, derives the `kaspa:` address from the signing

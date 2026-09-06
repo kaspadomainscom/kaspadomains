@@ -22,12 +22,12 @@ live backlog the continuous audit loop appends to.
       renamed (1024×1024), not a real 1200×630 branded banner — every social share (X,
       Discord, etc.) shows a squished/cropped logo. Needs an actual design asset; not
       something fixable from code.
-- [ ] **`DomainDataStorage` (title/description/image/website) is unwired.** This is the
-      general "bio" side of a domain profile, distinct from the links/resources side.
-      Decide if it's wanted before building it — but note it has the identical
-      `invalid opcode: MCOPY` problem as `DomainLinksStorage` (confirmed 2026-09-05, see
-      `BUGS.md`'s CRITICAL entries), so wiring it up wouldn't work until that's fixed
-      regardless of the product decision.
+- [ ] **No bio, title, image or website on a profile.** A listing shows its category,
+      status, vote count and links — nothing else. This used to be blocked on
+      `DomainDataStorage`, a contract that failed every call; with the contract path removed
+      it is now simply an unbuilt feature, and a straightforward one: columns on `domains`,
+      fields on the existing owner-only edit route. Needs a product decision on which fields
+      are wanted, and a moderation answer for user-supplied image URLs.
 
 ## Data-shape gaps
 
@@ -43,7 +43,13 @@ live backlog the continuous audit loop appends to.
       directions*: the rule fires on a deliberate probe and the current tree is clean.
 
 
-- [ ] **`Domain.feePaid` does not carry its unit.** It is a raw integer string whose meaning
+- [x] ~~**`Domain.feePaid` does not carry its unit.**~~ **Resolved 2026-09-06** by removing
+      the second producer. There is one source and one unit now (sompi), so the ambiguity
+      that made every card render the fee 10^10 too large cannot recur. Kept below as the
+      original description, because the *shape* of the problem is worth remembering — a
+      field whose meaning depends on who produced it — and the next multi-source field will
+      have it again.
+      <br>Original: It is a raw integer string whose meaning
       depends on which store produced the record: Supabase writes **sompi** (8 decimals), the
       contracts return **wei** (18 decimals). Those differ by 10^10, so a component that
       guesses wrong is not slightly off — it is wrong by ten orders of magnitude, which is
@@ -55,7 +61,14 @@ live backlog the continuous audit loop appends to.
 
 ## No automated tests at all
 
-- [ ] **The repo has no test runner.** There *is* CI —
+- [~] **The repo has almost no tests.** Codex added the first one on 2026-09-06 —
+      `src/lib/kaspaDomainRuntime.test.ts`, run by `npm run test:kaspa-runtime` under
+      `node --test` — which answers the runner question by making it: **node:test**, no new
+      dependency. What is still missing is coverage of the things that have actually broken:
+      `fetchAllPages` at various server caps, `paymentIntent` accept/reject, the
+      `signedMessage` digest, `verifyPayment`'s payer matching, and `normalizeDomainName`'s
+      idempotence. CI does not run the test script yet. Original note follows —
+      <br>There *is* CI —
       [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs `npm run lint` and
       `npm run build` on every push and PR, and the build type-checks — but `package.json`
       has no `test` script, so CI runs none. Every claim of correctness in `BUGS.md` rests
@@ -111,11 +124,12 @@ live backlog the continuous audit loop appends to.
 
 ## Supabase migration — reads and writes done, four real gaps left
 
-Supabase became the primary store on 2026-09-05 by owner decision (see
+Supabase became the primary store on 2026-09-05 by owner decision, and on 2026-09-06 it
+became the **only** store — the contract fallback was deleted (see
 [`ARCHITECTURE.md`](./ARCHITECTURE.md#data-model) and the API table in
 [`SPEC.md`](./SPEC.md)). Listing, voting, categories and resources all read and write
-Postgres now, behind signed requests, with automatic fallback to the contracts when
-Supabase is unconfigured. What's genuinely outstanding:
+Postgres behind signed requests; without a database the site cannot serve listings at all,
+and `/status` says so. What's genuinely outstanding:
 
 - [x] ~~**Nothing collects money any more**~~ — **fees restored 2026-09-05** at the
       owner's chosen rates: **200 KAS to list, 1 KAS per vote**. Paid on Kaspa L1 to a
@@ -148,7 +162,13 @@ Supabase is unconfigured. What's genuinely outstanding:
       SDK's and is untested against a real extension. If it differs, verification **fails
       closed** — owners are rejected rather than impostors admitted. Do not "fix" such a
       failure by relaxing the check.
-- [ ] **Site copy still describes the on-chain product.** `/docs`, the homepage's
+- [x] ~~**Site copy still describes the on-chain product.**~~ Swept repeatedly through
+      2026-09-06 and again after the contract removal: the homepage, `/domains`, `/learn`,
+      `/docs`, `/about`, `/privacy`, `/business-plan` and `/list-domain` all describe what
+      the software actually does. `/docs` had been the worst — it documented KNS contract
+      calls that were never made and stated the edit-permission rule backwards. The two
+      remaining false claims are in Codex's status files; see `BUGS.md`.
+      <br>Original: `/docs`, the homepage's
       single-payment permanence claims and "210 KAS", and `/business-plan` all
       promise permanence, on-chain recording and a fee. None of that is what happens now.
       This is user-facing and shouldn't sit unresolved — see the notice at the top of
@@ -158,7 +178,10 @@ Supabase is unconfigured. What's genuinely outstanding:
       schema and endpoints should be treated as unproven until someone provisions a
       project and exercises them (see `MIND.md` principle #10 — this is exactly the
       ABI-correct-but-chain-wrong shape of mistake, one layer over).
-- [ ] **Reconciliation plan for when the contracts come back.** `domains.tx_hash` and
+- [x] ~~**Reconciliation plan for when the contracts come back.**~~ Moot: the contract path
+      was removed on 2026-09-06 and there is nothing to reconcile with. `domains.tx_hash` is
+      retained for a future on-chain mirror (Toccata covenants), not for Kasplex.
+      <br>Original: `domains.tx_hash` and
       `votes.tx_hash` exist for this, but nothing populates or reads them yet. Decide
       whether the database becomes a cache of chain state, stays authoritative, or the two
       are merged — before there's enough data for the answer to be painful.
@@ -240,16 +263,16 @@ a grep.
       `typescript.ignoreBuildErrors` override, so `next build` type-checks too — lint,
       types, and build are all gated. Still not covered: there are no tests to run (see
       the next item), so CI can prove the app compiles and lints, not that it behaves.
-- [ ] No real test coverage. `src/test/a.tsx` is an empty placeholder. At minimum, the
+- [~] Test coverage is one file (Codex's, 2026-09-06). `src/test/a.tsx` — the empty placeholder — is deleted. At minimum, the
       contract-interaction hooks (`useListDomain`, wallet hooks) move real KAS value and
       are the highest-risk code paths to leave untested.
-- [ ] No Kasplex **mainnet** chain definition — only `kasplexTestnet` exists in
+- [x] ~~No Kasplex **mainnet** chain definition~~ — moot, the EVM path is gone. Was: only `kasplexTestnet` existed in
       [`src/lib/viemChains.ts`](../src/lib/viemChains.ts). Note: Kasplex mainnet is a real,
       live network now (launched ~September 2025) with published endpoints
       (`evmrpc.kasplex.org` / `explorer.kasplex.org`) — this is no longer a "doesn't exist
       yet" gap, just an unadded config. See [`KASPA_DEVELOPMENT.md`](./KASPA_DEVELOPMENT.md).
-- [ ] No production contract addresses in `contracts.ts` (testnet-only).
-- [ ] No contract security audit — and no Solidity source in this repo to audit. Hard
+- [x] ~~No production contract addresses~~ — moot, `contracts.ts` is deleted.
+- [x] ~~No contract security audit~~ — moot, no contracts. Was: no Solidity source in this repo to audit. Hard
       blocker before any mainnet deployment, regardless of frontend readiness.
 - [x] <a id="lint-debt"></a>**Lint debt — cleared 2026-09-05.** `npx eslint .` now reports
       **0 problems across 110 linted files** (verified via `--format json` and a file
@@ -279,7 +302,7 @@ a grep.
       editor's dropped `linksLoading` guard, see `BUGS.md`). Two smaller deltas were left
       alone as cosmetic: `Sidebar.tsx` now clears its search box only when the toggle
       button collapses it, rather than on any collapse.
-- [ ] Confirm whether `ethers` is still needed alongside `viem`, or fully migrated.
+- [ ] **`ethers` and `viem` are both still dependencies** but the EVM path is gone. `ethers` is used only for `keccak256` in the listing route; `viem` may now be unused entirely. Worth checking and dropping — two chain libraries for one hash function is a lot of dependency surface.
 - [x] ~~Confirm whether `https://supabase.com` in the CSP `connect-src` reflects
       real/planned infra or can be removed~~ — answered 2026-09-05: it was a leftover
       *and* it was the wrong host (clients call `https://<ref>.supabase.co`, never the
@@ -289,7 +312,7 @@ a grep.
 
 ## Unverified (not gaps or bugs — genuinely unknown, needs testing)
 
-- [ ] Whether `DomainCategoriesStorage.updateCategories` and
+- [x] ~~Whether `DomainCategoriesStorage.updateCategories` and
       `DomainLinksStorage.updateLinks` are callable by a domain owner or are admin-gated —
       no Solidity source to check, only testable on testnet with a real wallet.
 - [ ] The Kasware→Kasplex EVM-signing integration (MetaMask replacement) against a real

@@ -262,6 +262,46 @@ security boundary: every check is re-run at write time, so deleting the intent w
 nothing forgeable. Its only job is that the wallet prompt is the *last* uncertain step
 rather than the first.
 
+## 2026-09-06 (later) — deleting the thing that was causing the bugs
+
+The owner removed the Kasplex contract path and the 10,000-listing cap. The cap was copy.
+The contracts were 34 files.
+
+What makes this worth recording is not the deletion, it is what the deletion revealed. The
+contract path had been kept as "a fallback, in case the contracts come back" — and it had
+never worked: six of eight addresses had no deployed code, the other two failed every call.
+So it answered nothing, ever. But it was not inert. Because every read and write carried two
+branches and one was never exercised, it had *directly caused* five bugs that were already
+sitting in `BUGS.md`: the fee rendered 10^10 too large because `feePaid` meant sompi on one
+branch and wei on the other; "My Votes" permanently empty because votes were keyed by the
+EVM address on one branch and the L1 address on the other; a counter reading the dead
+contract and showing "Unavailable" above a working number; an admin page telling its own
+administrator "Access Denied"; and a connect button demanding two wallets when one mattered.
+
+Five bugs in the *live* path, caused by the shape the dead path forced on it. That became
+`MIND.md` #20: a dead fallback is not free — ask when it last succeeded, and if the answer
+is "never", it is a liability with a reassuring name.
+
+The same session produced #19, from a different direction. Principle #2 — an empty result
+and an error are different answers — has been in `MIND.md` since the beginning, and had by
+then been violated **eight times**, several of them in the same session as a fix for another
+instance of it. That is enough evidence to stop trusting a written rule: it became a lint
+rule instead. Documentation is a request; only a check is a constraint.
+
+Afterwards, a sweep found what removals always leave behind — conditionals whose remaining
+branch no longer means what it says. `useTrendingDomains` still had a "chain fallback" that
+called a now-Supabase-only function, so the branch meant to avoid Supabase loaded the entire
+manifest from Supabase. And a review of the last unexamined components found the worst
+non-money bug of the week: **nine of the sidebar's nineteen category links pointed at
+categories that do not exist**, on every page. Nothing could have caught it — a link is a
+string until someone clicks it — and it was found only by enumerating from `schema.sql`'s
+seed list and diffing. The fix was to derive the list from the database rather than correct
+nine strings.
+
+Finally, `docs/CODEX-TODO.md`: a queue and an explicit path-ownership table between the two
+agents, made ground rule 0. Two near-collisions and one actual one (an import removed from a
+file the other had open) were enough to stop relying on messages that are easy to miss.
+
 ## Related docs
 
 - [`BUGS.md`](./BUGS.md) — the bug-specific version of several entries above, with full

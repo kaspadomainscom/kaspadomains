@@ -3,8 +3,9 @@
 Last updated: 2026-09-06
 
 Every file in the repo, what it is for, and whether it is actually doing
-anything. **Rewritten 2026-09-06** after the EVM contract path was removed: `src/` went
-from 129 source files to 95, and unreachable files from 27 to 8. Written because "which of these 128 source files are live?" turned out
+anything. **Rewritten 2026-09-06** after the EVM contract path was removed: `src/` went from
+129 source files to **93**, and unreachable files from 27 to **8** — all of which are
+Codex's in-flight work. Written because "which of these 128 source files are live?" turned out
 to be a question nobody could answer quickly — and the answer includes **27 dead
 files**, most of them wired to contracts that have no deployed code.
 
@@ -177,55 +178,26 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 `useOwnedDomains`, `useVerifiedDomains`, `useKasware`, and the two wallet
 internals.
 
-### ⛔ Dead files — 27, unreachable from every route
+### ⛔ Unreachable files — 8, all Codex's
 
-Run `npm run dead:check` — the list below is its output, not a hand count.
-
-**This number was wrong twice before it was measured.** It was reported as 18, from a
-bare-name grep, which is wrong in both directions: `grep -rl walletClient` matches a *local
-variable* called `walletClient`, and `grep -rl useVerifiedDomains` matches the line that
-*defines* it. Both read as "used". Getting it right needs two things the naive version
-misses — resolve module **specifiers** rather than names, and treat reachability as
-**transitive**, because ten of these are reachable only through two barrel files that
-nothing imports.
+Run `npm run dead:check` — this list is its output, not a hand count.
 
 ```
-src/test/a.tsx                                        (EMPTY FILE)
-src/components/ConnectButton.tsx                      (Header defines its own, locally)
-src/components/DomainForm.tsx
-src/components/NonceWrapper.tsx
-src/components/pages/EcosystemAdmin/DistributionHistoryTable.tsx
-src/components/pages/domain/DomainOwnerBio.tsx
-src/hooks/domain/index.ts                             (barrel, unused)
-src/hooks/domains/index.ts                            (barrel, unused)
-src/hooks/domain/useDomainOwnerAndTimestamp.ts        ┐
-src/hooks/domain/useDomainStringFromHash.ts           │
-src/hooks/domain/useGetDomainData.ts                  │ reachable only
-src/hooks/domain/useIsDomainListed.ts                 │ through a dead
-src/hooks/domains/useGetDomainCategories.ts           │ barrel
-src/hooks/domains/useGetDomainsByCategory.ts          │
-src/hooks/domains/useGetDomainsByCategoryPaginated.ts │
-src/hooks/domains/useListedDomainsPaginated.ts        │
-src/hooks/domains/useTotalListedDomains.ts            ┘
-src/hooks/kns/useKasware.ts                           (only the dead ConnectButton)
-src/hooks/kns/api/useAssetStatus.ts
-src/hooks/kns/api/useCheckDomainAvailability.ts
-src/hooks/kns/api/useDomainOwner.ts
-src/hooks/kns/api/useDomainSearch.ts
-src/hooks/kns/api/useVerifiedDomains.ts
-src/hooks/kns/api/useVerifyOwnership.ts
-src/lib/domains.ts
-src/lib/kasplexProvider.ts
-src/lib/walletClient.ts
+src/hooks/kns/api/useAssetStatus.ts            ┐
+src/hooks/kns/api/useCheckDomainAvailability.ts │ Codex added knsApiUrl() to these
+src/hooks/kns/api/useDomainOwner.ts             │ on 2026-09-06; none is wired to a
+src/hooks/kns/api/useDomainSearch.ts            │ page yet
+src/hooks/kns/api/useVerifiedDomains.ts         │
+src/hooks/kns/api/useVerifyOwnership.ts        ┘
+src/lib/kasplex.ts          — EVM chain config, unreachable since the contract removal
+src/lib/viemChains.ts       — same
 ```
 
-That is **27 of 127 source files — roughly a fifth of `src/` is unreachable.** Most read
-contracts with no deployed code, so wiring one up would fail rather than work; they are a
-trap, not a resource.
+Down from 27 on 2026-09-06. The other 19, plus 15 more that were live but only served the
+contract path, were deleted with the EVM removal.
 
-**Not deleted**: that is the owner's call, and some of the KNS hooks
-(`useCheckDomainAvailability`, `useDomainSearch`) are plausibly wanted later. `src/test/a.tsx`
-is an empty file and could go today.
+**None of these are mine to delete.** Codex has uncommitted work in all eight; the last two
+are listed for them in [`CODEX-TODO.md`](./CODEX-TODO.md).
 
 ## 8b. Documentation — `docs/`
 
@@ -235,6 +207,7 @@ The map had no entry for its own folder until 2026-09-06. 22 files.
 |---|---|
 | `FILES.md` | This file. **Keeping it current is a standing rule** — see `MIND.md` |
 | `kaspadomains-systems.md` | The same codebase cut by *system*: what each does and which files build it |
+| `CODEX-TODO.md` | The work queue and path ownership between the two agents. Ground rule 0 in `AGENTS.md` |
 | `BUGS.md` | Open bugs + a fixed changelog carrying the evidence for each claim |
 | `GAPS.md` | What's missing, and the decision blocking each |
 | `SPEC.md` | Endpoints, pages, verified contract signatures, the paid-write order |

@@ -7,10 +7,11 @@ being a fully-featured listing on KaspaDomains. For the underlying contracts and
 behind each step, see [`SPEC.md`](./SPEC.md); for what's still unverified, see
 [`GAPS.md`](./GAPS.md#unverified-not-gaps-or-bugs--genuinely-unknown-needs-testing).
 
-## 0. The current lifecycle (Supabase, since 2026-09-05)
+## 0. The lifecycle (Supabase)
 
-This is what actually happens today. Sections 1–4 below describe the on-chain lifecycle,
-which is still in the code as a fallback but is not the running path.
+This is what happens. Sections 1–4 below describe the **historical** on-chain lifecycle,
+kept as a record of what the product used to be — that code was deleted on 2026-09-06 and
+none of it runs. Do not read them as a fallback; there is no fallback.
 
 ```
 Registered on KNS (Kaspa L1)
@@ -88,7 +89,7 @@ enforced by signature instead of inferred. Postgres stays — it becomes the ind
 answers the queries a UTXO set cannot — but stops being the source of truth. Voting keeps
 this shape until Based Apps ship. See [`Toccata-Dev.md`](./Toccata-Dev.md).
 
-## 1. Domain lifecycle (on-chain — fallback path, not currently running)
+## 1. Domain lifecycle (on-chain — HISTORICAL, deleted 2026-09-06)
 
 ```
 Registered on KNS (Kaspa L1)

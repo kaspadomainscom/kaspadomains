@@ -123,102 +123,20 @@ correct target to code against, not as proof any of it works on-chain today.
 | Explorer | `https://frontend.kasplextest.xyz` |
 | Mainnet | **Does not exist in this repo** — see `GAPS.md` |
 
-## Contracts
+## Contracts — removed
 
-All addresses from [`src/lib/contracts.ts`](../src/lib/contracts.ts). Full ABIs in
-`src/abis/*.json`.
+There are none. The Kasplex contract path was deleted on 2026-09-06 (owner decision): six of
+the eight configured addresses had no deployed code, and the two that did failed every call
+with `invalid opcode: MCOPY` because Kasplex targets the Shanghai EVM while modern `solc`
+defaults to Cancun+.
 
-### `KaspaDomainsRegistry` — `0x599DB3Ffbba36FfaAB3f86e92e1fCA0465b2CDeA`
+The verified signatures that used to be documented here are in git history if they are ever
+needed again (`git show c1d942d^:docs/SPEC.md`). They are deliberately not kept in the
+current spec: a signature table for contracts nobody can call is exactly the kind of
+plausible-looking documentation that gets built on. See `MIND.md` #20.
 
-The core listing contract.
-
-| Function | Signature | Notes |
-|---|---|---|
-| `listDomain` | `(string domain, address to) payable` | Requires `msg.value == DOMAIN_FEE` |
-| `DOMAIN_FEE` | `() view returns (uint256)` | **Constant, no setter** — see `GAPS.md` |
-| `domainHashPublic` | `(string domain) pure returns (uint256)` | Canonical hash for a domain string |
-| `getDomainById` | `(uint256 id) view returns (uint256,string,address,uint256,uint256)` | hash, name, owner, createdAt, feePaid |
-| `getListedDomains` | `(uint256 offset, uint256 limit) view returns (uint256[])` | |
-| `getDomainsWithNames` | `(uint256 offset, uint256 limit) view returns (uint256[],string[])` | |
-| `isHashListed` | `(uint256) view returns (bool)` | |
-| `owner` | `() view returns (address)` | Contract owner (for admin-gated calls) |
-| `totalDomains`, `totalFeesPaid`, `totalReceivedKas`, `totalUniqueOwners` | `() view returns (uint256)` | Read by `/EcosystemAdmin` |
-
-Used by: [`useListDomain.ts`](../src/hooks/domain/useListDomain.ts) (reads `DOMAIN_FEE()`
-live rather than hardcoding it), [`categoriesManifest.ts`](../src/data/categoriesManifest.ts).
-
-### `DomainVotesManager` — `0xbFB179D21A082cBb30ff245b6bCAb8a5b5566bAa`
-
-Community voting. **This is the contract whose real function names were discovered this
-session (see `BUGS.md`) — double-check any new code against this table, not against the
-old broken code.**
-
-| Function | Signature | Notes |
-|---|---|---|
-| `voteDomainByHash` | `(uint256 domainHash) payable` | Requires `msg.value == voteFee()`. Takes a **hash**, not the domain name string. |
-| `voteFee` | `() view returns (uint256)` | Owner-adjustable |
-| `setVoteFee` | `(uint256 newFee)` | Owner-only. The only fee in this whole contract suite with a real setter. |
-| `getDomainVoteCount` | `(string domain) view returns (uint256)` | ⚠️ Not `getDomainLikeCount` |
-| `hasUserVotedDomain` | `(address user, string domain) view returns (bool)` | ⚠️ Not `hasUserLikedDomain` |
-| `getVotedDomainIds` | `(address user) view returns (uint256[])` | ⚠️ Not `getVotesByAddress` |
-| `getVotedDomainIdsPaginated` | `(address user, uint256 offset, uint256 limit) view returns (uint256[])` | |
-| `getTopVotedDomains` | `(uint256[] domainHashes) view returns (uint256[] votes)` | Batch query — pass many hashes, get many vote counts in one call |
-| `userVoteCount` | `(address) view returns (uint16)` | |
-| `getUserRemainingVotes` | `(address user) view returns (uint256)` | |
-| Event `DomainVoted` | `(address indexed user, uint256 indexed domainHash, uint256 domainVotes, uint256 userVotes)` | ⚠️ Not `DomainLiked` |
-
-Used by: [`VotingSection.tsx`](../src/components/pages/domain/VotingSection.tsx),
-[`useGetDomainLikeCount.ts`](../src/hooks/domain/useGetDomainLikeCount.ts) (misleading
-filename, calls `getDomainVoteCount`), [`useMyVotes.tsx`](../src/hooks/domains/useMyVotes.tsx),
-[`lib/topVotedDomains.ts`](../src/lib/topVotedDomains.ts).
-
-### `DomainCategoriesStorage` — `0x73DeAC4CE5Ae3caCe36F1481B62cb635D9733E0D`
-
-| Function | Signature | Notes |
-|---|---|---|
-| `getAllowedCategories` | `() view returns (bytes32[])` | Admin-curated allowed list |
-| `updateCategories` | `(uint256 domainHash, bytes32[] categories)` | **Access control unverified** — see `GAPS.md` |
-| `getCategories` | `(uint256 domainHash) view returns (bytes32[])` | |
-| `getDomainsByCategoryPaginated` | `(bytes32 category, uint256 offset, uint256 limit) view returns (uint256[])` | |
-| `isDomainIn` | `(bytes32 category, uint256 domainHash) view returns (bool)` | |
-| `stringToBytes32` / `bytes32ToString` | conversion helpers | Category names are stored as `bytes32` on-chain |
-
-Used by: [`useGetAllowedCategories.ts`](../src/hooks/domains/useGetAllowedCategories.ts),
-[`useSetDomainCategories.ts`](../src/hooks/domain/useSetDomainCategories.ts),
-[`categoriesManifest.ts`](../src/data/categoriesManifest.ts) (this is the sole source of
-truth for categories — the old `src/data/categories/*.ts` static files were dead code and
-were deleted 2026-09-05, see `GAPS.md`).
-
-### `DomainLinksStorage` — `0x1B1D19d94b3355CE1521f9d565B517Bd84AB4B6C`
-
-The "resources" feature (X account, links).
-
-| Function | Signature | Notes |
-|---|---|---|
-| `getLinks` | `(string domain) view returns (Link[])` | `Link = {string name, string url}` tuple |
-| `updateLinks` | `(string domain, Link[] newLinks)` | Bulk replace. **Access control unverified.** |
-| `addLink` / `modifyLink` / `removeLink` | per-link mutations | Not used by this app — `updateLinks` (bulk) is simpler |
-| `MAX_LINKS` | `() view returns (uint8)` | Read live by the resource editor to cap the UI |
-
-Used by: [`useGetDomainLinks.ts`](../src/hooks/domain/useGetDomainLinks.ts),
-[`useUpdateDomainLinks.ts`](../src/hooks/domain/useUpdateDomainLinks.ts).
-
-### `DomainDataStorage` — `0xFd1a17b63478cf58b96c33aBbD4584b300F122b8`
-
-The general "bio" side of a profile (title/description/image/website) — **not wired up
-anywhere in the app**, see `GAPS.md`.
-
-| Function | Signature |
-|---|---|
-| `getDomainData` | `(uint256 domainHash) view returns (string title, string description, string image, string website, uint256 updatedAt)` |
-| `updateDomainData` | `(uint256 domainHash, string title, string description, string image, string website)` |
-
-### `KDCToken`, `EcosystemFund`, `DemoKNS`
-
-Present in `contracts.ts`, used by `/EcosystemAdmin` (fund tracking) and mint-on-vote
-mechanics. Not re-documented here in detail since the product no longer markets them as
-the hook (see `BUSINESS_PLAN.md`'s product-direction note) — but they're still real,
-live contracts, not vestigial.
+The intended on-chain future is **Toccata covenants on Kaspa L1**, not a Kasplex redeploy —
+see [`Toccata-Dev.md`](./Toccata-Dev.md).
 
 ## Wallet integration
 

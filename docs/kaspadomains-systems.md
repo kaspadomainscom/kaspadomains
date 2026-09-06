@@ -25,12 +25,12 @@ Status uses the same markers: ✅ working · 🟡 works with a known limitation 
 | 5 | [Voting](#5-voting) | 🔒 | One paid vote per wallet per domain |
 | 6 | [Profiles & resources](#6-profiles--resources) | 🔒 | The links an owner attaches |
 | 7 | [Discovery](#7-discovery) | 🟡 | Browse, search, trending, ranking |
-| 8 | [Storage](#8-storage) | 🔒 | Postgres, its schema, and the chain fallback |
+| 8 | [Storage](#8-storage) | 🔒 | Postgres and its schema — the only store |
 | 9 | [Health & operations](#9-health--operations) | ✅ | Whether any of this is actually working |
 | 10 | [Delivery & security headers](#10-delivery--security-headers) | ✅ | CSP, nonces, transport hardening |
 | 11 | [SEO & structured data](#11-seo--structured-data) | ✅ | What crawlers and social cards see |
 | 12 | [UI shell](#12-ui-shell) | ✅ | Layout, header, footer, toasts |
-| 13 | [Legacy Kasplex/EVM](#13-legacy-kasplexevm) | ⛔ | The on-chain design that no longer runs |
+| 13 | [Legacy Kasplex/EVM](#13-legacy-kasplexevm) | ✅ | **Removed 2026-09-06** — kept here as a record of what went and why |
 | 14 | [Docs & coordination](#14-docs--coordination) | ✅ | How the project remembers things |
 
 ---
@@ -240,8 +240,8 @@ paid listing silently vanishes from search.
 
 ## 8. Storage
 
-**What it does.** Holds listings, votes, categories, links and receipts — and falls back to
-the Kasplex contracts when unconfigured, so nothing is lost if they ever come back.
+**What it does.** Holds listings, votes, categories, links and receipts. It is the only
+store: without it the site cannot serve listings at all, which `/status` says plainly.
 
 **How.** Postgres via Supabase. RLS is on for every table with public read and **no write
 policy at all**: the publishable key ships to every browser, so if it could insert, anyone
@@ -346,25 +346,30 @@ silent on refunds, operating entity and jurisdiction.
 
 ## 13. Legacy Kasplex/EVM
 
-**Status: ⛔.** The original design — listings, votes, categories and an ecosystem fund in
-contracts on Kasplex. **6 of the 8 configured addresses have no deployed code** (re-verified
-2026-09-06 with raw `eth_getCode`), and the two that do fail every call with
-`invalid opcode: MCOPY` because Kasplex targets Shanghai while modern solc defaults to
-Cancun+.
+**Removed on 2026-09-06** (owner decision). This entry stays as a record, because "why is
+there no EVM code in a project whose docs mention Kasplex constantly?" is a reasonable
+question to have answered.
 
-Kept as a fallback so unsetting the Supabase variables restores the previous behaviour
-exactly. In practice it does not work.
+The original design put listings, votes, categories and an ecosystem fund in contracts on
+Kasplex. **Six of the eight configured addresses had no deployed code** (verified twice by
+raw `eth_getCode`), and the two that did failed every call with `invalid opcode: MCOPY` —
+Kasplex targets the Shanghai EVM while modern `solc` defaults to Cancun+.
 
-| File | Role |
-|---|---|
-| `src/lib/contracts.ts`, `src/abis/*.json` | Addresses and ABIs |
-| `src/lib/viemChains.ts`, `viemClient.ts`, `kasplex.ts`, `kasplexProvider.ts`, `kaswareEvm.ts`, `walletClient.ts` | EVM access |
-| `src/app/EcosystemAdmin/page.tsx` + `src/components/pages/EcosystemAdmin/**` | Administers a fund contract with no code, that fees no longer flow through |
-| `src/hooks/domain/useSetDomainCategories.ts`, `useDomainByHash.tsx` | Still reachable on the fallback path |
-| The 27 dead files in [`FILES.md`](./FILES.md) | Mostly this system's orphans. `npm run dead:check` lists them |
+It was kept as a "fallback" for a while. That was a mistake, and an expensive one: because
+every read and write carried two branches and one never ran, it directly caused five shipped
+bugs — the sompi/wei fee, votes keyed by the wrong address, a permanently-"Unavailable"
+counter, an admin page denying its own administrator, and a connect button demanding two
+wallets. Removing it deleted 34 files. See `MIND.md` #20.
 
-**Decision pending:** delete `/EcosystemAdmin` and the dead files, or keep them against a
-future redeploy?
+Gone: `contracts.ts`, `src/abis/**`, `viemClient.ts`, `viemChains.ts` consumers,
+`kaswareEvm.ts`, `useKaswareEvmWallet.ts`, `EcosystemAdmin` and its components, `utils.ts`,
+and every chain-branch in the data layer and hooks.
+
+**Still on disk, unreachable, and Codex's to resolve**: `src/lib/kasplex.ts`,
+`src/lib/viemChains.ts`. `npm run dead:check` lists them.
+
+The intended on-chain future is **Toccata covenants on Kaspa L1**, not a Kasplex redeploy —
+see [`Toccata-Dev.md`](./Toccata-Dev.md).
 
 ---
 

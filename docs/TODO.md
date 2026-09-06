@@ -6,6 +6,8 @@ This file is now a **live scratchpad and index**, not the full record. The detai
 organized content that used to live here has moved into focused files — this file just
 points to them and holds the actively-updated loop backlog below.
 
+- [`CODEX-TODO.md`](./CODEX-TODO.md) — **the work queue and path ownership between Claude
+  and Codex.** Read before starting anything
 - [`FILES.md`](./FILES.md) — every file, what it does, whether it's live, and the
   prioritised TODO
 - [`kaspadomains-systems.md`](./kaspadomains-systems.md) — the same codebase by *system*,
