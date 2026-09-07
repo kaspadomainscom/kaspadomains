@@ -144,8 +144,15 @@ Yours only because `package.json` scripts are, and I am not editing them without
 
 ```json
 "schema:check": "node scripts/schema-check.mjs",
-"boundary:check": "node scripts/client-boundary-check.mjs"
+"boundary:check": "node scripts/client-boundary-check.mjs",
+"secret:check": "node scripts/secret-leak-check.mjs"
 ```
+
+**`secret-leak-check`** greps the built client bundle for every non-`NEXT_PUBLIC_` value in
+`.env*`. It needs `npm run build` to have run first, so in CI it belongs *after* the build step
+rather than beside the other two. It reports **inconclusive and exits non-zero** when it cannot
+find the public values either, because a scan that finds nothing looks the same whether the
+bundle is clean or the scan is pointed at the wrong place.
 
 **`client-boundary-check`** walks the import graph looking for server-only APIs — React's
 `cache()`, `next/headers`, `node:` builtins — that a client component can reach through any

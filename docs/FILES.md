@@ -153,6 +153,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `lib/storeError.ts` | Why a Supabase call failed: schema not applied, unreachable, or genuinely unexpected. The five-code check was written out three times, and all three answered "unreachable" with a 500 | ✅ |
 | `scripts/schema-check.mjs` | Cross-checks the app against `supabase/schema.sql` with no database: columns, RPC names and `p_*` parameters, `KD***` codes, schema version. Catches what only fails at runtime — and for the paid routes, only *after* the user has paid | ✅ |
 | `scripts/client-boundary-check.mjs` | Walks the import graph for server-only APIs (`cache()`, `next/headers`, `node:`) that a client component can reach. Written after a grep-for-one-name check missed exactly that | ✅ |
+| `scripts/secret-leak-check.mjs` | Greps the built client bundle for every non-`NEXT_PUBLIC_` env value, with a positive control so a broken scan reports inconclusive instead of passing | ✅ |
 | `data/categoriesManifest.server.ts` | The manifest memoised per server request. The homepage loaded it three times — page, trending, JSON-LD — with nothing connecting them | ✅ |
 | `data/domainLookup.server.ts` | The domain lookups memoised per server request. Split out because `domainLookup.ts` is imported by the header and the search page, where React's `cache` has no request to scope to | ✅ |
 | `lib/paymentIntentToken.ts` | Mint/check the payment-intent token. Dependency-free and returns a boolean, so it is testable | ✅ |
