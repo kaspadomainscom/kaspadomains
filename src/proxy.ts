@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getSupabaseOrigin } from "@/lib/supabase";
-import { KNS_API_BASE_URL, LEGACY_KASPLEX_TESTNET } from "@/lib/kaspaDomainRuntime";
+import { KNS_API_BASE_URL } from "@/lib/kaspaDomainRuntime";
 
 // Resolved once at module scope: the value comes from the environment and
 // cannot change between requests.
@@ -53,8 +53,6 @@ export function proxy(request: NextRequest) {
     [
       `connect-src 'self'`,
       `https://kaspadomains.com`,
-      LEGACY_KASPLEX_TESTNET.rpcUrl,
-      `https://knsdomains.org`,
       knsApiOrigin,
       supabaseOrigin,
     ]
