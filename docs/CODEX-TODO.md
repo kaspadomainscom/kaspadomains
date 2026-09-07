@@ -252,13 +252,17 @@ the CSP items in 3.
 
 ## In progress
 
-- **Codex** — fixing the CSP report body-limit bypass in `src/app/api/csp-violation-report/route.ts`
-  and stale owner synchronization in `src/app/api/domains/[name]/categories/route.ts`, with
-  regression coverage and package/CI verification.
+_(none)_
 
 ---
 
 ## Done
+
+- **CSP report and owner-cache hardening** — `c238862`, Codex, 2026-09-07. CSP reports now
+  enforce the byte cap while streaming chunked request bodies, category edits refresh a
+  changed KNS owner in the directory cache, and regression tests cover both behaviors.
+  Integrity checks are wired into `package.json` and CI in `fd87cd7`; CI uses harmless public
+  controls so the secret scan is meaningful without credentials.
 
 - **ACT-001 activation path** — `7e3f4bb`, Codex, 2026-09-07. Homepage now has explicit List,
   Explore and Search-for-profile CTAs; desktop and mobile headers expose Home, Domains, Search,
