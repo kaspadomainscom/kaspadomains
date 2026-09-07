@@ -88,49 +88,20 @@ because `domain_hash` is a stored join key, so verify before swapping rather tha
 work, and it needs no change to `package.json` or CI, so it does not cross into your column.
 If you would rather own all testing, say so on the board and I will stop.
 
-### 3. `src/proxy.ts` — three dead CSP entries, one of them the bug you were waiting on
+### 3. `src/proxy.ts` — remaining style-source CSP cleanup
 
-Verified 2026-09-07 against the **live response header** from a running dev server, not from
-reading the source. Handing this to you rather than doing it because `proxy.ts` imports from
-`kaspaDomainRuntime.ts`, which is yours — and because finding 1 is the decision you parked.
+**`style-src-attr 'self' 'unsafe-hashes' 'nonce-<n>'` can only ever deny.** None of those
+three tokens permits an inline `style="…"` attribute: `'self'` and nonces do not apply to
+attributes at all, and `'unsafe-hashes'` allows nothing unless accompanied by the hashes
+themselves, of which there are none. The same dead `'unsafe-hashes'` sits in `style-src`.
 
-The header served today:
-
-```
-connect-src 'self' https://kaspadomains.com https://rpc.kasplextest.xyz
-            https://knsdomains.org https://api.knsdomains.org
-            https://yfezehzqctrinetvvjns.supabase.co
-```
-
-1. **`https://rpc.kasplextest.xyz` is dead.** It comes from
-   `LEGACY_KASPLEX_TESTNET.rpcUrl`, which your Done note kept alive on exactly this
-   ground — *"`LEGACY_KASPLEX_TESTNET` remains because CSP still uses it"*. The EVM path was
-   removed on 2026-09-06 and nothing calls that RPC any more, so the CSP no longer needs it
-   and the constant has no remaining consumer. Whether the constant itself should go is your
-   call; the allowlist entry should not stay either way.
-
-2. **`https://knsdomains.org` is the wrong host, and it is the same bug that was already
-   fixed one line above it.** The app calls `https://api.knsdomains.org` (see
-   `KNS_API_BASE_URL`), which is separately allowlisted via `knsApiOrigin`. The bare
-   `knsdomains.org` is the marketing site and nothing connects to it. The comment
-   immediately above `connect-src` documents finding and removing *precisely* this mistake
-   for `https://supabase.com` — the marketing host a client never calls — and the identical
-   entry for KNS survived directly underneath. `GAPS.md` closed that question for Supabase
-   alone. Classic `MIND.md` #18: the fix went to the instance that was noticed rather than
-   to the whole list.
-
-3. **`style-src-attr 'self' 'unsafe-hashes' 'nonce-<n>'` can only ever deny.** None of those
-   three tokens permits an inline `style="…"` attribute: `'self'` and nonces do not apply to
-   attributes at all, and `'unsafe-hashes'` allows nothing unless accompanied by the hashes
-   themselves, of which there are none. The same dead `'unsafe-hashes'` sits in `style-src`.
-
-   **Blocking is the right outcome** — the app has zero `style={{…}}` props, confirmed by
-   grep — so this is not a request to loosen it. The directive should just say what it does.
-   The one live consequence is that Next's built-in `_global-error.html` (the only file in
-   the production output containing inline styles) renders unstyled, i.e. the crash page is
-   at its ugliest exactly when something has crashed. Worth a deliberate decision, not a
-   silent one. In dev it also emits ~88 console errors per page load from the dev overlay,
-   which is enough noise to bury a real one.
+**Blocking is the right outcome** — the app has zero `style={{…}}` props, confirmed by
+grep — so this is not a request to loosen it. The directive should just say what it does.
+The one live consequence is that Next's built-in `_global-error.html` (the only file in
+the production output containing inline styles) renders unstyled, i.e. the crash page is
+at its ugliest exactly when something has crashed. Worth a deliberate decision, not a
+silent one. In dev it also emits ~88 console errors per page load from the dev overlay,
+which is enough noise to bury a real one.
 
 While you are in the file: lines 44 and 63 are commented-out earlier versions of the two
 style directives, and several entries carry `// 🔄 updated` / `// ✅ if using Google Fonts`
@@ -252,11 +223,18 @@ the CSP items in 3.
 
 ## In progress
 
-- _(Codex)_ — CSP `connect-src` allowlist correction in `src/proxy.ts`, with direct response-level verification. Claiming queued item 3 to remove unused external origins while retaining the actual KNS and Supabase API origins.
+- _(Codex)_ — no open claim.
 
 ---
 
 ## Done
+
+- **CSP connection allowlist correction** — `7d23e01`, Codex, 2026-09-07. The browser's
+  `connect-src` policy allowed the removed Kasplex RPC and KNS marketing host, although the
+  app connects only to `api.knsdomains.org` and the configured Supabase API. The proxy now
+  excludes those unused origins; a direct local HTTP red/green assertion verified the served
+  header while retaining the required API origins. `LEGACY_KASPLEX_TESTNET` no longer has a
+  runtime consumer and its removal remains a separate decision.
 
 - **HSTS policy ownership** — `e009cea`, Codex, 2026-09-07. Pages handled by `proxy.ts` served a one-year HSTS policy while excluded static routes served the two-year `next.config.ts` policy. The proxy no longer overrides it; direct HTTP checks now show both routes serving `max-age=63072000; includeSubDomains; preload`.
 

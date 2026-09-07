@@ -169,7 +169,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `lib/topVotedDomains.ts` | Ranking. Reads counts from the same store as the listings, never a mix | 🟡 |
 | `lib/jsonld.ts` | Structured data | ✅ |
 | `lib/kaspaDomainRuntime.ts` | Current KNS network, endpoint and non-authoritative covenant target | ✅ |
-| `proxy.ts` | CSP with per-request nonce, COOP/CORP and reporting headers; HSTS stays in `next.config.ts` so all routes agree | ✅ |
+| `proxy.ts` | CSP with per-request nonce, COOP/CORP and reporting headers; `connect-src` allows only live KNS/Supabase APIs, and HSTS stays in `next.config.ts` so all routes agree | ✅ |
 
 ---
 

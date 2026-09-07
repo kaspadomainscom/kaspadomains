@@ -308,7 +308,7 @@ build, but profile-write race behavior needs a database-backed test after the sc
 
 | File | Role |
 |---|---|
-| `src/proxy.ts` | CSP with a per-request nonce, COOP/CORP, `Report-To`; HSTS remains global in `next.config.ts` |
+| `src/proxy.ts` | CSP with a per-request nonce, COOP/CORP, `Report-To`, and only live KNS/Supabase API origins in `connect-src`; HSTS remains global in `next.config.ts` |
 | `src/context/NonceProvider.tsx`, `src/components/NonceWrapper.tsx` | Nonce plumbing |
 | `src/components/JsonLd.tsx` | Nonce-tagged structured data |
 | `src/app/api/csp-violation-report/route.ts` | Violation reports: 8 KB cap, field allow-list |
@@ -378,8 +378,8 @@ and every chain-branch in the data layer and hooks.
 
 **Nothing of it remains.** Codex removed the last two files (`kasplex.ts`,
 `viemChains.ts`) and the `viem` dependency on 2026-09-06; `npm run dead:check` reports
-**zero** unreachable files. `LEGACY_KASPLEX_TESTNET` survives in `kaspaDomainRuntime.ts`
-because the CSP still needs the origin.
+**zero** unreachable files. `LEGACY_KASPLEX_TESTNET` survives in `kaspaDomainRuntime.ts`, but
+no longer has a runtime consumer after the CSP no longer allowed its obsolete RPC origin.
 
 The intended on-chain future is **Toccata covenants on Kaspa L1**, not a Kasplex redeploy —
 see [`Toccata-Dev.md`](./Toccata-Dev.md).
