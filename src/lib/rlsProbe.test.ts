@@ -25,3 +25,10 @@ test('an RLS refusal remains a passing probe', async () => {
   const outcome = await runRlsProbe(async () => ({ error: { code: '42501', message: 'new row violates row-level security policy' } }));
   assert.equal(outcome.kind, 'blocked');
 });
+
+test('a transport rejection remains inconclusive', async () => {
+  const outcome = await runRlsProbe(async () => {
+    throw new Error('fetch failed');
+  });
+  assert.equal(outcome.kind, 'unknown');
+});

@@ -38,7 +38,16 @@ function isTransportFailure(error: RlsProbeError): boolean {
 }
 
 export async function runRlsProbe(insert: InsertProbe): Promise<RlsProbeOutcome> {
-  const { error } = await insert({ domain_hash: null, name: null, owner: null });
+  let error: RlsProbeError | null;
+  try {
+    ({ error } = await insert({ domain_hash: null, name: null, owner: null }));
+  } catch (caught) {
+    return {
+      kind: 'unknown',
+      error: { message: caught instanceof Error ? caught.message : String(caught) },
+    };
+  }
+
   if (!error) return { kind: 'open', error: null };
 
   if (error.code === 'PGRST205') return { kind: 'unknown', error };
