@@ -69,6 +69,10 @@ treasury actions, runs the relevant gates (`npm test`, `npm run lint`, `npm run 
 commits only after they pass. Reports use the fixed `STATUS / ITEM / RESULT / COMMIT / FILES /
 CHECKS / BLOCKER / NEXT` shape and notify only on a change, verification failure or blocker.
 
+**Automation blocker (2026-09-07):** the Codex app lookup reports that job `9a9a1656` no
+longer exists, so this pass did not create a duplicate or guess its preserved fields. The
+owner must recreate or relink the 10-minute loop before continuous runs can resume.
+
 ### First-cycle activation, truth and branding items
 
 - [x] **TRUTH-001** (2026-09-07): active 200 KAS listing and 1 KAS vote labels now derive

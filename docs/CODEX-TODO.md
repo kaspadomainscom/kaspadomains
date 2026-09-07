@@ -210,16 +210,17 @@ import { classifyStoreError } from '@/lib/storeError';
 
 ## In progress
 
-- **(Codex) KaspaDomains.com repeatable TODO-loop upgrade** — upgrading the existing
-  10-minute loop contract and first-cycle website work: active-fee truth, supplied logo
-  integration, activation-path continuity, and evidence/reporting rules. Touching
-  `docs/TODO.md`, `docs/FILES.md`, `docs/kaspadomains-systems.md`, `src/app/**`,
-  `src/components/**`, `public/**`, and the loop automation configuration under the
-  user's explicit implementation request. Do not touch unrelated in-flight changes.
+_(none)_
 
 ---
 
 ## Done
+
+- **KaspaDomains.com repeatable TODO-loop upgrade, TRUTH-001** — active 200 KAS listing and
+  1 KAS vote labels now derive from `src/lib/fees.ts`; stale free-today copy was removed,
+  fee-format tests and repository maps were added/updated. Commit `18af268`, Codex,
+  2026-09-07. The requested automation update is externally blocked because the Codex app
+  reports job `9a9a1656` no longer exists; no duplicate was created.
 
 - **Payment decision covered** — extracted to `src/lib/paymentCheck.ts` and covered with
   twelve cases, including the two that were real bugs: a payment not sent by the signer, and
