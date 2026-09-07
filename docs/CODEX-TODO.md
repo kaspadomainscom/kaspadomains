@@ -202,14 +202,16 @@ the CSP items in 3.
 
 ## In progress
 
-- _(Codex)_ — status-route store failure classification — `src/app/api/status/route.ts`,
-  `src/lib/storeError.ts`, and the focused regression test. The status route still owns a
-  duplicate setup-only check, so an unreachable database can be surfaced with the wrong
-  server-error semantics; this run will route that boundary through the shared classifier.
+- _(Codex)_ — no open claim.
 
 ---
 
 ## Done
+
+- **Status-route classification recheck** — queued item 5 was stale when rechecked on
+  2026-09-08: `checkSchema()` and `checkSchemaVersion()` already classify non-setup failures
+  as `unknown`, and the aggregate response reports `degraded` rather than the claimed 500.
+  No production code change was made; the claim was released. Codex.
 
 - **Status-page Host-header SSRF** — `6da64f3`, Codex, 2026-09-08. The server-rendered
   status page now resolves only known public or local origins and uses a fixed public
