@@ -27,6 +27,17 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
       untested, and it is the second thing to do after the schema.
 ## Fixed
 
+### 2026-09-08 — Valid uppercase KNS names were rejected by the listing flow
+
+The canonical domain boundary accepts whitespace and uppercase input, normalizing names such
+as `Example.KAS` to `example.kas`. The listing hook independently called
+`domain.endsWith('.kas')`, so a valid KNS asset with an uppercase suffix was stopped before
+preflight with an invalid-domain message.
+
+`isListableDomain` now owns the client gate and trims/lowercases before applying the existing
+suffix and minimum-length checks. The focused native regression test covers the accepted form
+and invalid boundaries. No server, fee, signing, or stored-name behavior changed.
+
 ### 2026-09-08 — A rejected final signature discarded a paid listing
 
 The listing flow preflights, sends the 200 KAS fee, then asks Kasware to sign the write. A

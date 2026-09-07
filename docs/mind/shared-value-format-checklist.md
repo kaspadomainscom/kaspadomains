@@ -4,7 +4,7 @@
 because that agreement is invisible to the compiler and its violation is invisible at
 runtime.
 
-Last updated: 2026-09-06
+Last updated: 2026-09-08
 
 Run this when a value is produced in one place and consumed in another: an identifier, an
 amount, a timestamp, an address, an enum encoded as a string. Grew out of
@@ -23,6 +23,9 @@ displayed 10,000,000,000× too large.
   it by hand.
 
 ## 2. Prefer a type over a comment
+
+- [ ] For user-entered identifiers, apply the owner's trim/case rules before validation. A
+  case-sensitive gate can reject a value the canonicalizer and authoritative API accept.
 
 - [ ] Can the format live *in the type* rather than in prose? `{ amount: bigint; unit:
   'sompi' | 'wei' }` turns a mismatch into a compile error. `feePaid: string` with a comment

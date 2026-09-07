@@ -202,13 +202,16 @@ the CSP items in 3.
 
 ## In progress
 
-- _(Codex)_ — case-insensitive listing-domain validation — `src/hooks/domain/useListDomain.ts`,
-  `src/lib/listDomainValidation.ts`, and the focused regression test. The hook rejects
-  valid uppercase-suffix KNS names even though the canonical domain contract accepts them.
+- _(Codex)_ — no open claim.
 
 ---
 
 ## Done
+
+- **Case-insensitive listing-domain validation** — `4f00d70`, Codex, 2026-09-08. The
+  listing hook now shares a trimmed, lowercase suffix gate with the canonical domain
+  contract, so valid uppercase KNS names reach preflight. Invalid suffixes and short names
+  remain rejected; no server or fee behavior changed.
 
 - **Paid listing recovery after final-signature failure** — `c29d9d3`, Codex,
   2026-09-08. The client persists the exact payment intent and transaction id after

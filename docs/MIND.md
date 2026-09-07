@@ -1,6 +1,6 @@
 # Mind
 
-Last updated: 2026-09-08 (paid-listing recovery review)
+Last updated: 2026-09-08 (case-insensitive domain validation review)
 
 How to think about working on this codebase — principles earned the hard way, each
 backed by a real incident. Read this before making changes, especially anything that
@@ -556,6 +556,14 @@ turned a client-only date into a server-rendered one, which is what prompted the
 the check showed the bug already existed on two other pages that had always rendered
 `DomainCard` from a server component. Changing where something renders is a reason to re-ask
 what it renders (#12).
+
+### Recurrence (2026-09-08): validation drifted from the canonical domain owner
+
+The listing hook checked `domain.endsWith('.kas')` directly, while the shared domain boundary
+trimmed and lowercased input first. A valid KNS name such as `Example.KAS` therefore failed
+before preflight with an invalid-domain message. The client gate now uses one small validator
+that applies the same case and whitespace rules before enforcing the suffix and length. A
+format owner is only useful when every boundary reaches it.
 
 ## 18. Enumerate from the source of record, not from what the code happens to touch
 

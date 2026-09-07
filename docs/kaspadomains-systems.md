@@ -129,7 +129,8 @@ three outcomes, so an outage never 404s a live domain.
 | `src/data/supabaseSource.ts` | `fetchDomainByName`, `fetchAllDomains`, `fetchListingStatuses` |
 | `src/data/types.ts` | The `Domain` shape both sources return |
 | `src/app/list-domain/page.tsx`, `src/components/PickDomainModal.tsx` | The listing UI |
-| `src/hooks/domain/useListDomain.ts` | preflight → pay → persist pending payment → sign → post; retries reuse the persisted payment |
+| `src/hooks/domain/useListDomain.ts` | canonical validation → preflight → pay → persist pending payment → sign → post; retries reuse the persisted payment |
+| `src/lib/listDomainValidation.ts` | Trims and lowercases a candidate before enforcing the `.kas` suffix and minimum length |
 | `src/hooks/kns/api/useOwnedDomains.ts`, `useVerifiedDomains.ts`, `usePaginatedDomains.ts` | What the wallet owns, from KNS |
 | `src/app/domain/[name]/page.tsx` | The public profile |
 | `src/app/domains/my-domains/page.tsx` | Owns (KNS) vs listed (us) — deliberately separate questions |
