@@ -210,14 +210,17 @@ import { classifyStoreError } from '@/lib/storeError';
 
 ## In progress
 
-- **(Codex) Loop push-at-end policy** — update the repeatable loop contract and existing
-  automation so each verified iteration pushes its own commit at the end, while preserving
-  the no-merge/no-deploy/no-funds safety gates. Touching `docs/TODO.md` and the automation
-  configuration only; do not stage unrelated in-flight files.
+_(none)_
 
 ---
 
 ## Done
+
+- **Loop push-at-end policy** — the repository contract now requires each successful,
+  verified iteration to push only its own commit, without force-pushes, rewrites, merges,
+  deploys, migrations, or funds movement. Commit `975fb35`, Codex, 2026-09-07. The scheduled
+  job update remains externally blocked because the Codex app reports automation `9a9a1656`
+  does not exist; no duplicate was created.
 
 - **KaspaDomains.com repeatable TODO-loop upgrade, TRUTH-001** — active 200 KAS listing and
   1 KAS vote labels now derive from `src/lib/fees.ts`; stale free-today copy was removed,
