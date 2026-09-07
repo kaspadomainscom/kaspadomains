@@ -217,7 +217,10 @@ import { classifyStoreError } from '@/lib/storeError';
 
 ## In progress
 
-_(none)_
+- **(Codex) Content-gap cleanup** — reconcile the business-plan copy with the database-backed
+  listing reality, refresh stale test-count documentation, and add the real 1200×630 branded
+  social asset if the supplied logo can support it. Owner/legal decisions and live Supabase
+  verification remain blockers; do not invent them or stage unrelated in-flight files.
 
 ---
 
