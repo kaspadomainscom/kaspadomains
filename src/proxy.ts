@@ -89,12 +89,6 @@ export function proxy(request: NextRequest) {
   response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
   response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
 
-  // Strong HSTS header with preload + subdomains + 1 year max-age
-  response.headers.set(
-    "Strict-Transport-Security",
-    "max-age=31536000; includeSubDomains; preload"
-  );
-
   response.headers.set("Report-To", JSON.stringify({
     group: "csp-endpoint",
     max_age: 10886400,
