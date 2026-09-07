@@ -202,7 +202,11 @@ the CSP items in 3.
 
 ## In progress
 
-- _(Codex)_ — no open claim.
+- _(Codex)_ — paid listing recovery after post-payment signing failure —
+  `src/hooks/domain/useListDomain.ts`, `src/lib/pendingPaidWrite.ts`, and the
+  focused regression test. The payment txid is currently discarded if the final
+  signing prompt fails; this run will persist one pending listing and reuse it
+  on an explicit retry without charging again. No server or schema changes.
 
 ---
 
