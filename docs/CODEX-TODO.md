@@ -252,7 +252,7 @@ the CSP items in 3.
 
 ## In progress
 
-_(none)_
+- _(Codex)_ — duplicate HSTS ownership: `src/proxy.ts`, `next.config.ts`, focused response-level regression coverage, and the required queue/map updates. Claiming queued item 6 to make the served max-age consistent across pages and excluded routes.
 
 ---
 
