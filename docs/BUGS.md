@@ -27,6 +27,28 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
       untested, and it is the second thing to do after the schema.
 ## Fixed
 
+### 2026-09-07 — The browse page's structured data was emitted on four pages it did not describe
+
+The same cascade as the canonical fix earlier the same day, one layer over. `domains/layout.tsx`
+rendered the "Recent Premium Kaspa Domains" `ItemList`, and a layout renders for every route
+beneath it — so `/domains/categories` (which lists categories, not domains),
+`/domains/top-voted` (a different ranked list) and the two per-wallet pages all carried it.
+
+Structured data is a description of the page it sits on. Four of those five pages were
+describing content they do not contain, and the list's `@id` is a homepage fragment, so they
+were also asserting an identifier belonging elsewhere.
+
+Moved onto `/domains/page.tsx`, which is what it describes. That left the layout doing nothing,
+so it is deleted — its reasoning moved to a note above the page's `metadata`, where the next
+person adding a layout there will actually see it.
+
+Four routes emit structured data now and each describes itself: `/` (WebSite plus recent
+domains), `/domains` (recent domains), `/domains/categories/category/[category]` (that
+category's domains) and `/domain/[name]` (that domain's profile).
+
+Found by applying `MIND.md` #24's own mechanic — check the rendered response per route rather
+than the source — to the next thing that cascades.
+
 ### 2026-09-07 - Branded social assets replaced the square legacy image
 
 The supplied transparent SVG lockup and icon are tracked under `public/brand/`, and the

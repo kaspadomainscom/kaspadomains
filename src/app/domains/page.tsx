@@ -1,8 +1,26 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
+import { getItemListJsonLd } from '@/lib/jsonld';
+import { JsonLd } from '@/components/JsonLd';
 import { loadCategoriesManifestOnce } from '@/data/categoriesManifest.server';
 import type { CategoryManifest } from '@/data/categoriesManifest';
 import { BrowseDomains } from '@/components/pages/domains/BrowseDomains';
 
+/**
+ * Note for anyone adding a `layout.tsx` beside this file: put nothing
+ * inheritable in it.
+ *
+ * There was one, and everything it declared was inherited by
+ * /domains/categories, /domains/my-domains, /domains/my-votes and
+ * /domains/top-voted -- a title, so three of them were called "Browse Premium
+ * .kas Domains", and a canonical, so all three told search engines they were
+ * this page and should be dropped in its favour. Two of them are client
+ * components and cannot export metadata at all, so they could not have
+ * corrected it. It emitted this page's structured data on all four as well.
+ *
+ * With those moved here the layout did nothing, so it is gone. See
+ * docs/MIND.md #24.
+ */
 export const metadata: Metadata = {
   title: 'Browse Premium .kas Domains | KaspaDomains',
   description:
@@ -35,8 +53,25 @@ export default async function DomainsPage() {
     console.error('Failed to load categories manifest:', error);
   }
 
+  // The recent-domains ItemList belongs to this page, not to the route segment.
+  //
+  // It used to be emitted by `domains/layout.tsx`, which meant all five routes
+  // under /domains carried it: /domains/categories, which lists categories
+  // rather than domains; /domains/top-voted, which is a different ranked list;
+  // and the two per-wallet pages, which are now noindex and render different
+  // content for every visitor. Structured data is a description of the page it
+  // sits on, and it was describing four pages it was not on. Its `@id` is a
+  // homepage fragment, so four routes were also asserting an identifier that
+  // belongs somewhere else. Same shape as the canonical those layouts were
+  // leaking -- see docs/MIND.md #24.
+  const nonce = (await headers()).get('x-csp-nonce') || undefined;
+  const jsonLd = await getItemListJsonLd();
+
   return (
     <div className="min-h-screen bg-[#0b1e1d]">
+      {/* Omitted entirely when the list could not be read: an empty ItemList
+          would tell crawlers the directory is empty. */}
+      {jsonLd && <JsonLd json={jsonLd} nonce={nonce} />}
       <section className="max-w-7xl mx-auto px-6 py-12 space-y-12">
         <header className="space-y-6 max-w-3xl mx-auto text-center">
           <h1 className="text-5xl font-extrabold text-white tracking-tight">Browse .kas Domains</h1>
