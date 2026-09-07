@@ -131,13 +131,26 @@ markers from an older pass.
 
 ---
 
-### 4. One line in `package.json`: wire up `scripts/schema-check.mjs`
+### 4. Two lines in `package.json`: wire up the two new checks
 
 Yours only because `package.json` scripts are, and I am not editing them without asking.
 
 ```json
-"schema:check": "node scripts/schema-check.mjs"
+"schema:check": "node scripts/schema-check.mjs",
+"boundary:check": "node scripts/client-boundary-check.mjs"
 ```
+
+**`client-boundary-check`** walks the import graph looking for server-only APIs — React's
+`cache()`, `next/headers`, `node:` builtins — that a client component can reach through any
+chain of imports. I wrote it because I made exactly that mistake: I wrapped two functions in
+`cache()` and asserted in the comment that the module was server-only, when a client component
+imported it under a different name. A grep for the function's own name could not have caught
+it, and neither `tsc`, `eslint` nor `next build` complained. It currently reports clean across
+10 server-only modules, 28 client components and 101 files.
+
+Verified by reintroducing the real bug and two other shapes; each is detected. That matters
+here, because the failure mode is quiet — a `cache()` in a browser does not throw, it just
+stops memoising.
 
 Worth adding to CI next to `npm test`. It needs no database and no credentials, which is what
 makes it CI-safe — `npm run db:check` covers what is actually deployed and cannot run there.
