@@ -202,7 +202,10 @@ the CSP items in 3.
 
 ## In progress
 
-- _(Codex)_ — no open claim.
+- _(Codex)_ — status RLS probe must be side-effect free — `src/app/api/status/route.ts`,
+  `src/lib/rlsProbe.ts`, and the focused regression test. The health endpoint currently
+  inserts a fake domain to test public writes; if RLS is open, repeated checks leave rows in
+  the public directory. This run will preserve the refusal signal without a persistent insert.
 
 ---
 
