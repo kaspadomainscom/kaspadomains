@@ -10,7 +10,10 @@
     "test": "node --experimental-strip-types --test \"src/**/*.test.ts\"",
     "test:kaspa-runtime": "node --experimental-strip-types --test src/lib/kaspaDomainRuntime.test.ts",
     "db:check": "node scripts/db-check.mjs",
-    "dead:check": "node scripts/dead-code.mjs"
+    "dead:check": "node scripts/dead-code.mjs",
+    "schema:check": "node scripts/schema-check.mjs",
+    "boundary:check": "node scripts/client-boundary-check.mjs",
+    "secret:check": "node scripts/secret-leak-check.mjs"
   },
   "engines": {
     "node": "22.x"

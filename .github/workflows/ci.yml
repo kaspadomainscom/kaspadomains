@@ -10,6 +10,12 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    # Harmless public controls let the post-build secret scan prove it can see
+    # the client bundle without requiring a real Supabase project or wallet.
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://ci.invalid.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-publishable-key-control
+      NEXT_PUBLIC_KASPADOMAINS_TREASURY_ADDRESS: kaspa:qzci-control-address
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,4 +25,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run lint
+      - run: npm run schema:check
+      - run: npm run boundary:check
       - run: npm run build
+      - run: npm run secret:check
