@@ -2,6 +2,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { headers } from 'next/headers';
+import { statusOrigin } from '@/lib/statusOrigin';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,13 +92,13 @@ export default async function StatusPage() {
   // see the identical result rather than two implementations that can disagree.
   const headerList = await headers();
   const host = headerList.get('host') ?? 'localhost:3000';
-  const protocol = host.startsWith('localhost') || host.startsWith('127.') ? 'http' : 'https';
+  const origin = statusOrigin(host);
 
   let status: Status | null = null;
   let fetchError: string | null = null;
 
   try {
-    const response = await fetch(`${protocol}://${host}/api/status`, { cache: 'no-store' });
+    const response = await fetch(`${origin}/api/status`, { cache: 'no-store' });
     // The route answers 503 when something is failing, which is correct for a
     // monitor and must not be treated as "could not load" here -- the body is
     // exactly the report we want to render.
