@@ -1,6 +1,6 @@
 // src/app/api/domains/preflight/route.ts
 import { NextResponse } from 'next/server';
-import { verificationFailure } from '@/lib/server/apiError';
+import { verificationFailure, storeFailure } from '@/lib/server/apiError';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
 import {
   requireDomainOwner,
@@ -147,7 +147,11 @@ export async function POST(request: Request) {
 
   if (lookupError) {
     console.error('Preflight lookup failed:', lookupError);
-    return NextResponse.json({ error: 'Could not check that domain.' }, { status: 500 });
+    // Classified rather than a flat 500. This is the gate that runs *before* the
+    // wallet is asked for anything, so "the database is unreachable" and "we
+    // have a bug" lead to different advice, and only one of them is worth
+    // retrying. See @/lib/storeError.
+    return storeFailure(lookupError, 'Could not check that domain.');
   }
 
   let amountSompi: bigint;

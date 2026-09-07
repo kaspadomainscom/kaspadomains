@@ -130,7 +130,7 @@ export async function PUT(
 
   if (lookupError) {
     console.error('Category lookup failed:', lookupError);
-    return NextResponse.json({ error: 'Could not update categories.' }, { status: 500 });
+    return storeFailure(lookupError, 'Could not update categories.');
   }
   if (!domain) {
     return NextResponse.json({ error: 'That domain is not listed.' }, { status: 404 });

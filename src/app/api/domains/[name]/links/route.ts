@@ -1,6 +1,6 @@
 // src/app/api/domains/[name]/links/route.ts
 import { NextResponse } from 'next/server';
-import { verificationFailure } from '@/lib/server/apiError';
+import { verificationFailure, storeFailure } from '@/lib/server/apiError';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
 import { requireDomainOwner, extractPayload } from '@/lib/server/verifyRequest';
 import { rpcError } from '@/lib/server/rpcError';
@@ -126,7 +126,7 @@ export async function PUT(
 
   if (lookupError) {
     console.error('Links lookup failed:', lookupError);
-    return NextResponse.json({ error: 'Could not update resources.' }, { status: 500 });
+    return storeFailure(lookupError, 'Could not update resources.');
   }
   if (!domain) {
     return NextResponse.json({ error: 'That domain is not listed.' }, { status: 404 });

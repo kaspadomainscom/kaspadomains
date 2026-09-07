@@ -27,6 +27,24 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
       untested, and it is the second thing to do after the schema.
 ## Fixed
 
+### 2026-09-07 — Three more database failures reported as "we have a bug"
+
+Follow-up to the `storeError` consolidation earlier today, and a miss in it. That pass replaced
+every site that called `setupUnavailable` — but three routes never called it: they returned a
+hardcoded `500` for a Supabase lookup failure directly. Sweeping by *pattern* found the sites
+shaped like the pattern; enumerating every Supabase error path in `src/app/api` found these.
+`MIND.md` #18, in a fix for a bug that was itself about incomplete enumeration.
+
+The three are the domain lookups in `preflight`, `categories` (PUT) and `links` (PUT). Each now
+goes through `storeFailure()`, which answers 503 with `retryable: true` for an unreachable
+database, 503 for a schema that has not been applied, and 500 only for something genuinely
+unexpected.
+
+**Preflight is the one that matters.** It is the gate that runs *before* the wallet is asked for
+anything, so it is where "the database is unreachable" and "we have a bug" lead to different
+advice — and only one of them is worth retrying. Answering 500 told the client the request could
+never succeed.
+
 ### 2026-09-07 — `db:check` never checked whether the browser can read the vote-count view
 
 The anon read loop iterates the **tables**. `domain_vote_counts` is a view, and it was probed
