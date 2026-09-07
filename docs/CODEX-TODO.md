@@ -223,7 +223,7 @@ the CSP items in 3.
 
 ## In progress
 
-- _(Codex)_ — no open claim.
+- _(Codex)_ — fatal-error CSP styling in `src/proxy.ts`, with a built-output black-box reproduction. Claiming the remaining style-source queue item to allow only the exact Next global-error style hashes; arbitrary inline styles remain blocked.
 
 ---
 
