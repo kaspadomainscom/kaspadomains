@@ -102,7 +102,11 @@ export default function Sidebar() {
   //
   // Deriving it means a category added to the database appears here, one
   // removed disappears, and no link can point at something that is not there.
-  const { options: categoryOptions } = useGetAllowedCategories();
+  const {
+    options: categoryOptions,
+    loading: categoriesLoading,
+    error: categoriesError,
+  } = useGetAllowedCategories();
 
   const categoryLinks = useMemo(
     () =>
@@ -249,8 +253,21 @@ export default function Sidebar() {
               />
             ))
           ) : (
+            // Four different reasons the list can be empty, and only one of them
+            // is "no categories found". This rendered that sentence during the
+            // initial load and during an outage too -- a confident claim about
+            // the site's own navigation, on every page, made while we were
+            // still asking or had just failed to. See docs/MIND.md #2 and #3.
             !collapsed && (
-              <p className="px-3 pt-2 text-sm text-white/50">No categories found</p>
+              <p className="px-3 pt-2 text-sm text-white/50">
+                {categoriesLoading
+                  ? 'Loading categories…'
+                  : categoriesError
+                    ? "Categories couldn't be loaded."
+                    : categoryLinks.length === 0
+                      ? 'No categories yet.'
+                      : 'No categories match that search.'}
+              </p>
             )
           )}
         </nav>

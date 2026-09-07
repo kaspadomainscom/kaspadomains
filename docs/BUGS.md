@@ -30,6 +30,22 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
 
 ## Fixed
 
+### 2026-09-07 — The sidebar told every visitor there were no categories, on every page
+
+`Sidebar` destructured only `options` from `useGetAllowedCategories` and ignored the `loading`
+and `error` it also returns. `options` is `[]` in three unrelated situations — still loading,
+the read failed, and genuinely none — and the component rendered **"No categories found"** for
+all of them.
+
+So during the initial load, and for the whole duration of a database outage, the site's primary
+navigation made a confident false claim about itself, on every page. Categories are the only
+browse mechanism this site has, so "there are none" is close to "there is nothing here".
+
+Four states now, because there are four reasons: loading, could-not-load, none exist, and none
+match the search — which is the only one the original sentence was ever right about. Verified in
+the browser against the current outage: the expanded sidebar reads "Categories couldn't be
+loaded." `MIND.md` #2 and #3.
+
 ### 2026-09-07 — The category editor told owners they had no categories when it could not read them
 
 The save path was already safe: `profileRevision === null` locks the whole editor, so a failed
