@@ -30,6 +30,21 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
 
 ## Fixed
 
+### 2026-09-07 — The category editor told owners they had no categories when it could not read them
+
+The save path was already safe: `profileRevision === null` locks the whole editor, so a failed
+read cannot lead to a bulk replace that drops categories — the lesson the resources editor
+learned the hard way was applied here.
+
+The *display* was not. `selected` falls back to `[]` when the current set is unknown, which is
+correct for the toggle logic and wrong to say out loud, so on a failed read the editor showed
+**"0 / 6 selected"** and *"Pick at least one category — a listing with none cannot be found"*.
+Both are confident claims about someone's own listing, derived from an error. The load error
+was displayed too, so the panel contradicted itself.
+
+Now gated on whether the set is actually known. Same distinction as the save guard, applied to
+what the page says rather than to what it does — `MIND.md` #2.
+
 ### 2026-09-07 — An unreachable database was reported as an internal server error
 
 Three files — the categories route, the write-nonce route and `rpcError.ts` — each carried

@@ -41,6 +41,20 @@ export function CategoryEditor({ domainName }: { domainName: string }) {
   const selected = draft ?? saved ?? [];
   const locked = loading || optionsLoading || saving || profileRevision === null;
 
+  /**
+   * Whether we actually know what this domain's categories are.
+   *
+   * `saved` is `null` for "not known" -- still loading, or the read failed --
+   * and `selected` falls back to `[]`, which is the right thing for the toggle
+   * logic and the wrong thing to *say*. Without this the editor told an owner
+   * "0 / 6 selected" and "a listing with none cannot be found" whenever the read
+   * failed, which is a confident claim about their listing made from an error.
+   *
+   * The save button was already safe -- `profileRevision === null` locks the
+   * whole editor -- so this is the display half of the same distinction.
+   */
+  const known = saved !== null;
+
   const dirty = useMemo(() => {
     if (!draft || !saved) return false;
     if (draft.length !== saved.length) return true;
@@ -114,7 +128,9 @@ export function CategoryEditor({ domainName }: { domainName: string }) {
       <p className="mt-3 text-xs text-gray-500">
         {loading
           ? 'Loading current categories…'
-          : `${selected.length} / ${MAX_CATEGORIES} selected`}
+          : known
+            ? `${selected.length} / ${MAX_CATEGORIES} selected`
+            : 'Current categories unknown — nothing can be saved until they load.'}
       </p>
 
       <button
@@ -127,8 +143,10 @@ export function CategoryEditor({ domainName }: { domainName: string }) {
       </button>
 
       {/* A listing with no categories is invisible, so say so before the API
-          has to refuse it. */}
-      {!loading && selected.length === 0 && (
+          has to refuse it -- but only when we actually read the current set.
+          Shown on a failed read, this told owners their listing had no
+          categories when we simply could not see them. */}
+      {!loading && known && selected.length === 0 && (
         <p className="mt-2 text-sm text-amber-300">
           Pick at least one category — a listing with none cannot be found.
         </p>
