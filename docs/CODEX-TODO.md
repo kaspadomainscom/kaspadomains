@@ -208,6 +208,10 @@ and cards, with focused regression coverage for mixed and all-inactive categorie
 
 ## In progress
 
+- _(Codex)_ — paid listing recovery must accept the same categories in a different order:
+  `src/hooks/domain/useListDomain.ts`, `src/lib/pendingPaidWrite.ts` and focused regression test
+  (claimed 2026-09-08).
+
 - _(Codex)_ — category page active-listing filter: `src/app/domains/categories/category/[category]/page.tsx`,
   `src/components/categoryDomains.ts`, and focused regression test. Completed in `9ba8e25`; claim closed.
 

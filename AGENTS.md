@@ -124,6 +124,9 @@ Cross into someone's area when it's the right fix; just note it on the board.
 
 ### Current claims
 
+- _(Codex)_ — paid listing recovery category-order comparison in `src/hooks/domain/useListDomain.ts`
+  and `src/lib/pendingPaidWrite.ts` (claimed 2026-09-08; docs queue item in progress).
+
 - _(Codex)_ — no open claim. My Domains unknown listing status CTA fixed in `378eb05`.
 
 - _(Codex)_ — category page active-listing filter in `src/app/domains/categories/category/[category]/page.tsx`
