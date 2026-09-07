@@ -104,6 +104,8 @@ touch the codebase, you own the part of the map you moved. See
 | 20 | A dead fallback is not free | An untaken branch is never exercised, so it stops being a safety net and becomes the place bugs hide |
 | 21 | A one-time token is not a version check | A replay guard says “only once”; it does not say the editor was based on the state it is replacing |
 | 22 | An error message is an instruction | "Try again" is a bug if the only retry available charges the user a second time |
+| 23 | Accidental safety is not safety | If the thing protecting you is a side effect of unrelated code, nothing is protecting you |
+| 24 | An inherited default is a claim about pages you never looked at | Cascading config asserts things on behalf of every descendant, including the ones added later |
 
 ## 1. Never trust a hardcoded value against a live contract — verify the ABI first
 
@@ -804,6 +806,75 @@ not parse as JSON is not this API answering with no detail -- it is a proxy's 50
 gateway timeout, precisely the transient case a paid write most needs to retry. The
 empty-for-unknown bug (#2) had reappeared *in the code written to fix a money-losing bug*, and
 only the mechanism caught it. That is the argument for #19 in one paragraph.
+
+## 23. Accidental safety is not safety
+
+**Purpose**: code is sometimes safe because of something that was never meant to make it safe.
+That is not a property you have, it is a coincidence you are standing on, and it disappears the
+moment somebody tidies up the thing that happened to be holding it.
+**Mechanic**: when you conclude "this is fine", ask **what exactly makes it fine**, and then
+ask whether that thing knows it has the job. If the answer is a side effect of unrelated code,
+or a leniency in someone else's parser, write the check you thought you had.
+
+**Two instances, one day apart in the same session (2026-09-07)**:
+
+1. **A stored `javascript:` URL was harmless — by accident.** The profile page rendered a link
+   as `isExternalUrl(url) ? url : \`https://${url}\``. A hostile value failed the test, so it was
+   *prefixed*, becoming `https://javascript:alert(1)` — an https URL with a nonsense host, which
+   does nothing. The prefixing existed to help users who typed `example.com`. It was neutralising
+   stored XSS as a side effect, and it would have vanished the instant anyone simplified that
+   fallback to render the value unchanged — a change that looks like a tidy-up and reads as
+   correct in review.
+
+2. **A mislabeled image "worked" because everything sniffs.** `og-image.png` contained JPEG
+   bytes, so it was served as `Content-Type: image/png` over a JPEG. That is usually survivable
+   because clients guess from the bytes. Except this app also sends
+   `X-Content-Type-Options: nosniff`, which exists precisely to stop them guessing. The safety
+   net had already been cut; nobody had noticed because nothing had failed *yet*.
+
+**The tell**: you can state why the code is safe, but the reason lives in a different file, or
+in another vendor's tolerance, and no test would fail if it went away. In both cases the fix was
+not to add protection but to make the existing protection *deliberate* — refuse instead of
+repair, and name the format instead of relying on a guess.
+
+Related to #20: a dead fallback is where bugs hide, and a fallback that is silently doing
+safety work is worse, because deleting it looks free.
+
+---
+
+## 24. An inherited default is a claim about pages you never looked at
+
+**Purpose**: configuration that cascades — layout metadata, base config, a shared default —
+does not describe the file it is written in. It describes that file *and everything under it,
+including things that do not exist yet*. Writing it feels local; its blast radius is not.
+**Mechanic**: before setting anything inheritable, enumerate what will inherit it and ask
+whether the statement is true of each. If it is a claim about identity — a canonical, a title,
+an owner, a base URL — the default is almost always *no value*, and each descendant states its
+own.
+
+**The incident (2026-09-07)**: Next merges a layout's `metadata` into every route beneath it.
+The root layout set `alternates.canonical: "https://kaspadomains.com"`, and `/domains/layout.tsx`
+set `.../domains`. Six pages inherited one of them, so `/learn`, `/list-domain` and `/search`
+each served a canonical saying they **were** the homepage, and `/domains/categories`,
+`/domains/my-domains` and `/domains/my-votes` said they were the browse page — while also
+inheriting its title, so three pages were titled "Browse Premium .kas Domains".
+
+A canonical is the one tag whose entire job is to say *these two URLs are the same page*. Every
+one of those was an instruction to drop a real URL from the index in favour of another. Two of
+the six were client components, which **cannot export metadata at all**, so they had no way to
+correct it even in principle.
+
+It was invisible from the source: each file looked reasonable on its own, and the wrong value
+appeared only in the merged output. It was found by reading the **served HTML** for twelve
+routes — and not even deliberately, but because a mobile-viewport sweep showed
+`/domains/my-domains` returning the browse page's title.
+
+**The tell**: a value that is correct for exactly one route, written somewhere that applies to
+many. And the general check: for anything inheritable, verify the *rendered* result per route,
+not the source. `MIND.md` #18 with a cascade attached — the source of record here is the
+response, not the file.
+
+---
 
 ## Related docs
 
