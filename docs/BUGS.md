@@ -27,6 +27,28 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
       untested, and it is the second thing to do after the schema.
 ## Fixed
 
+### 2026-09-07 — The CSP report endpoint's size limit counted the wrong thing
+
+`/api/csp-violation-report` is unauthenticated by necessity — browsers post to it without
+credentials — so its size limit is the thing standing between an attacker and arbitrary volume
+in production logs. Two ways it did not do what it said.
+
+**The unit was wrong.** `MAX_BODY_BYTES = 8 * 1024` was compared against `raw.length`, which
+counts UTF-16 code units rather than bytes. A body of two-byte characters was 16 KB on the wire
+and passed; three-byte characters made it 24 KB. Measured: 8,034 characters, **16,034 bytes**,
+accepted. The constant said bytes and the check counted something else — `MIND.md` #17, on the
+one path whose entire job is bounding hostile input.
+
+**And the limit ran too late.** The handler's own comment said an oversized POST was "dropped
+rather than parsed", but the check came *after* `await req.text()` had already buffered the
+whole body, so the memory was spent regardless.
+
+Now enforced in bytes, twice: `Content-Length` is checked before anything is read, and the
+decoded body is measured with `TextEncoder` for clients that omit or lie about it. Verified
+both paths independently — with a declared length, and over chunked encoding where there is
+none. A valid report still answers 204 either way, and a malformed one still answers 204
+without logging.
+
 ### 2026-09-07 — Every URL in the sitemap was a redirect
 
 `next.config.ts` sets `trailingSlash: true`, so `/list-domain` answers **308** and the real URL

@@ -9,8 +9,9 @@ import { NextResponse } from "next/server";
  * credentials -- so everything arriving here is attacker-controllable. It is
  * therefore treated as hostile input:
  *
- *   * The body is read as text with a hard size limit, so a multi-megabyte POST
- *     is dropped rather than parsed and logged.
+ *   * The body is size-limited in bytes, twice: once from `Content-Length`
+ *     before anything is read, and again on the decoded text for clients that
+ *     lie about it or omit it.
  *   * Only the handful of fields a real report contains are kept, each
  *     truncated. Logging the raw object meant an attacker could write arbitrary
  *     volume into production logs, which costs money and buries real reports.
@@ -19,6 +20,13 @@ import { NextResponse } from "next/server";
  */
 
 // Real CSP reports are well under 2 KB; 8 KB leaves generous headroom.
+//
+// Enforced in **bytes**, twice. It used to be compared against `raw.length`,
+// which counts UTF-16 code units rather than bytes -- so a body of two-byte
+// characters was 16 KB on the wire and passed an 8 KB check, and three-byte
+// characters made it 24 KB. The constant said bytes and the check counted
+// something else, which is the unit mismatch from `docs/MIND.md` #17 on a path
+// that exists specifically to bound hostile input.
 const MAX_BODY_BYTES = 8 * 1024;
 const MAX_FIELD_CHARS = 512;
 
@@ -45,8 +53,20 @@ function clean(value: unknown): string | number | undefined {
 
 export async function POST(req: NextRequest) {
   try {
+    // Refuse before reading, when the client says how big it is. The comment
+    // above this handler claimed an oversized POST was "dropped rather than
+    // parsed", but the check ran *after* `req.text()` had already buffered the
+    // whole thing, so the memory was spent either way. A declared length is
+    // trivially forgeable, hence the second check below -- this one just means
+    // an honest client never gets read.
+    const declared = Number(req.headers.get("content-length"));
+    if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) {
+      return new NextResponse(null, { status: 413 });
+    }
+
     const raw = await req.text();
-    if (raw.length > MAX_BODY_BYTES) {
+    // Bytes, not `raw.length`. See the note on MAX_BODY_BYTES.
+    if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) {
       return new NextResponse(null, { status: 413 });
     }
 
