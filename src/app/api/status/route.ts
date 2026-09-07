@@ -15,6 +15,7 @@ import {
   formatKas,
 } from '@/lib/fees';
 import { getL1CovenantStatus, resolveDirectorySource } from '@/lib/kaspaDomainRuntime';
+import { runRlsProbe } from '@/lib/rlsProbe';
 
 export const runtime = 'nodejs';
 // Health is worthless cached: the whole point is what is true right now.
@@ -258,23 +259,21 @@ async function checkRls(): Promise<Check> {
     };
   }
 
-  const { error } = await client.from('domains').insert({
-    domain_hash: '0',
-    name: `status-probe-${Date.now()}.invalid`,
-    owner: 'kaspa:status-probe',
-  });
+  const outcome = await runRlsProbe(async (payload) =>
+    client.from('domains').insert(payload as never)
+  );
 
-  if (!error) {
+  if (outcome.kind === 'open') {
     return {
       id: 'rls',
       label: 'Row Level Security',
       state: 'fail',
-      detail: 'The public key was able to INSERT. Anyone can forge a listing.',
+      detail: 'The public key was not refused by RLS. Anyone may be able to forge a listing.',
       action: 'Re-run the RLS section of supabase/schema.sql immediately.',
     };
   }
 
-  if (error.code === 'PGRST205') {
+  if (outcome.error?.code === 'PGRST205') {
     return {
       id: 'rls',
       label: 'Row Level Security',
@@ -284,16 +283,13 @@ async function checkRls(): Promise<Check> {
     };
   }
 
-  // Only a refusal by the database proves RLS is working. A failed connection
-  // also produces an error, and reading that as "writes are blocked" would make
-  // this check pass hardest exactly when it can see least.
-  if (error.code !== '42501' && !/row-level security/i.test(error.message ?? '')) {
+  if (outcome.kind === 'unknown') {
     return {
       id: 'rls',
       label: 'Row Level Security',
       state: 'unknown',
       detail: `Inconclusive — the write was refused, but not by RLS: ${
-        error.message || error.code || 'unknown error'
+        outcome.error?.message || outcome.error?.code || 'unknown error'
       }`,
     };
   }
