@@ -252,7 +252,7 @@ the CSP items in 3.
 
 ## In progress
 
-_(none)_
+- _(Codex)_ — status-route store-error classification: `src/app/api/status/route.ts` plus focused regression coverage. Claiming queued item 5 to distinguish an unreachable store from setup-incomplete and unexpected failures.
 
 ---
 
