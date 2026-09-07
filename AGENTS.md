@@ -124,7 +124,7 @@ Cross into someone's area when it's the right fix; just note it on the board.
 
 ### Current claims
 
-- _(Codex)_ — My Domains unknown listing status CTA in `src/app/domains/my-domains/page.tsx` (claimed 2026-09-08; docs queue item in progress).
+- _(Codex)_ — no open claim. My Domains unknown listing status CTA fixed in `378eb05`.
 
 - _(Codex)_ — category page active-listing filter in `src/app/domains/categories/category/[category]/page.tsx`
   and `src/components/categoryDomains.ts` (completed in `9ba8e25`; claim closed).

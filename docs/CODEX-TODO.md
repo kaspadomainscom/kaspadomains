@@ -208,8 +208,6 @@ and cards, with focused regression coverage for mixed and all-inactive categorie
 
 ## In progress
 
-- _(Codex)_ — My Domains unknown listing status must not offer a paid relist CTA: `src/app/domains/my-domains/page.tsx` (claimed 2026-09-08).
-
 - _(Codex)_ — category page active-listing filter: `src/app/domains/categories/category/[category]/page.tsx`,
   `src/components/categoryDomains.ts`, and focused regression test. Completed in `9ba8e25`; claim closed.
 
@@ -218,6 +216,11 @@ and cards, with focused regression coverage for mixed and all-inactive categorie
 ---
 
 ## Done
+
+- **My Domains unknown listing status CTA** — `378eb05`, Codex, 2026-09-08. The row now
+  distinguishes unavailable listing data from a confirmed unlisted domain, so a database
+  outage or loading state cannot invite a second paid listing. Focused regression coverage
+  protects the unknown, not-listed, and listed action states.
 
 - **Side-effect-free status RLS probe** — `022e7d9` plus same-bug transport hardening
   `ecad730`, Codex, 2026-09-08. The health endpoint no longer inserts a persistable fake

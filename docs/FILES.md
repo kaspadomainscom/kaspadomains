@@ -1,10 +1,10 @@
 # Files
 
-Last updated: 2026-09-08 (category browse filtering)
+Last updated: 2026-09-08 (unknown listing-status CTA)
 
 Every file in the repo, what it is for, and whether it is actually doing
-  anything. **Current inventory:** 131 TypeScript files under `src/`, with `npm run dead:check`
- reporting 131 source files, 59 entry points, and **zero unreachable files** on 2026-09-08. This map
+  anything. **Current inventory:** 135 TypeScript files under `src/`, with `npm run dead:check`
+ reporting 135 source files, 61 entry points, and **zero unreachable files** on 2026-09-08. This map
 exists because nobody could previously answer which files were live without manually tracing
 many dead EVM fallback paths.
 
@@ -185,7 +185,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `domains/page.tsx` | Browse + filter. Windowed pagination; an outage is not rendered as an empty directory | 🔒 |
 | `domains/categories/` | Category index and per-category pages | 🔒 |
 | `domains/top-voted/` | Ranking | 🔒 |
-| `domains/my-domains/` | KNS ownership **and** listing status, kept as separate questions | 🔒 |
+| `domains/my-domains/` | KNS ownership **and** listing status, kept as separate questions; unavailable status has no paid CTA | 🔒 |
 | `domains/my-votes/` | Rewritten to read Supabase by the L1 address | 🔒 |
 | `domains/new-listings/` | Redirect to `/list-domain` | ✅ |
 | `domain/[name]/` | Public profile. Existence from `domains`, category only a label | 🔒 |
@@ -216,8 +216,8 @@ hook.
 
 ### Reachability
 
-`npm run dead:check` is the source of record: as of 2026-09-07 it reports 123 source files,
-55 entry points, 123 reachable files and **0 unreachable files**. The stale EVM adapters and
+`npm run dead:check` is the source of record: as of 2026-09-08 it reports 135 source files,
+61 entry points, 135 reachable files and **0 unreachable files**. The stale EVM adapters and
 six unimported KNS hooks were removed rather than allowlisted.
 
 ## 8b. Documentation — `docs/`
