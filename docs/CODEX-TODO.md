@@ -32,18 +32,25 @@ will start it, and you can work without checking whether someone already has.
 
 Ownership means "default editor, and reviewer of changes here" — not a lock.
 
-| Area | Owner |
-|---|---|
-| `src/hooks/wallet/**`, wallet connect/reconnect UX | **Codex** |
-| `src/lib/kaspaDomainRuntime.ts` and its consumers | **Codex** |
-| `src/hooks/kns/api/**` | **Codex** |
-| `src/app/api/status/route.ts`, `src/app/status/page.tsx` | **Codex** |
-| `src/lib/kasplex.ts`, `src/lib/viemChains.ts` | **Codex** |
-| Test infrastructure, CI, `package.json` scripts | **Codex** |
-| `docs/**`, `README.md`, `AGENTS.md` prose | **Claude** |
-| `src/data/**`, `src/lib/server/**`, `src/app/api/domains/**` | **Claude** |
-| `supabase/**` | **Claude** |
-| UI pages and components not listed above | **Claude** |
+This table is the **source of record**, and `scripts/check-staged.mjs` parses it rather than
+keeping a second copy. Only the backticked path patterns are machine-readable; rows that are
+prose still tell a human what is meant, and files they cover come back as *unassigned* rather
+than guessed at.
+
+| Area | Owner | Note |
+|---|---|---|
+| `src/hooks/wallet/**`, wallet connect/reconnect UX | **Codex** | |
+| `src/lib/kaspaDomainRuntime.ts` and its consumers | **Codex** | |
+| `src/hooks/kns/api/**` | **Codex** | |
+| `src/app/api/status/route.ts`, `src/app/status/page.tsx` | **Codex** | |
+| `src/lib/kasplex.ts`, `src/lib/viemChains.ts` | **Codex** | |
+| Test infrastructure, CI, `package.json` scripts | **Codex** | |
+| `docs/**`, `README.md`, `AGENTS.md` prose | **Claude** | |
+| `src/data/**`, `src/lib/server/**`, `src/app/api/domains/**` | **Claude** | |
+| `supabase/**` | **Claude** | |
+| `scripts/**` | **Claude** | all five scripts here were written by Claude; the `package.json` wiring for them stays Codex's |
+| `eslint.config.mjs` | **Claude** | the three project rules in it were written by Claude |
+| `src/components/**`, `src/app/**` | **Claude** | the general rule; the Codex paths above win, because the check matches the longest pattern |
 
 ---
 

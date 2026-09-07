@@ -43,39 +43,84 @@ in-progress notes only.
 
 ## Continuous audit loop — backlog for next iterations
 
-A recurring local loop (`/loop 10m`, job `9a9a1656`) is running audit-and-fix passes across
-UI/UX, content, SEO, and missing-page gaps, recording completed work in `BUGS.md`/`GAPS.md`
-as it goes. Checked so far: homepage + trending data, `/domains`, `/domains/top-voted`,
-`/search`, `DomainCard`, OG/Twitter metadata, robots.txt, marketplace-language across the
-whole site, mobile hamburger menu, image alt text, heading hierarchy (all pages now have
-exactly one `<h1>`), internal linking + theme + breadcrumbs on `/learn`, `/docs`,
-`/business-plan`, both category pages, a full (non-`tail`-truncated) lint audit, the entire
-community voting feature (was calling nonexistent contract functions everywhere), and the
-listing-price display/admin-adjustability questions. Also fixed this pass: `README.md` was
-still unedited `create-next-app` boilerplate (no project description, no link into this
-folder) — rewritten; and found `src/types/db.ts` is dead code (never imported) containing
-a marketplace-shaped `Domain` type and an old commented-out CSP draft that's the likely
-origin of the still-open "why does `connect-src` allowlist Supabase" question in `GAPS.md`.
-Not yet checked, in rough priority order — full detail on each in [`GAPS.md`](./GAPS.md)
-and [`BUGS.md`](./BUGS.md):
+The loop runs audit-and-fix passes across correctness, UI/UX, content and SEO, recording
+completed work in [`BUGS.md`](./BUGS.md) and [`GAPS.md`](./GAPS.md) as it goes.
+
+**Scheduling is currently broken.** Codex reports that job `9a9a1656` no longer exists, so no
+duplicate was created and its preserved fields were not guessed at. The owner has to recreate
+or relink the 10-minute loop before continuous runs resume; until then, passes happen when
+someone asks for one.
+
+**Covered so far.** Earlier passes: homepage and trending data, `/domains`,
+`/domains/top-voted`, `/search`, `DomainCard`, OG/Twitter metadata, `robots.txt`,
+marketplace-language across the whole site, the mobile menu, image alt text, heading hierarchy,
+internal linking and breadcrumbs on `/learn`, `/docs`, `/business-plan` and both category
+pages, a full lint audit, the community voting feature, and the listing-price questions.
+
+2026-09-07 added: the paid write path (a transient failure charged the fee twice, and an
+expired intent refused a fee already paid), the homepage reporting an outage as an empty
+directory, `/search` claiming "no matching domains" before searching, the browse page shipping
+no listings in its HTML, hydration-unsafe date and count formatting, an unreachable database
+reported as a 500, the profile URL built eleven different ways, profile-link URLs repaired
+instead of refused, and the category editor claiming zero categories it could not read.
+
+Three checks were added in the same period and belong in every run:
+`scripts/schema-check.mjs`, `scripts/client-boundary-check.mjs` and `scripts/check-staged.mjs`.
+
+Not yet checked, in rough priority order — full detail in [`GAPS.md`](./GAPS.md) and
+[`BUGS.md`](./BUGS.md):
 
 ### Repeatable loop contract
 
-Each 10-minute run uses an isolated worktree and completes at most one independently
-testable item. It reads `AGENTS.md`, `CODEX-TODO.md`, `MIND.md`, `TODO.md`, `BUGS.md` and
-`GAPS.md`, checks for in-flight work, stops for owner-only decisions or live Supabase/chain/
-treasury actions, runs the relevant gates (`npm test`, `npm run lint`, `npm run build`,
-`npx tsc --noEmit`, `npm run dead:check`, plus `npm run db:check` for database changes), and
-commits only after they pass. At the end of a successful iteration, push only that verified
-commit to the current branch's configured remote; never force-push, rewrite history, or push
-unrelated in-flight files. Reports use the fixed `STATUS / ITEM / RESULT / COMMIT / FILES /
-CHECKS / BLOCKER / NEXT` shape and notify only on a change, verification failure, push failure
-or blocker.
+**The loop's standing task is: _keep coding kaspadomains.com and fix bugs in all app._** That
+is deliberately open-ended, which makes the cap below the thing that keeps it honest — an
+open-ended task with no cap becomes a wall of unrelated changes nobody can review or revert.
 
-**Automation blocker (2026-09-07):** the Codex app lookup reports that job `9a9a1656` no
-longer exists, so the push-at-end policy could not be written to the scheduled job. This pass
-did not create a duplicate or guess its preserved fields; the owner must recreate or relink the
-10-minute loop before continuous runs can resume.
+Each run uses an isolated worktree and completes **at most one independently testable item**.
+That cap is the point: an iteration that does three things cannot be reverted, reviewed or
+reported on cleanly, and it is how a loop turns into a wall of unrelated changes.
+
+**Read first**, every run: [`AGENTS.md`](../AGENTS.md), [`CODEX-TODO.md`](./CODEX-TODO.md),
+[`MIND.md`](./MIND.md), this file, [`BUGS.md`](./BUGS.md), [`GAPS.md`](./GAPS.md). Check for
+in-flight work before touching anything.
+
+**Stop, do not guess**, for owner-only decisions and for anything that touches live Supabase
+data, the chain, or the treasury (`MIND.md` #8 and #9). A blocker is a finding to report, not
+a wall to climb.
+
+**Gates — all of them, on the full output, not the tail** (`MIND.md` #6):
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm test
+npm run build                        # exit code, not "Compiled successfully" in the log
+npm run dead:check
+node scripts/schema-check.mjs         # app vs supabase/schema.sql, no database needed
+node scripts/client-boundary-check.mjs # server-only APIs reachable from client components
+npm run db:check                      # database changes only; needs credentials
+```
+
+A green run is evidence, not proof (`MIND.md` #13): a check that cannot see must not report
+OK (#14), so read what each one actually claims to have checked.
+
+**Before committing**: stage explicit paths — never `git add -A` or `git add .` — and run
+`node scripts/check-staged.mjs`, which fails if the staged set spans both agents' columns.
+See ground rules 1 and 2 in `AGENTS.md`.
+
+**Committing and pushing**: commit only after the gates pass. Push is a fast-forward of the
+current branch only; never force-push and never rewrite shared history, because the other
+agent's commits are on the same branch. A push sends the **whole branch**, so satisfy yourself
+it is green as a whole, not just your part. If the push is not a fast-forward, stop and say so
+on the board.
+
+**Keep the maps current in the same change** that makes them wrong, not afterwards:
+[`FILES.md`](./FILES.md) for the file map, `BUGS.md` for something broken, `GAPS.md` for
+something missing, `MIND.md` for a new operating lesson. This is a standing practice in
+`MIND.md`, not a courtesy.
+
+**Reports** use the fixed `STATUS / ITEM / RESULT / COMMIT / FILES / CHECKS / BLOCKER / NEXT`
+shape, and notify only on a change, a verification failure, a push failure or a blocker.
 
 ### First-cycle activation, truth and branding items
 
