@@ -11,6 +11,17 @@ import {
   type PendingListing,
 } from '@/lib/pendingPaidWrite';
 
+function getPendingStorage(): Storage | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage;
+  } catch {
+    // A storage getter can throw in private browsing or when storage is blocked.
+    // The in-memory pending record still makes a same-page retry safe.
+    return null;
+  }
+}
+
 /**
  * Create a listing.
  *
@@ -59,7 +70,7 @@ export function useListDomain() {
     setIsLoading(true);
 
     try {
-      const storage = typeof window !== 'undefined' ? window.localStorage : null;
+      const storage = getPendingStorage();
       const pending =
         (pendingInMemory.current?.domain.trim().toLowerCase() === domain.trim().toLowerCase()
           ? pendingInMemory.current
