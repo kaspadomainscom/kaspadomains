@@ -27,6 +27,18 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
       untested, and it is the second thing to do after the schema.
 ## Fixed
 
+### 2026-09-08 — A paid listing retry rejected the same categories in a different order
+
+After a listing fee was sent, recovery compared the pending category array with the current
+selection using `JSON.stringify`. The server treats categories as a set, so selecting the same
+categories in another order made the client reject the already-paid request and leave the
+listing unfinished.
+
+`sameCategorySelection` now trims, deduplicates and sorts both selections before comparing them.
+Storage matching and the listing hook share that rule; a genuinely different category set still
+refuses reuse. Native regression coverage exercises both paths. No fee, payment verification or
+category allow-list behavior changed.
+
 ### 2026-09-08 — Category pages rendered withdrawn listings
 
 The category page used `isActive` only for its empty-state check, then rendered the original

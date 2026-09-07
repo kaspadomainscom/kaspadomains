@@ -124,8 +124,7 @@ Cross into someone's area when it's the right fix; just note it on the board.
 
 ### Current claims
 
-- _(Codex)_ — paid listing recovery category-order comparison in `src/hooks/domain/useListDomain.ts`
-  and `src/lib/pendingPaidWrite.ts` (claimed 2026-09-08; docs queue item in progress).
+- _(Codex)_ — no open claim. Paid listing retry now accepts equivalent category order in `dca5f4a`.
 
 - _(Codex)_ — no open claim. My Domains unknown listing status CTA fixed in `378eb05`.
 

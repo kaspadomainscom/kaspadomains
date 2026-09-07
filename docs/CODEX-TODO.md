@@ -208,10 +208,6 @@ and cards, with focused regression coverage for mixed and all-inactive categorie
 
 ## In progress
 
-- _(Codex)_ — paid listing recovery must accept the same categories in a different order:
-  `src/hooks/domain/useListDomain.ts`, `src/lib/pendingPaidWrite.ts` and focused regression test
-  (claimed 2026-09-08).
-
 - _(Codex)_ — category page active-listing filter: `src/app/domains/categories/category/[category]/page.tsx`,
   `src/components/categoryDomains.ts`, and focused regression test. Completed in `9ba8e25`; claim closed.
 
@@ -220,6 +216,11 @@ and cards, with focused regression coverage for mixed and all-inactive categorie
 ---
 
 ## Done
+
+- **Paid listing retry rejected equivalent category order** — `dca5f4a`, Codex, 2026-09-08.
+  Recovery now compares the trimmed category membership as a set, so a reordered selection can
+  finish a listing without another payment while a different set remains refused. Focused native
+  regression coverage protects both outcomes.
 
 - **My Domains unknown listing status CTA** — `378eb05`, Codex, 2026-09-08. The row now
   distinguishes unavailable listing data from a confirmed unlisted domain, so a database
