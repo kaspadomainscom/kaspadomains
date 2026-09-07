@@ -599,6 +599,30 @@ from the declaration.
 
 **Checklist**: [`mind/verification-checklist.md`](./mind/verification-checklist.md), step 0.
 
+### Recurrence (2026-09-07, twice in one session): `grep -l` does not find a renamed caller
+
+Both times the mistake was the same, and both times it ended up **written into a comment as a
+fact**:
+
+1. "Two client components import the manifest" — one of them only *mentioned* the function in
+   prose explaining that it used to call it. `grep -l` matched the comment.
+2. "Nothing in this module is reachable from a client component, which is what makes `cache()`
+   safe here" — a client component imported it through `findDomainByName`, a wrapper with a
+   different name. Grepping for `lookupDomain` could not have found it.
+
+The second is the worse one, and not because of the `cache()`. **The comment asserted exactly
+the property a reader would otherwise have checked**, so it did not survive scrutiny — it
+replaced it. A wrong comment on a subtle invariant is more durable than the bug it describes.
+
+The rule: *whose* list are you reading? A grep returns files containing a string. The question
+is almost always "what reaches this", and the answer is a graph — imports, re-exports,
+wrappers — not a text match. Where the answer matters, walk the graph:
+[`scripts/client-boundary-check.mjs`](../scripts/client-boundary-check.mjs) does it for the
+client boundary, and it flags case 2 immediately, naming both components.
+
+And before writing an invariant into a comment, ask what would have to be true for it to be
+false, then check *that*. Both of these were one command away from being disproved.
+
 ## 19. When a principle keeps being violated, it has to become a mechanism
 
 **Purpose**: writing a rule down is a request to remember it. Past some number of
