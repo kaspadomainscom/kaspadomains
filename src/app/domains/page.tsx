@@ -1,6 +1,14 @@
+import type { Metadata } from 'next';
 import { loadCategoriesManifestOnce } from '@/data/categoriesManifest.server';
 import type { CategoryManifest } from '@/data/categoriesManifest';
 import { BrowseDomains } from '@/components/pages/domains/BrowseDomains';
+
+export const metadata: Metadata = {
+  title: 'Browse Premium .kas Domains | KaspaDomains',
+  description:
+    'Browse premium .kas domains by category. Every domain is registered on Kaspa L1 through KNS and owned directly by its holder — KaspaDomains is a registry and discovery layer, not a marketplace.',
+  alternates: { canonical: 'https://kaspadomains.com/domains' },
+};
 
 /**
  * The directory's main browse page.

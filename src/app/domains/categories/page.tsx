@@ -7,6 +7,7 @@ import { type CategoryManifest } from "@/data/categoriesManifest";
 export const metadata: Metadata = {
   title: "Domain Categories | kaspadomains.com",
   description: "Browse all KNS domain categories like finance, gaming, characters, memes, and more.",
+  alternates: { canonical: "https://kaspadomains.com/domains/categories" },
 };
 
 export default async function DomainCategoriesPage() {

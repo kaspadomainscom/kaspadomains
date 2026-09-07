@@ -13,6 +13,7 @@ import { LISTING_FEE_LABEL, VOTE_FEE_LABEL } from "@/lib/fees";
 const TRENDING_COUNT = 3;
 
 export const metadata = {
+  alternates: { canonical: "https://kaspadomains.com" },
   title: "KaspaDomains — Premium .kas Domains, Organized by Category",
   description:
     `List your .kas domain for ${LISTING_FEE_LABEL}. Get placed in a category, add your X account and links, and build your Kaspa-native identity.`,

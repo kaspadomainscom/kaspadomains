@@ -30,6 +30,37 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
 
 ## Fixed
 
+### 2026-09-07 — Six pages told search engines they were a different page
+
+Next merges a layout's `metadata` into every route beneath it, so an `alternates.canonical` on
+a layout is inherited by every descendant that does not override it. Both layouts had one:
+
+- **the root layout** claimed `https://kaspadomains.com`, so `/learn`, `/list-domain` and
+  `/search` each served a canonical saying they *were* the homepage;
+- **`/domains/layout.tsx`** claimed `https://kaspadomains.com/domains`, so
+  `/domains/categories`, `/domains/my-domains` and `/domains/my-votes` served a canonical
+  saying they were the browse page — and inherited its title too, so all three were titled
+  "Browse Premium .kas Domains".
+
+A canonical is the one tag whose entire job is to say "these two URLs are the same page", so
+this is the instruction to drop five real URLs from the index in favour of two others. The two
+client-component pages could not have fixed it themselves: a client component cannot export
+`metadata` at all.
+
+Neither layout declares a canonical now. Every indexable page states its own, and a page
+without one is judged on its own URL, which is honest. `/domains/my-domains` and
+`/domains/my-votes` get `robots: noindex, follow` through new sibling layouts rather than a
+corrected canonical — they render different content for every wallet, so there is nothing to
+index — and `/list-domain` gets a layout because it is a client component.
+
+Verified against the served HTML for twelve routes, before and after. A side effect worth
+noting: a domain profile page during a database outage used to serve
+`canonical: https://kaspadomains.com`, so an outage actively told search engines every domain
+page was the homepage. It now serves no canonical and `noindex`.
+
+Same class as the profile-URL consolidation earlier the same day (`MIND.md` #17), one level up:
+there the URL had eleven builders, here the claim had one owner too many.
+
 ### 2026-09-07 — The sidebar told every visitor there were no categories, on every page
 
 `Sidebar` destructured only `options` from `useGetAllowedCategories` and ignored the `loading`

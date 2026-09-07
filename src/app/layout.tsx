@@ -30,9 +30,12 @@ export const metadata: Metadata = {
 
   metadataBase: new URL("https://kaspadomains.com"),
 
-  alternates: {
-    canonical: "https://kaspadomains.com",
-  },
+  // No `alternates.canonical` here on purpose. Next merges layout metadata into
+  // every descendant route, so a canonical set at the root is inherited by any
+  // page that does not override it -- and a canonical is a claim that two URLs
+  // are the same page. /learn, /list-domain and /search were all telling search
+  // engines they *were* the homepage. Each page states its own; a page with none
+  // is judged on its own URL, which is honest.
 
   openGraph: {
     title: "Kaspadomains – Explore the Kaspa Name System",

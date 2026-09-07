@@ -6,6 +6,7 @@ export const metadata = {
   title: "Learn | KaspaDomains",
   description:
     "How KaspaDomains works: list your .kas domain, place it in a category, add your resources, and get discovered.",
+  alternates: { canonical: "https://kaspadomains.com/learn" },
 };
 
 export default function Learn() {
