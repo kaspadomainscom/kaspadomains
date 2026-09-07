@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { useToast } from '@/components/ToastProvider';
 import { signRequest, sendPaidWrite, payFee, preflight } from '@/lib/signedFetch';
 import { formatKas } from '@/lib/fees';
+import { isListableDomain } from '@/lib/listDomainValidation';
 import {
   clearPendingListing,
   findPendingListing,
@@ -61,7 +62,7 @@ export function useListDomain() {
 
     setError(null);
 
-    if (!domain || !domain.endsWith('.kas') || domain.length < 5) {
+    if (!isListableDomain(domain)) {
       addToast('Invalid domain. Must end with ".kas" and be at least 5 characters.', 'error');
       return null;
     }
