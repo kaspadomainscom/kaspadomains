@@ -72,6 +72,12 @@ because the test runner cannot resolve a relative import, so a separate module w
 untestable — and the alternative, a second copy of the normalisation, is the bug being fixed.
 Third instance of `MIND.md` #17 in this codebase after the `.kas` suffix and the category cap.
 
+**Follow-up, same day: the consolidation itself missed one.** The survey grep excluded
+`/domain/update/`, so a twelfth call site in `DomainInfoPanel` survived the pass that existed
+specifically to remove it — found only by reading the component later. Fixed, and the rule is
+now a lint error (`noInlineDomainUrls` in `eslint.config.mjs`) rather than a convention, since
+a careful grep has now demonstrably failed at it twice. `MIND.md` #19.
+
 **A bug introduced and caught inside the fix**: the first version defaulted an unbuildable URL
 to the site origin (`?? SITE_ORIGIN`). That is worse than the problem — a canonical pointing at
 the homepage tells search engines the profile *is* the homepage, which deindexes it in favour

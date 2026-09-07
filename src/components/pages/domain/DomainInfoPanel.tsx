@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Domain } from "@/data/types";
 import { Detail } from "./Detail";
 import { DomainResources } from "./DomainResources";
+import { domainUpdatePath } from "@/lib/domainName";
 
 type Props = {
     domain: Domain;
@@ -35,7 +36,7 @@ export function DomainInfoPanel({ domain, category }: Props) {
             <DomainResources domainName={domain.name} />
 
             <Link
-                href={`/domain/update/${encodeURIComponent(domain.name)}`}
+                href={domainUpdatePath(domain.name) ?? "/domains"}
                 className="inline-block text-sm text-kaspaMint hover:underline"
             >
                 Own this domain? Manage its resources →

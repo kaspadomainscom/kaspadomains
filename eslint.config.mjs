@@ -65,11 +65,49 @@ const noLocaleFormatting = {
   },
 };
 
+/**
+ * Domain URLs are built by `@/lib/domainName`, never by hand.
+ *
+ * They were built inline in eleven places, three different ways -- six encoded
+ * the name, five did not, only one normalised it -- so the canonical tag, the
+ * og:url, the sitemap entry and the links for one page could be four different
+ * strings. `/domain/[name]` redirects anything not already canonical, which
+ * turns that into self-inflicted redirects and a canonical tag that contradicts
+ * itself.
+ *
+ * The rule exists because consolidating them by hand **missed one**: the survey
+ * grep filtered out `/domain/update/`, and a twelfth call site in
+ * `DomainInfoPanel` survived the pass that was specifically about this. A rule
+ * finds the one a careful grep does not.
+ */
+const noInlineDomainUrls = {
+  // No exemption for robots.txt, which also contains "/domain/update/": the
+  // selector matches template literals only, and that file uses a plain string
+  // for a disallow prefix rather than building a URL. An ignore entry there
+  // would be config that never does anything.
+  files: ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}", "src/hooks/**/*.{ts,tsx}"],
+  rules: {
+    "no-restricted-syntax": [
+      "error",
+      {
+        // The backslashes are doubled because this selector lives in a JS
+        // string: esquery needs to receive /^\/domain\//, so the source must
+        // carry \\/. Written singly it becomes /^/domain//, which is not a
+        // valid selector and takes the whole lint run down with it.
+        selector: "TemplateLiteral[quasis.0.value.raw=/^\\/domain\\//]",
+        message:
+          "Build domain URLs with domainProfilePath / domainProfileUrl / domainUpdatePath from @/lib/domainName, so the canonical tag, the sitemap and the links cannot disagree. See docs/MIND.md #17.",
+      },
+    ],
+  },
+};
+
 const eslintConfig = [
   ...nextCoreWebVitals,
   ...nextTypescript,
   noEmptyOnError,
   noLocaleFormatting,
+  noInlineDomainUrls,
   {
     ignores: [
       "node_modules/**",
