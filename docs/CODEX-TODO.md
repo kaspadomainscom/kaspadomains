@@ -217,7 +217,10 @@ import { classifyStoreError } from '@/lib/storeError';
 
 ## In progress
 
-_(none)_
+- **(Codex) ACT-001 activation path** — make homepage/header routes to explore, search,
+  profiles and listing explicit while preserving canonical profile lookup and the
+  preflight-before-payment flow. Planned paths: `src/app/page.tsx`,
+  `src/components/header/Header.tsx`, and synchronized repository maps.
 
 ---
 
