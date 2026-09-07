@@ -27,6 +27,16 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
       untested, and it is the second thing to do after the schema.
 ## Fixed
 
+### 2026-09-08 — Category pages rendered withdrawn listings
+
+The category page used `isActive` only for its empty-state check, then rendered the original
+unfiltered membership list. A category with one active and one withdrawn domain therefore
+showed the withdrawn domain in the browse grid.
+
+`activeCategoryDomains` now owns the render boundary and the page maps that filtered list for
+both the empty state and cards. Native regression tests cover mixed and all-inactive categories;
+no moderation or data-loading behavior changed.
+
 ### 2026-09-08 — The status health check could create fake directory rows
 
 `/api/status` tested Row Level Security by inserting a real `status-probe-*.invalid` domain.

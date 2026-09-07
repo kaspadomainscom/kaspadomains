@@ -1,10 +1,10 @@
 # Files
 
-Last updated: 2026-09-08
+Last updated: 2026-09-08 (category browse filtering)
 
 Every file in the repo, what it is for, and whether it is actually doing
-anything. **Current inventory:** 123 TypeScript files under `src/`, with `npm run dead:check`
-reporting 123 source files, 55 entry points, and **zero unreachable files** on 2026-09-07. This map
+  anything. **Current inventory:** 131 TypeScript files under `src/`, with `npm run dead:check`
+ reporting 131 source files, 59 entry points, and **zero unreachable files** on 2026-09-08. This map
 exists because nobody could previously answer which files were live without manually tracing
 many dead EVM fallback paths.
 
@@ -203,7 +203,8 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 
 **Live components:** `Header` (+`trendingDomains`; explicit Home, Domains, Search, Learn and
 List Domain routes), `Footer`, `Sidebar`,
-`DomainCard`, `PickDomainModal`, `Loader`, `ToastProvider`,
+`DomainCard`, `PickDomainModal`, `categoryDomains.ts` (filters inactive category memberships),
+`Loader`, `ToastProvider`,
 `JsonLd`, `NonceWrapper`, `KaspaDomainsLogo`, `icons`, and under `pages/domain/`:
 `VotingSection`, `CategoryEditor`, `DomainInfoPanel`, `DomainTitleSection`,
 `DomainBreadcrumb`, `DomainResources`, `Detail`.

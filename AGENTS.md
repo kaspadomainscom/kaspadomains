@@ -125,7 +125,7 @@ Cross into someone's area when it's the right fix; just note it on the board.
 ### Current claims
 
 - _(Codex)_ — category page active-listing filter in `src/app/domains/categories/category/[category]/page.tsx`
-  and `src/components/categoryDomains.ts` (claimed 2026-09-08).
+  and `src/components/categoryDomains.ts` (completed in `9ba8e25`; claim closed).
 - _(Codex)_ — no open claim. SA-05 replay/concurrency protection is complete in `548e764`;
   its Supabase migration remains unapplied, so no live database or wallet flow has been
   asserted as working.

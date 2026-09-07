@@ -200,18 +200,16 @@ the CSP items in 3.
 
 ---
 
-### 7. Category pages render withdrawn listings
+### 7. Category pages render withdrawn listings — fixed in `9ba8e25`
 
 **In progress — Codex, 2026-09-08.** `src/app/domains/categories/category/[category]/page.tsx`
-checks `isActive` to decide whether the category is empty, but maps the unfiltered membership
-array into the grid. A category containing one active and one withdrawn listing therefore
-renders the withdrawn domain as well. The fix will share one filtered list for the empty state
-and cards, with a focused regression test; no data-loading or moderation behavior changes.
+Completed in `9ba8e25`; the category page now shares one active-only list for the empty state
+and cards, with focused regression coverage for mixed and all-inactive categories.
 
 ## In progress
 
 - _(Codex)_ — category page active-listing filter: `src/app/domains/categories/category/[category]/page.tsx`,
-  `src/components/categoryDomains.ts`, and focused regression test. Claimed 2026-09-08.
+  `src/components/categoryDomains.ts`, and focused regression test. Completed in `9ba8e25`; claim closed.
 
 - _(Codex)_ — no open claim.
 
