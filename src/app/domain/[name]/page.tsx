@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import type { Metadata } from "next";
 
 import { loadCategoriesManifestOnce } from "@/data/categoriesManifest.server";
-import { lookupDomain, findDomainCategoryTitle } from "@/data/domainLookup";
+import { lookupDomainOnce, findDomainCategoryTitleOnce } from "@/data/domainLookup.server";
 import { normalizeDomainName, domainProfilePath, domainProfileUrl } from "@/lib/domainName";
 import { getDomainJsonLd } from "@/lib/jsonld";
 import { JsonLd } from "@/components/JsonLd";
@@ -84,7 +84,7 @@ export async function generateMetadata({
   const resolvedParams = await params;
   const canonical = ensureKasSuffix(resolvedParams.name);
 
-  const result = await lookupDomain(canonical);
+  const result = await lookupDomainOnce(canonical);
 
   // A domain that genuinely isn't listed gets noindex too, but the page body is
   // what actually returns the 404 -- metadata only decides what crawlers are
@@ -92,7 +92,7 @@ export async function generateMetadata({
   if (result.status !== "found") return UNAVAILABLE_METADATA;
 
   const domain = result.domain;
-  const category = (await findDomainCategoryTitle(domain.name)) ?? "Uncategorized";
+  const category = (await findDomainCategoryTitleOnce(domain.name)) ?? "Uncategorized";
   const description = `${domain.name}, a premium KNS domain listed in the ${category} category on KaspaDomains.`;
 
   // Omitted rather than defaulted if it cannot be built. A canonical is a claim
@@ -142,7 +142,7 @@ export default async function DomainPage({ params }: PageProps): Promise<JSX.Ele
   // redirect() throws, so nothing after it runs.
   if (rawName !== canonical) redirect(domainProfilePath(canonical) ?? "/domains");
 
-  const result = await lookupDomain(canonical);
+  const result = await lookupDomainOnce(canonical);
 
   // "We couldn't check" is not "it doesn't exist". A 404 is a permanent answer
   // -- it tells search engines to drop the page and tells the owner their paid
@@ -171,7 +171,7 @@ export default async function DomainPage({ params }: PageProps): Promise<JSX.Ele
 
   // A missing category is not a missing domain. Failing to load one leaves the
   // page intact with an honest label rather than taking the whole profile down.
-  const category = (await findDomainCategoryTitle(domain.name)) ?? "Uncategorized";
+  const category = (await findDomainCategoryTitleOnce(domain.name)) ?? "Uncategorized";
 
   const nonce = (await headers()).get("x-csp-nonce") || undefined;
   const jsonLd = getDomainJsonLd({

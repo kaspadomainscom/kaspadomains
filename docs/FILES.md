@@ -141,6 +141,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `lib/storeError.ts` | Why a Supabase call failed: schema not applied, unreachable, or genuinely unexpected. The five-code check was written out three times, and all three answered "unreachable" with a 500 | ✅ |
 | `scripts/schema-check.mjs` | Cross-checks the app against `supabase/schema.sql` with no database: columns, RPC names and `p_*` parameters, `KD***` codes, schema version. Catches what only fails at runtime — and for the paid routes, only *after* the user has paid | ✅ |
 | `data/categoriesManifest.server.ts` | The manifest memoised per server request. The homepage loaded it three times — page, trending, JSON-LD — with nothing connecting them | ✅ |
+| `data/domainLookup.server.ts` | The domain lookups memoised per server request. Split out because `domainLookup.ts` is imported by the header and the search page, where React's `cache` has no request to scope to | ✅ |
 | `lib/paymentIntentToken.ts` | Mint/check the payment-intent token. Dependency-free and returns a boolean, so it is testable | ✅ |
 | `lib/paging.ts` | Reads every row of a query a server will silently truncate. Dependency-free so it is testable | ✅ |
 | `lib/domainName.ts` | The one owner of a `.kas` name's canonical form **and of the URLs built from it**. The name had five implementations (one published `foo.kas.kas`); the profile URL had eleven, five of them unencoded | ✅ |

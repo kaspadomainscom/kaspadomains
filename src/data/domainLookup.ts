@@ -1,4 +1,3 @@
-import { cache } from "react";
 import { fetchAllDomains, fetchDomainByName, fetchDomainCategories } from "./supabaseSource";
 import type { Domain } from "./types";
 import { normalizeDomainName } from "@/lib/domainName";
@@ -29,18 +28,20 @@ export type DomainLookup =
  * returned.
  */
 /**
- * Memoised per server request. Both callers are on the same page render:
- * `generateMetadata` needs the domain to build the title, and the page body
- * needs it again to render — so without this, every profile page ran the whole
- * lookup twice, doubling its cost and creating a window in which the two could
- * disagree about whether the domain exists.
+ * Not memoised here, deliberately.
  *
- * Server-only, which is what makes `cache` safe here: nothing in this module is
- * reachable from a client component.
+ * The server needs it to be -- `generateMetadata` and the page body both look
+ * the same domain up on one render -- but this module is imported by client
+ * components too (`components/header/Header.tsx` and `app/search/page.tsx`, via
+ * `findDomainByName` and `getAllDomains`), and React's `cache` is a server API
+ * with no request to scope to in a browser.
+ *
+ * So the memoisation lives in `domainLookup.server.ts`, the same split as
+ * `categoriesManifest.server.ts`. It was briefly applied here with a comment
+ * asserting the module was server-only; it was not, and the comment was the only
+ * thing saying otherwise.
  */
-export const lookupDomain = cache(async function lookupDomain(
-  name: string
-): Promise<DomainLookup> {
+export async function lookupDomain(name: string): Promise<DomainLookup> {
   if (!name) return { status: "not-listed" };
 
   // Normalised here rather than at each call site, and to the same rule the
@@ -63,7 +64,7 @@ export const lookupDomain = cache(async function lookupDomain(
     console.error("Supabase lookup failed for", searchName, error);
     return { status: "unavailable", error: error as Error };
   }
-});
+}
 
 /**
  * Finds a domain by its name (case-insensitive).
@@ -104,10 +105,8 @@ export async function getAllDomains(): Promise<Domain[]> {
  * Returns undefined when there is no category to show -- which callers should
  * render as "Uncategorized", never as "this domain does not exist".
  */
-/** Memoised for the same reason as `lookupDomain`. */
-export const findDomainCategoryTitle = cache(async function findDomainCategoryTitle(
-  name: string
-): Promise<string | undefined> {
+/** Memoised alongside `lookupDomain`, and for the same reason. */
+export async function findDomainCategoryTitle(name: string): Promise<string | undefined> {
   if (!name) return undefined;
   const searchName = normalizeDomainName(name);
 
@@ -121,4 +120,4 @@ export const findDomainCategoryTitle = cache(async function findDomainCategoryTi
     console.error("Supabase category lookup failed for", searchName, error);
     return undefined;
   }
-});
+}

@@ -197,7 +197,12 @@ import { classifyStoreError } from '@/lib/storeError';
 
 ## In progress
 
-_(nothing claimed — move items here with your name before starting)_
+- **(Codex) KaspaDomains.com repeatable TODO-loop upgrade** — upgrading the existing
+  10-minute loop contract and first-cycle website work: active-fee truth, supplied logo
+  integration, activation-path continuity, and evidence/reporting rules. Touching
+  `docs/TODO.md`, `docs/FILES.md`, `docs/kaspadomains-systems.md`, `src/app/**`,
+  `src/components/**`, `public/**`, and the loop automation configuration under the
+  user's explicit implementation request. Do not touch unrelated in-flight changes.
 
 ---
 
