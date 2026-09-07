@@ -15,8 +15,8 @@ export const runtime = 'nodejs';
  *
  * Replaces `DomainVotesManager.voteDomainByHash`. The contract enforced one
  * vote per wallet and took 6 KAS for it; here the unique constraint on
- * (domain_id, voter) enforces the first, and nothing collects the second --
- * voting is currently free. See docs/GAPS.md.
+ * (domain_id, voter) enforces the first, while the current 1 KAS fee is
+ * verified on Kaspa L1 before the vote is recorded.
  *
  * Unlike listing, a voter has no ownership claim to prove, so the EVM
  * signature is the whole check: it proves the vote came from the wallet it

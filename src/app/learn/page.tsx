@@ -1,5 +1,6 @@
 // src/app/learn/page.tsx
 import Link from "next/link";
+import { LISTING_FEE_LABEL, VOTE_FEE_LABEL } from "@/lib/fees";
 
 export const metadata = {
   title: "Learn | KaspaDomains",
@@ -35,7 +36,7 @@ export default function Learn() {
             <li>Connect your Kasware wallet — it holds the key that owns your domain on KNS, and signs the request (a message, not a transaction — signing is free)</li>
             <li>Pick a verified <code className="text-kaspaMint">.kas</code> domain you own</li>
             <li>Choose at least one category so your domain can be found</li>
-            <li>Pay a one-time <span className="text-kaspaMint font-semibold">200 KAS</span> listing fee — no renewals, ever</li>
+            <li>Pay a one-time <span className="text-kaspaMint font-semibold">{LISTING_FEE_LABEL}</span> listing fee — no renewals, ever</li>
             <li>Add your X account and other links to your domain&apos;s profile</li>
           </ul>
         </section>
@@ -69,7 +70,7 @@ export default function Learn() {
         <section className="bg-[#122c2a] p-6 md:p-8 rounded-2xl shadow-md border border-[#1d3b39]">
           <h2 className="text-4xl font-bold text-white mb-4">Community Voting</h2>
           <p className="text-gray-300 leading-relaxed">
-            Anyone can support a listed domain for <span className="text-kaspaMint font-semibold">1 KAS</span> per vote,
+            Anyone can support a listed domain for <span className="text-kaspaMint font-semibold">{VOTE_FEE_LABEL}</span> per vote,
             one vote per wallet. Votes raise a domain&apos;s ranking and visibility across the site,
             surfacing the domains the community values most — see who&apos;s currently
             leading on{" "}

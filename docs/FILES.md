@@ -3,8 +3,8 @@
 Last updated: 2026-09-07
 
 Every file in the repo, what it is for, and whether it is actually doing
-anything. **Current inventory:** 93 files under `src/`, with `npm run dead:check` reporting
-92 source files, 41 entry points, and **zero unreachable files** on 2026-09-06. This map
+anything. **Current inventory:** 115 TypeScript files under `src/`, with `npm run dead:check`
+reporting 115 source files, 50 entry points, and **zero unreachable files** on 2026-09-07. This map
 exists because nobody could previously answer which files were live without manually tracing
 many dead EVM fallback paths.
 
@@ -133,6 +133,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `lib/supabase.ts` | Typed read/admin clients. Admin throws if constructed in the browser | ✅ |
 | `lib/database.types.ts` | Hand-written schema/RPC types + `REQUIRED_SCHEMA_VERSION` 4 | ✅ |
 | `lib/fees.ts` | **The single source of the fee.** 200 KAS / 1 KAS, treasury address, shape-validated | ✅ |
+| `lib/feeDisplay.ts` | Dependency-free sompi formatter used to derive all fee labels | ✅ |
 | `lib/limits.ts` | How much of a listing a domain may have: the category cap and the link cap. Both were declared twice; the category one was enforced only on edits, so it could be sidestepped at creation | ✅ |
 | `lib/paymentCheck.ts` | Decides whether a transaction paid the fee, from the right wallet. Dependency-free, so it is testable | ✅ |
 | `lib/paidWriteRetry.ts` | When a request whose fee is **already paid** comes back failed: retry, treat as done, or stop. Dependency-free and tested — the wrong answer here charges someone twice | ✅ |
@@ -193,8 +194,8 @@ hook.
 
 ### Reachability
 
-`npm run dead:check` is the source of record: as of 2026-09-06 it reports 89 source files,
-41 entry points, 92 reachable files and **0 unreachable files**. The stale EVM adapters and
+`npm run dead:check` is the source of record: as of 2026-09-07 it reports 115 source files,
+50 entry points, 115 reachable files and **0 unreachable files**. The stale EVM adapters and
 six unimported KNS hooks were removed rather than allowlisted.
 
 ## 8b. Documentation — `docs/`

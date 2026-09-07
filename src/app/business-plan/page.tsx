@@ -1,6 +1,7 @@
 // src/app/business-plan/page.tsx
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LISTING_FEE_LABEL, VOTE_FEE_LABEL } from "@/lib/fees";
 
 export const metadata: Metadata = {
   title: "Business Plan | KaspaDomains",
@@ -38,30 +39,29 @@ export default function BusinessPlanPage() {
         <Section title="The Solution">
           <ol className="list-decimal list-inside space-y-2">
             <li><strong>Prove ownership</strong> — connect Kasware to verify the .kas name on KNS.</li>
-            <li><strong>List it</strong> — sign a message with Kasware to confirm the request is yours. The fee is a one-time <strong className="text-kaspaMint">200 KAS</strong>.</li>
+            <li><strong>List it</strong> — sign a message with Kasware to confirm the request is yours. The fee is a one-time <strong className="text-kaspaMint">{LISTING_FEE_LABEL}</strong>.</li>
             <li><strong>Categorize it</strong> — pick at least one category so it can actually be found.</li>
             <li><strong>Add resources</strong> — attach an X account and links to the domain&apos;s public profile.</li>
             <li><strong>Get discovered</strong> — the domain appears on its category page and in search.</li>
-            <li><strong>Community voting</strong> — anyone can support a domain for 1 KAS per vote, one per wallet, boosting its ranking.</li>
+            <li><strong>Community voting</strong> — anyone can support a domain for {VOTE_FEE_LABEL} per vote, one per wallet, boosting its ranking.</li>
           </ol>
           <p className="text-gray-400 text-sm mt-4">
           </p>
         </Section>
 
         <Section title="Revenue Model">
-          <p className="text-sm text-yellow-400 bg-yellow-400/10 border border-yellow-400/30 rounded px-3 py-2 mb-4">
-            Not currently in effect. Listing and voting are free today — the fees below describe
-            the intended model, not what the site charges.
+          <p className="text-sm text-gray-400 mb-4">
+            The current fee schedule is deliberately simple: a one-time listing fee and a
+            per-wallet vote fee. Signing is free and profile edits remain free after listing.
           </p>
           <ul className="space-y-2">
             <li>
-              <strong className="text-kaspaMint">Listing fees</strong> — planned at a one-time
-              fee per domain.
+              <strong className="text-kaspaMint">Listing fees</strong> — one-time {LISTING_FEE_LABEL}
+              per domain.
             </li>
             <li>
-              <strong className="text-kaspaMint">Voting fees</strong> — planned per vote,
-              uncapped and ongoing as long as the community keeps engaging. A portion would go
-              to the domain owner, the rest funding the ecosystem.
+              <strong className="text-kaspaMint">Voting fees</strong> — {VOTE_FEE_LABEL} per
+              vote, one vote per wallet. Fees are paid on Kaspa L1 to the configured treasury.
             </li>
           </ul>
         </Section>

@@ -4,6 +4,7 @@ import React from 'react';
 import PickDomainModal from '@/components/PickDomainModal';
 import { useOwnedDomains } from '@/hooks/kns/api/useOwnedDomains';
 import { useWalletContext } from '@/context/WalletContext';
+import { LISTING_FEE_LABEL } from '@/lib/fees';
 
 export default function ListDomainPage() {
   const { kasware } = useWalletContext();
@@ -56,7 +57,7 @@ export default function ListDomainPage() {
             <h2 className="text-3xl font-bold text-white">Listing Benefits</h2>
             <p className="text-gray-300 leading-relaxed">
               Listing your domain costs a one-time{' '}
-              <span className="font-semibold text-yellow-400">200 KAS</span>. No renewals, no subscriptions. You&apos;ll be asked to sign a message so we can
+              <span className="font-semibold text-yellow-400">{LISTING_FEE_LABEL}</span>. No renewals, no subscriptions. You&apos;ll be asked to sign a message so we can
               check the request came from your wallet — signing is free and moves no funds.
             </p>
 
@@ -67,7 +68,7 @@ export default function ListDomainPage() {
                 <li>A profile page with your own links, editable any time, free</li>
                 <li>Placement in up to six categories, changeable later, free</li>
                 <li>Community voting, and a place in the top-voted ranking</li>
-                <li>One-time 200 KAS fee — no renewals or subscriptions</li>
+                <li>One-time {LISTING_FEE_LABEL} fee — no renewals or subscriptions</li>
               </ul>
             </div>
 

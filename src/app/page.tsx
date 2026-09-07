@@ -8,13 +8,14 @@ import { loadTopVotedDomains, type DomainWithVotes } from "@/lib/topVotedDomains
 import { getWebsiteJsonLd, getItemListJsonLd } from "@/lib/jsonld";
 import { JsonLd } from "@/components/JsonLd";
 import { formatCount } from "@/lib/format";
+import { LISTING_FEE_LABEL, VOTE_FEE_LABEL } from "@/lib/fees";
 
 const TRENDING_COUNT = 3;
 
 export const metadata = {
   title: "KaspaDomains — Premium .kas Domains, Organized by Category",
   description:
-    "List your .kas domain for 200 KAS. Get placed in a category, add your X account and links, and build your Kaspa-native identity.",
+    `List your .kas domain for ${LISTING_FEE_LABEL}. Get placed in a category, add your X account and links, and build your Kaspa-native identity.`,
   openGraph: {
     title: "KaspaDomains — Premium .kas Domains, Organized by Category",
     description:
@@ -79,7 +80,7 @@ export default async function Home() {
           Own the Future of <span className="text-yellow-400">.kas</span> Domains
         </h1>
         <p className="text-lg md:text-xl max-w-3xl mx-auto mb-8 text-white/90">
-          Secure your premium .kas domain for a one-time 200 KAS fee. Get placed in a category,
+          Secure your premium .kas domain for a one-time {LISTING_FEE_LABEL} fee. Get placed in a category,
           attach your X account and links, and showcase your Kaspa identity.
         </p>
         <Link
@@ -111,7 +112,7 @@ export default async function Home() {
                 <p className="text-sm text-gray-400 mb-1">
                   🔥 {formatCount(domain.votes)} vote{domain.votes === 1 ? "" : "s"}
                 </p>
-                <p className="text-sm text-gray-500">200 KAS to list</p>
+                <p className="text-sm text-gray-500">{LISTING_FEE_LABEL} to list</p>
                 <Link
                   href={domainProfilePath(domain.name) ?? "/domains"}
                   className="text-yellow-400 underline text-sm mt-3 inline-block hover:text-yellow-300"
@@ -165,7 +166,7 @@ export default async function Home() {
         <div className="text-lg text-gray-300 leading-relaxed space-y-6 mb-12">
           <p>
             <strong>1. List your domain:</strong> Connect Kasware, prove you hold the name on
-            KNS, and add it to the KaspaDomains index. Listing costs a one-time <strong>200 KAS</strong>, paid from your
+            KNS, and add it to the KaspaDomains index. Listing costs a one-time <strong>{LISTING_FEE_LABEL}</strong>, paid from your
             Kasware wallet.
           </p>
           <p>
@@ -178,7 +179,7 @@ export default async function Home() {
           </p>
           <p>
             <strong>4. Get voted on:</strong> The community can support your domain to boost its
-            visibility and ranking. Each vote costs <strong>1 KAS</strong>, one per wallet.
+            visibility and ranking. Each vote costs <strong>{VOTE_FEE_LABEL}</strong>, one per wallet.
           </p>
           <p>
             <strong>5. You keep the name either way:</strong> your <span className="whitespace-nowrap">.kas</span> domain

@@ -1,5 +1,7 @@
 // src/lib/fees.ts
 import { KASPA_L1_ADDRESS_PREFIX } from './kaspaDomainRuntime';
+import { SOMPI_PER_KAS, formatKas } from './feeDisplay';
+export { SOMPI_PER_KAS, formatKas } from './feeDisplay';
 
 /**
  * Fee schedule, in one place so the client (which asks the wallet for the
@@ -10,12 +12,6 @@ import { KASPA_L1_ADDRESS_PREFIX } from './kaspaDomainRuntime';
  * the old on-chain fees, which stopped being collected when
  * `KaspaDomainsRegistry` and `DomainVotesManager` went dead.
  */
-
-// Written as BigInt(...) rather than `100n` literals: tsconfig targets below
-// ES2020, where BigInt literals are a syntax error.
-
-/** Kaspa has 8 decimal places; the base unit is the sompi. */
-export const SOMPI_PER_KAS = BigInt(100_000_000);
 
 export const LISTING_FEE_KAS = BigInt(200);
 export const VOTE_FEE_KAS = BigInt(1);
@@ -54,9 +50,6 @@ export const isTreasuryAddressValid = KASPA_ADDRESS_PATTERN.test(TREASURY_ADDRES
  */
 export const isFeeCollectionConfigured = isTreasuryAddressValid;
 
-export function formatKas(sompi: bigint): string {
-  const whole = sompi / SOMPI_PER_KAS;
-  const fraction = sompi % SOMPI_PER_KAS;
-  if (fraction === BigInt(0)) return `${whole} KAS`;
-  return `${whole}.${fraction.toString().padStart(8, '0').replace(/0+$/, '')} KAS`;
-}
+/** Human-readable labels for UI and metadata copy. Keep these derived from the amounts above. */
+export const LISTING_FEE_LABEL = formatKas(LISTING_FEE_SOMPI);
+export const VOTE_FEE_LABEL = formatKas(VOTE_FEE_SOMPI);

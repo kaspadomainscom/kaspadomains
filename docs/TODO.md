@@ -59,6 +59,31 @@ origin of the still-open "why does `connect-src` allowlist Supabase" question in
 Not yet checked, in rough priority order — full detail on each in [`GAPS.md`](./GAPS.md)
 and [`BUGS.md`](./BUGS.md):
 
+### Repeatable loop contract
+
+Each 10-minute run uses an isolated worktree and completes at most one independently
+testable item. It reads `AGENTS.md`, `CODEX-TODO.md`, `MIND.md`, `TODO.md`, `BUGS.md` and
+`GAPS.md`, checks for in-flight work, stops for owner-only decisions or live Supabase/chain/
+treasury actions, runs the relevant gates (`npm test`, `npm run lint`, `npm run build`,
+`npx tsc --noEmit`, `npm run dead:check`, plus `npm run db:check` for database changes), and
+commits only after they pass. Reports use the fixed `STATUS / ITEM / RESULT / COMMIT / FILES /
+CHECKS / BLOCKER / NEXT` shape and notify only on a change, verification failure or blocker.
+
+### First-cycle activation, truth and branding items
+
+- [x] **TRUTH-001** (2026-09-07): active 200 KAS listing and 1 KAS vote labels now derive
+      from `src/lib/fees.ts`; contradictory “free today” copy is removed while signing and
+      post-listing profile edits remain explicitly free. The unapplied schema remains an
+      honest availability blocker.
+- [ ] **BRAND-001**: integrate the supplied logo into tracked `public/brand/` assets, root
+      metadata and a real 1200×630 social image.
+- [ ] **ACT-001**: make homepage/header routes to explore, search, profiles and listing
+      explicit while preserving preflight-before-payment.
+- [ ] **ACT-002**: verify profile-to-listing continuity across stale, unavailable and mobile
+      states.
+- [ ] **POLISH-001**: process remaining mobile, accessibility, performance and SEO checks
+      after activation and truth items pass.
+
 - [x] ~~`DomainLinksStorage.getLinks` throws `invalid opcode: MCOPY`~~ — investigated
       2026-09-05 by querying the live RPC directly. Turned out much bigger than the one
       function: **6 of the 8 contracts in `contracts.ts` have no deployed code at all**
@@ -138,12 +163,10 @@ and [`BUGS.md`](./BUGS.md):
       KNS-transfer question first — a covenant pinned to the original owner keeps trusting
       them after a sale. See [`Toccata-Dev.md`](./Toccata-Dev.md) and `PROJECT_PLAN.md`
       Phase 2.5.
-- [x] **Site copy updated to match reality** (2026-09-05): the homepage, `/list-domain`,
-      `/docs`, `/learn` and `/business-plan` no longer promise a paid, permanent, on-chain
-      listing. They now say listing and voting are free right now, that signing is a
-      message rather than a transaction, and — on `/docs` — where a listing is actually
-      stored and what that means. `/business-plan`'s revenue section is marked as the
-      intended model, not what the site charges.
+- [x] **Site copy updated to match reality** (2026-09-07): the homepage, `/list-domain`,
+      `/docs`, `/learn` and `/business-plan` now agree with the active 200 KAS listing and
+      1 KAS vote schedule. They distinguish free signing and post-listing profile edits, and
+      `/docs` still explains that the index is database-backed rather than an on-chain record.
 - [ ] **Exercise the Supabase work against a real project.** ⚠ **This is the blocker.**
       The connection, the keys and the treasury address are all live and verified, but
       `supabase/schema.sql` has never been applied — `npm run db:check` and `/status` agree

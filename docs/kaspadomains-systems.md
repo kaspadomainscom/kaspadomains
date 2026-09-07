@@ -90,6 +90,7 @@ taking money for something it then refuses to do.
 | File | Role |
 |---|---|
 | `src/lib/fees.ts` | **The single source of the amounts.** Treasury address + shape validation |
+| `src/lib/feeDisplay.ts` | Dependency-free sompi formatter; fee labels are derived from the active amounts |
 | `src/app/api/domains/preflight/route.ts` | Every check that can fail, before any money moves |
 | `src/lib/server/paymentIntent.ts` | Issue/verify the HMAC intent. Explicitly *not* a security boundary |
 | `src/lib/server/verifyPayment.ts` | On-chain verification, including who paid |
