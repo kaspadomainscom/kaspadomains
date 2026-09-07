@@ -106,7 +106,22 @@ export async function getAllDomains(): Promise<Domain[]> {
  * render as "Uncategorized", never as "this domain does not exist".
  */
 /** Memoised alongside `lookupDomain`, and for the same reason. */
-export async function findDomainCategoryTitle(name: string): Promise<string | undefined> {
+export type DomainCategoryLabel = { key: string; title: string; isAllowed: boolean };
+
+/**
+ * Returns the key as well as the title.
+ *
+ * The key is what makes the category linkable from a domain's breadcrumb; this
+ * used to return the title alone, so the profile page could name the category it
+ * belonged to but could not point at it.
+ *
+ * `isAllowed` travels with it because it decides whether linking is safe. A
+ * withdrawn category still labels the domain honestly -- it is genuinely in it --
+ * but its page calls `notFound()`, so the label must not become a link.
+ */
+export async function findDomainCategory(
+  name: string
+): Promise<DomainCategoryLabel | undefined> {
   if (!name) return undefined;
   const searchName = normalizeDomainName(name);
 
@@ -115,7 +130,7 @@ export async function findDomainCategoryTitle(name: string): Promise<string | un
     if (categories.length === 0) return undefined;
     // Prefer a published category; fall back to a withdrawn one rather than
     // showing nothing, since the domain is genuinely in it.
-    return (categories.find((c) => c.isAllowed) ?? categories[0]).title;
+    return categories.find((c) => c.isAllowed) ?? categories[0];
   } catch (error) {
     console.error("Supabase category lookup failed for", searchName, error);
     return undefined;

@@ -1,7 +1,8 @@
 import { cache } from 'react';
 import {
-  findDomainCategoryTitle,
+  findDomainCategory,
   lookupDomain,
+  type DomainCategoryLabel,
   type DomainLookup,
 } from './domainLookup';
 
@@ -35,5 +36,6 @@ import {
  */
 export const lookupDomainOnce: (name: string) => Promise<DomainLookup> = cache(lookupDomain);
 
-export const findDomainCategoryTitleOnce: (name: string) => Promise<string | undefined> =
-  cache(findDomainCategoryTitle);
+export const findDomainCategoryOnce: (
+  name: string
+) => Promise<DomainCategoryLabel | undefined> = cache(findDomainCategory);

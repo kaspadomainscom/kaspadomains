@@ -236,9 +236,15 @@ shape, and notify only on a change, a verification failure, a push failure or a 
       preflight makes a paid-but-unfulfilled action unlikely rather than impossible, and
       `/terms` currently tells users not to assume a refund exists. That is honest but not
       a policy.
-- [ ] Internal linking + breadcrumbs on domain profile pages (`/domain/[name]`) — has a
-      Home/Domains breadcrumb; worth checking whether it should also link to the domain's
-      category.
+- [x] Internal linking + breadcrumbs on domain profile pages (`/domain/[name]`) — done
+      2026-09-07. The breadcrumb now reads Home / Domains / *Category* / domain, giving every
+      profile page an internal link to its category. `findDomainCategoryTitle` returned only
+      the title, so the page could name the category it belonged to but not point at it; it
+      returns the key and `isAllowed` too now. **Linked only when the category is published** —
+      a withdrawn category still labels the domain honestly, since it is genuinely in it, but
+      its page calls `notFound()`, so the label stays plain text rather than becoming a 404.
+      Verified by type-check and build; the populated breadcrumb cannot be exercised until the
+      schema is applied.
 - [ ] Mobile check remaining pages: `/domain/update/[name]`, `/domains/my-domains`, and
       the four newer ones (`/status`, `/about`, `/terms`, `/privacy`). (`EcosystemAdmin`
       was on this list and no longer exists — deleted with the EVM removal on 2026-09-06.)

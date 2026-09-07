@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import type { Metadata } from "next";
 
 import { loadCategoriesManifestOnce } from "@/data/categoriesManifest.server";
-import { lookupDomainOnce, findDomainCategoryTitleOnce } from "@/data/domainLookup.server";
+import { lookupDomainOnce, findDomainCategoryOnce } from "@/data/domainLookup.server";
 import { normalizeDomainName, domainProfilePath, domainProfileUrl } from "@/lib/domainName";
 import { getDomainJsonLd } from "@/lib/jsonld";
 import { JsonLd } from "@/components/JsonLd";
@@ -92,7 +92,7 @@ export async function generateMetadata({
   if (result.status !== "found") return UNAVAILABLE_METADATA;
 
   const domain = result.domain;
-  const category = (await findDomainCategoryTitleOnce(domain.name)) ?? "Uncategorized";
+  const category = (await findDomainCategoryOnce(domain.name))?.title ?? "Uncategorized";
   const description = `${domain.name}, a premium KNS domain listed in the ${category} category on KaspaDomains.`;
 
   // Omitted rather than defaulted if it cannot be built. A canonical is a claim
@@ -171,7 +171,16 @@ export default async function DomainPage({ params }: PageProps): Promise<JSX.Ele
 
   // A missing category is not a missing domain. Failing to load one leaves the
   // page intact with an honest label rather than taking the whole profile down.
-  const category = (await findDomainCategoryTitleOnce(domain.name)) ?? "Uncategorized";
+  const categoryLabel = await findDomainCategoryOnce(domain.name);
+  const category = categoryLabel?.title ?? "Uncategorized";
+
+  // Linked only when the category is published. A withdrawn one still labels the
+  // domain honestly -- it is genuinely in it -- but its page calls notFound(), so
+  // turning the label into a link would send readers to a 404.
+  const categoryLink =
+    categoryLabel && categoryLabel.isAllowed
+      ? { key: categoryLabel.key, title: categoryLabel.title }
+      : undefined;
 
   const nonce = (await headers()).get("x-csp-nonce") || undefined;
   const jsonLd = getDomainJsonLd({
@@ -183,7 +192,7 @@ export default async function DomainPage({ params }: PageProps): Promise<JSX.Ele
   return (
     <main className="max-w-3xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
       <JsonLd json={jsonLd} nonce={nonce} />
-      <DomainBreadcrumb domainName={domain.name} />
+      <DomainBreadcrumb domainName={domain.name} category={categoryLink} />
       <DomainTitleSection domainName={domain.name} category={category} />
       <DomainInfoPanel domain={domain} category={category} />
       <VotingSection domainName={domain.name} />
