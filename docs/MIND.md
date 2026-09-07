@@ -1,6 +1,6 @@
 # Mind
 
-Last updated: 2026-09-07 (profile-write concurrency review)
+Last updated: 2026-09-08 (paid-listing recovery review)
 
 How to think about working on this codebase — principles earned the hard way, each
 backed by a real incident. Read this before making changes, especially anything that
@@ -806,6 +806,16 @@ not parse as JSON is not this API answering with no detail -- it is a proxy's 50
 gateway timeout, precisely the transient case a paid write most needs to retry. The
 empty-for-unknown bug (#2) had reappeared *in the code written to fix a money-losing bug*, and
 only the mechanism caught it. That is the argument for #19 in one paragraph.
+
+### Recurrence (2026-09-08, the other post-payment failure)
+
+The retry loop made the normal network race safe, but the final `signMessage` prompt still
+ran after `sendKaspa`. If the owner rejected that prompt, `useListDomain` caught the error and
+discarded the txid; the next click started at preflight and asked for a second fee. The fix
+persists the exact intent and payment id immediately after payment, reuses it only for the
+same domain and category choice, and clears it only after the write succeeds. Principle #22
+now covers both a server refusal and a client-side prompt failure: every instruction to retry
+must have a path that reuses what the user already spent.
 
 ## 23. Accidental safety is not safety
 

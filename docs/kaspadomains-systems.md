@@ -1,6 +1,6 @@
 # KaspaDomains — systems
 
-Last updated: 2026-09-07
+Last updated: 2026-09-08
 
 The same codebase cut by **system** rather than by folder. Each entry says what the system
 does, how it works, every file it is built from, and where it is weak.
@@ -98,12 +98,13 @@ taking money for something it then refuses to do.
 | `src/lib/signedFetch.ts` | `preflight()` and `payFee()` — the only place funds move |
 | `supabase/migrations/0003_atomic_writes.sql` | Receipt claim + write in one transaction |
 | `supabase/migrations/20260906201516_profile_replay_protection.sql` | Profile revision + one-time write-token transaction contract |
-| `src/hooks/domain/useListDomain.ts`, `src/components/pages/domain/VotingSection.tsx` | The two callers |
+| `src/hooks/domain/useListDomain.ts`, `src/components/pages/domain/VotingSection.tsx` | The two callers; listing recovery persists a paid intent/txid for explicit retry |
 
 **Weak points.** A payment can still be made and the write still fail if the connection
-drops between steps 2 and 3 — the receipt stays unclaimed, so retrying with the same txid
-works, but only if the user comes back. **The refund policy is an unmade decision**, and
-`/terms` says not to assume one exists.
+drops between steps 2 and 3; the browser now retains the exact intent and txid for an
+explicit retry in the same profile, but a user who clears storage or changes devices still
+needs operator recovery. **The refund policy is an unmade decision**, and `/terms` says not
+to assume one exists.
 
 > Read [`mind/irreversible-action-checklist.md`](./mind/irreversible-action-checklist.md)
 > before changing anything in this system.
@@ -128,7 +129,7 @@ three outcomes, so an outage never 404s a live domain.
 | `src/data/supabaseSource.ts` | `fetchDomainByName`, `fetchAllDomains`, `fetchListingStatuses` |
 | `src/data/types.ts` | The `Domain` shape both sources return |
 | `src/app/list-domain/page.tsx`, `src/components/PickDomainModal.tsx` | The listing UI |
-| `src/hooks/domain/useListDomain.ts` | preflight → pay → sign → post |
+| `src/hooks/domain/useListDomain.ts` | preflight → pay → persist pending payment → sign → post; retries reuse the persisted payment |
 | `src/hooks/kns/api/useOwnedDomains.ts`, `useVerifiedDomains.ts`, `usePaginatedDomains.ts` | What the wallet owns, from KNS |
 | `src/app/domain/[name]/page.tsx` | The public profile |
 | `src/app/domains/my-domains/page.tsx` | Owns (KNS) vs listed (us) — deliberately separate questions |

@@ -1,6 +1,6 @@
 # Files
 
-Last updated: 2026-09-07
+Last updated: 2026-09-08
 
 Every file in the repo, what it is for, and whether it is actually doing
 anything. **Current inventory:** 123 TypeScript files under `src/`, with `npm run dead:check`
@@ -151,6 +151,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `lib/limits.ts` | How much of a listing a domain may have: the category cap and the link cap. Both were declared twice; the category one was enforced only on edits, so it could be sidestepped at creation | ✅ |
 | `lib/paymentCheck.ts` | Decides whether a transaction paid the fee, from the right wallet. Dependency-free, so it is testable | ✅ |
 | `lib/paidWriteRetry.ts` | When a request whose fee is **already paid** comes back failed: retry, treat as done, or stop. Dependency-free and tested — the wrong answer here charges someone twice | ✅ |
+| `lib/pendingPaidWrite.ts` | Persists a paid listing's intent and transaction id so a failed final signature can be retried without another charge; dependency-free and tested | ✅ |
 | `lib/format.ts` | Dates and counts, derived from UTC parts so the server and the browser produce the same string. `toLocaleDateString` did not, and this app renders the same components in both | ✅ |
 | `lib/linkUrl.ts` | What counts as a usable profile link. The API and the profile page had separate copies that disagreed: one refused a bad URL, the other rewrote it and rendered it anyway | ✅ |
 | `lib/signedMessageFormat.ts` | The signed-request format, pure and dependency-free so it can be tested. `signedMessage.ts` supplies the real KNS scope; the format has one definition either way | ✅ |
@@ -165,7 +166,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `lib/domainName.ts` | The one owner of a `.kas` name's canonical form **and of the URLs built from it**. The name had five implementations (one published `foo.kas.kas`); the profile URL had eleven, five of them unencoded | ✅ |
 | `lib/profileWrite.ts` | The closed profile-write action set, nonce TTL and safe revision parser shared by browser/API/read layer | ✅ |
 | `lib/signedMessage.ts` | Canonical JSON → SHA-256 → signed message. Dependency-free so it never pulls WASM into the browser | ✅ |
-| `lib/signedFetch.ts` | `preflight` → `payFee` → `signedFetch`, plus signed profile-token preparation | ✅ |
+| `lib/signedFetch.ts` | `preflight` → `payFee` → `signedFetch`, plus signed profile-token preparation; paid listing recovery is owned by `useListDomain` | ✅ |
 | `lib/topVotedDomains.ts` | Ranking. Reads counts from the same store as the listings, never a mix | 🟡 |
 | `lib/jsonld.ts` | Structured data | ✅ |
 | `lib/kaspaDomainRuntime.ts` | Current KNS network, endpoint and non-authoritative covenant target | ✅ |

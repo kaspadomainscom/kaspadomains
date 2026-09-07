@@ -202,15 +202,17 @@ the CSP items in 3.
 
 ## In progress
 
-- _(Codex)_ — paid listing recovery after post-payment signing failure —
-  `src/hooks/domain/useListDomain.ts`, `src/lib/pendingPaidWrite.ts`, and the
-  focused regression test. The payment txid is currently discarded if the final
-  signing prompt fails; this run will persist one pending listing and reuse it
-  on an explicit retry without charging again. No server or schema changes.
+- _(Codex)_ — no open claim.
 
 ---
 
 ## Done
+
+- **Paid listing recovery after final-signature failure** — `c29d9d3`, Codex,
+  2026-09-08. The client persists the exact payment intent and transaction id after
+  sending the fee, then reuses it on an explicit retry instead of charging again when
+  signing or the first write fails. Category mismatches are refused, and the record is
+  cleared only after success. No server, schema, refund, or live-wallet behavior changed.
 
 - **Fatal-error CSP styling** — `7593cc4`, Codex, 2026-09-07. The built Next global-error
   document uses inline CSS outside application nonce plumbing, so the CSP rendered the

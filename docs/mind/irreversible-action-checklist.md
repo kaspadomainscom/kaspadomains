@@ -3,7 +3,7 @@
 **Purpose**: make sure every way a request can be refused is established *before* anything
 irreversible happens, so a failure costs the user an error message and not their money.
 
-Last updated: 2026-09-06
+Last updated: 2026-09-08
 
 Run this whenever a flow moves funds, signs a transaction, sends something outward, or
 deletes something. Grew out of [`MIND.md`](../MIND.md)'s principles #9 and #16, and the
@@ -58,6 +58,9 @@ This is the subtle one, and it is what actually caused SA-04.
   failed — see the receipt-release path in
   [`claimReceipt.ts`](../../src/lib/server/claimReceipt.ts), which returns a payment for
   re-use rather than replaying it.
+- [ ] Preserve the transaction id across every later client failure, including a rejected
+  signing prompt or a page reload. An explicit retry may resend the signed write, but must
+  never start `payFee` again for the same pending action.
 
 ## 7. Ask before doing it, in this repo's own terms
 

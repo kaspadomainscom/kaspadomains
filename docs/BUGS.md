@@ -27,6 +27,20 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
       untested, and it is the second thing to do after the schema.
 ## Fixed
 
+### 2026-09-08 — A rejected final signature discarded a paid listing
+
+The listing flow preflights, sends the 200 KAS fee, then asks Kasware to sign the write. A
+user can reject that final prompt or lose the connection after payment; the hook caught the
+error and discarded `paymentTxId`, so clicking again restarted at preflight and charged a
+second fee. This was the client-side counterpart to the transient payment verification race
+already covered by `paidWriteRetry`.
+
+`useListDomain` now stores the exact intent, transaction id and category choice immediately
+after payment. An explicit retry reuses that record and refuses a different category set;
+the record is removed only after the write succeeds. A dependency-free helper and two native
+tests cover recovery and the no-mismatch rule. Browser storage loss or a different device
+still requires operator recovery; no refund or live wallet behavior is claimed.
+
 ### 2026-09-07 — The CSP report endpoint's size limit counted the wrong thing
 
 `/api/csp-violation-report` is unauthenticated by necessity — browsers post to it without
