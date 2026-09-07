@@ -131,8 +131,10 @@ shape, and notify only on a change, a verification failure, a push failure or a 
 - [x] **BRAND-001** (2026-09-07): supplied transparent SVG lockup and icon are tracked under
       `public/brand/`; header, favicon and metadata use the new assets, and `public/og-image.png`
       is a generated 1200×630 banner used for Open Graph and Twitter cards.
-- [ ] **ACT-001**: make homepage/header routes to explore, search, profiles and listing
-      explicit while preserving preflight-before-payment.
+- [x] **ACT-001** (2026-09-07): homepage now exposes List, Explore and Search-for-profile CTAs;
+      desktop and mobile headers expose Home, Domains, Search, Learn and List Domain. Canonical
+      profile lookup still routes known names directly to `/domain/[name]` and unknown or
+      unavailable names to `/search`, with preflight-before-payment unchanged.
 - [ ] **ACT-002**: verify profile-to-listing continuity across stale, unavailable and mobile
       states.
 - [ ] **POLISH-001**: process remaining mobile, accessibility, performance and SEO checks

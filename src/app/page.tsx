@@ -84,11 +84,25 @@ export default async function Home() {
           Secure your premium .kas domain for a one-time {LISTING_FEE_LABEL} fee. Get placed in a category,
           attach your X account and links, and showcase your Kaspa identity.
         </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link
+            href="/list-domain"
+            className="inline-block bg-yellow-400 text-[#0E1E25] px-10 py-4 rounded-full font-semibold text-lg shadow-lg hover:bg-yellow-300 transition"
+          >
+            List Your Domain Today
+          </Link>
+          <Link
+            href="/domains"
+            className="inline-block border border-white/60 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white/10 transition"
+          >
+            Explore Domains
+          </Link>
+        </div>
         <Link
-          href="/list-domain"
-          className="inline-block bg-yellow-400 text-[#0E1E25] px-10 py-4 rounded-full font-semibold text-lg shadow-lg hover:bg-yellow-300 transition"
+          href="/search"
+          className="inline-block mt-4 text-white underline underline-offset-4 hover:text-yellow-200"
         >
-          🚀 List Your Domain Today
+          Search for a .kas profile →
         </Link>
       </section>
 

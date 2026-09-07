@@ -13,7 +13,9 @@ import TrendingDomainsComponent from './trendingDomains';
 const NAV_ITEMS = [
   { label: 'Home', href: '/' },
   { label: 'Domains', href: '/domains' },
+  { label: 'Search', href: '/search' },
   { label: 'Learn', href: '/learn' },
+  { label: 'List Domain', href: '/list-domain' },
 ];
 
 function ConnectButton() {

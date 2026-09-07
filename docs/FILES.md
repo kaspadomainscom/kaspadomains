@@ -171,7 +171,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 
 | Page | Purpose | Status |
 |---|---|---|
-| `page.tsx` | Homepage | ✅ |
+| `page.tsx` | Homepage with explicit list, explore and profile-search activation CTAs | ✅ |
 | `domains/page.tsx` | Browse + filter. Windowed pagination; an outage is not rendered as an empty directory | 🔒 |
 | `domains/categories/` | Category index and per-category pages | 🔒 |
 | `domains/top-voted/` | Ranking | 🔒 |
@@ -181,7 +181,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `domain/[name]/` | Public profile. Existence from `domains`, category only a label | 🔒 |
 | `domain/update/[name]/` | Owner-only editor: links + categories | 🔒 |
 | `list-domain/` | Listing flow entry | 🔒 |
-| `search/` | Client-side filter over all listings | 🟡 loads every listing into the browser |
+| `search/` | Client-side filter over all listings; canonical profile lookup routes here when needed | 🟡 loads every listing into the browser |
 | `status/` | Live health, human-readable. `noindex` | ✅ |
 | `about/`, `terms/`, `privacy/` | Written from the source, not a template | 🟡 not legally reviewed |
 | `docs/`, `learn/`, `business-plan/` | Explanatory content | ✅ |
@@ -191,7 +191,8 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 
 ## 8. Components and hooks
 
-**Live components:** `Header` (+`trendingDomains`), `Footer`, `Sidebar`,
+**Live components:** `Header` (+`trendingDomains`; explicit Home, Domains, Search, Learn and
+List Domain routes), `Footer`, `Sidebar`,
 `DomainCard`, `PickDomainModal`, `Loader`, `ToastProvider`,
 `JsonLd`, `NonceWrapper`, `KaspaDomainsLogo`, `icons`, and under `pages/domain/`:
 `VotingSection`, `CategoryEditor`, `DomainInfoPanel`, `DomainTitleSection`,
