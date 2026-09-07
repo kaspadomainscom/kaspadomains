@@ -6,7 +6,7 @@ import { LISTING_FEE_LABEL, VOTE_FEE_LABEL } from "@/lib/fees";
 export const metadata: Metadata = {
   title: "Business Plan | KaspaDomains",
   description:
-    "The logic behind KaspaDomains: a one-time on-chain listing, then SEO and additional data per domain.",
+    "The logic behind KaspaDomains: a paid, database-backed directory profile for the .kas domain you already own.",
   alternates: {
     canonical: "https://kaspadomains.com/business-plan",
   },
@@ -20,9 +20,9 @@ export default function BusinessPlanPage() {
         <header className="text-center space-y-4">
           <h1 className="text-4xl md:text-5xl font-extrabold text-white">Business Plan</h1>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            Pay once, get listed on-chain — then KaspaDomains&apos; job is SEO and additional
-            data per domain: an indexed, discoverable page and resources a bare on-chain
-            record can&apos;t carry.
+            Pay once, get listed in KaspaDomains&apos; directory — then the site&apos;s job is SEO and
+            additional data per domain: an indexed, discoverable profile and resources a bare
+            KNS ownership record can&apos;t carry.
           </p>
         </header>
 

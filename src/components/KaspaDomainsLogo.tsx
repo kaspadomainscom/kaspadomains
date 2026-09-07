@@ -12,7 +12,7 @@ export default function KaspaDomainsLogo() {
           concatenates everything inside it -- so a matching alt made screen
           readers announce "KaspaDomains KaspaDomains, link". */}
       <Image
-        src="/kaspadomains-logo.jpg"
+        src="/brand/kaspadomains-logo-icon.svg"
         alt=""
         width={40}
         height={40}

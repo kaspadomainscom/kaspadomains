@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     "Explore and learn about KNS domains on the Kaspa blockchain. Search domain names, check availability, and understand ownership via kaspadomains.com.",
 
   icons: {
-    icon: "/favicon.ico",
+    icon: "/brand/kaspadomains-logo-icon.svg",
   },
 
   metadataBase: new URL("https://kaspadomains.com"),
@@ -46,8 +46,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "https://kaspadomains.com/og-image.png",
-        width: 1024,
-        height: 1024,
+        width: 1200,
+        height: 630,
         alt: "Kaspadomains Open Graph Image",
       },
     ],

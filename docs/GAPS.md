@@ -18,10 +18,11 @@ live backlog the continuous audit loop appends to.
       are silent on **refunds**, the **operating entity** and the **governing
       jurisdiction**. Those are owner decisions; inventing a position on refunds for a
       site taking 200 KAS would be worse than admitting none exists yet.
-- [ ] **No proper Open Graph banner image.** `public/og-image.png` is the square logo
-      renamed (1024×1024), not a real 1200×630 branded banner — every social share (X,
-      Discord, etc.) shows a squished/cropped logo. Needs an actual design asset; not
-      something fixable from code.
+- [x] ~~**No proper Open Graph banner image.**~~ **Fixed 2026-09-07.** Added the supplied
+      transparent SVG logo sources under `public/brand/` and generated `public/og-image.png`
+      as a real 1200×630 PNG banner. Root, homepage, category and profile metadata now point
+      to that banner with matching dimensions; the old square JPEG is no longer a live
+      metadata target.
 - [ ] **No bio, title, image or website on a profile.** A listing shows its category,
       status, vote count and links — nothing else. This used to be blocked on
       `DomainDataStorage`, a contract that failed every call; with the contract path removed
@@ -63,7 +64,7 @@ live backlog the continuous audit loop appends to.
 
 - [~] **The repo has a small native test suite, not broad behavioral coverage.** `npm test`
       uses `node:test` with no additional runner, and CI runs it with lint and build. The
-      current nine tests cover silent wallet restoration, domain-name canonicalization, the
+      current 78 test cases cover silent wallet restoration, domain-name canonicalization, the
       KNS-runtime boundary, and profile-write action/revision parsing. The important missing
       cases are still `fetchAllPages` at server caps above and below the page size,
       `paymentIntent` accept/reject properties, signed-message digest behavior,

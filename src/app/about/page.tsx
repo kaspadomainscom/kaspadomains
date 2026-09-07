@@ -99,8 +99,9 @@ export default function AboutPage() {
           claim.
         </p>
         <p>
-          Fees are on the Kaspa blockchain and are public and permanent. The site verifies
-          them from the chain rather than trusting the browser.
+          Fee transactions are recorded on Kaspa L1 and are public and permanent. The site
+          verifies them from the chain rather than trusting the browser; the directory profile
+          itself is stored in the KaspaDomains database.
         </p>
         <p>
           Earlier versions kept listings in smart contracts on Kasplex. Six of the eight

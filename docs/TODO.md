@@ -128,8 +128,9 @@ shape, and notify only on a change, a verification failure, a push failure or a 
       from `src/lib/fees.ts`; contradictory “free today” copy is removed while signing and
       post-listing profile edits remain explicitly free. The unapplied schema remains an
       honest availability blocker.
-- [ ] **BRAND-001**: integrate the supplied logo into tracked `public/brand/` assets, root
-      metadata and a real 1200×630 social image.
+- [x] **BRAND-001** (2026-09-07): supplied transparent SVG lockup and icon are tracked under
+      `public/brand/`; header, favicon and metadata use the new assets, and `public/og-image.png`
+      is a generated 1200×630 banner used for Open Graph and Twitter cards.
 - [ ] **ACT-001**: make homepage/header routes to explore, search, profiles and listing
       explicit while preserving preflight-before-payment.
 - [ ] **ACT-002**: verify profile-to-listing continuity across stale, unavailable and mobile
@@ -217,9 +218,9 @@ shape, and notify only on a change, a verification failure, a push failure or a 
       them after a sale. See [`Toccata-Dev.md`](./Toccata-Dev.md) and `PROJECT_PLAN.md`
       Phase 2.5.
 - [x] **Site copy updated to match reality** (2026-09-07): the homepage, `/list-domain`,
-      `/docs`, `/learn` and `/business-plan` now agree with the active 200 KAS listing and
-      1 KAS vote schedule. They distinguish free signing and post-listing profile edits, and
-      `/docs` still explains that the index is database-backed rather than an on-chain record.
+      `/docs`, `/learn`, `/about` and `/business-plan` now agree with the active 200 KAS
+      listing and 1 KAS vote schedule. They distinguish free signing and post-listing profile
+      edits, and explain that the index is database-backed rather than an on-chain record.
 - [ ] **Exercise the Supabase work against a real project.** ⚠ **This is the blocker.**
       The connection, the keys and the treasury address are all live and verified, but
       `supabase/schema.sql` has never been applied — `npm run db:check` and `/status` agree

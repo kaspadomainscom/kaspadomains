@@ -295,7 +295,7 @@ never OK — see `MIND.md` #14 and
 [`mind/health-check-checklist.md`](./mind/health-check-checklist.md). Two checks here have
 already gone green precisely because they could observe nothing.
 
-**Weak points.** 🟡 The native test suite is still small: CI runs its nine tests, lint and
+**Weak points.** 🟡 The native test suite is still small: CI runs its 78 test cases, lint and
 build, but profile-write race behavior needs a database-backed test after the schema exists.
 `dead:check` is green locally but is not yet a CI step.
 
@@ -324,10 +324,12 @@ silently drops out of the allow-list rather than erroring.
 | `src/app/robots.txt/route.ts` | Disallows `/api/`, `/EcosystemAdmin`, `/domain/update/`, `/search`, `/status` |
 | `src/lib/jsonld.ts` | Domain and ItemList JSON-LD |
 | `src/app/**/layout.tsx`, per-page `metadata` | Titles, descriptions, canonicals, OG/Twitter |
+| `public/brand/kaspadomains-logo*.svg` | Transparent logo sources for the header and metadata |
+| `public/brand/kaspadomains-og.svg`, `public/og-image.png` | SVG source and generated 1200×630 social banner |
 
-**Weak points.** 🟡 `public/og-image.png` is the square logo renamed, so every social share
-is cropped. Copy has twice drifted from reality here — claiming listings were on-chain long
-after they moved to Postgres.
+**Weak points.** Copy had twice drifted from reality here — claiming listings were on-chain
+long after they moved to Postgres. The current 1200×630 `public/og-image.png` is tracked and
+used by root, homepage, category and profile metadata.
 
 ---
 

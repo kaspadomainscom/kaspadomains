@@ -55,8 +55,8 @@ export async function generateMetadata({
         images: [
           {
             url: "https://kaspadomains.com/og-image.png",
-            width: 1024,
-            height: 1024,
+            width: 1200,
+            height: 630,
             alt: "Kaspa Domains",
           },
         ],
@@ -67,7 +67,7 @@ export async function generateMetadata({
         card: "summary_large_image",
         title,
         description,
-        images: ["https://kaspadomains.com/kaspadomains-logo.jpg"],
+        images: ["https://kaspadomains.com/og-image.png"],
       },
     };
   } catch (error) {

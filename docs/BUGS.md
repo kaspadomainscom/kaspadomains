@@ -25,10 +25,15 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
       tested from here. The residual risk is narrow and fails safe — a signing-convention
       mismatch rejects legitimate owners rather than admitting impostors — but it is
       untested, and it is the second thing to do after the schema.
-- [ ] **No proper Open Graph image.** `public/og-image.png` is the square logo renamed, so
-      every social share is cropped. Needs a design asset, not code.
-
 ## Fixed
+
+### 2026-09-07 - Branded social assets replaced the square legacy image
+
+The supplied transparent SVG lockup and icon are tracked under `public/brand/`, and the
+generated `public/og-image.png` is a real 1200x630 banner. Root, homepage, category and
+profile metadata, plus favicon metadata, now point at the new assets with matching dimensions.
+The square JPEG remains only as a legacy compatibility asset and is no longer a live metadata
+target.
 
 ### 2026-09-07 — Six pages told search engines they were a different page
 
@@ -989,12 +994,10 @@ verified — not just "fixed X."
   removed years ago in favor of the Metadata API (confirmed against current Next.js docs).
   None of that JSON-LD or those meta tags were ever actually rendered. Ported the real
   content into `generateMetadata`/page bodies and deleted the files.
-- **`og-image.png` was `kaspadomains-logo.jpg` renamed** (byte-identical, confirmed via
-  SHA-256) — a 1024×1024 JPEG, not the 1200×630 PNG every page's metadata claimed.
+- **The old square `og-image.jpg` was `kaspadomains-logo.jpg` renamed** (byte-identical,
+  confirmed via SHA-256) — a 1024×1024 JPEG, not the 1200×630 PNG the metadata claimed.
   `twitter-image.png` was referenced but didn't exist at all (404 on every Twitter Card
-  fetch). Fixed the declared dimensions and pointed both at the real image. A proper
-  branded 1200×630 banner is still a real gap (needs a design asset, not a code fix — see
-  `GAPS.md`).
+  fetch). The live metadata now uses the generated banner described above.
 - **`robots.txt` blocked five nonexistent routes** (`/admin/`, `/login`, `/signup`,
   `/domain/new`, `/domain/edit` — generic boilerplate, never real routes here) while
   leaving the actual admin dashboard (`/EcosystemAdmin`) and edit route

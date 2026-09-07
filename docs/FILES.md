@@ -71,6 +71,16 @@ below is waiting on that single step.
 
 ---
 
+## 2b. Public assets — `public/`
+
+| File | Purpose | Status |
+|---|---|---|
+| `brand/kaspadomains-logo.svg` | Supplied transparent lockup; SVG source of truth | ✅ |
+| `brand/kaspadomains-logo-icon.svg` | Supplied transparent icon used by the header | ✅ |
+| `brand/kaspadomains-og.svg` | Source artwork for the social banner | ✅ |
+| `og-image.png` | Generated 1200×630 Open Graph/Twitter banner | ✅ |
+| `favicon.ico`, `kaspadomains-logo.jpg`, `og-image.jpg` | Legacy assets retained for compatibility; no live metadata target | 🟡 |
+
 ## 3. Database — `supabase/`
 
 | File | Purpose | Status |
@@ -247,8 +257,8 @@ The map had no entry for its own folder until 2026-09-06. 22 files.
    filter client-side.
 6. **Dependency majors**: eslint 10, TypeScript 7, `@noble/curves` 2,
     `lucide-react` 1, `@types/node` 26. In-range updates are already applied.
-7. **Real OG image.** `public/og-image.png` is the square logo renamed, so every
-    social share is cropped.
+7. **Real OG image.** `public/og-image.png` is a tracked 1200×630 branded banner generated
+    from the SVG logo sources.
 8. Mobile pass on `/status`, `/about`, `/terms`, `/privacy`,
     `/domain/update/[name]`, `/domains/my-domains`.
 

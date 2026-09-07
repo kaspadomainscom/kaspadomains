@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 260" role="img" aria-labelledby="title">
+  <title id="title">KaspaDomains.com logo</title>
+  <g transform="translate(10 10)">
+    <path d="M120 6 220 64v116l-100 58L20 180V64Z" fill="#49E29B"/>
+    <path d="m120 42 60 35v70l-60 35-60-35V77Z" fill="#0B1220"/>
+    <circle cx="120" cy="112" r="18" fill="#49E29B"/>
+  </g>
+  <text x="292" y="153" font-family="'Helvetica Neue', Arial, sans-serif" font-size="78" letter-spacing="-2" dominant-baseline="middle">
+    <tspan fill="#49E29B" font-weight="700">kaspa</tspan><tspan fill="#0B1220" font-weight="700">domains</tspan><tspan fill="#49E29B" font-weight="600">.com</tspan>
+  </text>
+</svg>
