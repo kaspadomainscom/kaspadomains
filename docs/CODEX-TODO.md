@@ -252,7 +252,7 @@ the CSP items in 3.
 
 ## In progress
 
-_(none)_
+- _(Codex)_ — CSP `connect-src` allowlist correction in `src/proxy.ts`, with direct response-level verification. Claiming queued item 3 to remove unused external origins while retaining the actual KNS and Supabase API origins.
 
 ---
 
