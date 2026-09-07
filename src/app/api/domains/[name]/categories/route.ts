@@ -1,6 +1,6 @@
 // src/app/api/domains/[name]/categories/route.ts
 import { NextResponse } from 'next/server';
-import { verificationFailure } from '@/lib/server/apiError';
+import { verificationFailure, storeFailure } from '@/lib/server/apiError';
 import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
 import { requireDomainOwner, extractPayload } from '@/lib/server/verifyRequest';
 import { rpcError } from '@/lib/server/rpcError';
@@ -9,13 +9,6 @@ import { parseProfileRevision } from '@/lib/profileWrite';
 
 export const runtime = 'nodejs';
 
-function setupUnavailable(error?: { code?: string } | null) {
-  return error?.code === 'PGRST202' ||
-    error?.code === 'PGRST204' ||
-    error?.code === 'PGRST205' ||
-    error?.code === '42P01' ||
-    error?.code === '42703';
-}
 
 // The cap is owned by @/lib/limits and enforced at listing time too.
 
@@ -196,14 +189,7 @@ export async function GET(
 
   if (error) {
     console.error('Category read failed:', error);
-    return NextResponse.json(
-      {
-        error: setupUnavailable(error)
-          ? 'This deployment is not finished setting up profile editing.'
-          : 'Could not load categories.',
-      },
-      { status: setupUnavailable(error) ? 503 : 500 }
-    );
+    return storeFailure(error, 'Could not load categories.');
   }
   if (!data) {
     return NextResponse.json({ error: 'That domain is not listed.' }, { status: 404 });

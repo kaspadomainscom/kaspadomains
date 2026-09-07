@@ -30,6 +30,31 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
 
 ## Fixed
 
+### 2026-09-07 — An unreachable database was reported as an internal server error
+
+Three files — the categories route, the write-nonce route and `rpcError.ts` — each carried
+their own copy of the same five-code check for "is the schema missing?" (`PGRST202`,
+`PGRST204`, `PGRST205`, `42P01`, `42703`), and each answered **everything else** with a 500.
+
+A transport failure carries none of those codes. So a database that could not be reached —
+network down, project paused, DNS failing — was reported as an internal server error, which is
+a claim that the bug is in our code. That sends whoever is on call looking in the wrong place,
+and it is the wrong signal to a crawler, which treats 500 as "broken" and 503 as "come back
+later".
+
+`lib/storeError.ts` now names three outcomes instead of two: `setup-incomplete` (503, not
+retryable — waiting cannot apply a migration), `unreachable` (503, retryable) and `unexpected`
+(500, the only case where "something is wrong with us and we do not know what" is honest).
+`storeFailure()` in `server/apiError.ts` renders all three, carrying `retryable` through to the
+client the same way the paid write path does.
+
+Verified live: `GET /api/domains/test.kas/categories` returned `500 {"error":"Could not load
+categories."}` before and returns `503 {"error":"The database could not be reached…",
+"retryable":true}` now.
+
+**A fourth copy of the same check lives in `src/app/api/status/route.ts`**, which is Codex's
+file — queued rather than changed.
+
 ### 2026-09-07 — The canonical tag, the sitemap and the links disagreed about a page's URL
 
 A domain profile URL was built in **eleven** places, three different ways: six encoded the

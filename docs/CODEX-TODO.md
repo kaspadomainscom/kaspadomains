@@ -165,6 +165,27 @@ constants now, sees 96, and says `SKIPPED` out loud for any select it cannot res
 
 ---
 
+### 5. `src/app/api/status/route.ts` — a fourth copy of the setup-code check
+
+The "is the schema missing?" test (`PGRST202`, `PGRST204`, `PGRST205`, `42P01`, `42703`) was
+written out in four places. I consolidated three of them into `src/lib/storeError.ts`; the
+fourth is in your status route, so it is yours to move or to keep deliberately.
+
+Worth doing more than the tidiness suggests. All three copies I replaced shared the same gap:
+they asked only whether the schema was missing and answered **everything else** with a 500,
+so an *unreachable* database — network down, project paused, DNS failing — was reported as an
+internal server error. `classifyStoreError` names three outcomes rather than two, and
+`/status`'s whole job is telling those apart. Given `MIND.md` #14 came out of this very route
+reporting "All 6 tables present" while every one was missing, a health check that cannot
+distinguish "cannot reach" from "not set up" is the same shape of problem.
+
+```ts
+import { classifyStoreError } from '@/lib/storeError';
+// 'setup-incomplete' | 'unreachable' | 'unexpected'
+```
+
+---
+
 **Still yours:**
 
 - the profile-write token/revision races against an applied Supabase schema. This needs a

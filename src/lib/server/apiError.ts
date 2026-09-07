@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
 import { VerificationError } from './verificationError';
+import {
+  classifyStoreError,
+  isStoreFailureRetryable,
+  storeFailureMessage,
+  storeFailureStatus,
+} from '../storeError';
 
 /**
  * Render a failed verification as the API's error response.
@@ -27,5 +33,32 @@ export function verificationFailure(error: unknown): NextResponse {
       ...(error.code ? { code: error.code } : {}),
     },
     { status: error.status }
+  );
+}
+
+/**
+ * Render a failed Supabase call as an honest response.
+ *
+ * The routes were deciding this inline, and all of them asked only "is the
+ * schema missing?" -- so an unreachable database became a 500, which claims the
+ * bug is ours. This asks the fuller question once and carries the answer through
+ * to the status, the message and `retryable`, which the client uses to decide
+ * whether trying again is worth anything.
+ *
+ * `fallback` is the message for the genuinely unexpected case, where the caller
+ * knows what the request was for and the classifier does not.
+ */
+export function storeFailure(
+  error: { code?: string | null; message?: string | null } | null | undefined,
+  fallback: string
+): NextResponse {
+  const failure = classifyStoreError(error);
+
+  return NextResponse.json(
+    {
+      error: storeFailureMessage(failure, fallback),
+      ...(isStoreFailureRetryable(failure) ? { retryable: true } : {}),
+    },
+    { status: storeFailureStatus(failure) }
   );
 }

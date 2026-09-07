@@ -1,6 +1,12 @@
 // src/lib/server/rpcError.ts
 import type { PostgrestError } from '@supabase/supabase-js';
 import { VerificationError } from './verificationError';
+import {
+  classifyStoreError,
+  isStoreFailureRetryable,
+  storeFailureMessage,
+  storeFailureStatus,
+} from '../storeError';
 
 /**
  * Turn a Postgres error from one of the atomic write functions into an HTTP
@@ -35,19 +41,16 @@ export function rpcError(error: PostgrestError, fallback: string): VerificationE
     return new VerificationError(error.message || 'That category is not available.', 400);
   }
 
-  // PGRST202: the function does not exist. That means the deployed code is
-  // ahead of the database. Say exactly that -- the alternative is a generic 500
-  // that sends someone looking for a bug in the application.
-  if (
-    error.code === 'PGRST202' ||
-    error.code === 'PGRST204' ||
-    error.code === 'PGRST205' ||
-    error.code === '42P01' ||
-    error.code === '42703'
-  ) {
+  // Anything that is not one of our own KD codes is classified rather than
+  // guessed at. This was a third hand-written copy of the same five setup codes,
+  // and like the other two it had no answer for an *unreachable* database, so a
+  // network failure became a 500 -- a claim that the bug is in this code.
+  const failure = classifyStoreError(error);
+  if (failure !== 'unexpected') {
     return new VerificationError(
-      'This deployment is not finished setting up, so the action was not performed.',
-      503
+      storeFailureMessage(failure, fallback),
+      storeFailureStatus(failure),
+      { retryable: isStoreFailureRetryable(failure) }
     );
   }
 

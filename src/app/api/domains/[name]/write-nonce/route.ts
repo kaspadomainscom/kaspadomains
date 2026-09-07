@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
-import { verificationFailure } from '@/lib/server/apiError';
+import { verificationFailure, storeFailure } from '@/lib/server/apiError';
 import { REQUIRED_SCHEMA_VERSION } from '@/lib/database.types';
 import {
   isProfileWriteAction,
@@ -15,13 +15,6 @@ import {
 
 export const runtime = 'nodejs';
 
-function setupUnavailable(error?: { code?: string } | null) {
-  return error?.code === 'PGRST202' ||
-    error?.code === 'PGRST204' ||
-    error?.code === 'PGRST205' ||
-    error?.code === '42P01' ||
-    error?.code === '42703';
-}
 
 /**
  * Issue (or return) the one active write token for a loaded profile snapshot.
@@ -109,14 +102,7 @@ export async function POST(
 
   if (domainError) {
     console.error('Profile-write domain lookup failed:', domainError);
-    return NextResponse.json(
-      {
-        error: setupUnavailable(domainError)
-          ? 'This deployment is not finished setting up profile editing.'
-          : 'Could not prepare this profile update.',
-      },
-      { status: setupUnavailable(domainError) ? 503 : 500 }
-    );
+    return storeFailure(domainError, 'Could not prepare this profile update.');
   }
   if (!listedDomain) {
     return NextResponse.json({ error: 'That domain is not listed.' }, { status: 404 });
@@ -152,14 +138,7 @@ export async function POST(
 
   if (expiredDeleteError) {
     console.error('Failed to clear expired profile-write nonce:', expiredDeleteError);
-    return NextResponse.json(
-      {
-        error: setupUnavailable(expiredDeleteError)
-          ? 'This deployment is not finished setting up profile editing.'
-          : 'Could not prepare this profile update.',
-      },
-      { status: setupUnavailable(expiredDeleteError) ? 503 : 500 }
-    );
+    return storeFailure(expiredDeleteError, 'Could not prepare this profile update.');
   }
 
   const expiresAt = new Date(now.getTime() + PROFILE_WRITE_NONCE_TTL_MS).toISOString();
@@ -176,14 +155,7 @@ export async function POST(
   // existing nonce below. That is expected; any other failure is not.
   if (insertError && insertError.code !== '23505') {
     console.error('Failed to issue profile-write nonce:', insertError);
-    return NextResponse.json(
-      {
-        error: setupUnavailable(insertError)
-          ? 'This deployment is not finished setting up profile editing.'
-          : 'Could not prepare this profile update.',
-      },
-      { status: setupUnavailable(insertError) ? 503 : 500 }
-    );
+    return storeFailure(insertError, 'Could not prepare this profile update.');
   }
 
   const { data: issued, error: issuedError } = await supabase
@@ -198,14 +170,7 @@ export async function POST(
 
   if (issuedError || !issued) {
     console.error('Could not read issued profile-write nonce:', issuedError);
-    return NextResponse.json(
-      {
-        error: setupUnavailable(issuedError)
-          ? 'This deployment is not finished setting up profile editing.'
-          : 'Could not prepare this profile update.',
-      },
-      { status: setupUnavailable(issuedError) ? 503 : 500 }
-    );
+    return storeFailure(issuedError, 'Could not prepare this profile update.');
   }
 
   return NextResponse.json(
