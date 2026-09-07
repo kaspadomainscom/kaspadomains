@@ -217,14 +217,18 @@ import { classifyStoreError } from '@/lib/storeError';
 
 ## In progress
 
-- **(Codex) Content-gap cleanup** — reconcile the business-plan copy with the database-backed
-  listing reality, refresh stale test-count documentation, and add the real 1200×630 branded
-  social asset if the supplied logo can support it. Owner/legal decisions and live Supabase
-  verification remain blockers; do not invent them or stage unrelated in-flight files.
+_(none)_
 
 ---
 
 ## Done
+
+- **Content-gap cleanup / BRAND-001** — `171a0e4`, Codex, 2026-09-07. Business-plan and About
+  copy now distinguish KNS ownership, Kaspa fee transactions and the database-backed directory;
+  the supplied transparent SVG lockup/icon and generated 1200×630 social banner are tracked and
+  wired into header, favicon and metadata; stale test-count and OG-image records are synced.
+  Legal policy decisions, the unapplied live Supabase schema, and real wallet verification remain
+  blockers and were not invented or applied.
 
 - **Loop push-at-end policy** — the repository contract now requires each successful,
   verified iteration to push only its own commit, without force-pushes, rewrites, merges,
