@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { baseDomainName } from '@/lib/domainName';
+import { baseDomainName, domainProfilePath } from '@/lib/domainName';
 
 interface TrendingDomainsProps {
   /** Canonical names. `null` means "not known", which is not "there are none". */
@@ -25,7 +25,7 @@ export default function TrendingDomainsComponent({ trendingDomains }: TrendingDo
               key={domain}
               // The canonical name, so the profile page does not have to
               // redirect to add the suffix back.
-              href={`/domain/${encodeURIComponent(domain)}`}
+              href={domainProfilePath(domain) ?? "/domains"}
               className="flex-shrink-0 whitespace-nowrap hover:underline glow-green"
             >
               🔥 <span className="font-semibold">{baseDomainName(domain)}</span> —{' '}

@@ -1,6 +1,7 @@
 // src/app/sitemap.xml/route.ts
 
 import { loadCategoriesManifestOnce } from "@/data/categoriesManifest.server";
+import { domainProfilePath } from "@/lib/domainName";
 import { type CategoryManifest } from "@/data/categoriesManifest";
 import { NextResponse } from "next/server";
 
@@ -42,7 +43,8 @@ export async function GET() {
   const domainRoutes = Object.values(categoriesData).flatMap((category) =>
     category.domains
       .filter((d) => d.isActive)
-      .map((d) => `/domain/${d.name}`)
+      .map((d) => domainProfilePath(d.name))
+      .filter((path): path is string => path !== null)
   );
 
   const allRoutes = [...staticRoutes, ...domainRoutes];

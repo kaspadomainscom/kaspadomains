@@ -2,6 +2,7 @@
 "use client";
 
 import { useMemo, useState } from 'react';
+import { domainProfilePath, domainUpdatePath } from '@/lib/domainName';
 import Link from 'next/link';
 import { useWalletContext } from '@/context/WalletContext';
 import { usePaginatedDomains, type DomainAsset } from '@/hooks/kns/api/usePaginatedDomains';
@@ -75,13 +76,13 @@ function DomainRow({
         {status ? (
           <>
             <Link
-              href={`/domain/${encodeURIComponent(name)}`}
+              href={domainProfilePath(name) ?? "/domains"}
               className="rounded bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/15"
             >
               View
             </Link>
             <Link
-              href={`/domain/update/${encodeURIComponent(name)}`}
+              href={domainUpdatePath(name) ?? "/domains/my-domains"}
               className="rounded bg-teal-500/20 px-3 py-1.5 text-sm text-teal-200 hover:bg-teal-500/30"
             >
               Edit profile

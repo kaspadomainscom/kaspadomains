@@ -1,5 +1,6 @@
 // src/lib/jsonld.ts
 import { normalizeDomainName } from "@/lib/domainName";
+import { domainProfileUrl } from "./domainName";
 
 export type DomainJsonLdInput = {
   name: string;
@@ -47,12 +48,18 @@ export function getDomainJsonLd({ name, owner, category }: DomainJsonLdInput) {
   // published to every search engine.
   const canonical = normalizeDomainName(name);
 
+  // `url` is omitted rather than defaulted when it cannot be built. Structured
+  // data is a claim made to search engines: a ProfilePage whose url is the site
+  // root says this profile *is* the homepage. Saying nothing is the honest
+  // shape of "we do not have one".
+  const url = domainProfileUrl(canonical);
+
   return {
     "@context": "https://schema.org",
     "@type": "ProfilePage",
     name: canonical,
     description: `${canonical} — a premium KNS domain on Kaspa, showcased on KaspaDomains. Owned and controlled by its holder.`,
-    url: `https://kaspadomains.com/domain/${encodeURIComponent(canonical)}`,
+    ...(url ? { url } : {}),
     mainEntity: {
       "@type": "Thing",
       name: canonical,
@@ -104,13 +111,20 @@ export async function getItemListJsonLd(limit = 6): Promise<ItemListJsonLd | nul
     .filter((d) => d.isActive)
     .slice(0, limit);
 
+  // Dropped before numbering, not after: `position` must be a gapless sequence,
+  // and an item pointing at the site root would tell a crawler that every
+  // unresolvable domain is the homepage.
+  const entries = recentDomains
+    .map((domain) => ({ name: normalizeDomainName(domain.name), url: domainProfileUrl(domain.name) }))
+    .filter((entry): entry is { name: string; url: string } => entry.url !== null);
+
   return {
     ...listShell,
-    itemListElement: recentDomains.map((domain, index) => ({
+    itemListElement: entries.map((entry, index) => ({
       "@type": "ListItem",
       position: index + 1,
-      url: `https://kaspadomains.com/domain/${encodeURIComponent(normalizeDomainName(domain.name))}`,
-      name: normalizeDomainName(domain.name),
+      url: entry.url,
+      name: entry.name,
     })),
   };
 }

@@ -1,7 +1,7 @@
 // src/app/domains/categories/category/[category]/page.tsx
 
 import { notFound } from "next/navigation";
-import { normalizeDomainName } from "@/lib/domainName";
+import { normalizeDomainName, domainProfileUrl } from "@/lib/domainName";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { loadCategoriesManifestOnce } from "@/data/categoriesManifest.server";
@@ -123,15 +123,23 @@ export default async function CategoryPage({ params }: PageProps) {
   if (!categoryData) return notFound();
 
   const activeDomains = categoryData.domains.filter((d) => d.isActive);
+
+  // Entries whose URL cannot be built are dropped before numbering rather than
+  // published with a null `url`. `position` has to be a gapless sequence, so
+  // filtering after the map would leave holes in it.
+  const listedUrls = activeDomains
+    .map((domain) => ({ name: normalizeDomainName(domain.name), url: domainProfileUrl(domain.name) }))
+    .filter((entry): entry is { name: string; url: string } => entry.url !== null);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: `Premium ${categoryData.title} Domains`,
-    itemListElement: activeDomains.map((domain, index) => ({
+    itemListElement: listedUrls.map((entry, index) => ({
       "@type": "ListItem",
       position: index + 1,
-      url: `https://kaspadomains.com/domain/${domain.name}`,
-      name: normalizeDomainName(domain.name),
+      url: entry.url,
+      name: entry.name,
     })),
   };
 

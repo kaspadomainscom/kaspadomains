@@ -1,6 +1,7 @@
 'use client';
 
 import { DomainAsset } from '@/hooks/kns/types';
+import { domainProfilePath } from '@/lib/domainName';
 import { useListDomain } from '@/hooks/domain/useListDomain';
 import { useGetAllowedCategories } from '@/hooks/domains/useGetAllowedCategories';
 import { LISTING_FEE_SOMPI, formatKas } from '@/lib/fees';
@@ -175,7 +176,7 @@ export default function PickDomainModal({
       {listedDomain && (
         <p className="text-green-400 text-sm mt-4">
           <strong>{listedDomain}</strong> is listed.{' '}
-          <a href={`/domain/${encodeURIComponent(listedDomain)}`} className="underline">
+          <a href={domainProfilePath(listedDomain) ?? "/domains"} className="underline">
             View its page
           </a>
         </p>

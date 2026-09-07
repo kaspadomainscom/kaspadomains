@@ -2,6 +2,7 @@
 'use client';
 
 import { Domain } from '@/data/types';
+import { domainProfilePath } from '@/lib/domainName';
 import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
 import { formatKas } from '@/lib/fees';
@@ -67,7 +68,7 @@ export function DomainCard({ domain }: { domain: Domain }) {
     // readers announce as one confused control. The link now covers the card
     // body and the explorer anchor is a sibling.
     <div className="group border border-[#1d3b39] rounded-2xl p-5 shadow-md hover:shadow-lg hover:border-kaspaMint/50 transition-all duration-200 bg-[#122c2a]">
-      <Link href={`/domain/${encodeURIComponent(domain.name)}`} className="block">
+      <Link href={domainProfilePath(domain.name) ?? "/domains"} className="block">
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-2xl font-semibold text-white truncate group-hover:text-kaspaMint transition">
             {domain.name}

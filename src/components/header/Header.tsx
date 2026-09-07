@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import { domainProfilePath } from '@/lib/domainName';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import KaspaDomainsLogo from '../KaspaDomainsLogo';
@@ -228,7 +229,7 @@ export default function Header() {
       const exists = await findDomainByName(canonical);
       router.push(
         exists
-          ? `/domain/${encodeURIComponent(canonical)}`
+          ? (domainProfilePath(canonical) ?? "/domains")
           : `/search?q=${encodeURIComponent(canonical.replace(/\.kas$/, ''))}`
       );
     },

@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getAllDomains } from '@/data/domainLookup';
 import type { Domain } from '@/data/types';
-import { normalizeDomainName, baseDomainName } from '@/lib/domainName';
+import { baseDomainName, domainProfilePath } from '@/lib/domainName';
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
@@ -105,15 +105,14 @@ export default function SearchPage() {
         ) : state.status === 'ready' && state.results.length > 0 ? (
           <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {state.results.map((domain) => {
-              // Both forms come from the one owner, so the link and the label
-              // cannot disagree about the suffix.
-              const canonical = normalizeDomainName(domain.name);
+              // The label and the href both come from the one owner, so they
+              // cannot disagree about the suffix or the encoding.
               const baseName = baseDomainName(domain.name);
 
               return (
                 <li key={domain.name}>
                   <Link
-                    href={`/domain/${encodeURIComponent(canonical)}`}
+                    href={domainProfilePath(domain.name) ?? "/domains"}
                     className="group block rounded-xl border border-[#1d3b39] bg-[#122c2a] hover:border-kaspaMint/50 hover:shadow-lg transition-all duration-200 p-5"
                   >
                     <div className="flex items-center justify-between">

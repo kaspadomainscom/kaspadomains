@@ -1,5 +1,6 @@
 // src/app/page.tsx
 import Link from "next/link";
+import { domainProfilePath } from "@/lib/domainName";
 import { headers } from "next/headers";
 import { loadCategoriesManifestOnce } from "@/data/categoriesManifest.server";
 import { type CategoryManifest } from "@/data/categoriesManifest";
@@ -112,7 +113,7 @@ export default async function Home() {
                 </p>
                 <p className="text-sm text-gray-500">200 KAS to list</p>
                 <Link
-                  href={`/domain/${domain.name}`}
+                  href={domainProfilePath(domain.name) ?? "/domains"}
                   className="text-yellow-400 underline text-sm mt-3 inline-block hover:text-yellow-300"
                 >
                   View Domain →

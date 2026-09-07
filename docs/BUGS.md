@@ -30,6 +30,30 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
 
 ## Fixed
 
+### 2026-09-07 — The canonical tag, the sitemap and the links disagreed about a page's URL
+
+A domain profile URL was built in **eleven** places, three different ways: six encoded the
+name, five did not, and only the structured data normalised it first. So the
+`<link rel="canonical">` on a profile page, the `og:url` beside it, the sitemap entry for it
+and the links pointing at it could be four different strings for one page.
+
+Not cosmetic. `/domain/[name]` redirects anything not already canonical, so non-canonical
+names in the sitemap make it a sitemap of redirects — and a canonical tag that disagrees with
+the URL people land on is the one signal whose entire job is to say "these are the same page".
+
+`domainProfilePath` / `domainProfileUrl` / `domainUpdatePath` now live in `lib/domainName.ts`,
+beside the canonical form they are derived from. They went there rather than into a `routes.ts`
+because the test runner cannot resolve a relative import, so a separate module would have been
+untestable — and the alternative, a second copy of the normalisation, is the bug being fixed.
+Third instance of `MIND.md` #17 in this codebase after the `.kas` suffix and the category cap.
+
+**A bug introduced and caught inside the fix**: the first version defaulted an unbuildable URL
+to the site origin (`?? SITE_ORIGIN`). That is worse than the problem — a canonical pointing at
+the homepage tells search engines the profile *is* the homepage, which deindexes it in favour
+of the homepage, and a JSON-LD `ListItem` doing the same says every unresolvable domain is the
+homepage. All four sites now omit the field instead. Absent is honest; wrong is harmful. Same
+lesson as the empty-`ItemList` fix earlier the same day, in code written to apply it.
+
 ### 2026-09-07 — The profile page repaired link URLs the API had already refused
 
 **Not an exploitable bug, and worth saying so plainly**: a stored `javascript:alert(1)` was

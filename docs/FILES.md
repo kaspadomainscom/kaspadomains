@@ -142,7 +142,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `data/categoriesManifest.server.ts` | The manifest memoised per server request. The homepage loaded it three times — page, trending, JSON-LD — with nothing connecting them | ✅ |
 | `lib/paymentIntentToken.ts` | Mint/check the payment-intent token. Dependency-free and returns a boolean, so it is testable | ✅ |
 | `lib/paging.ts` | Reads every row of a query a server will silently truncate. Dependency-free so it is testable | ✅ |
-| `lib/domainName.ts` | **The one owner of a `.kas` name's canonical form.** Dependency-free, so server and client share it | ✅ |
+| `lib/domainName.ts` | The one owner of a `.kas` name's canonical form **and of the URLs built from it**. The name had five implementations (one published `foo.kas.kas`); the profile URL had eleven, five of them unencoded | ✅ |
 | `lib/profileWrite.ts` | The closed profile-write action set, nonce TTL and safe revision parser shared by browser/API/read layer | ✅ |
 | `lib/signedMessage.ts` | Canonical JSON → SHA-256 → signed message. Dependency-free so it never pulls WASM into the browser | ✅ |
 | `lib/signedFetch.ts` | `preflight` → `payFee` → `signedFetch`, plus signed profile-token preparation | ✅ |

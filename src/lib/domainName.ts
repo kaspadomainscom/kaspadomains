@@ -47,3 +47,69 @@ export function normalizeDomainName(name: string): string {
 export function baseDomainName(name: string): string {
   return normalizeDomainName(name).replace(/\.kas$/, '');
 }
+
+/**
+ * The one owner of the URLs this site publishes about a domain.
+ *
+ * These live here, beside the canonical form they are built from, rather than in
+ * a routes module of their own. The separation would read better; it is not
+ * available. The test runner resolves neither `@/` aliases nor extensionless
+ * relative imports, so a module is only testable if it imports nothing but Node
+ * builtins -- a `routes.ts` importing `normalizeDomainName` cannot be tested,
+ * and the alternative is a second copy of the normalisation, which is the exact
+ * bug this file exists to prevent. Testable and correct beats tidy.
+ *
+ * ## Why they need an owner
+ *
+ * A profile URL was built in **eleven** places, three different ways: six
+ * encoded the name, five did not, and only the structured data normalised it
+ * first. So the `<link rel="canonical">` on a profile page, the `og:url` beside
+ * it, the sitemap entry for it and the links pointing at it could be four
+ * different strings for one page.
+ *
+ * Not cosmetic. `/domain/[name]` redirects anything not already canonical, so
+ * non-canonical names in a sitemap make it a sitemap of redirects -- and a
+ * canonical tag that disagrees with the URL people land on is the one signal
+ * whose entire job is to say "these are the same page".
+ */
+
+/**
+ * Where this site lives, canonically. No trailing slash, which is what makes
+ * concatenation with a path safe.
+ *
+ * Still written out in ~30 other places, almost all inside static `metadata`
+ * blocks. They are not wrong, but they are the same drift hazard; one of those
+ * files belongs to the other agent, so consolidating them is queued rather than
+ * done here. This is where they should end up.
+ */
+export const SITE_ORIGIN = 'https://kaspadomains.com';
+
+/**
+ * The path to a domain's profile page: canonical name, percent-encoded.
+ *
+ * Both steps matter, for different reasons. Normalising means the URL does not
+ * redirect. Encoding means a character with meaning in a URL cannot change which
+ * page is addressed -- `.kas` names are plain today, but that is a fact about
+ * the data rather than a property of the URL builder, and five of the eleven
+ * original call sites were relying on it.
+ *
+ * `null` for an empty name rather than `/domain/`, which is a different route.
+ */
+export function domainProfilePath(name: string): string | null {
+  const canonical = normalizeDomainName(name);
+  if (!canonical) return null;
+  return `/domain/${encodeURIComponent(canonical)}`;
+}
+
+/** The absolute form, for canonical tags, `og:url`, JSON-LD and the sitemap. */
+export function domainProfileUrl(name: string): string | null {
+  const path = domainProfilePath(name);
+  return path === null ? null : `${SITE_ORIGIN}${path}`;
+}
+
+/** The path to a domain's edit page. Same rules, different route. */
+export function domainUpdatePath(name: string): string | null {
+  const canonical = normalizeDomainName(name);
+  if (!canonical) return null;
+  return `/domain/update/${encodeURIComponent(canonical)}`;
+}

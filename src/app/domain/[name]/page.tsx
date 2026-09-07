@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 
 import { loadCategoriesManifestOnce } from "@/data/categoriesManifest.server";
 import { lookupDomain, findDomainCategoryTitle } from "@/data/domainLookup";
-import { normalizeDomainName } from "@/lib/domainName";
+import { normalizeDomainName, domainProfilePath, domainProfileUrl } from "@/lib/domainName";
 import { getDomainJsonLd } from "@/lib/jsonld";
 import { JsonLd } from "@/components/JsonLd";
 
@@ -95,16 +95,21 @@ export async function generateMetadata({
   const category = (await findDomainCategoryTitle(domain.name)) ?? "Uncategorized";
   const description = `${domain.name}, a premium KNS domain listed in the ${category} category on KaspaDomains.`;
 
+  // Omitted rather than defaulted if it cannot be built. A canonical is a claim
+  // that two URLs are the same page, so pointing this one at the site root would
+  // tell search engines the profile *is* the homepage -- which deindexes it in
+  // favour of the homepage. No canonical simply means "judge this page on its
+  // own URL", which is both true and harmless.
+  const profileUrl = domainProfileUrl(domain.name);
+
   return {
     title: `${domain.name} — Premium ${category} Domain | kaspadomains.com`,
     description,
-    alternates: {
-      canonical: `https://kaspadomains.com/domain/${domain.name}`,
-    },
+    ...(profileUrl ? { alternates: { canonical: profileUrl } } : {}),
     openGraph: {
       title: domain.name,
       description: `Premium KNS domain in ${category}`,
-      url: `https://kaspadomains.com/domain/${domain.name}`,
+      ...(profileUrl ? { url: profileUrl } : {}),
       images: [
         {
           url: "https://kaspadomains.com/og-image.png",
@@ -135,7 +140,7 @@ export default async function DomainPage({ params }: PageProps): Promise<JSX.Ele
   const canonical = ensureKasSuffix(rawName);
 
   // redirect() throws, so nothing after it runs.
-  if (rawName !== canonical) redirect(`/domain/${canonical}`);
+  if (rawName !== canonical) redirect(domainProfilePath(canonical) ?? "/domains");
 
   const result = await lookupDomain(canonical);
 
