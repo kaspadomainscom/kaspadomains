@@ -202,7 +202,10 @@ the CSP items in 3.
 
 ## In progress
 
-- _(Codex)_ — no open claim.
+- _(Codex)_ — status-page Host-header SSRF — `src/app/status/page.tsx`,
+  `src/lib/statusOrigin.ts`, and the focused regression test. The page currently
+  interpolates an untrusted Host header into a server-side fetch URL; this run will
+  allow only the known public origin or local development host and fall back safely.
 
 ---
 
