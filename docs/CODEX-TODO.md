@@ -210,7 +210,10 @@ import { classifyStoreError } from '@/lib/storeError';
 
 ## In progress
 
-_(none)_
+- **(Codex) Loop push-at-end policy** — update the repeatable loop contract and existing
+  automation so each verified iteration pushes its own commit at the end, while preserving
+  the no-merge/no-deploy/no-funds safety gates. Touching `docs/TODO.md` and the automation
+  configuration only; do not stage unrelated in-flight files.
 
 ---
 
