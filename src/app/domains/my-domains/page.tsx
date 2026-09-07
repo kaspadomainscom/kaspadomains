@@ -10,6 +10,7 @@ import { useListingStatuses, type ListingStatus } from '@/hooks/domains/useListi
 import Loader from '@/components/Loader';
 import { formatKas, LISTING_FEE_SOMPI } from '@/lib/fees';
 import { formatUtcDate } from '@/lib/format';
+import { listingStatusAction } from './listingStatusAction';
 
 /**
  * "My Domains" answers two questions that come from two different places, and
@@ -60,6 +61,7 @@ function DomainRow({
   // missing or unparseable, so an unreadable value renders as nothing rather
   // than as "Invalid Date".
   const registered = formatUtcDate(Number(asset.creationBlockTime));
+  const action = listingStatusAction(status);
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-white/10 bg-white/5 p-4">
@@ -73,7 +75,7 @@ function DomainRow({
       )}
 
       <div className="mt-auto flex flex-wrap gap-2 pt-1">
-        {status ? (
+        {action === 'listed' ? (
           <>
             <Link
               href={domainProfilePath(name) ?? "/domains"}
@@ -88,14 +90,14 @@ function DomainRow({
               Edit profile
             </Link>
           </>
-        ) : (
+        ) : action === 'not-listed' ? (
           <Link
             href="/list-domain"
             className="rounded bg-teal-500/20 px-3 py-1.5 text-sm text-teal-200 hover:bg-teal-500/30"
           >
             List for {formatKas(LISTING_FEE_SOMPI)}
           </Link>
-        )}
+        ) : null}
       </div>
     </div>
   );
