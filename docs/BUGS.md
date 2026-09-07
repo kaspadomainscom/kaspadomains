@@ -27,6 +27,31 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
       untested, and it is the second thing to do after the schema.
 ## Fixed
 
+### 2026-09-07 — A malformed response could have emptied a listing's categories
+
+Three places took a list straight off a server response with `??`, substituting a value we had
+guessed for one the server never sent. The revision beside them was strictly validated and threw
+when absent, which is the asymmetry that hid it: one field verified, its neighbour defaulted.
+
+The serious one was the **read** path in `useDomainCategories`. `body.categories ?? []` meant a
+response that merely omitted the list would unlock the editor showing zero categories — and
+saving is a bulk replace, so the owner's next save would delete the categories they actually
+had. Same shape as the resources editor's data-loss bug, arriving through a malformed response
+rather than a failed read.
+
+The other two are the save paths in `useDomainCategories` and `useUpdateDomainLinks`, which fell
+back to what the client *sent*. The write has succeeded at that point, so this is not data loss —
+but it leaves the editor holding a snapshot the server never confirmed, and the next save builds
+on it, which is exactly what the profile-revision guard exists to prevent.
+
+`parseCategoryList` and `parseLinkList` now sit beside `parseProfileRevision` in
+`lib/profileWrite.ts` and return `null` for anything that is not the expected shape. `[]` stays a
+valid answer, distinct from "no list arrived". Twelve cases each, and the validator was mutation
+tested: restoring the `?? []` behaviour fails three of them.
+
+Also: a double-click on Save returned `null` silently, so the second click looked like nothing
+happened. It now says so, matching `useListDomain`.
+
 ### 2026-09-07 — Three more database failures reported as "we have a bug"
 
 Follow-up to the `storeError` consolidation earlier today, and a miss in it. That pass replaced

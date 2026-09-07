@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { useToast } from '@/components/ToastProvider';
 import { prepareProfileWrite, signedFetch, readError } from '@/lib/signedFetch';
-import { parseProfileRevision } from '@/lib/profileWrite';
+import { parseLinkList, parseProfileRevision } from '@/lib/profileWrite';
 import type { DomainLink } from './useGetDomainLinks';
 
 export function useUpdateDomainLinks() {
@@ -18,7 +18,12 @@ export function useUpdateDomainLinks() {
     links: DomainLink[],
     profileRevision: number
   ): Promise<{ links: DomainLink[]; profileRevision: number } | null> => {
-    if (isSubmitting.current) return null;
+    if (isSubmitting.current) {
+      // Say so. Returning null silently left a second click looking like
+      // nothing happened at all, while useListDomain reports the same state.
+      addToast('Already saving. Please wait.');
+      return null;
+    }
 
     const cleanLinks = links
       .map((l) => ({ name: l.name.trim(), url: l.url.trim() }))
@@ -61,12 +66,16 @@ export function useUpdateDomainLinks() {
         profileRevision?: unknown;
       };
       const nextProfileRevision = parseProfileRevision(body.profileRevision);
-      if (nextProfileRevision === null) {
+      const savedLinks = parseLinkList(body.links);
+      if (nextProfileRevision === null || savedLinks === null) {
+        // The write succeeded; we just cannot trust our snapshot of it. Falling
+        // back to what we *sent* would leave the editor showing a state the
+        // server never confirmed, and the next save would build on it.
         throw new Error('The resources were saved, but the editor must reload before another change.');
       }
 
       addToast(`Resources saved for "${domain}".`, 'success');
-      return { links: body.links ?? cleanLinks, profileRevision: nextProfileRevision };
+      return { links: savedLinks, profileRevision: nextProfileRevision };
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to save resources.';
       addToast(msg, 'error');

@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { prepareProfileWrite, signedFetch, readError } from '@/lib/signedFetch';
-import { parseProfileRevision } from '@/lib/profileWrite';
+import { parseCategoryList, parseProfileRevision } from '@/lib/profileWrite';
 
 type Loaded = {
   domain: string;
@@ -83,9 +83,22 @@ export function useDomainCategories(domainName: string) {
           });
           return;
         }
+        // Validated, not defaulted. Saving is a bulk replace, so a response that
+        // merely omitted the list would unlock the editor showing zero
+        // categories and the next save would delete the owner's real ones.
+        const categories = parseCategoryList(body.categories);
+        if (categories === null) {
+          setLoaded({
+            domain,
+            categories: null,
+            profileRevision: null,
+            error: 'Could not read the current categories.',
+          });
+          return;
+        }
         setLoaded({
           domain,
-          categories: body.categories ?? [],
+          categories,
           profileRevision,
           error: null,
         });
@@ -141,12 +154,16 @@ export function useDomainCategories(domainName: string) {
           profileRevision?: unknown;
         };
         const nextProfileRevision = parseProfileRevision(body.profileRevision);
-        if (nextProfileRevision === null) {
+        const savedCategories = parseCategoryList(body.categories);
+        if (nextProfileRevision === null || savedCategories === null) {
+          // The write succeeded; we just cannot trust our snapshot of it. Using
+          // what we *sent* would leave the editor showing a state the server
+          // never confirmed, and the next save would be based on it.
           throw new Error('The categories were saved, but reload before another change.');
         }
         setLoaded({
           domain,
-          categories: body.categories ?? categories,
+          categories: savedCategories,
           profileRevision: nextProfileRevision,
           error: null,
         });
