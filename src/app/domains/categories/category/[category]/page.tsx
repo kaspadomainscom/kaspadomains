@@ -7,6 +7,7 @@ import Link from "next/link";
 import { loadCategoriesManifestOnce } from "@/data/categoriesManifest.server";
 import { DomainCard } from "@/components/DomainCard";
 import { JsonLd } from "@/components/JsonLd";
+import { activeCategoryDomains } from "@/components/categoryDomains";
 import type { Metadata } from "next";
 
 type StaticParam = { category: string };
@@ -122,7 +123,7 @@ export default async function CategoryPage({ params }: PageProps) {
 
   if (!categoryData) return notFound();
 
-  const activeDomains = categoryData.domains.filter((d) => d.isActive);
+  const activeDomains = activeCategoryDomains(categoryData.domains);
 
   // Entries whose URL cannot be built are dropped before numbering rather than
   // published with a null `url`. `position` has to be a gapless sequence, so
@@ -164,7 +165,7 @@ export default async function CategoryPage({ params }: PageProps) {
         </p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-          {categoryData.domains.map((domain) => (
+          {activeDomains.map((domain) => (
             <DomainCard key={domain.name} domain={domain} />
           ))}
         </div>
