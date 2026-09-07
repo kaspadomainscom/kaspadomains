@@ -9,6 +9,20 @@ import { KNS_API_BASE_URL } from "@/lib/kaspaDomainRuntime";
 const supabaseOrigin = getSupabaseOrigin();
 const knsApiOrigin = new URL(KNS_API_BASE_URL).origin;
 
+// Next's framework-level global error page is generated outside the app's nonce
+// plumbing. Permit only its current, exact inline CSS so a fatal error remains
+// usable without allowing arbitrary inline styles.
+const nextGlobalErrorStyleHash = `'sha256-Wwucq8eX2r0YFymkQhDXm5hN0+FfSvI3s4JSSaqa4iw='`;
+const nextGlobalErrorStyleAttributeHashes = [
+  `'sha256-sQDnCGqiOcC4TW1ZAPeI8cRzm5Hw76hKE4LnpQSSl7E='`,
+  `'sha256-QEOONb/cW/6DUeVHoGf1XABLPLdlh6jWPG5u+pzWYi0='`,
+  `'sha256-sy52lX0+2tv+g3EsY0ht0hi3CxCko9VY8zphhzsFvgA='`,
+  `'sha256-iLeYE2tE/9/4vrSckiVn8RIgduekH+yQHpekWMznysk='`,
+  `'sha256-OPcBYHHpZ7cLgkEO7nrN88lEb30oBEtDgxJPN+tOzvA='`,
+  `'sha256-q3nqK4VzeI/SowYCYQ/tCfo056B/JMutuSpzbJbHczk='`,
+  `'sha256-A+uDk22eA51dyqK3XKcDHuv+89qNT14AKBRcPnvNPD4='`,
+].join(" ");
+
 // Helper: Generate base64url nonce
 function base64url(bytes: Uint8Array): string {
   let binary = "";
@@ -41,9 +55,8 @@ export function proxy(request: NextRequest) {
   const csp = [
     `default-src 'none'`,
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
-    // `style-src 'self' 'nonce-${nonce}'`,
-    `style-src 'self' 'nonce-${nonce}' 'unsafe-hashes' https://fonts.googleapis.com`, // 🔄 updated
-    `style-src-attr 'self' 'unsafe-hashes' 'nonce-${nonce}'`,
+    `style-src 'self' 'nonce-${nonce}' ${nextGlobalErrorStyleHash} https://fonts.googleapis.com`,
+    `style-src-attr 'unsafe-hashes' ${nextGlobalErrorStyleAttributeHashes}`,
     `img-src 'self' data: https://kaspadomains.com`,
     // The old entry here was `https://supabase.com` -- the marketing site, which
     // a Supabase client never calls. Requests go to the per-project API origin
