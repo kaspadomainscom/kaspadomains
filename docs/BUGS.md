@@ -27,6 +27,17 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
       untested, and it is the second thing to do after the schema.
 ## Fixed
 
+### 2026-09-08 — The status page trusted Host as a server-side fetch destination
+
+The server-rendered `/status` page interpolated the request `Host` header into its fetch URL.
+An attacker could send a forged host such as `169.254.169.254`, causing the server to request
+`https://169.254.169.254/api/status` rather than its own status endpoint.
+
+`statusOrigin` now allowlists the public KaspaDomains hosts and the two local development
+targets; every other header falls back to the fixed public HTTPS origin. Native tests cover
+the SSRF payload and the supported origins. The status API itself and deployment proxy
+behavior were not changed.
+
 ### 2026-09-08 — Valid uppercase KNS names were rejected by the listing flow
 
 The canonical domain boundary accepts whitespace and uppercase input, normalizing names such

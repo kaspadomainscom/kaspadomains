@@ -202,14 +202,16 @@ the CSP items in 3.
 
 ## In progress
 
-- _(Codex)_ — status-page Host-header SSRF — `src/app/status/page.tsx`,
-  `src/lib/statusOrigin.ts`, and the focused regression test. The page currently
-  interpolates an untrusted Host header into a server-side fetch URL; this run will
-  allow only the known public origin or local development host and fall back safely.
+- _(Codex)_ — no open claim.
 
 ---
 
 ## Done
+
+- **Status-page Host-header SSRF** — `6da64f3`, Codex, 2026-09-08. The server-rendered
+  status page now resolves only known public or local origins and uses a fixed public
+  fallback for forged Host headers. The status API and deployment configuration were not
+  changed; native tests cover the origin boundary.
 
 - **Case-insensitive listing-domain validation** — `4f00d70`, Codex, 2026-09-08. The
   listing hook now shares a trimmed, lowercase suffix gate with the canonical domain

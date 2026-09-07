@@ -165,6 +165,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `lib/paging.ts` | Reads every row of a query a server will silently truncate. Dependency-free so it is testable | ✅ |
 | `lib/domainName.ts` | The one owner of a `.kas` name's canonical form **and of the URLs built from it**. The name had five implementations (one published `foo.kas.kas`); the profile URL had eleven, five of them unencoded | ✅ |
 | `lib/listDomainValidation.ts` | Shared client-side gate for trimmed, case-insensitive `.kas` listing names; keeps the wallet flow aligned with canonical domain input | ✅ |
+| `lib/statusOrigin.ts` | Allowlisted origin resolver for the server-rendered status fetch; rejects attacker-controlled Host destinations | ✅ |
 | `lib/profileWrite.ts` | The closed profile-write action set, nonce TTL and safe revision parser shared by browser/API/read layer | ✅ |
 | `lib/signedMessage.ts` | Canonical JSON → SHA-256 → signed message. Dependency-free so it never pulls WASM into the browser | ✅ |
 | `lib/signedFetch.ts` | `preflight` → `payFee` → `signedFetch`, plus signed profile-token preparation; paid listing recovery is owned by `useListDomain` | ✅ |

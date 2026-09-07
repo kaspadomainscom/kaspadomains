@@ -3,7 +3,7 @@
 **Purpose**: turn [`../MIND.md`](../MIND.md)'s narrative principles into steps you can
 actually run, so "remember why this matters" becomes "here's what to do right now."
 
-Last updated: 2026-09-07
+Last updated: 2026-09-08
 
 `MIND.md` states the operating principles as narrative, each backed by a real incident,
 now with an explicit Purpose/Mechanic line per principle. This directory is the
@@ -21,6 +21,7 @@ about.
 | [`irreversible-action-checklist.md`](./irreversible-action-checklist.md) | Make sure every refusal is established before money moves, not after | #9, #16 |
 | [`shared-value-format-checklist.md`](./shared-value-format-checklist.md) | Stop two sides of a boundary agreeing informally about a value's shape | #17 |
 | [`optimistic-concurrency-checklist.md`](./optimistic-concurrency-checklist.md) | Prevent a valid save from replacing state the editor never rendered | #21 |
+| [`server-fetch-origin-checklist.md`](./server-fetch-origin-checklist.md) | Keep request-derived metadata from steering server-side fetches | #25 |
 
 ## Related docs
 

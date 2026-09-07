@@ -1,6 +1,6 @@
 # Mind
 
-Last updated: 2026-09-08 (case-insensitive domain validation review)
+Last updated: 2026-09-08 (status-origin trust review)
 
 How to think about working on this codebase — principles earned the hard way, each
 backed by a real incident. Read this before making changes, especially anything that
@@ -106,6 +106,7 @@ touch the codebase, you own the part of the map you moved. See
 | 22 | An error message is an instruction | "Try again" is a bug if the only retry available charges the user a second time |
 | 23 | Accidental safety is not safety | If the thing protecting you is a side effect of unrelated code, nothing is protecting you |
 | 24 | An inherited default is a claim about pages you never looked at | Cascading config asserts things on behalf of every descendant, including the ones added later |
+| 25 | Request headers are input, not origin authority | A server-side fetch must never turn an untrusted Host value into a destination |
 
 ## 1. Never trust a hardcoded value against a live contract — verify the ABI first
 
@@ -908,6 +909,23 @@ not the source. `MIND.md` #18 with a cascade attached — the source of record h
 response, not the file.
 
 ---
+
+## 25. Request headers are input, not origin authority
+
+**Purpose**: a request header can describe what a client asked for, but it cannot authorize
+where the server should make a new request.
+**Mechanic**: before constructing a server-side URL from request metadata, allowlist the
+complete origin and use a fixed safe fallback for every other value.
+
+**The incident (2026-09-08)**: the server-rendered status page read `Host` and interpolated it
+into `fetch(`${protocol}://${host}/api/status`)`. A forged `Host: 169.254.169.254` therefore
+sent the server toward a cloud metadata address. The page needed its own status endpoint, not
+an origin chosen by the caller.
+
+The fix maps only `kaspadomains.com`/`www.kaspadomains.com` to HTTPS and the two known local
+development targets to HTTP; all other hosts resolve to the fixed public origin. The status
+API and proxy were not changed. See
+[`mind/server-fetch-origin-checklist.md`](./mind/server-fetch-origin-checklist.md).
 
 ## Related docs
 
