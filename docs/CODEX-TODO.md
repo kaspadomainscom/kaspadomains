@@ -217,14 +217,15 @@ import { classifyStoreError } from '@/lib/storeError';
 
 ## In progress
 
-- **(Codex) ACT-001 activation path** — make homepage/header routes to explore, search,
-  profiles and listing explicit while preserving canonical profile lookup and the
-  preflight-before-payment flow. Planned paths: `src/app/page.tsx`,
-  `src/components/header/Header.tsx`, and synchronized repository maps.
+_(none)_
 
 ---
 
 ## Done
+
+- **ACT-001 activation path** — `7e3f4bb`, Codex, 2026-09-07. Homepage now has explicit List,
+  Explore and Search-for-profile CTAs; desktop and mobile headers expose Home, Domains, Search,
+  Learn and List Domain. Canonical profile lookup and preflight-before-payment are unchanged.
 
 - **Content-gap cleanup / BRAND-001** — `171a0e4`, Codex, 2026-09-07. Business-plan and About
   copy now distinguish KNS ownership, Kaspa fee transactions and the database-backed directory;
