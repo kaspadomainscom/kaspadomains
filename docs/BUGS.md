@@ -30,6 +30,28 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
 
 ## Fixed
 
+### 2026-09-07 — The profile page repaired link URLs the API had already refused
+
+**Not an exploitable bug, and worth saying so plainly**: a stored `javascript:alert(1)` was
+rendered as `href="https://javascript:alert(1)"` — an https URL with a nonsense host, which
+does nothing. The problem is that the safety was *accidental*.
+
+`/api/domains/[name]/links` refused any URL not starting with `http://` or `https://`.
+`DomainResources` redeclared the same regex and, when it failed, rewrote the value as
+`https://${url}` and rendered it anyway. One rule, two owners, disagreeing about the
+outcome — `MIND.md` #17. Nothing was protecting the accident: change that fallback to render
+the value unmodified, which is a reasonable-looking simplification, and a stored
+`javascript:` URL on a public profile becomes stored XSS.
+
+`src/lib/linkUrl.ts` owns the rule now, and both sides use it. The renderer refuses instead
+of repairing: a link that fails shows its label without being clickable, which neither hides
+what the owner saved nor trusts it. Also refused now — whitespace and control characters
+inside the URL, which a browser strips while parsing, so the address it resolves is not the
+one a reviewer reads; and a scheme with no host, which rendered as a link to nowhere.
+
+Checked every other dynamic `href` in the app while here. `DomainResources` was the only one
+carrying user-controlled input; the rest are internal routes and a computed explorer URL.
+
 ### 2026-09-07 — "My Votes" would have silently truncated a long voting history
 
 `fetchVotedDomains` selected every vote for a wallet with no `range`, so PostgREST would

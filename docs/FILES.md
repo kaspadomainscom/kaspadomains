@@ -137,6 +137,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `lib/paymentCheck.ts` | Decides whether a transaction paid the fee, from the right wallet. Dependency-free, so it is testable | ✅ |
 | `lib/paidWriteRetry.ts` | When a request whose fee is **already paid** comes back failed: retry, treat as done, or stop. Dependency-free and tested — the wrong answer here charges someone twice | ✅ |
 | `lib/format.ts` | Dates and counts, derived from UTC parts so the server and the browser produce the same string. `toLocaleDateString` did not, and this app renders the same components in both | ✅ |
+| `lib/linkUrl.ts` | What counts as a usable profile link. The API and the profile page had separate copies that disagreed: one refused a bad URL, the other rewrote it and rendered it anyway | ✅ |
 | `scripts/schema-check.mjs` | Cross-checks the app against `supabase/schema.sql` with no database: columns, RPC names and `p_*` parameters, `KD***` codes, schema version. Catches what only fails at runtime — and for the paid routes, only *after* the user has paid | ✅ |
 | `data/categoriesManifest.server.ts` | The manifest memoised per server request. The homepage loaded it three times — page, trending, JSON-LD — with nothing connecting them | ✅ |
 | `lib/paymentIntentToken.ts` | Mint/check the payment-intent token. Dependency-free and returns a boolean, so it is testable | ✅ |

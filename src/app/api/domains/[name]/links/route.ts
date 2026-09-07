@@ -5,6 +5,7 @@ import { getSupabaseAdminClient, isSupabaseWritable } from '@/lib/supabase';
 import { requireDomainOwner, extractPayload } from '@/lib/server/verifyRequest';
 import { rpcError } from '@/lib/server/rpcError';
 import { MAX_LINKS } from '@/lib/limits';
+import { safeLinkHref } from '@/lib/linkUrl';
 import { parseProfileRevision } from '@/lib/profileWrite';
 
 export const runtime = 'nodejs';
@@ -76,11 +77,13 @@ export async function PUT(
   }
 
   for (const link of links) {
-    // Only http(s). Without this, a `javascript:` URL rendered as an anchor on
-    // a public profile page is a stored XSS vector.
-    if (!/^https?:\/\//i.test(link.url)) {
+    // Only http(s), and the same rule the profile page renders by -- see
+    // @/lib/linkUrl. The two used to be separate copies that disagreed about
+    // what to do when a URL failed: this one refused, the renderer silently
+    // rewrote it as `https://${url}` and displayed it anyway.
+    if (!safeLinkHref(link.url)) {
       return NextResponse.json(
-        { error: `Links must start with http:// or https:// — "${link.url}" does not.` },
+        { error: `Links must be a full http:// or https:// address — "${link.url}" is not.` },
         { status: 400 }
       );
     }

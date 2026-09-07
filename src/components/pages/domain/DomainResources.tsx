@@ -1,10 +1,7 @@
 'use client';
 
 import { useGetDomainLinks } from '@/hooks/domain/useGetDomainLinks';
-
-function isExternalUrl(url: string): boolean {
-  return /^https?:\/\//i.test(url);
-}
+import { safeLinkHref } from '@/lib/linkUrl';
 
 export function DomainResources({ domainName }: { domainName: string }) {
   const { links, loading } = useGetDomainLinks(domainName);
@@ -30,18 +27,41 @@ export function DomainResources({ domainName }: { domainName: string }) {
         Resources:
       </span>
       <ul className="flex flex-wrap gap-2">
-        {links.map((link, i) => (
-          <li key={`${link.name}-${i}`}>
-            <a
-              href={isExternalUrl(link.url) ? link.url : `https://${link.url}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block px-3 py-1 rounded-full bg-[#1d3b39] hover:bg-kaspaMint hover:text-[#0F2F2E] text-sm text-kaspaMint border border-[#3DFDAD]/30 transition"
-            >
-              {link.name}
-            </a>
-          </li>
-        ))}
+        {links.map((link, i) => {
+          const href = safeLinkHref(link.url);
+
+          // Not clickable, but still shown. The owner put this on their profile,
+          // so hiding it would misrepresent the page; making it a link would
+          // trust a URL that failed the check. This used to rewrite anything
+          // that failed as `https://${url}` and render it anyway -- which
+          // neutralised a `javascript:` URL by accident rather than by
+          // decision. See @/lib/linkUrl.
+          if (!href) {
+            return (
+              <li key={`${link.name}-${i}`}>
+                <span
+                  title="This link was not saved as a valid http(s) address, so it is not clickable."
+                  className="inline-block px-3 py-1 rounded-full bg-[#1d3b39]/50 text-sm text-gray-500 border border-white/10 cursor-not-allowed"
+                >
+                  {link.name}
+                </span>
+              </li>
+            );
+          }
+
+          return (
+            <li key={`${link.name}-${i}`}>
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-3 py-1 rounded-full bg-[#1d3b39] hover:bg-kaspaMint hover:text-[#0F2F2E] text-sm text-kaspaMint border border-[#3DFDAD]/30 transition"
+              >
+                {link.name}
+              </a>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
