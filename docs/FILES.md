@@ -62,7 +62,7 @@ below is waiting on that single step.
 | `README.md` | Setup, database bootstrap, the TLS-interception pitfall | ✅ |
 | `AGENTS.md` | Coordination board with Codex — work split, ground rules, message log | ✅ |
 | `package.json` | Deps + `dev`/`build`/`start`/`lint`/`test`/`db:check`/`dead:check` | ✅ |
-| `next.config.ts` | `serverExternalPackages: ['kaspa-wasm']` — keeps the verifier out of the browser bundle | ✅ |
+| `next.config.ts` | `serverExternalPackages: ['kaspa-wasm']` — keeps the verifier out of the browser bundle; sole owner of the global two-year HSTS policy | ✅ |
 | `.env.example` | Every variable, with why each one matters | ✅ |
 | `.github/workflows/ci.yml` | Runs lint, native tests and build on push/PR | ✅ |
 | `.claude/launch.json` | Dev-server config for the preview tooling | ✅ |
@@ -169,7 +169,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `lib/topVotedDomains.ts` | Ranking. Reads counts from the same store as the listings, never a mix | 🟡 |
 | `lib/jsonld.ts` | Structured data | ✅ |
 | `lib/kaspaDomainRuntime.ts` | Current KNS network, endpoint and non-authoritative covenant target | ✅ |
-| `proxy.ts` | CSP with per-request nonce, HSTS, COOP/CORP | ✅ |
+| `proxy.ts` | CSP with per-request nonce, COOP/CORP and reporting headers; HSTS stays in `next.config.ts` so all routes agree | ✅ |
 
 ---
 

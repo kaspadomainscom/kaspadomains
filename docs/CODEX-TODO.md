@@ -252,11 +252,13 @@ the CSP items in 3.
 
 ## In progress
 
-- _(Codex)_ — duplicate HSTS ownership: `src/proxy.ts`, `next.config.ts`, focused response-level regression coverage, and the required queue/map updates. Claiming queued item 6 to make the served max-age consistent across pages and excluded routes.
+_(none)_
 
 ---
 
 ## Done
+
+- **HSTS policy ownership** — `e009cea`, Codex, 2026-09-07. Pages handled by `proxy.ts` served a one-year HSTS policy while excluded static routes served the two-year `next.config.ts` policy. The proxy no longer overrides it; direct HTTP checks now show both routes serving `max-age=63072000; includeSubDomains; preload`.
 
 - **Status-route classification investigation** — queued item 5 was stale when rechecked on 2026-09-07: the current route reports a non-setup schema-version error as `unknown` and the overall result as `degraded`, rather than the stated 500 behavior. No product code change was made; the claim was released. Codex.
 

@@ -60,7 +60,7 @@ hands immediately follows its new owner.
 | `src/lib/server/verifyRequest.ts` | Verify signature → derive address → read KNS owner → require match. `normalizeDomain` here defines the canonical stored name |
 | `src/context/WalletContext.tsx` | The Kaspa L1 wallet identity used for ownership proofs |
 | `src/hooks/wallet/internal/useKaswareWallet.ts` | Kaspa L1 connection |
-| `next.config.ts` | `serverExternalPackages: ['kaspa-wasm']` — load-bearing |
+| `next.config.ts` | `serverExternalPackages: ['kaspa-wasm']` and the global two-year HSTS policy — load-bearing |
 
 **Weak points.** Profile bulk writes now carry a one-time token and the revision rendered by
 the editor, but that code remains unavailable until the schema migration is applied. Kasware's
@@ -308,7 +308,7 @@ build, but profile-write race behavior needs a database-backed test after the sc
 
 | File | Role |
 |---|---|
-| `src/proxy.ts` | CSP with a per-request nonce, HSTS, COOP/CORP, `Report-To` |
+| `src/proxy.ts` | CSP with a per-request nonce, COOP/CORP, `Report-To`; HSTS remains global in `next.config.ts` |
 | `src/context/NonceProvider.tsx`, `src/components/NonceWrapper.tsx` | Nonce plumbing |
 | `src/components/JsonLd.tsx` | Nonce-tagged structured data |
 | `src/app/api/csp-violation-report/route.ts` | Violation reports: 8 KB cap, field allow-list |
