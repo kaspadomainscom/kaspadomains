@@ -252,7 +252,9 @@ the CSP items in 3.
 
 ## In progress
 
-_(none)_
+- **Codex** — fixing the CSP report body-limit bypass in `src/app/api/csp-violation-report/route.ts`
+  and stale owner synchronization in `src/app/api/domains/[name]/categories/route.ts`, with
+  regression coverage and package/CI verification.
 
 ---
 
