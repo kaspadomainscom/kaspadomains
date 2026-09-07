@@ -208,6 +208,8 @@ and cards, with focused regression coverage for mixed and all-inactive categorie
 
 ## In progress
 
+- _(Codex)_ — My Domains unknown listing status must not offer a paid relist CTA: `src/app/domains/my-domains/page.tsx` (claimed 2026-09-08).
+
 - _(Codex)_ — category page active-listing filter: `src/app/domains/categories/category/[category]/page.tsx`,
   `src/components/categoryDomains.ts`, and focused regression test. Completed in `9ba8e25`; claim closed.
 
