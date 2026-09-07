@@ -213,6 +213,34 @@ import { classifyStoreError } from '@/lib/storeError';
 
 ---
 
+### 6. `Strict-Transport-Security` is declared twice, with two different values
+
+Verified from the served response, not from reading the source.
+
+| where | max-age |
+|---|---|
+| `next.config.ts` | `63072000` (2 years) |
+| `src/proxy.ts` | `31536000` (1 year) |
+| **actually served on a page** | **`31536000`** |
+
+The middleware wins, so `next.config.ts`'s two-year value never reaches a page and anyone
+reading that file is misled about what the site sends. `MIND.md` #17 on a security header.
+
+It is also **inconsistent per route**. `proxy.ts` skips `/_next`, `/api`, `/favicon.ico`,
+`robots.txt`, `sitemap.xml` and anything with a static extension — so those get the config's two
+years while pages get one.
+
+**Suggested fix: keep `next.config.ts` as the only owner and drop the header from `proxy.ts`.**
+That is the direction that covers everything, including the static assets the middleware
+deliberately skips; making `proxy.ts` the owner would leave those with no HSTS at all. Both
+values already clear the preload minimum, so this is about having one answer rather than about
+the number.
+
+Yours because `proxy.ts` imports from `kaspaDomainRuntime.ts`. Queued rather than done, same as
+the CSP items in 3.
+
+---
+
 **Still yours:**
 
 - the profile-write token/revision races against an applied Supabase schema. This needs a

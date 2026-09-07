@@ -27,6 +27,26 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
       untested, and it is the second thing to do after the schema.
 ## Fixed
 
+### 2026-09-07 — Every URL in the sitemap was a redirect
+
+`next.config.ts` sets `trailingSlash: true`, so `/list-domain` answers **308** and the real URL
+is `/list-domain/`. The sitemap emitted the bare form for every entry, so a crawler spent a
+request per URL discovering the redirect — and the URL submitted was not the one the page
+declares as canonical, which is the single signal a sitemap exists to reinforce.
+
+Same class as the canonical bug earlier today: a URL assembled by rules that do not match the
+site's actual URL form. The root is special-cased, since `https://kaspadomains.com` already ends
+in the slash that separates it from the origin and appending another gives `//`.
+
+Verified by fetching all ten: every one now returns 200 with a canonical that matches the
+submitted URL exactly. Before, each was a 308.
+
+**Found but not fixed — queued as `CODEX-TODO.md` item 6:** `Strict-Transport-Security` is
+declared in both `next.config.ts` (`max-age=63072000`) and `src/proxy.ts` (`31536000`). The
+middleware wins, so the config's value never reaches a page, and because `proxy.ts` skips
+`/_next` and static assets those get the two-year value while pages get one. `proxy.ts` is
+Codex's.
+
 ### 2026-09-07 — A malformed response could have emptied a listing's categories
 
 Three places took a list straight off a server response with `??`, substituting a value we had

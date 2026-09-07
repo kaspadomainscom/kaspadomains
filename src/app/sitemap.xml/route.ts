@@ -49,13 +49,29 @@ export async function GET() {
 
   const allRoutes = [...staticRoutes, ...domainRoutes];
 
+  /**
+   * `next.config.ts` sets `trailingSlash: true`, so every path here 308s to its
+   * trailing-slash form -- `/list-domain` redirects to `/list-domain/`. Emitting
+   * the bare form made **every entry in this sitemap a redirect**: a crawler
+   * spends a request discovering the real URL, and the URL submitted is not the
+   * one the page declares as canonical, which is the one signal a sitemap exists
+   * to reinforce.
+   *
+   * The root is the exception -- `https://kaspadomains.com/` already ends in the
+   * slash that separates it from the origin, and appending another produces `//`.
+   */
+  const canonicalUrl = (route: string) => {
+    if (route === '') return `${baseUrl}/`;
+    return route.endsWith('/') ? `${baseUrl}${route}` : `${baseUrl}${route}/`;
+  };
+
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
 ${allRoutes
     .map(
       (route) => `
   <url>
-    <loc>${baseUrl}${route}</loc>
+    <loc>${canonicalUrl(route)}</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>`
