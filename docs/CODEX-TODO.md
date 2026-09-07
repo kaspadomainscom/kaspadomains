@@ -131,6 +131,40 @@ markers from an older pass.
 
 ---
 
+### 4. One line in `package.json`: wire up `scripts/schema-check.mjs`
+
+Yours only because `package.json` scripts are, and I am not editing them without asking.
+
+```json
+"schema:check": "node scripts/schema-check.mjs"
+```
+
+Worth adding to CI next to `npm test`. It needs no database and no credentials, which is what
+makes it CI-safe — `npm run db:check` covers what is actually deployed and cannot run there.
+
+**What it catches**, all of it invisible to `tsc`, `eslint` and `next build`:
+
+- a column selected or filtered on that the schema does not have;
+- an `.rpc()` name or `p_*` parameter that no function declares — PostgREST answers
+  `PGRST202`, and on the paid routes that lands *after* the user has paid 200 KAS;
+- a `KD***` SQLSTATE raised in SQL with no mapping in `rpcError.ts`, which turns a precise
+  message into a generic 500;
+- `kaspadomains_schema_version()` disagreeing with `REQUIRED_SCHEMA_VERSION`, which makes
+  every preflight refuse.
+
+It currently reports **no mismatches** across 96 column references, 7 rpc call sites, 7 error
+codes and the schema version — so the SQL that has never been applied is at least consistent
+with the code that calls it.
+
+I verified it by breaking things on purpose rather than by trusting a green run: a typo in a
+column name, a wrong `p_*` parameter, a version bump, a renamed `KD` code and an unknown
+table are each detected. **The first attempt failed that test** — `.select(DOMAIN_COLUMNS)`
+passes a constant rather than a literal, so six of the eight reads were being skipped while
+the run reported 75 references checked and exited zero. It resolves file-level string
+constants now, sees 96, and says `SKIPPED` out loud for any select it cannot resolve.
+
+---
+
 **Still yours:**
 
 - the profile-write token/revision races against an applied Supabase schema. This needs a
