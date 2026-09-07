@@ -38,6 +38,10 @@ test('a paid listing can be recovered after signing fails without paying again',
   savePendingListing(storage, pending);
 
   assert.deepEqual(loadPendingListing(storage, 'example.kas', pending.categories), pending);
+  assert.deepEqual(
+    loadPendingListing(storage, 'example.kas', ['community', 'tech']),
+    pending,
+  );
 
   clearPendingListing(storage, 'example.kas');
   assert.equal(loadPendingListing(storage, 'example.kas', pending.categories), null);

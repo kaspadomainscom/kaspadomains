@@ -24,6 +24,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/** Compare category membership without treating selection order as meaningful. */
+export function sameCategorySelection(left: string[], right: string[]): boolean {
+  const canonical = (values: string[]) => Array.from(new Set(values.map((value) => value.trim()))).sort();
+  const leftCanonical = canonical(left);
+  const rightCanonical = canonical(right);
+  return (
+    leftCanonical.length === rightCanonical.length &&
+    leftCanonical.every((value, index) => value === rightCanonical[index])
+  );
+}
+
 function matches(pending: unknown, domain: string, categories: string[]): pending is PendingListing {
   return (
     isRecord(pending) &&
@@ -31,7 +42,7 @@ function matches(pending: unknown, domain: string, categories: string[]): pendin
     pending.domain.trim().toLowerCase() === domain.trim().toLowerCase() &&
     Array.isArray(pending.categories) &&
     pending.categories.every((category) => typeof category === 'string') &&
-    JSON.stringify(pending.categories) === JSON.stringify(categories) &&
+    sameCategorySelection(pending.categories as string[], categories) &&
     typeof pending.intent === 'string' &&
     pending.intent.length > 0 &&
     typeof pending.paymentTxId === 'string' &&

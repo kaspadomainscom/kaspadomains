@@ -9,6 +9,7 @@ import {
   clearPendingListing,
   findPendingListing,
   savePendingListing,
+  sameCategorySelection,
   type PendingListing,
 } from '@/lib/pendingPaidWrite';
 
@@ -81,9 +82,9 @@ export function useListDomain() {
       let intent: string;
       let paymentTxId: string;
       if (pending) {
-        if (JSON.stringify(pending.categories) !== JSON.stringify(categories)) {
+        if (!sameCategorySelection(pending.categories, categories)) {
           throw new Error(
-            'A payment is already pending for this domain. Retry with the categories you originally chose.'
+            'A payment is already pending for this domain. Retry with the same categories you originally chose.'
           );
         }
         pendingInMemory.current = pending;
