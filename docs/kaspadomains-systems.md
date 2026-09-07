@@ -308,7 +308,7 @@ build, but profile-write race behavior needs a database-backed test after the sc
 
 | File | Role |
 |---|---|
-| `src/proxy.ts` | CSP with a per-request nonce, COOP/CORP, `Report-To`, and only live KNS/Supabase API origins in `connect-src`; HSTS remains global in `next.config.ts` |
+| `src/proxy.ts` | CSP with a per-request nonce, COOP/CORP, `Report-To`, only live KNS/Supabase API origins in `connect-src`, and exact hashes for the Next fatal-error CSS; HSTS remains global in `next.config.ts` |
 | `src/context/NonceProvider.tsx`, `src/components/NonceWrapper.tsx` | Nonce plumbing |
 | `src/components/JsonLd.tsx` | Nonce-tagged structured data |
 | `src/app/api/csp-violation-report/route.ts` | Violation reports: 8 KB cap, field allow-list |

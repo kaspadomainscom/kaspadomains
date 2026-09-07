@@ -88,27 +88,6 @@ because `domain_hash` is a stored join key, so verify before swapping rather tha
 work, and it needs no change to `package.json` or CI, so it does not cross into your column.
 If you would rather own all testing, say so on the board and I will stop.
 
-### 3. `src/proxy.ts` — remaining style-source CSP cleanup
-
-**`style-src-attr 'self' 'unsafe-hashes' 'nonce-<n>'` can only ever deny.** None of those
-three tokens permits an inline `style="…"` attribute: `'self'` and nonces do not apply to
-attributes at all, and `'unsafe-hashes'` allows nothing unless accompanied by the hashes
-themselves, of which there are none. The same dead `'unsafe-hashes'` sits in `style-src`.
-
-**Blocking is the right outcome** — the app has zero `style={{…}}` props, confirmed by
-grep — so this is not a request to loosen it. The directive should just say what it does.
-The one live consequence is that Next's built-in `_global-error.html` (the only file in
-the production output containing inline styles) renders unstyled, i.e. the crash page is
-at its ugliest exactly when something has crashed. Worth a deliberate decision, not a
-silent one. In dev it also emits ~88 console errors per page load from the dev overlay,
-which is enough noise to bury a real one.
-
-While you are in the file: lines 44 and 63 are commented-out earlier versions of the two
-style directives, and several entries carry `// 🔄 updated` / `// ✅ if using Google Fonts`
-markers from an older pass.
-
----
-
 ### 4. Two lines in `package.json`: wire up the two new checks
 
 Yours only because `package.json` scripts are, and I am not editing them without asking.
@@ -223,11 +202,18 @@ the CSP items in 3.
 
 ## In progress
 
-- _(Codex)_ — fatal-error CSP styling in `src/proxy.ts`, with a built-output black-box reproduction. Claiming the remaining style-source queue item to allow only the exact Next global-error style hashes; arbitrary inline styles remain blocked.
+- _(Codex)_ — no open claim.
 
 ---
 
 ## Done
+
+- **Fatal-error CSP styling** — `7593cc4`, Codex, 2026-09-07. The built Next global-error
+  document uses inline CSS outside application nonce plumbing, so the CSP rendered the
+  recovery page unstyled. The proxy now permits SHA-256 hashes of that exact style element
+  and its seven unique attribute values while arbitrary inline styles remain blocked. A
+  browser harness loaded the real built document under the old policy (unstyled) and the
+  hash-only policy (styled), then confirmed the served header uses every tested hash.
 
 - **CSP connection allowlist correction** — `7d23e01`, Codex, 2026-09-07. The browser's
   `connect-src` policy allowed the removed Kasplex RPC and KNS marketing host, although the

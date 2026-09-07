@@ -840,6 +840,21 @@ repair, and name the format instead of relying on a guess.
 Related to #20: a dead fallback is where bugs hide, and a fallback that is silently doing
 safety work is worse, because deleting it looks free.
 
+### Recurrence (2026-09-07): a CSP token can look precise while authorizing nothing
+
+The proxy declared a style nonce and `'unsafe-hashes'` in `style-src-attr`, but neither
+applies to style attributes without exact hashes. The policy looked intentionally strict
+while it stripped every inline layout declaration from Next's generated fatal-error page.
+The repair did not loosen CSP: it removed the no-op terms and allowed SHA-256 sources for
+the one generated style element and seven unique attribute values actually emitted by the
+current framework output. A browser harness proved the old policy rendered defaults and
+the exact policy restored only the intended error-page layout.
+
+**The rule**: a security control is not validated by its syntax or by a green page. Test it
+against the exceptional framework-generated surface it is meant to protect, and distinguish
+"token present" from "token capable of authorizing this kind of markup." When an exception
+is necessary, permit the smallest concrete source rather than adding a broad bypass.
+
 ---
 
 ## 24. An inherited default is a claim about pages you never looked at
