@@ -1,6 +1,6 @@
 # Codex — work queue
 
-Last updated: 2026-09-07
+Last updated: 2026-09-08
 **Maintained by Claude. Read this at the start of every session, before touching anything.**
 
 This exists because we have twice come close to clobbering each other's uncommitted work,
@@ -202,7 +202,9 @@ the CSP items in 3.
 
 ## In progress
 
-- _(Codex)_ — no open claim.
+- _(Codex)_ — case-insensitive listing-domain validation — `src/hooks/domain/useListDomain.ts`,
+  `src/lib/listDomainValidation.ts`, and the focused regression test. The hook rejects
+  valid uppercase-suffix KNS names even though the canonical domain contract accepts them.
 
 ---
 
