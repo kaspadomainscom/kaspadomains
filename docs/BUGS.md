@@ -1,6 +1,6 @@
 # Bugs
 
-Last updated: 2026-09-07
+Last updated: 2026-09-08
 
 Bug tracker: things that are broken relative to what the code/UI claims to do — as opposed
 to features that were never built (see [`GAPS.md`](./GAPS.md)). "Open" means still broken
@@ -26,6 +26,18 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
       mismatch rejects legitimate owners rather than admitting impostors — but it is
       untested, and it is the second thing to do after the schema.
 ## Fixed
+
+### 2026-09-08 — The status health check could create fake directory rows
+
+`/api/status` tested Row Level Security by inserting a real `status-probe-*.invalid` domain.
+When a public policy was accidentally open, every monitor request persisted another row and
+polluted the directory the check was meant to protect.
+
+`runRlsProbe` now submits null values for the three `NOT NULL` domain columns. An open policy
+still reaches a constraint error and is reported as unsafe, but no row can be stored; blocked,
+unreachable, and thrown transport outcomes remain distinguishable. Native tests cover the
+open-policy no-persistence boundary, RLS refusal, and transport rejection. No live database
+write or RLS migration was performed.
 
 ### 2026-09-08 — The status page trusted Host as a server-side fetch destination
 

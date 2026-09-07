@@ -156,6 +156,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `lib/linkUrl.ts` | What counts as a usable profile link. The API and the profile page had separate copies that disagreed: one refused a bad URL, the other rewrote it and rendered it anyway | ✅ |
 | `lib/signedMessageFormat.ts` | The signed-request format, pure and dependency-free so it can be tested. `signedMessage.ts` supplies the real KNS scope; the format has one definition either way | ✅ |
 | `lib/storeError.ts` | Why a Supabase call failed: schema not applied, unreachable, or genuinely unexpected. The five-code check was written out three times, and all three answered "unreachable" with a 500 | ✅ |
+| `lib/rlsProbe.ts` | Side-effect-free public-write probe for `/api/status`; detects an open RLS policy without persisting a directory row | ✅ |
 | `scripts/schema-check.mjs` | Cross-checks the app against `supabase/schema.sql` with no database: columns, RPC names and `p_*` parameters, `KD***` codes, schema version. Catches what only fails at runtime — and for the paid routes, only *after* the user has paid | ✅ |
 | `scripts/client-boundary-check.mjs` | Walks the import graph for server-only APIs (`cache()`, `next/headers`, `node:`) that a client component can reach. Written after a grep-for-one-name check missed exactly that | ✅ |
 | `scripts/secret-leak-check.mjs` | Greps the built client bundle for every non-`NEXT_PUBLIC_` env value, with a positive control so a broken scan reports inconclusive instead of passing | ✅ |

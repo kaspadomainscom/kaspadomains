@@ -202,14 +202,17 @@ the CSP items in 3.
 
 ## In progress
 
-- _(Codex)_ — status RLS probe must be side-effect free — `src/app/api/status/route.ts`,
-  `src/lib/rlsProbe.ts`, and the focused regression test. The health endpoint currently
-  inserts a fake domain to test public writes; if RLS is open, repeated checks leave rows in
-  the public directory. This run will preserve the refusal signal without a persistent insert.
+- _(Codex)_ — no open claim.
 
 ---
 
 ## Done
+
+- **Side-effect-free status RLS probe** — `022e7d9` plus same-bug transport hardening
+  `ecad730`, Codex, 2026-09-08. The health endpoint no longer inserts a persistable fake
+  listing: null values hit the domains table's `NOT NULL` constraints, preserving detection
+  of an open policy without polluting the directory. Thrown transport failures remain
+  inconclusive; no live database or policy change was performed.
 
 - **Status-route classification recheck** — queued item 5 was stale when rechecked on
   2026-09-08: `checkSchema()` and `checkSchemaVersion()` already classify non-setup failures

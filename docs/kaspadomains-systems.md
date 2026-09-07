@@ -291,6 +291,7 @@ until someone loses money or gives up.
 | `src/app/api/status/route.ts` | Machine-readable; 503 when failing |
 | `src/app/status/page.tsx` | The human-readable version |
 | `src/lib/statusOrigin.ts` | Restricts that server-side fetch to the known public origin or localhost development |
+| `src/lib/rlsProbe.ts` | Tests public-write refusal with a non-persistable payload |
 | `scripts/db-check.mjs` | The CLI equivalent, exits non-zero so it can gate a deploy |
 | `scripts/dead-code.mjs` | Reachability from every route. `npm run dead:check` |
 | `.github/workflows/ci.yml` | Native tests, lint and build on every push |

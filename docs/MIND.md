@@ -1,6 +1,6 @@
 # Mind
 
-Last updated: 2026-09-08 (status-origin trust review)
+Last updated: 2026-09-08 (side-effect-free health probe review)
 
 How to think about working on this codebase — principles earned the hard way, each
 backed by a real incident. Read this before making changes, especially anything that
@@ -107,6 +107,7 @@ touch the codebase, you own the part of the map you moved. See
 | 23 | Accidental safety is not safety | If the thing protecting you is a side effect of unrelated code, nothing is protecting you |
 | 24 | An inherited default is a claim about pages you never looked at | Cascading config asserts things on behalf of every descendant, including the ones added later |
 | 25 | Request headers are input, not origin authority | A server-side fetch must never turn an untrusted Host value into a destination |
+| 26 | A health check must not change health | A probe that writes while checking safeguards can corrupt the state it reports on |
 
 ## 1. Never trust a hardcoded value against a live contract — verify the ABI first
 
@@ -926,6 +927,26 @@ The fix maps only `kaspadomains.com`/`www.kaspadomains.com` to HTTPS and the two
 development targets to HTTP; all other hosts resolve to the fixed public origin. The status
 API and proxy were not changed. See
 [`mind/server-fetch-origin-checklist.md`](./mind/server-fetch-origin-checklist.md).
+
+---
+
+## 26. A health check must not change health
+
+**Purpose**: an operational endpoint may inspect a system, but it must not corrupt the state
+it is supposed to report on.
+**Mechanic**: make probes read-only or guarantee that any attempted write fails before
+persistence; never depend on cleanup after a successful insert.
+
+**The incident (2026-09-08)**: `/api/status` tested public Row Level Security by inserting a
+real `status-probe-*.invalid` domain. If a permissive policy let that insert through, every
+monitoring request left another row in the public directory. The health check became a source
+of the data pollution it was warning about.
+
+The fix sends null values for the three `NOT NULL` domain columns. A policy that is open still
+reaches the database and is reported unsafe, but the constraint rejects the payload before a
+row can be stored. RLS refusal, missing schema, transport failure, and thrown transport errors
+remain separate outcomes. See
+[`mind/health-probe-checklist.md`](./mind/health-probe-checklist.md).
 
 ## Related docs
 

@@ -22,6 +22,7 @@ about.
 | [`shared-value-format-checklist.md`](./shared-value-format-checklist.md) | Stop two sides of a boundary agreeing informally about a value's shape | #17 |
 | [`optimistic-concurrency-checklist.md`](./optimistic-concurrency-checklist.md) | Prevent a valid save from replacing state the editor never rendered | #21 |
 | [`server-fetch-origin-checklist.md`](./server-fetch-origin-checklist.md) | Keep request-derived metadata from steering server-side fetches | #25 |
+| [`health-probe-checklist.md`](./health-probe-checklist.md) | Keep operational probes from mutating the data they inspect | #26 |
 
 ## Related docs
 
