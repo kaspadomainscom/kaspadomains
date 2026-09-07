@@ -66,12 +66,16 @@ testable item. It reads `AGENTS.md`, `CODEX-TODO.md`, `MIND.md`, `TODO.md`, `BUG
 `GAPS.md`, checks for in-flight work, stops for owner-only decisions or live Supabase/chain/
 treasury actions, runs the relevant gates (`npm test`, `npm run lint`, `npm run build`,
 `npx tsc --noEmit`, `npm run dead:check`, plus `npm run db:check` for database changes), and
-commits only after they pass. Reports use the fixed `STATUS / ITEM / RESULT / COMMIT / FILES /
-CHECKS / BLOCKER / NEXT` shape and notify only on a change, verification failure or blocker.
+commits only after they pass. At the end of a successful iteration, push only that verified
+commit to the current branch's configured remote; never force-push, rewrite history, or push
+unrelated in-flight files. Reports use the fixed `STATUS / ITEM / RESULT / COMMIT / FILES /
+CHECKS / BLOCKER / NEXT` shape and notify only on a change, verification failure, push failure
+or blocker.
 
 **Automation blocker (2026-09-07):** the Codex app lookup reports that job `9a9a1656` no
-longer exists, so this pass did not create a duplicate or guess its preserved fields. The
-owner must recreate or relink the 10-minute loop before continuous runs can resume.
+longer exists, so the push-at-end policy could not be written to the scheduled job. This pass
+did not create a duplicate or guess its preserved fields; the owner must recreate or relink the
+10-minute loop before continuous runs can resume.
 
 ### First-cycle activation, truth and branding items
 
