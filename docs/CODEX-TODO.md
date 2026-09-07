@@ -202,7 +202,10 @@ the CSP items in 3.
 
 ## In progress
 
-- _(Codex)_ — no open claim.
+- _(Codex)_ — status-route store failure classification — `src/app/api/status/route.ts`,
+  `src/lib/storeError.ts`, and the focused regression test. The status route still owns a
+  duplicate setup-only check, so an unreachable database can be surfaced with the wrong
+  server-error semantics; this run will route that boundary through the shared classifier.
 
 ---
 
