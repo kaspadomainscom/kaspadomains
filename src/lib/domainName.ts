@@ -77,10 +77,15 @@ export function baseDomainName(name: string): string {
  * Where this site lives, canonically. No trailing slash, which is what makes
  * concatenation with a path safe.
  *
- * Still written out in ~30 other places, almost all inside static `metadata`
- * blocks. They are not wrong, but they are the same drift hazard; one of those
- * files belongs to the other agent, so consolidating them is queued rather than
- * done here. This is where they should end up.
+ * The literal string still appears in ~30 other places, almost all inside static
+ * `metadata` blocks. Deliberately left alone: they are correct, they read
+ * clearly in context, and one of those files belongs to the other agent. This
+ * constant exists for URLs that are *computed* — where a mismatch between two
+ * builders is possible and has already happened. A metadata block that spells
+ * out its own canonical cannot drift from anything.
+ *
+ * If the origin ever does change, `grep -rn "https://kaspadomains.com" src` finds
+ * every one of them.
  */
 export const SITE_ORIGIN = 'https://kaspadomains.com';
 
