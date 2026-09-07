@@ -64,6 +64,22 @@ function readEnv() {
       if (value) found.set(key, value);
     }
   }
+  // CI supplies harmless public controls through the process environment so
+  // the check can run without committing a .env file or any real credential.
+  // Limit this merge to application variables; scanning the whole runner
+  // environment would turn unrelated build secrets into false positives.
+  for (const key of [
+    'NEXT_PUBLIC_SUPABASE_URL',
+    'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    'NEXT_PUBLIC_KASPADOMAINS_TREASURY_ADDRESS',
+    'SUPABASE_SECRET_KEY',
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'PAYMENT_INTENT_SECRET',
+  ]) {
+    const value = process.env[key]?.trim();
+    if (value && !found.has(key)) found.set(key, value);
+  }
   return found;
 }
 

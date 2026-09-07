@@ -1,6 +1,7 @@
 // src/app/api/csp-violation-report/route.ts
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { readLimitedBody } from "./body";
 
 /**
  * Receive Content-Security-Policy violation reports.
@@ -64,9 +65,11 @@ export async function POST(req: NextRequest) {
       return new NextResponse(null, { status: 413 });
     }
 
-    const raw = await req.text();
-    // Bytes, not `raw.length`. See the note on MAX_BODY_BYTES.
-    if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) {
+    // Bound the stream before decoding. `req.text()` buffers the entire body,
+    // so checking its result would still allow a chunked request to consume
+    // arbitrary memory before returning 413.
+    const raw = await readLimitedBody(req, MAX_BODY_BYTES);
+    if (raw === null) {
       return new NextResponse(null, { status: 413 });
     }
 

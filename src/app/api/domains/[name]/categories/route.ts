@@ -6,6 +6,7 @@ import { requireDomainOwner, extractPayload } from '@/lib/server/verifyRequest';
 import { rpcError } from '@/lib/server/rpcError';
 import { MAX_CATEGORIES } from '@/lib/limits';
 import { parseProfileRevision } from '@/lib/profileWrite';
+import { syncDomainOwner } from '@/lib/ownerSync';
 
 export const runtime = 'nodejs';
 
@@ -134,6 +135,23 @@ export async function PUT(
   }
   if (!domain) {
     return NextResponse.json({ error: 'That domain is not listed.' }, { status: 404 });
+  }
+
+  // KNS is authoritative. Keep the cached owner current on every owner-only
+  // profile mutation, including category edits; otherwise a transferred
+  // domain can remain displayed under its former owner indefinitely.
+  if ((domain.owner ?? '') !== verified.knsOwner) {
+    try {
+      await syncDomainOwner(domain.owner, verified.knsOwner, verified.signerAddress, async (patch) => {
+        const { error: ownerSyncError } = await supabase
+          .from('domains')
+          .update(patch)
+          .eq('id', domain.id);
+        if (ownerSyncError) throw ownerSyncError;
+      });
+    } catch (ownerSyncError) {
+      console.error('Failed to sync owner from KNS:', ownerSyncError);
+    }
   }
 
   // One transactional call. The allow-list check lives inside it, so it is
