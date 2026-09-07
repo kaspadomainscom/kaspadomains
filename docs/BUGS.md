@@ -27,6 +27,31 @@ gone with them rather than fixed — see the Fixed section and `MIND.md` #20. Wh
       untested, and it is the second thing to do after the schema.
 ## Fixed
 
+### 2026-09-07 — `db:check` never checked whether the browser can read the vote-count view
+
+The anon read loop iterates the **tables**. `domain_vote_counts` is a view, and it was probed
+only with the *secret* key — so the script could report the entire read path healthy while the
+browser could not read it at all. A check reporting OK about something it never looked at is
+`MIND.md` #14, in the script written to catch exactly this class.
+
+The gap is plausible rather than theoretical. RLS is handled: the view is
+`security_invoker = true`, so the public-read policies on `domains` and `votes` apply to the
+caller. But a `GRANT` is a separate thing, and a view is not covered by whatever default
+privileges happen to apply to tables.
+
+If it is missing, `useListingStatuses` gets nothing and "My Domains" shows "Listing status
+unavailable" against every domain a wallet owns — so an owner cannot tell whether the listing
+they paid for exists. The page degrades honestly, which is why it would not have looked like a
+bug; the feature would simply be dead.
+
+Now probed with the anon key alongside the tables, with a message naming the consequence.
+
+**Verified while here, and no bug found**: RLS itself is correct. All seven tables have it
+enabled; the five the browser reads have `for select using (true)`; `payment_receipts` and
+`profile_write_nonces` have no policy at all, which is right — only the service role touches
+them. No table has an anon insert/update/delete policy, so writes can only go through the API
+routes.
+
 ### 2026-09-07 — The browse page's structured data was emitted on four pages it did not describe
 
 The same cascade as the canonical fix earlier the same day, one layer over. `domains/layout.tsx`

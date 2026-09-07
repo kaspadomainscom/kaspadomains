@@ -199,6 +199,35 @@ for (const table of Object.keys(EXPECTED)) {
   else line(`read ${table}`, false, `${error.code}: ${error.message}`);
 }
 
+// The view, with the anon key.
+//
+// It was only ever probed with the *secret* key above, so this script could
+// report the whole read path healthy while the browser could not read it at all.
+// That is the one object where the gap is plausible rather than theoretical: RLS
+// is handled -- the view is `security_invoker = true`, so the public-read
+// policies on `domains` and `votes` apply to the caller -- but a GRANT is a
+// separate thing, and a view is not covered by whatever default privileges
+// happen to apply to tables.
+//
+// If it fails, `useListingStatuses` gets nothing, and "My Domains" shows
+// "Listing status unavailable" against every domain a user owns, so an owner
+// cannot tell whether their paid listing exists. The page degrades honestly, but
+// the feature is dead.
+{
+  const { error } = await anon.from('domain_vote_counts').select('name, votes').limit(1);
+  if (!error) {
+    line('read domain_vote_counts (view)', true, 'readable by the anon key');
+  } else if (error.code === 'PGRST205') {
+    line('read domain_vote_counts (view)', false, 'view missing — run supabase/schema.sql');
+  } else {
+    line(
+      'read domain_vote_counts (view)',
+      false,
+      `${error.code}: ${error.message} — "My Domains" cannot show listing status without this`
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // RLS
 // ---------------------------------------------------------------------------
