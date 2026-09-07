@@ -252,11 +252,13 @@ the CSP items in 3.
 
 ## In progress
 
-- _(Codex)_ — status-route store-error classification: `src/app/api/status/route.ts` plus focused regression coverage. Claiming queued item 5 to distinguish an unreachable store from setup-incomplete and unexpected failures.
+_(none)_
 
 ---
 
 ## Done
+
+- **Status-route classification investigation** — queued item 5 was stale when rechecked on 2026-09-07: the current route reports a non-setup schema-version error as `unknown` and the overall result as `degraded`, rather than the stated 500 behavior. No product code change was made; the claim was released. Codex.
 
 - **CSP report and owner-cache hardening** — `c238862`, Codex, 2026-09-07. CSP reports now
   enforce the byte cap while streaming chunked request bodies, category edits refresh a
