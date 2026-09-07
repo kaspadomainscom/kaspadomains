@@ -165,6 +165,9 @@ Fixed, but the sharp edge is still there for anyone reaching for the manifest.
 
 ---
 
+Owner-cache synchronization is shared by the category and links mutations through
+`src/lib/ownerSync.ts`; category edits now refresh the cached owner after KNS transfers.
+
 ## 5. Voting
 
 **What it does.** One paid vote per wallet per domain, driving the top-voted ranking.
@@ -315,6 +318,9 @@ build, but profile-write race behavior needs a database-backed test after the sc
 silently drops out of the allow-list rather than erroring.
 
 ---
+
+The CSP report route delegates body reading to `src/app/api/csp-violation-report/body.ts`,
+which bounds chunked request streams before JSON parsing.
 
 ## 11. SEO & structured data
 

@@ -3,8 +3,8 @@
 Last updated: 2026-09-07
 
 Every file in the repo, what it is for, and whether it is actually doing
-anything. **Current inventory:** 115 TypeScript files under `src/`, with `npm run dead:check`
-reporting 115 source files, 50 entry points, and **zero unreachable files** on 2026-09-07. This map
+anything. **Current inventory:** 123 TypeScript files under `src/`, with `npm run dead:check`
+reporting 123 source files, 55 entry points, and **zero unreachable files** on 2026-09-07. This map
 exists because nobody could previously answer which files were live without manually tracing
 many dead EVM fallback paths.
 
@@ -134,6 +134,10 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 
 ## 6. Data layer — `src/data/`, `src/lib/`
 
+| `lib/ownerSync.ts` | Keeps the cached directory owner aligned with the authoritative KNS owner after profile mutations | ✅ |
+| `app/api/csp-violation-report/body.ts` | Byte-bounded stream reader for the unauthenticated CSP report endpoint | ✅ |
+| `app/api/csp-violation-report/body.test.ts`, `lib/ownerSync.test.ts` | Regression coverage for hostile-body limits and KNS owner-cache synchronization | ✅ |
+
 | File | Purpose | Status |
 |---|---|---|
 | `data/supabaseSource.ts` | Every Supabase read. `fetchAllPages` avoids silent truncation; profile-link reads include the rendered revision | ✅ |
@@ -207,8 +211,8 @@ hook.
 
 ### Reachability
 
-`npm run dead:check` is the source of record: as of 2026-09-07 it reports 115 source files,
-50 entry points, 115 reachable files and **0 unreachable files**. The stale EVM adapters and
+`npm run dead:check` is the source of record: as of 2026-09-07 it reports 123 source files,
+55 entry points, 123 reachable files and **0 unreachable files**. The stale EVM adapters and
 six unimported KNS hooks were removed rather than allowlisted.
 
 ## 8b. Documentation — `docs/`
