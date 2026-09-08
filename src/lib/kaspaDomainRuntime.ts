@@ -25,23 +25,6 @@ export const KNS_API_BASE_URL = 'https://api.knsdomains.org/mainnet/api/v1';
 export const KASPA_TRANSACTION_API_BASE_URL = 'https://api.kaspa.org/transactions';
 export const KASPA_L1_ADDRESS_PREFIX = 'kaspa' as const;
 
-/**
- * Kasplex is a legacy EVM fallback. Its testnet is not Kaspa L1 testnet-10 and
- * must never be used as evidence that the L1 covenant exists.
- */
-export const LEGACY_KASPLEX_TESTNET = {
-  chainId: 167012,
-  chainHexId: '0x28d84',
-  chainName: 'Kasplex Testnet',
-  rpcUrl: 'https://rpc.kasplextest.xyz',
-  explorerUrl: 'https://frontend.kasplextest.xyz',
-  nativeCurrency: {
-    name: 'Kaspa',
-    symbol: 'KAS',
-    decimals: 18,
-  },
-} as const;
-
 const L1_COVENANT_STATUS = {
   network: 'testnet-10' as const,
   deployment: 'not-built' as const satisfies L1CovenantDeployment,

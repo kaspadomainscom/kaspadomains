@@ -7,7 +7,6 @@ const runtime = require('./kaspaDomainRuntime.ts') as {
   getL1CovenantStatus?: () => unknown;
   isL1CovenantOperational?: () => boolean;
   KNS_NETWORK?: string;
-  LEGACY_KASPLEX_TESTNET?: { chainId: number; chainName: string };
   knsApiUrl?: (path: string) => URL;
   kaspaTransactionUrl?: (transactionId: string) => URL;
   resolveDirectorySource?: (configured: boolean) => string;
@@ -32,16 +31,6 @@ test('keeps the testnet covenant target separate from current mainnet authority'
     runtime.kaspaTransactionUrl?.('abc123').toString(),
     'https://api.kaspa.org/transactions/abc123'
   );
-  assert.deepEqual(runtime.LEGACY_KASPLEX_TESTNET, {
-    chainId: 167012,
-    chainHexId: '0x28d84',
-    chainName: 'Kasplex Testnet',
-    rpcUrl: 'https://rpc.kasplextest.xyz',
-    explorerUrl: 'https://frontend.kasplextest.xyz',
-    nativeCurrency: { name: 'Kaspa', symbol: 'KAS', decimals: 18 },
-  });
-  const covenant = runtime.getL1CovenantStatus?.() as { network?: string } | undefined;
-  assert.notEqual(runtime.LEGACY_KASPLEX_TESTNET?.chainName, covenant?.network);
 });
 
 test('reports no directory source when the database is unconfigured', () => {
