@@ -241,9 +241,8 @@ active-listing classifier, so withdrawn memberships are not advertised in visibl
 
 ### 11. Homepage category cards count withdrawn listings
 
-**In progress - Codex, 2026-09-08.** The homepage still uses the raw membership length for
-category counts, while the category index and detail pages count active listings only. Reuse
-the canonical active-listing count so all category surfaces agree.
+**Done - Codex, 2026-09-08, `3d552a1`.** The homepage now uses the canonical active-listing
+count, keeping category totals consistent across homepage, index, and detail metadata.
 
 ## In progress
 

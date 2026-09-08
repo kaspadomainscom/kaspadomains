@@ -1,6 +1,6 @@
 # Files
 
-Last updated: 2026-09-08 (category counts aligned with active listings, withdrawn listing status actions, explicit active evidence, dependency and legacy-export cleanup)
+Last updated: 2026-09-08 (homepage and category counts aligned with active listings, withdrawn listing status actions, explicit active evidence, dependency and legacy-export cleanup)
 
 Every file in the repo, what it is for, and whether it is actually doing
   anything. **Current inventory:** 135 TypeScript files under `src/`, with `npm run dead:check`
@@ -203,7 +203,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 
 **Live components:** `Header` (+`trendingDomains`; explicit Home, Domains, Search, Learn and
 List Domain routes), `Footer`, `Sidebar`,
-`DomainCard`, `PickDomainModal`, `categoryDomains.ts` (filters and counts active category memberships),
+`DomainCard`, `PickDomainModal`, `categoryDomains.ts` (filters and counts active category memberships across browse surfaces),
 `Loader`, `ToastProvider`,
 `JsonLd`, `NonceWrapper`, `KaspaDomainsLogo`, `icons`, and under `pages/domain/`:
 `VotingSection`, `CategoryEditor`, `DomainInfoPanel`, `DomainTitleSection`,
