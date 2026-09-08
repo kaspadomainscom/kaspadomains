@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Metadata } from "next";
 import { loadCategoriesManifestOnce } from "@/data/categoriesManifest.server";
 import { type CategoryManifest } from "@/data/categoriesManifest";
+import { activeCategoryCount } from "@/components/categoryDomains";
 
 export const metadata: Metadata = {
   title: "Domain Categories | kaspadomains.com",
@@ -52,23 +53,26 @@ export default async function DomainCategoriesPage() {
           <p className="text-gray-400">No categories available right now.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {Object.entries(categoriesData).map(([slug, category]) => (
-              <Link
-                key={slug}
-                href={`/domains/categories/category/${slug}`}
-                className="group relative block rounded-2xl border border-[#1d3b39] bg-[#122c2a] p-5 transition-shadow hover:shadow-lg hover:border-kaspaMint/50"
-              >
-                <h2 className="text-xl font-semibold text-white group-hover:text-kaspaMint mb-2">
-                  {category.title}
-                </h2>
-                <p className="text-sm text-gray-400">
-                  {category.domains.length} domain{category.domains.length !== 1 ? "s" : ""}
-                </p>
-                <span className="absolute top-4 right-4 inline-block rounded-full bg-kaspaMint/10 px-3 py-0.5 text-xs font-medium text-kaspaMint">
-                  {category.domains.length}
-                </span>
-              </Link>
-            ))}
+            {Object.entries(categoriesData).map(([slug, category]) => {
+              const listedCount = activeCategoryCount(category.domains);
+              return (
+                <Link
+                  key={slug}
+                  href={`/domains/categories/category/${slug}`}
+                  className="group relative block rounded-2xl border border-[#1d3b39] bg-[#122c2a] p-5 transition-shadow hover:shadow-lg hover:border-kaspaMint/50"
+                >
+                  <h2 className="text-xl font-semibold text-white group-hover:text-kaspaMint mb-2">
+                    {category.title}
+                  </h2>
+                  <p className="text-sm text-gray-400">
+                    {listedCount} domain{listedCount !== 1 ? "s" : ""}
+                  </p>
+                  <span className="absolute top-4 right-4 inline-block rounded-full bg-kaspaMint/10 px-3 py-0.5 text-xs font-medium text-kaspaMint">
+                    {listedCount}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         )}
       </main>
