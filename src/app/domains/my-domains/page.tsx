@@ -27,7 +27,8 @@ import { listingStatusAction } from './listingStatusAction';
 const PAGE_SIZE = 12;
 
 function ListedBadge({ status }: { status: ListingStatus | null | undefined }) {
-  if (status === undefined) {
+  const action = listingStatusAction(status);
+  if (action === 'unknown') {
     // Not known -- Supabase is unconfigured, still loading, or errored.
     return (
       <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-gray-300">
@@ -35,13 +36,14 @@ function ListedBadge({ status }: { status: ListingStatus | null | undefined }) {
       </span>
     );
   }
-  if (status === null) {
+  if (action === 'not-listed') {
     return (
       <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-gray-300">
         Not listed
       </span>
     );
   }
+  if (!status) return null;
   return (
     <span className="rounded-full bg-teal-500/15 px-2.5 py-0.5 text-xs font-medium text-teal-300">
       Listed · {status.votes} {status.votes === 1 ? 'vote' : 'votes'}
