@@ -16,6 +16,7 @@ import {
 } from '@/lib/fees';
 import { getL1CovenantStatus, resolveDirectorySource } from '@/lib/kaspaDomainRuntime';
 import { runRlsProbe } from '@/lib/rlsProbe';
+import { classifyStoreError } from '@/lib/storeError';
 
 export const runtime = 'nodejs';
 // Health is worthless cached: the whole point is what is true right now.
@@ -68,6 +69,30 @@ type Check = {
   action?: string;
 };
 
+function storeFailureDetail(error: { code?: string | null; message?: string | null }): Pick<Check, 'state' | 'detail' | 'action'> {
+  const failure = classifyStoreError(error);
+  if (failure === 'setup-incomplete') {
+    return {
+      state: 'fail',
+      detail: 'The database schema is incomplete.',
+      action: 'Apply supabase/schema.sql and the migrations, then re-check.',
+    };
+  }
+  if (failure === 'unreachable') {
+    const message = error.message || error.code || 'unknown error';
+    return {
+      state: 'unknown',
+      detail: `The database could not be reached: ${message}`,
+      action: explainTransportFailure(message) ?? 'Check the database URL and key, then re-check.',
+    };
+  }
+  return {
+    state: 'fail',
+    detail: `Unexpected database error: ${error.message || error.code || 'unknown error'}`,
+    action: 'Check the server logs and database configuration.',
+  };
+}
+
 async function checkSchema(): Promise<Check[]> {
   if (!isSupabaseWritable) {
     return [
@@ -84,22 +109,20 @@ async function checkSchema(): Promise<Check[]> {
   const supabase = getSupabaseAdminClient();
   const missing: string[] = [];
   const unreachable: string[] = [];
+  const unexpected: string[] = [];
   let firstFailure = '';
 
   await Promise.all(
     TABLE_NAMES.map(async (table) => {
       const { error } = await supabase.from(table).select('*').limit(0);
       if (!error) return;
-      // PGRST205 is PostgREST's "no such table in the schema cache".
-      if (error.code === 'PGRST205') {
+      const failure = classifyStoreError(error);
+      if (failure === 'setup-incomplete') {
         missing.push(table);
         return;
       }
-      // Anything else -- a network failure, a refused connection -- means the
-      // check did not run. Counting that as "present" is how a health page ends
-      // up reporting green while nothing works; only an actual successful query
-      // proves a table exists.
-      unreachable.push(table);
+      if (failure === 'unreachable') unreachable.push(table);
+      else unexpected.push(table);
       if (!firstFailure) firstFailure = error.message || error.code || 'unknown error';
     })
   );
@@ -114,6 +137,18 @@ async function checkSchema(): Promise<Check[]> {
         action:
           explainTransportFailure(firstFailure) ??
           'The database could not be reached. Check the URL and key, then re-check.',
+      },
+    ];
+  }
+
+  if (unexpected.length > 0) {
+    return [
+      {
+        id: 'schema',
+        label: 'Database schema',
+        state: 'fail',
+        detail: `Unexpected error while checking ${unexpected.length} of ${TABLE_NAMES.length} tables: ${firstFailure}`,
+        action: 'Check the server logs and database configuration.',
       },
     ];
   }
@@ -173,19 +208,23 @@ async function checkSchemaVersion(): Promise<Check> {
   const { data, error } = await getSupabaseAdminClient().rpc('kaspadomains_schema_version');
 
   if (error) {
-    // PGRST202 is "no such function": the migration has not been applied.
+    const failure = classifyStoreError(error);
     return {
       id: 'schema-version',
       label: 'Atomic write functions',
-      state: error.code === 'PGRST202' ? 'fail' : 'unknown',
+      state: failure === 'setup-incomplete' ? 'fail' : failure === 'unreachable' ? 'unknown' : 'fail',
       detail:
-        error.code === 'PGRST202'
+        failure === 'setup-incomplete'
           ? 'Missing. Paid writes are disabled until they exist.'
-          : `Could not check: ${error.message || error.code}`,
+          : failure === 'unreachable'
+            ? `Could not check: ${error.message || error.code || 'database unreachable'}`
+            : `Unexpected database error: ${error.message || error.code || 'unknown error'}`,
       action:
-        error.code === 'PGRST202'
+        failure === 'setup-incomplete'
           ? 'Apply supabase/migrations/0003_atomic_writes.sql.'
-          : undefined,
+          : failure === 'unreachable'
+            ? 'Check the database URL and key, then re-check.'
+            : 'Check the server logs and database configuration.',
     };
   }
 
@@ -222,21 +261,11 @@ async function checkPublicRead(): Promise<Check> {
 
   const { error } = await client.from('categories').select('key').limit(1);
   if (error) {
+    const failure = storeFailureDetail(error);
     return {
       id: 'read',
       label: 'Public reads',
-      state: 'fail',
-      detail:
-        error.code === 'PGRST205'
-          ? 'The categories table does not exist.'
-          : // Say what actually went wrong. "Refused." with no reason sent me
-            // looking at RLS for a problem that was a failed connection.
-            `Failed: ${error.message || error.code || 'unknown error'}`,
-      action:
-        error.code === 'PGRST205'
-          ? 'Run supabase/schema.sql, then re-check.'
-          : explainTransportFailure(error.message ?? '') ??
-            'Check NEXT_PUBLIC_SUPABASE_URL and the publishable key.',
+      ...failure,
     };
   }
 
