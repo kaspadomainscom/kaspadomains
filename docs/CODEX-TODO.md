@@ -206,26 +206,27 @@ the CSP items in 3.
 Completed in `9ba8e25`; the category page now shares one active-only list for the empty state
 and cards, with focused regression coverage for mixed and all-inactive categories.
 
-### 8. My Domains treats withdrawn listings as active
+### 8. My Domains treats withdrawn listings as active — fixed in `a3b2928`
 
-**In progress — Codex, 2026-09-08.** `fetchListingStatuses` includes inactive rows, and
-`listingStatusAction` currently treats every returned row as listed. An owner whose listing
-was withdrawn therefore gets View/Edit actions instead of the not-listed recovery path.
-Scope: `src/app/domains/my-domains/listingStatusAction.ts` and its focused regression test.
+**Done — Codex, 2026-09-08.** `fetchListingStatuses` includes inactive rows, and the My
+Domains action boundary now maps those rows to the existing not-listed recovery path. The
+badge and actions share the classifier; focused regression coverage protects withdrawn,
+unknown, absent and active states.
 
 ## In progress
 
 - _(Codex)_ — category page active-listing filter: `src/app/domains/categories/category/[category]/page.tsx`,
   `src/components/categoryDomains.ts`, and focused regression test. Completed in `9ba8e25`; claim closed.
 
-- _(Codex)_ — My Domains withdrawn-listing action: `src/app/domains/my-domains/page.tsx`,
-  `src/app/domains/my-domains/listingStatusAction.ts` and focused regression test.
-
 - _(Codex)_ — no open claim.
 
 ---
 
 ## Done
+
+- **My Domains withdrawn-listing action** — `a3b2928`, Codex, 2026-09-08. Inactive listing rows
+  now show `Not listed` and the existing relist path rather than View/Edit profile actions;
+  the badge and action classifier share the same state boundary, with native regression coverage.
 
 - **Paid listing retry rejected equivalent category order** — `dca5f4a`, Codex, 2026-09-08.
   Recovery now compares the trimmed category membership as a set, so a reordered selection can

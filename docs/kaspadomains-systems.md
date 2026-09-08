@@ -1,6 +1,6 @@
 # KaspaDomains — systems
 
-Last updated: 2026-09-08 (paid listing retry category order)
+Last updated: 2026-09-08 (withdrawn listing status actions)
 
 The same codebase cut by **system** rather than by folder. Each entry says what the system
 does, how it works, every file it is built from, and where it is weak.
@@ -133,8 +133,8 @@ three outcomes, so an outage never 404s a live domain.
 | `src/lib/listDomainValidation.ts` | Trims and lowercases a candidate before enforcing the `.kas` suffix and minimum length |
 | `src/hooks/kns/api/useOwnedDomains.ts`, `useVerifiedDomains.ts`, `usePaginatedDomains.ts` | What the wallet owns, from KNS |
 | `src/app/domain/[name]/page.tsx` | The public profile |
-| `src/app/domains/my-domains/page.tsx` | Owns (KNS) vs listed (us) — deliberately separate questions; unavailable status has no paid CTA |
-| `src/app/domains/my-domains/listingStatusAction.ts`, `listingStatusAction.test.ts` | Preserve unknown, confirmed unlisted, and listed states at the row action boundary |
+| `src/app/domains/my-domains/page.tsx` | Owns (KNS) vs listed (us) — deliberately separate questions; unavailable and withdrawn statuses have no profile-edit CTA |
+| `src/app/domains/my-domains/listingStatusAction.ts`, `listingStatusAction.test.ts` | Preserve unknown, confirmed unlisted, active listed, and withdrawn states at the row action boundary |
 
 **Weak points.** A listing is a mutable database row, not an on-chain fact. There is no
 delist or transfer flow.

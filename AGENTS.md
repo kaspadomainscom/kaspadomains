@@ -128,6 +128,9 @@ Cross into someone's area when it's the right fix; just note it on the board.
 
 - _(Codex)_ — no open claim. My Domains unknown listing status CTA fixed in `378eb05`.
 
+- _(Codex)_ — no open claim. Withdrawn My Domains listings now follow the not-listed action and
+  badge path in `a3b2928`; inactive rows cannot expose View/Edit links.
+
 - _(Codex)_ — category page active-listing filter in `src/app/domains/categories/category/[category]/page.tsx`
   and `src/components/categoryDomains.ts` (completed in `9ba8e25`; claim closed).
 - _(Codex)_ — no open claim. SA-05 replay/concurrency protection is complete in `548e764`;

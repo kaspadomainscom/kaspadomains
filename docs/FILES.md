@@ -1,6 +1,6 @@
 # Files
 
-Last updated: 2026-09-08 (paid listing retry category order)
+Last updated: 2026-09-08 (withdrawn listing status actions)
 
 Every file in the repo, what it is for, and whether it is actually doing
   anything. **Current inventory:** 135 TypeScript files under `src/`, with `npm run dead:check`
@@ -185,7 +185,7 @@ Deleted: `claimReceipt.ts` — with the write atomic there is nothing to release
 | `domains/page.tsx` | Browse + filter. Windowed pagination; an outage is not rendered as an empty directory | 🔒 |
 | `domains/categories/` | Category index and per-category pages | 🔒 |
 | `domains/top-voted/` | Ranking | 🔒 |
-| `domains/my-domains/` | KNS ownership **and** listing status, kept as separate questions; unavailable status has no paid CTA | 🔒 |
+| `domains/my-domains/` | KNS ownership **and** listing status, kept as separate questions; unavailable and withdrawn statuses have no profile-edit CTA | 🔒 |
 | `domains/my-votes/` | Rewritten to read Supabase by the L1 address | 🔒 |
 | `domains/new-listings/` | Redirect to `/list-domain` | ✅ |
 | `domain/[name]/` | Public profile. Existence from `domains`, category only a label | 🔒 |

@@ -49,6 +49,19 @@ showed the withdrawn domain in the browse grid.
 both the empty state and cards. Native regression tests cover mixed and all-inactive categories;
 no moderation or data-loading behavior changed.
 
+### 2026-09-08 — My Domains offered profile actions for withdrawn listings
+
+The listing-status read includes inactive rows, but the My Domains action classifier treated
+every returned row as active. After a listing was withdrawn, its owner therefore saw a
+`Listed` badge with View/Edit links instead of the paid relist path used for a confirmed
+unlisted domain.
+
+`listingStatusAction` now carries the `Domain.isActive` signal through the action boundary,
+and the badge uses that same classifier. Inactive rows render as not listed and offer the
+existing relist action; unavailable, active and genuinely absent statuses remain distinct.
+Native regression coverage protects the withdrawn state and the existing actions. No
+moderation, ownership, database or payment behavior changed.
+
 ### 2026-09-08 — The status health check could create fake directory rows
 
 `/api/status` tested Row Level Security by inserting a real `status-probe-*.invalid` domain.
