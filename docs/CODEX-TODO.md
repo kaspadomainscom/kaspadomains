@@ -152,6 +152,10 @@ The "is the schema missing?" test (`PGRST202`, `PGRST204`, `PGRST205`, `42P01`, 
 written out in four places. I consolidated three of them into `src/lib/storeError.ts`; the
 fourth is in your status route, so it is yours to move or to keep deliberately.
 
+**In progress - Codex, 2026-09-08.** Route failures will use the shared
+`classifyStoreError` boundary so missing schema, unreachable storage, and
+unexpected failures keep distinct health signals.
+
 Worth doing more than the tidiness suggests. All three copies I replaced shared the same gap:
 they asked only whether the schema was missing and answered **everything else** with a 500,
 so an *unreachable* database — network down, project paused, DNS failing — was reported as an
