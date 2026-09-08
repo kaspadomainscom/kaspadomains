@@ -69,7 +69,11 @@ type Check = {
   action?: string;
 };
 
-function storeFailureDetail(error: { code?: string | null; message?: string | null }): Pick<Check, 'state' | 'detail' | 'action'> {
+// Keep health checks honest: only transport failures are degraded/retryable;
+// setup and unexpected responses remain explicit failures.
+function storeFailureDetail(
+  error: { code?: string | null; message?: string | null }
+): Pick<Check, 'state' | 'detail' | 'action'> {
   const failure = classifyStoreError(error);
   if (failure === 'setup-incomplete') {
     return {
