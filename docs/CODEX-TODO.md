@@ -195,6 +195,14 @@ the CSP items in 3.
 
 ---
 
+### 9. Remove the dead Kasplex compatibility constant — `src/lib/kaspaDomainRuntime.ts` is yours
+
+**In progress — Codex, 2026-09-08.** `LEGACY_KASPLEX_TESTNET` is exported but has no runtime
+consumer; the old CSP/import rationale is stale. Remove the unreachable compatibility branch and
+keep the current mainnet and non-authoritative L1 covenant boundaries explicit.
+
+---
+
 **Still yours:**
 
 - the profile-write token/revision races against an applied Supabase schema. This needs a
