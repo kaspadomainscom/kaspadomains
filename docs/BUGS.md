@@ -59,8 +59,9 @@ unlisted domain.
 `listingStatusAction` now carries the `Domain.isActive` signal through the action boundary,
 and the badge uses that same classifier. Inactive rows render as not listed and offer the
 existing relist action; unavailable, active and genuinely absent statuses remain distinct.
-Native regression coverage protects the withdrawn state and the existing actions. No
-moderation, ownership, database or payment behavior changed.
+The follow-up classifier hardening (`02141f9`) requires explicit active evidence before
+showing a listed state. Native regression coverage protects the withdrawn state and the
+existing actions. No moderation, ownership, database or payment behavior changed.
 
 ### 2026-09-08 — The status health check could create fake directory rows
 

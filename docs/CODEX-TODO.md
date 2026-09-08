@@ -206,7 +206,7 @@ the CSP items in 3.
 Completed in `9ba8e25`; the category page now shares one active-only list for the empty state
 and cards, with focused regression coverage for mixed and all-inactive categories.
 
-### 8. My Domains treats withdrawn listings as active — fixed in `a3b2928`
+### 8. My Domains treats withdrawn listings as active — fixed in `a3b2928`, `02141f9`
 
 **Done — Codex, 2026-09-08.** `fetchListingStatuses` includes inactive rows, and the My
 Domains action boundary now maps those rows to the existing not-listed recovery path. The

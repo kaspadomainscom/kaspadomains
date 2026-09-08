@@ -1,6 +1,6 @@
 # Files
 
-Last updated: 2026-09-08 (withdrawn listing status actions)
+Last updated: 2026-09-08 (withdrawn listing status actions, explicit active evidence)
 
 Every file in the repo, what it is for, and whether it is actually doing
   anything. **Current inventory:** 135 TypeScript files under `src/`, with `npm run dead:check`
