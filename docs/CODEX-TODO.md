@@ -239,6 +239,12 @@ unknown, absent and active states.
 **Done - Codex, 2026-09-08, `ab0dfc7`.** The category index and detail metadata now reuse the
 active-listing classifier, so withdrawn memberships are not advertised in visible counts.
 
+### 11. Homepage category cards count withdrawn listings
+
+**In progress - Codex, 2026-09-08.** The homepage still uses the raw membership length for
+category counts, while the category index and detail pages count active listings only. Reuse
+the canonical active-listing count so all category surfaces agree.
+
 ## In progress
 
 - _(Codex)_ — no open claim.
