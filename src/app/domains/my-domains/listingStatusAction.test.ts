@@ -15,7 +15,7 @@ test('keeps unavailable listing status from offering a paid relist action', () =
 
 test('preserves confirmed not-listed and listed actions', () => {
   assert.equal(listingStatusAction(null), 'not-listed');
-  assert.equal(listingStatusAction({ votes: 0 }), 'listed');
+  assert.equal(listingStatusAction({ votes: 0, domain: { isActive: true } }), 'listed');
 });
 
 test('a withdrawn listing follows the not-listed recovery path', () => {
@@ -23,4 +23,8 @@ test('a withdrawn listing follows the not-listed recovery path', () => {
     listingStatusAction({ votes: 0, domain: { isActive: false } }),
     'not-listed'
   );
+});
+
+test('a status without an activity signal is not treated as listed', () => {
+  assert.equal(listingStatusAction({ votes: 0 }), 'not-listed');
 });
