@@ -7,7 +7,7 @@ import Link from "next/link";
 import { loadCategoriesManifestOnce } from "@/data/categoriesManifest.server";
 import { DomainCard } from "@/components/DomainCard";
 import { JsonLd } from "@/components/JsonLd";
-import { activeCategoryCount, activeCategoryDomains } from "@/components/categoryDomains";
+import { listedCategoryCount, activeCategoryDomains } from "@/components/categoryDomains";
 import type { Metadata } from "next";
 
 type StaticParam = { category: string };
@@ -40,7 +40,7 @@ export async function generateMetadata({
     }
 
     const title = `${categoryData.title} | Kaspa Domains`;
-    const description = `Explore ${activeCategoryCount(categoryData.domains)} premium KNS domains in the ${category} category. Perfect for Kaspa wallets, identity, and branding.`;
+    const description = `Explore ${listedCategoryCount(categoryData.domains)} premium KNS domains in the ${category} category. Perfect for Kaspa wallets, identity, and branding.`;
 
     return {
       title,

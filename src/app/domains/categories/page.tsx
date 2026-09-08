@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Metadata } from "next";
 import { loadCategoriesManifestOnce } from "@/data/categoriesManifest.server";
 import { type CategoryManifest } from "@/data/categoriesManifest";
-import { activeCategoryCount } from "@/components/categoryDomains";
+import { listedCategoryCount } from "@/components/categoryDomains";
 
 export const metadata: Metadata = {
   title: "Domain Categories | kaspadomains.com",
@@ -54,7 +54,7 @@ export default async function DomainCategoriesPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {Object.entries(categoriesData).map(([slug, category]) => {
-              const listedCount = activeCategoryCount(category.domains);
+              const listedCount = listedCategoryCount(category.domains);
               return (
                 <Link
                   key={slug}

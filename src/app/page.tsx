@@ -9,6 +9,7 @@ import { getWebsiteJsonLd, getItemListJsonLd } from "@/lib/jsonld";
 import { JsonLd } from "@/components/JsonLd";
 import { formatCount } from "@/lib/format";
 import { LISTING_FEE_LABEL, VOTE_FEE_LABEL } from "@/lib/fees";
+import { listedCategoryCount } from "@/components/categoryDomains";
 
 const TRENDING_COUNT = 3;
 
@@ -159,16 +160,21 @@ export default async function Home() {
           </p>
         ) : Object.keys(categoriesData).length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {Object.entries(categoriesData).map(([key, { title, domains }]) => (
-              <Link
-                key={key}
-                href={`/domains/categories/category/${key}`}
-                className="block bg-[#121E28] p-6 rounded-2xl shadow-md hover:shadow-xl hover:bg-[#1C2B37] transition transform hover:-translate-y-1"
-              >
-                <h3 className="text-xl font-semibold mb-1 text-white">{title}</h3>
-                <p className="text-sm text-gray-400">{domains.length} domains</p>
-              </Link>
-            ))}
+            {Object.entries(categoriesData).map(([key, { title, domains }]) => {
+              const listedCount = listedCategoryCount(domains);
+              return (
+                <Link
+                  key={key}
+                  href={`/domains/categories/category/${key}`}
+                  className="block bg-[#121E28] p-6 rounded-2xl shadow-md hover:shadow-xl hover:bg-[#1C2B37] transition transform hover:-translate-y-1"
+                >
+                  <h3 className="text-xl font-semibold mb-1 text-white">{title}</h3>
+                  <p className="text-sm text-gray-400">
+                    {listedCount} domain{listedCount !== 1 ? "s" : ""}
+                  </p>
+                </Link>
+              );
+            })}
           </div>
         ) : (
           <p className="text-center text-gray-400">No categories yet.</p>

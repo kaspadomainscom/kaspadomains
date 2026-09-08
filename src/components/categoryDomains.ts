@@ -6,6 +6,6 @@ export function activeCategoryDomains<T extends { isActive: boolean }>(
 }
 
 /** Count only memberships that are visible as listed domains. */
-export function activeCategoryCount(domains: readonly { isActive: boolean }[]): number {
+export function listedCategoryCount(domains: readonly { isActive: boolean }[]): number {
   return activeCategoryDomains(domains).length;
 }

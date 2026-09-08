@@ -3,9 +3,9 @@ import { createRequire } from 'node:module';
 import test from 'node:test';
 
 const require = createRequire(import.meta.url);
-const { activeCategoryDomains, activeCategoryCount } = require('./categoryDomains.ts') as {
+const { activeCategoryDomains, listedCategoryCount } = require('./categoryDomains.ts') as {
   activeCategoryDomains: <T extends { isActive: boolean }>(domains: readonly T[]) => T[];
-  activeCategoryCount: (domains: readonly { isActive: boolean }[]) => number;
+  listedCategoryCount: (domains: readonly { isActive: boolean }[]) => number;
 };
 
 test('category grids exclude inactive memberships', () => {
@@ -28,7 +28,7 @@ test('an all-inactive category produces no cards', () => {
 // pages rendered only active listings, so the same category showed conflicting totals.
 test('category counts exclude withdrawn memberships', () => {
   assert.equal(
-    activeCategoryCount([
+    listedCategoryCount([
       { isActive: true },
       { isActive: false },
       { isActive: true },
