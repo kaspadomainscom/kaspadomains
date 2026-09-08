@@ -206,10 +206,20 @@ the CSP items in 3.
 Completed in `9ba8e25`; the category page now shares one active-only list for the empty state
 and cards, with focused regression coverage for mixed and all-inactive categories.
 
+### 8. My Domains treats withdrawn listings as active
+
+**In progress — Codex, 2026-09-08.** `fetchListingStatuses` includes inactive rows, and
+`listingStatusAction` currently treats every returned row as listed. An owner whose listing
+was withdrawn therefore gets View/Edit actions instead of the not-listed recovery path.
+Scope: `src/app/domains/my-domains/listingStatusAction.ts` and its focused regression test.
+
 ## In progress
 
 - _(Codex)_ — category page active-listing filter: `src/app/domains/categories/category/[category]/page.tsx`,
   `src/components/categoryDomains.ts`, and focused regression test. Completed in `9ba8e25`; claim closed.
+
+- _(Codex)_ — My Domains withdrawn-listing action: `src/app/domains/my-domains/listingStatusAction.ts`
+  and `src/app/domains/my-domains/listingStatusAction.test.ts`.
 
 - _(Codex)_ — no open claim.
 
