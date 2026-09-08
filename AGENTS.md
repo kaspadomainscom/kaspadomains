@@ -124,9 +124,6 @@ Cross into someone's area when it's the right fix; just note it on the board.
 
 ### Current claims
 
-- _(Codex, 2026-09-08)_ — reconciling stale status in `docs/CODEX-TODO.md` against verified
-  category/status/HSTS commits; documentation-only, no source edits.
-
 - _(Codex)_ — no open claim. Dead Kasplex compatibility export removed in `a37ce86`; current
   mainnet and non-authoritative L1 covenant boundaries remain explicit.
 
