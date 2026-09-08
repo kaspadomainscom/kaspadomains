@@ -218,8 +218,8 @@ Scope: `src/app/domains/my-domains/listingStatusAction.ts` and its focused regre
 - _(Codex)_ — category page active-listing filter: `src/app/domains/categories/category/[category]/page.tsx`,
   `src/components/categoryDomains.ts`, and focused regression test. Completed in `9ba8e25`; claim closed.
 
-- _(Codex)_ — My Domains withdrawn-listing action: `src/app/domains/my-domains/listingStatusAction.ts`
-  and `src/app/domains/my-domains/listingStatusAction.test.ts`.
+- _(Codex)_ — My Domains withdrawn-listing action: `src/app/domains/my-domains/page.tsx`,
+  `src/app/domains/my-domains/listingStatusAction.ts` and focused regression test.
 
 - _(Codex)_ — no open claim.
 
