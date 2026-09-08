@@ -1,6 +1,6 @@
 # Files
 
-Last updated: 2026-09-08 (withdrawn listing status actions, explicit active evidence)
+Last updated: 2026-09-08 (withdrawn listing status actions, explicit active evidence, dependency cleanup)
 
 Every file in the repo, what it is for, and whether it is actually doing
   anything. **Current inventory:** 135 TypeScript files under `src/`, with `npm run dead:check`
@@ -61,7 +61,7 @@ below is waiting on that single step.
 |---|---|---|
 | `README.md` | Setup, database bootstrap, the TLS-interception pitfall | ✅ |
 | `AGENTS.md` | Coordination board with Codex — work split, ground rules, message log | ✅ |
-| `package.json` | Deps + `dev`/`build`/`start`/`lint`/`test`/`db:check`/`dead:check` | ✅ |
+| `package.json` | App dependencies + `dev`/`build`/`start`/`lint`/`test`/`db:check`/`dead:check`/`schema:check`/`boundary:check`/`secret:check` | ✅ |
 | `next.config.ts` | `serverExternalPackages: ['kaspa-wasm']` — keeps the verifier out of the browser bundle; sole owner of the global two-year HSTS policy | ✅ |
 | `.env.example` | Every variable, with why each one matters | ✅ |
 | `.github/workflows/ci.yml` | Runs lint, native tests and build on push/PR | ✅ |
@@ -267,8 +267,9 @@ The map had no entry for its own folder until 2026-09-06. 22 files.
 
 5. **Server-side search.** `/search` loads every listing into the browser to
    filter client-side.
-6. **Dependency majors**: eslint 10, TypeScript 7, `@noble/curves` 2,
-    `lucide-react` 1, `@types/node` 26. In-range updates are already applied.
+6. **Dependency majors**: eslint 10, TypeScript 7, `lucide-react` 1,
+    `@types/node` 26. In-range updates are already applied; unused production dependencies
+    were removed in `c4eb4d1`.
 7. **Real OG image.** `public/og-image.png` is a tracked 1200×630 branded banner generated
     from the SVG logo sources.
 8. Mobile pass on `/status`, `/about`, `/terms`, `/privacy`,

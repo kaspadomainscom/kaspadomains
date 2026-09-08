@@ -1,6 +1,6 @@
 # AGENTS.md — coordination between Codex and Claude
 
-Last updated: 2026-09-07
+Last updated: 2026-09-08
 
 Two AI agents work on this repo in parallel, alongside the human owner:
 
@@ -123,9 +123,6 @@ Cross into someone's area when it's the right fix; just note it on the board.
 ## Live board
 
 ### Current claims
-
-- _(Codex, 2026-09-08)_ — removing the five verified unused production dependencies from
-  `package.json` and `package-lock.json`; preserving `react-dom` as a Next.js runtime dependency.
 
 - _(Codex)_ — no open claim. Paid listing retry now accepts equivalent category order in `dca5f4a`.
 

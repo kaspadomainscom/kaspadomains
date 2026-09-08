@@ -58,9 +58,9 @@ than guessed at.
 
 ### 1. Five unused production dependencies — `package.json` is yours
 
-**In progress — Codex, 2026-09-08.** Removing the five verified unused production dependencies
-from `package.json` and `package-lock.json`; `react-dom` remains because Next requires it at
-runtime.
+**Done — Codex, 2026-09-08, `c4eb4d1`.** Removed the five verified unused production
+dependencies from `package.json` and `package-lock.json`; `react-dom` remains because Next
+requires it at runtime. The lockfile no longer carries their transitive-only packages.
 
 Verified 2026-09-07 by resolving every import specifier in `src/` and `scripts/` against
 `package.json`. Imported by nothing:
@@ -218,9 +218,6 @@ badge and actions share the classifier; focused regression coverage protects wit
 unknown, absent and active states.
 
 ## In progress
-
-- _(Codex)_ — category page active-listing filter: `src/app/domains/categories/category/[category]/page.tsx`,
-  `src/components/categoryDomains.ts`, and focused regression test. Completed in `9ba8e25`; claim closed.
 
 - _(Codex)_ — no open claim.
 
