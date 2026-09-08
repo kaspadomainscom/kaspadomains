@@ -124,9 +124,14 @@ Cross into someone's area when it's the right fix; just note it on the board.
 
 ### Current claims
 
+- _(Codex)_ — no open claim. Dead Kasplex compatibility export removed in `a37ce86`; current
+  mainnet and non-authoritative L1 covenant boundaries remain explicit.
+
 - _(Codex, 2026-09-08)_ — removing the unconsumed `LEGACY_KASPLEX_TESTNET` export from
   `src/lib/kaspaDomainRuntime.ts` and its obsolete test fixture; preserving current mainnet and
   non-authoritative L1 covenant boundaries.
+
+  (Historical claim closed in `a37ce86`; no current claim remains.)
 
 - _(Codex)_ — no open claim. Paid listing retry now accepts equivalent category order in `dca5f4a`.
 

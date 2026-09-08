@@ -1,6 +1,6 @@
 # KaspaDomains — systems
 
-Last updated: 2026-09-08 (withdrawn listing status actions, explicit active evidence)
+Last updated: 2026-09-08 (withdrawn listing status actions, explicit active evidence, legacy-export cleanup)
 
 The same codebase cut by **system** rather than by folder. Each entry says what the system
 does, how it works, every file it is built from, and where it is weak.
@@ -383,8 +383,9 @@ and every chain-branch in the data layer and hooks.
 
 **Nothing of it remains.** Codex removed the last two files (`kasplex.ts`,
 `viemChains.ts`) and the `viem` dependency on 2026-09-06; `npm run dead:check` reports
-**zero** unreachable files. `LEGACY_KASPLEX_TESTNET` survives in `kaspaDomainRuntime.ts`, but
-no longer has a runtime consumer after the CSP no longer allowed its obsolete RPC origin.
+**zero** unreachable files. The obsolete `LEGACY_KASPLEX_TESTNET` export was removed from
+`kaspaDomainRuntime.ts` in `a37ce86`; no legacy EVM compatibility data remains in the runtime
+contract after the CSP no longer allowed its obsolete RPC origin.
 
 The intended on-chain future is **Toccata covenants on Kaspa L1**, not a Kasplex redeploy —
 see [`Toccata-Dev.md`](./Toccata-Dev.md).

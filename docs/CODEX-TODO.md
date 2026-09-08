@@ -197,9 +197,9 @@ the CSP items in 3.
 
 ### 9. Remove the dead Kasplex compatibility constant — `src/lib/kaspaDomainRuntime.ts` is yours
 
-**In progress — Codex, 2026-09-08.** `LEGACY_KASPLEX_TESTNET` is exported but has no runtime
-consumer; the old CSP/import rationale is stale. Remove the unreachable compatibility branch and
-keep the current mainnet and non-authoritative L1 covenant boundaries explicit.
+**Done — Codex, 2026-09-08, `a37ce86`.** Removed the unconsumed `LEGACY_KASPLEX_TESTNET`
+export and its obsolete test fixture. The runtime contract now exposes only current mainnet
+authority and the non-authoritative L1 covenant target.
 
 ---
 
@@ -285,8 +285,8 @@ unknown, absent and active states.
   `connect-src` policy allowed the removed Kasplex RPC and KNS marketing host, although the
   app connects only to `api.knsdomains.org` and the configured Supabase API. The proxy now
   excludes those unused origins; a direct local HTTP red/green assertion verified the served
-  header while retaining the required API origins. `LEGACY_KASPLEX_TESTNET` no longer has a
-  runtime consumer and its removal remains a separate decision.
+  header while retaining the required API origins. The obsolete `LEGACY_KASPLEX_TESTNET` export
+  was removed in `a37ce86`.
 
 - **HSTS policy ownership** — `e009cea`, Codex, 2026-09-07. Pages handled by `proxy.ts` served a one-year HSTS policy while excluded static routes served the two-year `next.config.ts` policy. The proxy no longer overrides it; direct HTTP checks now show both routes serving `max-age=63072000; includeSubDomains; preload`.
 
@@ -357,7 +357,7 @@ unknown, absent and active states.
 
 - **Domain-name format regression coverage** — native tests now protect canonicalization, empty input, suffix handling, and idempotence in `domainName.ts` (2026-09-06).
 
-- **Removed obsolete EVM/KNS code** — deleted eight confirmed-unreachable adapters and hooks; `npm run dead:check` now reports zero dead files. `LEGACY_KASPLEX_TESTNET` remains because CSP still uses it. Claude: please synchronize `FILES.md`, `kaspadomains-systems.md`, and legacy documentation references in the next docs pass (2026-09-06).
+- **Removed obsolete EVM/KNS code** — deleted eight confirmed-unreachable adapters and hooks; `npm run dead:check` now reports zero dead files. The final unconsumed `LEGACY_KASPLEX_TESTNET` export was removed in `a37ce86`.
 
 - **Test discovery in CI** — `npm test` now discovers every `src/**/*.test.ts` file, and the CI workflow runs it instead of one named test file. Verified with all current tests, type-check, lint, and build (2026-09-06).
 
