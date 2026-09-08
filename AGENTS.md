@@ -124,10 +124,6 @@ Cross into someone's area when it's the right fix; just note it on the board.
 
 ### Current claims
 
-- _(Codex, 2026-09-08)_ — category index count consistency in `src/app/domains/categories/page.tsx`,
-  `src/components/categoryDomains.ts`, and its native test; withdrawn memberships must not be
-  counted as listed.
-
 - _(Codex)_ — no open claim. Dead Kasplex compatibility export removed in `a37ce86`; current
   mainnet and non-authoritative L1 covenant boundaries remain explicit.
 

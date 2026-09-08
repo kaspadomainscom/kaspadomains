@@ -231,9 +231,8 @@ unknown, absent and active states.
 
 ### 10. Category index counts withdrawn listings
 
-**In progress - Codex, 2026-09-08.** The category index currently counts every membership,
-while category detail pages correctly render active listings only. Reuse the active-listing
-classifier so index counts and detail cards agree.
+**Done - Codex, 2026-09-08, `ab0dfc7`.** The category index and detail metadata now reuse the
+active-listing classifier, so withdrawn memberships are not advertised in visible counts.
 
 ## In progress
 

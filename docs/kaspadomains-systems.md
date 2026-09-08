@@ -1,6 +1,6 @@
 # KaspaDomains — systems
 
-Last updated: 2026-09-08 (withdrawn listing status actions, explicit active evidence, legacy-export cleanup)
+Last updated: 2026-09-08 (category counts aligned with active listings, withdrawn listing status actions, explicit active evidence, legacy-export cleanup)
 
 The same codebase cut by **system** rather than by folder. Each entry says what the system
 does, how it works, every file it is built from, and where it is weak.
@@ -160,7 +160,7 @@ boundary, and a foreign key proves a category *exists*, not that it is published
 | `src/hooks/domains/useGetAllowedCategories.ts` | The allow-list, with **titles** not just keys |
 | `src/components/pages/domain/CategoryEditor.tsx` | The editor |
 | `src/data/categoriesManifest.ts` | Manifest for browse pages. Filters `is_allowed` |
-| `src/app/domains/categories/page.tsx`, `.../category/[category]/page.tsx`, `src/components/categoryDomains.ts` | Browse; inactive memberships are filtered before rendering |
+| `src/app/domains/categories/page.tsx`, `.../category/[category]/page.tsx`, `src/components/categoryDomains.ts` | Browse; inactive memberships are filtered before rendering and counting |
 
 **Weak points.** The manifest drops disallowed categories, so it must never be used to
 decide whether a *domain* exists — doing that made withdrawing a category 404 paid listings.
