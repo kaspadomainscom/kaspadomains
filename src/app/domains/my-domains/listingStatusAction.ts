@@ -5,7 +5,7 @@ export type ListingStatusValue =
 
 export type ListingStatusAction = 'unknown' | 'not-listed' | 'listed';
 
-/** Keep unavailable status distinct from a confirmed unlisted domain. */
+/** Keep unavailable, withdrawn, and incomplete status distinct from active listings. */
 export function listingStatusAction(status: ListingStatusValue): ListingStatusAction {
   if (status === undefined) return 'unknown';
   if (status === null || status.domain?.isActive !== true) return 'not-listed';
