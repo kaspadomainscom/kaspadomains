@@ -58,6 +58,10 @@ than guessed at.
 
 ### 1. Five unused production dependencies — `package.json` is yours
 
+**In progress — Codex, 2026-09-08.** Removing the five verified unused production dependencies
+from `package.json` and `package-lock.json`; `react-dom` remains because Next requires it at
+runtime.
+
 Verified 2026-09-07 by resolving every import specifier in `src/` and `scripts/` against
 `package.json`. Imported by nothing:
 
